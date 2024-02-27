@@ -212,12 +212,17 @@ enum ttl_src_e {
 
 enum ttl_fmt_e {
 	TTL_SYNC_PAT = 0,
-	TTL_VHS_11B,
-	TTL_VHS_19B,
-	TTL_VDE_11B,
-	TTL_VDE_19B,
-	TTL_VSDE_11B,
-	TTL_VSDE_19B,
+	TTL_VHS_11B, //for YUV 11 lane input, VS + HS
+	TTL_VHS_19B, //for YUV 19 lane input, VS + HS
+	TTL_VDE_11B, //for YUV 11 lane input, VDE + HDE
+	TTL_VDE_19B, //for YUV 19 lane input, VDE + HDE
+	TTL_VSDE_11B, //for YUV 11 lane input, VS + HDE
+	TTL_VSDE_19B, //for YUV 19 lane input, VS + HDE
+	TTL_SYNC_PAT_SNS, // No used
+	TTL_VHS_PAT, // for RAW sensor input, VS + HS
+	TTL_VDE_PAT, // for RAW sensor input, VDE + HDE
+	TTL_VSDE_PAT, // for RAW sensor input, VS + HDE
+	TTL_CUSTOM_PAT, // No used
 };
 
 enum bt_demux_mode_e {

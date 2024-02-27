@@ -55,6 +55,17 @@ CVI_S32 CVI_VI_SetDevNum(CVI_U32 devNum);
 CVI_S32 CVI_VI_GetDevNum(CVI_U32 *devNum);
 
 /**
+ * @brief Get vi pipe state.
+ *
+ * @param ViPipe(Out), Device Num.
+ *
+ * @return CVI_S32 Return CVI_SUCCESS if succeed.
+ */
+#if (defined ARCH_CV181X) || (defined ARCH_CV180X)
+CVI_S32 CVI_VI_QueryDevStatus(VI_PIPE ViPipe);
+#endif
+
+/**
  * @brief Set vi device attribute.
  *
  * @param ViDev(In), Device ID.
