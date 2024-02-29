@@ -95,7 +95,7 @@ OBJCOPY = $(CROSS_COMPILE)objcopy
 #
 # export TARGET_PACKAGES_INCLUDE and TARGET_PACKAGES_LIBDIR from build/Makefile
 #
-WARNING_LEVEL=-Wall -Wextra -Werror
+WARNING_LEVEL=-Wall -Wextra
 
 #Generate object files by CC
 CFLAGS   = $(OPT_LEVEL) -std=gnu11 -g $(WARNING_LEVEL) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections $(CVI_TARGET_PACKAGES_INCLUDE)
