@@ -106,7 +106,7 @@ struct combo_dev_attr_s pr2020_rx_attr = {
 		.freq = CAMPLL_FREQ_NONE,
 	},
 	.ttl_attr = {
-		.vi = TTL_VI_SRC_VI1,
+		.vi = TTL_VI_SRC_VI0,
 		.func = {
 			-1, -1, -1, -1,
 			0, 1, 2, 3, 4, 5, 6, 7,
@@ -115,25 +115,6 @@ struct combo_dev_attr_s pr2020_rx_attr = {
 		},
 	},
 	.devno = 0,
-};
-
-struct combo_dev_attr_s pr2020_rx1_attr = {
-	.input_mode = INPUT_MODE_BT656_9B,
-	.mac_clk = RX_MAC_CLK_200M,
-	.mclk = {
-		.cam = 1,
-		.freq = CAMPLL_FREQ_NONE,
-	},
-	.ttl_attr = {
-		.vi = TTL_VI_SRC_VI1,
-		.func = {
-			-1, -1, -1, -1,
-			0, 1, 2, 3, 4, 5, 6, 7,
-			-1, -1, -1, -1,
-			-1, -1, -1, -1,
-		},
-	},
-	.devno = 1,
 };
 
 #ifdef __cplusplus

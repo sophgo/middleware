@@ -5,11 +5,11 @@ ifeq ($(PARAM_FILE), )
 endif
 include ../sample.mk
 
-#SYS_INC:= "/media/cvitek/zhongbin.wang/athena2_0908/middleware/v2/modules/sys/include"
+#SYS_INC:= "/media/cvitek/zhongbin.wang/cv186x_0908/middleware/v2/modules/sys/include"
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(SYS_INC) -I../common/ -I$(KERNEL_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(SYS_INC) -I$(KERNEL_INC) $(COMM_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 
@@ -26,7 +26,6 @@ REQUIRES = cvi_common cvi_sample
 #LIBS = $(MW_LIBS)
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 DEFS += -DRPC_MULTI_PROCESS
-LIBS += -lnanomsg
 endif
 
 EXTRA_CFLAGS = $(INCS) $(DEFS)
@@ -45,8 +44,8 @@ $(SDIR)/%.o: $(SDIR)/%.c
 	@$(CC) $(DEPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
 	@echo [$(notdir $(CC))] $(notdir $@)
 
-$(TARGET):  $(OBJS) $(MW_LIB)/libdpu.a $(MW_LIB)/libsys.a $(MW_LIB)/libdwa.a
-	@$(CXX) -o $@ -Wl,--start-group $(OBJS)  $(MW_LIB)/libdpu.a $(MW_LIB)/libsys.a $(MW_LIB)/libdwa.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
+$(TARGET):  $(COMM_OBJ) $(OBJS) $(MW_LIB)/libdpu.a $(MW_LIB)/libsys.a $(MW_LIB)/libdwa.a
+	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(MW_LIB)/libdpu.a $(MW_LIB)/libsys.a $(MW_LIB)/libdwa.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
 
 clean:

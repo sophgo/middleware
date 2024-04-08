@@ -1,0 +1,7 @@
+# cppcheckparser.py
+a tool to parse report from cppcheck, use git blame to find committer and produce final report
+
+you might use `pip -r requirements.txt` to install dependent libraries.
+
+cppcheck command: (v2.3)
+cppcheck --enable=all --quiet --template='{file},{line},{severity},{id}:{message}' -I header_folder sourcecode_folder 2>output.txt

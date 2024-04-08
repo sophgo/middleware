@@ -1,0 +1,7 @@
+################# select sensor type for your sample ###############################
+SENSOR0_TYPE ?= OV_OS08A20_MIPI_8M_30FPS_10BIT
+SENSOR1_TYPE ?= SONY_IMX327_MIPI_2M_30FPS_12BIT
+
+MW_DIR ?= ../../
+
+STATIC = 0

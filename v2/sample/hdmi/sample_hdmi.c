@@ -50,9 +50,9 @@ CVI_S32 AUDIO_MAP(CVI_HDMI_ATTR* attr, CVI_CHAR * filename, CVI_U64* pu64PhyAddr
 	fread(p,u32Len,1,fd);
 	memcpy(*ppVirAddr, p, u32Len);
 
-	attr->audio_start_vaddr = *pu64PhyAddr;
-	attr->audio_stop_vaddr = *pu64PhyAddr + u32Len;
-	SAMPLE_PRT("Start_addr:0x%lx, Stop_addr:0x%lx\n",attr->audio_start_vaddr, attr->audio_stop_vaddr);
+	attr->audio_start_paddr = *pu64PhyAddr;
+	attr->audio_stop_paddr = *pu64PhyAddr + u32Len;
+	SAMPLE_PRT("Start_addr:0x%lx, Stop_addr:0x%lx\n",attr->audio_start_paddr, attr->audio_stop_paddr);
 	SAMPLE_PRT("vaddr:%p\n", *ppVirAddr);
 
     free(p);
@@ -345,7 +345,7 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 	setAttr.video_format = mcode;
 	setAttr.pix_clk = pixel_clk;
 	setAttr.hdmi_force_output = force_output;
-	setAttr.deep_color_mode = CVI_HDMI_DEEP_COLOR_8BIT;
+	setAttr.deep_color_mode = CVI_HDMI_DEEP_COLOR_24BIT;
 	setAttr.sample_rate = CVI_HDMI_SAMPLE_RATE_44K;
 	setAttr.hdcp14_en = hdcp14_en;
 	if(csc_en){

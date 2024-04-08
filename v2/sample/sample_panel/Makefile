@@ -7,8 +7,8 @@ include ../sample.mk
 
 PANEL_INC =../../component/panel/$(shell echo $(CHIP_ARCH) | tr A-Z a-z)
 SDIR = $(PWD)
-SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(PANEL_INC) -I../common -I$(KERNEL_INC)
+SRCS = $(wildcard $(SDIR)/*.c) $(filter-out $(COMMON_DIR)/sample_common_vo.c, $(wildcard $(COMMON_DIR)/*.c))
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(PANEL_INC) -I$(KERNEL_INC) $(COMM_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 
@@ -21,7 +21,6 @@ LIBS = -lvo -lsys -lmipi_tx
 
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 DEFS += -DRPC_MULTI_PROCESS
-LIBS += -lnanomsg
 endif
 
 EXTRA_CFLAGS = $(INCS)

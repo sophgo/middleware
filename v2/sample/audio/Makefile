@@ -15,10 +15,10 @@ include ../sample.mk
 SDIR = $(PWD)
 3PARTY_INCLUDE = include/include
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(COMM_INC) -I$(3PARTY_INCLUDE) -Iaac_sample
+INCS = -I$(MW_INC) -I$(ISP_INC) $(COMM_INC) -I$(3PARTY_INCLUDE) -Iaac_sample
 INCS += -I$(MW_INC)/../3rdparty/libmad/include
 INCS += -I$(MW_INC)/../3rdparty/lame/include
-ifeq ($(CVIARCH), $(filter $(CVIARCH), CV181X CV180X ATHENA2))
+ifeq ($(CVIARCH), $(filter $(CVIARCH), CV181X CV180X CV186X))
 INCS += -I$(PWD)/include -I$(KERNEL_INC)
 ifneq ($(CONFIG_ENABLE_SDK_ASAN), y)
 USE_CVIAUDIO_STATIC = no
@@ -85,7 +85,7 @@ ifeq ($(USE_SONIC_LIB), yes)
 DEFINES += -DUSE_SONIC_LIB
 endif
 
-ifeq ($(CVIARCH), $(filter $(CVIARCH), CV181X CV180X ATHENA2))
+ifeq ($(CVIARCH), $(filter $(CVIARCH), CV181X CV180X CV186X))
 DEFINES += -DAUD_SUPPORT_KERNEL_MODE
 endif
 
@@ -105,7 +105,7 @@ endif
 INCS += -I ./include/
 
 AEC_TEST_LDLIBS += -lcvi_vqe
-ifeq ($(CVIARCH), $(filter $(CVIARCH), CV181X CV180X ATHENA2))
+ifeq ($(CVIARCH), $(filter $(CVIARCH), CV181X CV180X CV186X))
 AEC_TEST_LDLIBS += -lsys
 endif
 
@@ -149,7 +149,7 @@ LDLIBS += -laaccomm2
 LDLIBS += -laacsbrenc2
 endif
 LDLIBS += -pthread
-ifeq ($(CVIARCH), $(filter $(CVIARCH), CV181X CV180X ATHENA2))
+ifeq ($(CVIARCH), $(filter $(CVIARCH), CV181X CV180X CV186X))
 LDLIBS += -lsys
 endif
 
@@ -160,14 +160,10 @@ EXTRA_LDFLAGS = $(LDLIBS) -lm -lpthread -ldl
 
 MP3_EXTRA_LDFLAGS = -lcvi_mp3 -lmad -lcvi_audio -lm -lpthread  -ldl -lcvi_VoiceEngine -lcvi_vqe -ltinyalsa -lcvi_RES1
 
-EXTRA_CFLAGS += -DCLI_DEBUG_SUPPORT
-EXTRA_LDFLAGS += -lcli
-
 ifeq ($(MULTI_PROCESS_SUPPORT_AUDIO), yes)
 DEFINES += -DRPC_MULTI_PROCESS
 DEFINES += -DRPC_MULTI_PROCESS_AUDIO
 DEFINES += -DCVIAUDIO_STATIC
-EXTRA_LDFLAGS += -lnanomsg
 endif
 
 ifeq ($(SAMPLE_STATIC),1)

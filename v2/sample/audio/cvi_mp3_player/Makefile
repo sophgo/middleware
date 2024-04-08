@@ -15,7 +15,7 @@ include ../../sample.mk
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
 INCS = -I$(MW_INC) -I../common/ -I$(MW_INC)/../3rdparty/libmad/include -I ./
-ifeq ($(CHIP_ARCH), $(filter $(CHIP_ARCH), CV181X CV180X ATHENA2))
+ifeq ($(CHIP_ARCH), $(filter $(CHIP_ARCH), CV181X CV180X CV186X))
 INCS += -I$(KERNEL_INC)
 endif
 OBJS = $(SRCS:.c=.o)
@@ -26,7 +26,7 @@ TARGET = cvi_mp3player
 EXTRA_CFLAGS = $(INCS)
 EXTRA_LDFLAGS +=  -lcvi_audio
 EXTRA_LDFLAGS +=  -lm -lpthread  -ldl -lcvi_mp3 -lcvi_VoiceEngine -lmad
-EXTRA_LDFLAGS +=  -lcvi_vqe -ltinyalsa -lcvi_RES1 -lcli
+EXTRA_LDFLAGS +=  -lcvi_vqe -ltinyalsa -lcvi_RES1
 
 ifeq ($(SAMPLE_STATIC),1)
 LIB_DEP := $(MW_LIB)/libmad.a

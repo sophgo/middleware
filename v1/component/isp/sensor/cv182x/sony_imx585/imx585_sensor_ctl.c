@@ -199,8 +199,8 @@ static void imx585_linear_8M30_init(VI_PIPE ViPipe)
 	imx585_write_register(ViPipe, 0x301B, 0x00);// INCKSEL2[1:0]
 	imx585_write_register(ViPipe, 0x301C, 0x00);// INCKSEL4[1:0]
 	imx585_write_register(ViPipe, 0x301E, 0x01);// SYS_MODE
-	imx585_write_register(ViPipe, 0x3020, 0x00);// XVS_DRV[1:0]
-	imx585_write_register(ViPipe, 0x3021, 0x00);// -
+	imx585_write_register(ViPipe, 0x3020, 0x01);// XVS_DRV[1:0]
+	imx585_write_register(ViPipe, 0x3021, 0x01);// -
 	imx585_write_register(ViPipe, 0x3022, 0x02);// -
 	imx585_write_register(ViPipe, 0x3023, 0x01);// -
 	imx585_write_register(ViPipe, 0x3024, 0x00);// -
@@ -526,8 +526,8 @@ static void imx585_wdr_8M30_2to1_init(VI_PIPE ViPipe)
 	imx585_write_register(ViPipe, 0x301B, 0x00);  // ADDMODE[1:0]
 	imx585_write_register(ViPipe, 0x301C, 0x01);  // THIN_V_EN
 	imx585_write_register(ViPipe, 0x301E, 0x01);  // VCMODE
-	imx585_write_register(ViPipe, 0x3020, 0x00);  // HREVERSE
-	imx585_write_register(ViPipe, 0x3021, 0x00);  // VREVERSE
+	imx585_write_register(ViPipe, 0x3020, 0x01);  // HREVERSE
+	imx585_write_register(ViPipe, 0x3021, 0x01);  // VREVERSE
 	imx585_write_register(ViPipe, 0x3022, 0x00);  // ADBIT[1:0]
 	imx585_write_register(ViPipe, 0x3023, 0x00);  // MDBIT[1:0]
 	imx585_write_register(ViPipe, 0x3024, 0x00);  // COMBI_EN

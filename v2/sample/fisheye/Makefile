@@ -7,7 +7,7 @@ include ../sample.mk
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I../common -I$(KERNEL_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) $(COMM_INC) -I$(PANEL_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 
@@ -23,12 +23,6 @@ endif
 LIBS = $(MW_LIBS)
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 DEFS += -DRPC_MULTI_PROCESS
-LIBS += -lnanomsg
-endif
-
-ifeq ($(CLI_DEBUG_SUPPORT), 1)
-DEFS += -DCLI_DEBUG_SUPPORT
-LIBS += -lcli
 endif
 
 EXTRA_CFLAGS = $(INCS) $(DEFS)

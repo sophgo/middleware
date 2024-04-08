@@ -1,0 +1,134 @@
+{
+	"chapter_x": {
+		"//": "主章节号，副章节号，模块名字",
+		"chapter_num_main": 1,
+		"chapter_num_sub": 1,
+		"module": "CNR",
+		"ch_tl3_1": {
+			"//": "第一小节，用三号标题,内容不可为空",
+			"tl_num": 1,
+			"title": "功能描述",
+			"content": "TODO@Kidd"
+		},
+		"ch_tl3_2": {
+			"//": "第二小节，用三号标题;起始描述内容可为空;",
+			"tl_num": 2,
+			"title": "API 参考",
+			"section_start": "",
+			"//1": "本节涉及到的 API 列表",
+			"section_api_list": [
+				{
+					"style": "List Bullet",
+					"link": "",
+					"content": ["CVI_ISP_SetCNRAttr", "设置 CNR 属性参数"]
+				},
+				{
+					"style": "List Bullet",
+					"link": "",
+					"content": ["CVI_ISP_GetCNRAttr", "获取 CNR 属性参数"]
+				}
+			],
+			"//2": "API 的详细解释",
+			"section_apis":[
+				{
+					"title": "CVI_ISP_SetCNRAttr",
+					"detail": {
+						"描述": {
+							"style": "normal",
+							"content":"设置 CNR 属性参数"
+						},
+						"语法": {
+							"style": "normal",
+							"content": "CVI_S32 CVI_ISP_SetCNRAttr(VI_PIPE ViPipe, const ISP_CNR_ATTR_S *pstCNRAttr);",
+							"link": "ISP_CNR_ATTR_S"
+						},
+						"参数": {
+							"style": "table",
+							"table":[
+								["参数名称", "描述", "输入/输出"],
+								["ViPipe", "VI_PIPE 号", "输入"],
+								["pstCNRAttr", "pstCNRAttr 属性参数", "输入"]
+							]
+						},
+						"返回值": {
+							"style": "table",
+							"table":[
+								["返回值", "描述"],
+								["0", "成功"],
+								["非 0", "失败，其值为错误码"]
+							]
+						},
+						"需求": {
+							"style": "List Bullet",
+							"content":[
+								["头文件", "cvi_isp.h", "cvi_comm_isp.h"],
+								["库文件", "libisp.so"]
+							]
+						},
+						"注意": {
+							"style": "normal",
+							"content": "无"
+						},
+						"举例": {
+							"style": "normal",
+							"content": "无"
+						},
+						"相关主题": [
+							{
+								"style": "normal",
+								"content": "CVI_ISP_GetCNRAttr",
+								"link": ""
+							}
+						]
+					}
+				}
+			]
+		},
+		"//3": "三级标题,数据类型的详细解释",
+		"ch_tl3_3": {
+			"tl_num": 3,
+			"title": "数据类型",
+			"section_start": "",
+			"section_datastruct_list": [
+				{
+					"style": "List Bullet",
+					"link": "",
+					"content": ["DATA_T", "定义数据格式"]
+				}
+			],
+			"section_datastructs": [
+				{
+					"title": "CVI_ISP_SetCNRAttr",
+					"detail": {
+						"说明": {
+							"style": "normal",
+							"content": "定义数据格式"
+						},
+						"定义": {
+							"style": "code",
+							"content": "...."
+						},
+						"成员": {
+								"style": "table",
+								"table":[
+									["成员名称", "描述"],
+									["...", "...."]
+								]
+						},
+						"注意事项": {
+							"style": "normal",
+							"content": "无"
+						},
+						"相关数据类型及接口":[ 
+							{
+								"style": "normal",
+								"content": "无",
+								"link": ""
+							}
+						]
+					}
+				}
+			]
+		}
+	}
+}

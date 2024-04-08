@@ -6,10 +6,9 @@ endif
 include ../sample.mk
 include ./Kbuild
 
-PANEL_INC =../../component/panel/$(shell echo $(CVIARCH) | tr A-Z a-z)
 SDIR = $(PWD)
-SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) -I$(PANEL_INC) -I../common
+SRCS = $(wildcard $(SDIR)/*.c) $(filter-out $(COMMON_DIR)/sample_common_vo.c, $(wildcard $(COMMON_DIR)/*.c))
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) $(COMM_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 
@@ -22,8 +21,7 @@ LIBS = -lsys -lmipi_tx -lmisc
 
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 DEFS += -DRPC_MULTI_PROCESS
-LIBS += -lnanomsg
-LIBS += -lvenc -lvdec -lmisc
+LIBS += -lmisc
 endif
 
 CFLAGS += $(KBUILD_DEFINES)

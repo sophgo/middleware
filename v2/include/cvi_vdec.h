@@ -70,6 +70,8 @@ CVI_S32 CVI_VDEC_GetUserDataAttr(VDEC_CHN VdChn, VDEC_USER_DATA_ATTR_S *pstUserD
 CVI_S32 CVI_VDEC_SetModParam(const VDEC_MOD_PARAM_S *pstModParam);
 CVI_S32 CVI_VDEC_GetModParam(VDEC_MOD_PARAM_S *pstModParam);
 
+CVI_S32 CVI_VDEC_SetStrideAlign(VDEC_CHN VdChn, CVI_U32 align);
+
 #ifdef __cplusplus
 #if __cplusplus
 }

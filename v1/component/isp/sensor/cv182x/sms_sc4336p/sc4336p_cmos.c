@@ -243,6 +243,74 @@ struct gain_tbl_info_s {
 	CVI_U8	regGainFineStep;
 };
 
+static struct gain_tbl_info_s AgainInfo[6] = {
+	{
+		.gainMax = 2031,
+		.idxBase = 0,
+		.regGain = 0x00,
+		.regGainFineBase = 0x80,
+		.regGainFineStep = 2,
+	},
+	{
+		.gainMax = 4064,
+		.idxBase = 64,
+		.regGain = 0x08,
+		.regGainFineBase = 0x80,
+		.regGainFineStep = 2,
+	},
+	{
+		.gainMax = 8128,
+		.idxBase = 128,
+		.regGain = 0x09,
+		.regGainFineBase = 0x80,
+		.regGainFineStep = 2,
+	},
+	{
+		.gainMax = 16256,
+		.idxBase = 192,
+		.regGain = 0x0b,
+		.regGainFineBase = 0x80,
+		.regGainFineStep = 2,
+	},
+	{
+		.gainMax = 32512,
+		.idxBase = 256,
+		.regGain = 0x0f,
+		.regGainFineBase = 0x80,
+		.regGainFineStep = 2,
+	},
+	{
+		.gainMax = 32768,
+		.idxBase = 320,
+		.regGain = 0x1f,
+		.regGainFineBase = 0x80,
+		.regGainFineStep = 2,
+	},
+};
+
+static CVI_U32 Again_table[] = {
+	1024, 1040, 1055, 1072, 1088, 1103, 1120, 1135, 1152, 1168, 1183, 1200, 1216, 1231, 1248, 1263, 1280,
+	1296, 1311, 1328, 1344, 1359, 1376, 1391, 1408, 1424, 1439, 1456, 1472, 1487, 1504, 1519, 1536, 1552,
+	1567, 1584, 1600, 1615, 1632, 1647, 1664, 1680, 1695, 1712, 1728, 1743, 1760, 1775, 1792, 1808, 1823,
+	1840, 1856, 1871, 1888, 1903, 1920, 1936, 1951, 1968, 1984, 1999, 2016, 2031, 2048, 2079, 2112, 2144,
+	2176, 2207, 2240, 2272, 2304, 2335, 2368, 2400, 2432, 2463, 2496, 2528, 2560, 2591, 2624, 2656, 2688,
+	2719, 2752, 2784, 2816, 2847, 2880, 2912, 2944, 2975, 3008, 3040, 3072, 3103, 3136, 3168, 3200, 3231,
+	3264, 3296, 3328, 3359, 3392, 3424, 3456, 3487, 3520, 3552, 3584, 3615, 3648, 3680, 3712, 3743, 3776,
+	3808, 3840, 3871, 3904, 3936, 3968, 3999, 4032, 4064, 4096, 4160, 4224, 4288, 4352, 4416, 4480, 4544,
+	4608, 4672, 4736, 4800, 4864, 4928, 4992, 5056, 5120, 5184, 5248, 5312, 5376, 5440, 5504, 5568, 5632,
+	5696, 5760, 5824, 5888, 5952, 6016, 6080, 6144, 6208, 6272, 6336, 6400, 6464, 6528, 6592, 6656, 6720,
+	6784, 6848, 6912, 6976, 7040, 7104, 7168, 7232, 7296, 7360, 7424, 7488, 7552, 7616, 7680, 7744, 7808,
+	7872, 7936, 8000, 8064, 8128, 8192, 8320, 8448, 8576, 8704, 8832, 8960, 9088, 9216, 9344, 9472, 9600,
+	9728, 9856, 9984, 10112, 10240, 10368, 10496, 10624, 10752, 10880, 11008, 11136, 11264, 11392, 11520,
+	11648, 11776, 11904, 12032, 12160, 12288, 12416, 12544, 12672, 12800, 12928, 13056, 13184, 13312, 13440,
+	13568, 13696, 13824, 13952, 14080, 14208, 14336, 14464, 14592, 14720, 14848, 14976, 15104, 15232, 15360,
+	15488, 15616, 15744, 15872, 16000, 16128, 16256, 16384, 16640, 16896, 17152, 17408, 17664, 17920, 18176,
+	18432, 18688, 18944, 19200, 19456, 19712, 19968, 20224, 20480, 20736, 20992, 21248, 21504, 21760, 22016,
+	22272, 22528, 22784, 23040, 23296, 23552, 23808, 24064, 24320, 24576, 24832, 25088, 25344, 25600, 25856,
+	26112, 26368, 26624, 26880, 27136, 27392, 27648, 27904, 28160, 28416, 28672, 28928, 29184, 29440, 29696,
+	29952, 30208, 30464, 30720, 30976, 31232, 31488, 31744, 32000, 32256, 32512, 32768
+};
+
 static struct gain_tbl_info_s DgainInfo[] = {
 	{
 		.gainMax = 2016,
@@ -287,36 +355,29 @@ static CVI_U32 Dgain_table[] = {
 };
 
 static const CVI_U32 dgain_table_size = ARRAY_SIZE(Dgain_table);
+static const CVI_U32 again_table_size = ARRAY_SIZE(Again_table);
 
 static CVI_S32 cmos_again_calc_table(VI_PIPE ViPipe, CVI_U32 *pu32AgainLin, CVI_U32 *pu32AgainDb)
 {
-	CVI_U32 again = *pu32AgainLin;
+	CVI_U32 i;
 
 	(void) ViPipe;
 
 	CMOS_CHECK_POINTER(pu32AgainLin);
 	CMOS_CHECK_POINTER(pu32AgainDb);
-
-	if (again < 2048) {
-		*pu32AgainDb = 0x00;
-		*pu32AgainLin = 1024;
-	} else if (again < 4096) {
-		*pu32AgainDb = 0x08;
-		*pu32AgainLin = 2048;
-	} else if (again < 8192) {
-		*pu32AgainDb = 0x09;
-		*pu32AgainLin = 4096;
-	} else if (again < 16384) {
-		*pu32AgainDb = 0x0B;
-		*pu32AgainLin = 8192;
-	} else if (again < 32768) {
-		*pu32AgainDb = 0x0F;
-		*pu32AgainLin = 16384;
-	} else {
-		*pu32AgainDb = 0x1F;
-		*pu32AgainLin = 32768;
+	if (*pu32AgainLin >= Again_table[again_table_size - 1]) {
+		*pu32AgainLin = Again_table[again_table_size - 1];
+		*pu32AgainDb = again_table_size - 1;
+		return CVI_SUCCESS;
 	}
 
+	for (i = 1; i < again_table_size; i++) {
+		if (*pu32AgainLin < Again_table[i]) {
+			*pu32AgainLin = Again_table[i - 1];
+			*pu32AgainDb = i - 1;
+			break;
+		}
+	}
 	return CVI_SUCCESS;
 }
 
@@ -364,7 +425,17 @@ static CVI_S32 cmos_gains_update(VI_PIPE ViPipe, CVI_U32 *pu32Again, CVI_U32 *pu
 	u32Dgain = pu32Dgain[0];
 
 	/* find Again register setting. */
-	pstSnsRegsInfo->astI2cData[LINEAR_AGAIN_ADDR].u32Data = (u32Again & 0xFF);
+	tbl_num = sizeof(AgainInfo)/sizeof(struct gain_tbl_info_s);
+	for (i = tbl_num - 1; i >= 0; i--) {
+		info = &AgainInfo[i];
+
+		if (u32Again >= info->idxBase)
+			break;
+	}
+
+	pstSnsRegsInfo->astI2cData[LINEAR_AGAIN_H_ADDR].u32Data = (info->regGain & 0xFF);
+	u32Again = info->regGainFineBase + (u32Again - info->idxBase) * info->regGainFineStep;
+	pstSnsRegsInfo->astI2cData[LINEAR_AGAIN_L_ADDR].u32Data = (u32Again & 0xFF);
 
 	/* find Dgain register setting. */
 	tbl_num = sizeof(DgainInfo)/sizeof(struct gain_tbl_info_s);
@@ -572,7 +643,8 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 			pstI2c_data[LINEAR_SHS1_1_ADDR].u32RegAddr     = SC4336P_EXP_ADDR + 1;
 			pstI2c_data[LINEAR_SHS1_2_ADDR].u32RegAddr     = SC4336P_EXP_ADDR + 2;
 
-			pstI2c_data[LINEAR_AGAIN_ADDR].u32RegAddr      = SC4336P_AGAIN_ADDR;
+			pstI2c_data[LINEAR_AGAIN_H_ADDR].u32RegAddr      = SC4336P_AGAIN_ADDR;
+			pstI2c_data[LINEAR_AGAIN_L_ADDR].u32RegAddr      = SC4336P_DGAIN_ADDR + 1;
 			pstI2c_data[LINEAR_DGAIN_ADDR].u32RegAddr      = SC4336P_DGAIN_ADDR;
 			pstI2c_data[LINEAR_D_FINEGAIN_ADDR].u32RegAddr = SC4336P_DGAIN_ADDR + 1;
 

@@ -5,9 +5,9 @@
 #include <linux/cvi_comm_mipi_tx.h>
 
 #define HX8399_HACT		1080
-#define HX8399_HSA		5
-#define HX8399_HBP		148
-#define HX8399_HFP		5
+#define HX8399_HSA		115
+#define HX8399_HBP		138
+#define HX8399_HFP		115
 
 #define HX8399_VACT		1920
 #define HX8399_VSA		6
@@ -156,9 +156,9 @@ static CVI_U8 data_hx8399_15[] = {
 static CVI_U8 data_hx8399_16[] = {
 	0xcc, 0x08,
 };
-static CVI_U8 data_hx8399_17[] = {
-	0x21
-};
+// static CVI_U8 data_hx8399_17[] = {
+// 	0x21
+// };
 static CVI_U8 data_hx8399_18[] = {
 	0x11
 };
@@ -184,7 +184,7 @@ const struct dsc_instr dsi_init_cmds_hx8399_1080x1920[] = {
 	{.delay = 0, .data_type = 0x29, .size = 3, .data = data_hx8399_14 },
 	{.delay = 10, .data_type = 0x29, .size = 55, .data = data_hx8399_15 },
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_hx8399_16 },
-	{.delay = 0, .data_type = 0x05, .size = 1, .data = data_hx8399_17 },
+	// {.delay = 0, .data_type = 0x05, .size = 1, .data = data_hx8399_17 },
 	{.delay = 120, .data_type = 0x05, .size = 1, .data = data_hx8399_18 },
 	{.delay = 20, .data_type = 0x05, .size = 1, .data = data_hx8399_19 }
 };

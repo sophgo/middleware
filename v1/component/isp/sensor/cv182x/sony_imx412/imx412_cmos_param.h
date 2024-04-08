@@ -28,9 +28,9 @@ static const IMX412_MODE_S g_astImx412_mode[IMX412_MODE_NUM] = {
 					.u32Height = 3040,
 				},
 				.stWndRect = {
-					.s32X = 28,
+					.s32X = 12,
 					.s32Y = 20,
-					.u32Width = 4000,
+					.u32Width = 4032,
 					.u32Height = 3000,
 				},
 				.stMaxSize = {

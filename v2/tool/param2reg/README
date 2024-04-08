@@ -1,0 +1,12 @@
+# param2reg.py
+a tool to parsing 1880v2_API_parameters_to_registers_mapping_list.xlsx
+and generate source codes.
+if you have any question, please contact with kidd (kidd.chen@wisecore.com.tw).
+
+you might use `pip -r requirements.txt` to install dependant libraries.
+
+
+# param2reg_cf.py
+a tool to parsing 1880v2_API_parameters_to_registers_mapping_list.xlsx
+and generate source codes.
+if you have any question, please contact with CF (chungfan.hsu@wisecore.com.tw).

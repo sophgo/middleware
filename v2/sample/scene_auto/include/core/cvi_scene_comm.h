@@ -7,7 +7,7 @@
 
 #if defined(ARCH_CV183X) || defined(ARCH_CV182X)
 #include "cvi_type.h"
-#elif defined(__CV180X__) || defined(__CV181X__) || defined(__ATHENA2__)
+#elif defined(__CV180X__) || defined(__CV181X__) || defined(__CV186X__)
 #include <linux/cvi_type.h>
 #endif // SOCs
 

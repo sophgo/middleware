@@ -30,7 +30,7 @@
 #define DIV_0_TO_1_FLOAT(a) ((((a) < 1E-10) && ((a) > -1E-10)) ? 1 : (a))
 #define IMX412_ID 412
 
-#define SENSOR_IMX412_12M_WIDTH  4000
+#define SENSOR_IMX412_12M_WIDTH  4032
 #define SENSOR_IMX412_12M_HEIGHT 3000
 #define IMX412_I2C_ADDR_1 0x36
 #define IMX412_I2C_ADDR_2 0x1A

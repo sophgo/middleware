@@ -406,9 +406,8 @@ static void sc4336p_slave_linear_1440p30_init(VI_PIPE ViPipe)
 	sc4336p_slave_write_register(ViPipe, 0x5aed, 0x2c);
 	sc4336p_slave_write_register(ViPipe, 0x36e9, 0x44);
 	sc4336p_slave_write_register(ViPipe, 0x37f9, 0x44);
-	// sc4336p_slave_write_register(ViPipe, 0x0100, 0x01);
- 
-	// sc4336p_slave_default_reg_init(ViPipe);
+
+	sc4336p_slave_default_reg_init(ViPipe);
 
 	sc4336p_slave_write_register(ViPipe, 0x0100, 0x01);
 

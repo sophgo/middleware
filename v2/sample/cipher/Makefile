@@ -10,7 +10,7 @@ include ../sample.mk
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I../common/ -I. -I$(KERNEL_INC)
+INCS = -I$(MW_INC) -I. -I$(KERNEL_INC) $(COMM_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 
@@ -23,7 +23,7 @@ EXTRA_CFLAGS = $(INCS)
 
 ldflags-y += -lcipher -lmisc -lsys
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
-ldflags-y += -lnanomsg -lvenc -lvdec
+ldflags-y += -lvenc -lvdec
 endif
 ldflags-y += -lpthread -ldl
 

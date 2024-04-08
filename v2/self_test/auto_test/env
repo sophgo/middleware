@@ -1,0 +1,16 @@
+#!/bin/sh
+today=$(date +"%Y-%m-%d")
+#today="2022-02-22"
+
+TEST_BASE_DIR=/mnt/data/nfs/test/test_daily/mediapipe/$today/mars/musl_riscv64/static_libs
+#UT_BIN_DIR=/mnt/data/nfs/test/test_daily/mars/mw_ut
+#TEST_BASE_DIR=/mnt/data/nfs/test/test_daily/runtime_reconfig/VI_FPS
+RELOAD_PIPE_BY_SIGNAL_BINARY="$TEST_BASE_DIR"/reload_pipe_by_signal
+
+
+RELOAD_PIPE_BY_SIGNAL_BINARY=${RELOAD_PIPE_BY_SIGNAL_BINARY:=}
+#UT_BIN_DIR=${UT_BIN_DIR:=/mnt/nfs/auto_test}
+TEST_TIMES=${TEST_TIMES:=1}
+SLEEP_SECONDS=${SLEEP_SECONDS:=3}
+
+export UT_BIN_DIR TEST_TIMES SLEEP_SECONDS RELOAD_PIPE_BY_SIGNAL_BINARY

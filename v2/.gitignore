@@ -47,6 +47,7 @@ sample/dpu/sample_dpu
 sample/cvi_tde/sample_tde
 sample/hdmi/sample_hdmi
 sample/sample_panel/sample_panel
+sample/sample_panel/lt9611/lt9611
 
 self_test/cvi_test/cvi_test
 self_test/cvi_test/res

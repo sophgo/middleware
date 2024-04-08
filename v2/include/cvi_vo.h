@@ -22,6 +22,10 @@ extern "C"
 
 CVI_S32 CVI_VO_SetPubAttr(VO_DEV VoDev, const VO_PUB_ATTR_S *pstPubAttr);
 CVI_S32 CVI_VO_GetPubAttr(VO_DEV VoDev, VO_PUB_ATTR_S *pstPubAttr);
+
+CVI_S32 CVI_VO_SetHDMIParam(VO_DEV VoDev, const VO_HDMI_PARAM_S *pstHDMIParam);
+CVI_S32 CVI_VO_GetHDMIParam(VO_DEV VoDev, VO_HDMI_PARAM_S *pstHDMIParam);
+
 /* CVI_VO_I80Init: init i80 per instructions
  *
  * @param VoDev: the chn which has vb to be released
@@ -73,12 +77,23 @@ CVI_S32 CVI_VO_GetDisplayBufLen(VO_LAYER VoLayer, CVI_U32 *pu32BufLen);
 CVI_S32 CVI_VO_SetChnAttr(VO_LAYER VoLayer, VO_CHN VoChn, const VO_CHN_ATTR_S *pstChnAttr);
 CVI_S32 CVI_VO_GetChnAttr(VO_LAYER VoLayer, VO_CHN VoChn, VO_CHN_ATTR_S *pstChnAttr);
 
-CVI_S32 CVI_VO_EnableChn(VO_LAYER VoLayer, VO_CHN VoChn);
-CVI_S32 CVI_VO_DisableChn(VO_LAYER VoLayer, VO_CHN VoChn);
+CVI_S32 CVI_VO_SetChnParam(VO_LAYER VoLayer, VO_CHN VoChn, const VO_CHN_PARAM_S *pstChnParam);
+CVI_S32 CVI_VO_GetChnParam(VO_LAYER VoLayer, VO_CHN VoChn, VO_CHN_PARAM_S *pstChnParam);
 
 CVI_S32 CVI_VO_SetChnDisplayPosition(VO_LAYER VoLayer, VO_CHN VoChn, const POINT_S *pstDispPos);
 CVI_S32 CVI_VO_GetChnDisplayPosition(VO_LAYER VoLayer, VO_CHN VoChn, POINT_S *pstDispPos);
 
+CVI_S32 CVI_VO_SetChnZoomInWindow(VO_LAYER VoLayer, VO_CHN VoChn, const VO_CHN_ZOOM_ATTR_S *pstChnZoomAttr);
+CVI_S32 CVI_VO_GetChnZoomInWindow(VO_LAYER VoLayer, VO_CHN VoChn, VO_CHN_ZOOM_ATTR_S *pstChnZoomAttr);
+
+CVI_S32 CVI_VO_SetChnBorder(VO_LAYER VoLayer, VO_CHN VoChn, const VO_CHN_BORDER_ATTR_S *pstChnBorder);
+CVI_S32 CVI_VO_GetChnBorder(VO_LAYER VoLayer, VO_CHN VoChn, VO_CHN_BORDER_ATTR_S *pstChnBorder);
+
+CVI_S32 CVI_VO_SetChnMirror(VO_LAYER VoLayer, VO_CHN VoChn, VO_CHN_MIRROR_TYPE enChnMirror);
+CVI_S32 CVI_VO_GetChnMirror(VO_LAYER VoLayer, VO_CHN VoChn, VO_CHN_MIRROR_TYPE *penChnMirror);
+
+CVI_S32 CVI_VO_EnableChn(VO_LAYER VoLayer, VO_CHN VoChn);
+CVI_S32 CVI_VO_DisableChn(VO_LAYER VoLayer, VO_CHN VoChn);
 
 CVI_S32 CVI_VO_SetChnFrameRate(VO_LAYER VoLayer, VO_CHN VoChn, CVI_S32 s32ChnFrmRate);
 CVI_S32 CVI_VO_GetChnFrameRate(VO_LAYER VoLayer, VO_CHN VoChn, CVI_S32 *ps32ChnFrmRate);
@@ -87,6 +102,8 @@ CVI_S32 CVI_VO_GetChnFrame(VO_LAYER VoLayer, VO_CHN VoChn, VIDEO_FRAME_INFO_S *p
 CVI_S32 CVI_VO_ReleaseChnFrame(VO_LAYER VoLayer, VO_CHN VoChn, const VIDEO_FRAME_INFO_S *pstVideoFrame);
 
 CVI_S32 CVI_VO_PauseChn(VO_LAYER VoLayer, VO_CHN VoChn);
+CVI_S32 CVI_VO_StepChn(VO_LAYER VoLayer, VO_CHN VoChn);
+CVI_S32 CVI_VO_RefreshChn(VO_LAYER VoLayer, VO_CHN VoChn);
 CVI_S32 CVI_VO_ResumeChn(VO_LAYER VoLayer, VO_CHN VoChn);
 
 CVI_S32 CVI_VO_ShowChn(VO_LAYER VoLayer, VO_CHN VoChn);
@@ -119,6 +136,19 @@ CVI_S32 CVI_VO_UnRegPmCallBack(VO_DEV VoDev);
 
 CVI_S32 CVI_VO_SetGammaInfo(VO_GAMMA_INFO_S *pinfo);
 CVI_S32 CVI_VO_GetGammaInfo(VO_GAMMA_INFO_S *pinfo);
+
+CVI_S32 CVI_VO_SetWbcSrc(VO_WBC VoWbc, const VO_WBC_SRC_S *pstWbcSrc);
+CVI_S32 CVI_VO_GetWbcSrc(VO_WBC VoWbc, VO_WBC_SRC_S *pstWbcSrc);
+CVI_S32 CVI_VO_EnableWbc(VO_WBC VoWbc);
+CVI_S32 CVI_VO_DisableWbc(VO_WBC VoWbc);
+CVI_S32 CVI_VO_SetWbcAttr(VO_WBC VoWbc, const VO_WBC_ATTR_S *pstWbcAttr);
+CVI_S32 CVI_VO_GetWbcAttr(VO_WBC VoWbc, VO_WBC_ATTR_S *pstWbcAttr);
+CVI_S32 CVI_VO_SetWbcMode(VO_WBC VoWbc, VO_WBC_MODE_E enWbcMode);
+CVI_S32 CVI_VO_GetWbcMode(VO_WBC VoWbc, VO_WBC_MODE_E *penWbcMode);
+CVI_S32 CVI_VO_SetWbcDepth(VO_WBC VoWbc, CVI_U32 u32Depth);
+CVI_S32 CVI_VO_GetWbcDepth(VO_WBC VoWbc, CVI_U32 *pu32Depth);
+CVI_S32 CVI_VO_GetWbcFrame(VO_WBC VoWbc, VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_S32 s32MilliSec);
+CVI_S32 CVI_VO_ReleaseWbcFrame(VO_WBC VoWbc, const VIDEO_FRAME_INFO_S *pstVideoFrame);
 
 #ifdef __cplusplus
 #if __cplusplus

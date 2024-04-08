@@ -90,12 +90,14 @@ typedef struct _IMX327_SUBLVDS_MODE_S {
 
 extern ISP_SNS_STATE_S *g_pastImx327_sublvds[VI_MAX_PIPE_NUM];
 extern ISP_SNS_COMMBUS_U g_aunImx327_sublvds_BusInfo[];
+extern ISP_SNS_COMMADDR_U g_aunImx327_sublvds_AddrInfo[];
 extern CVI_U16 g_au16Imx327_sublvds_GainMode[];
 extern const CVI_U8 imx327_sublvds_i2c_addr;
 extern const CVI_U32 imx327_sublvds_addr_byte;
 extern const CVI_U32 imx327_sublvds_data_byte;
 extern void imx327_sublvds_init(VI_PIPE ViPipe);
 extern void imx327_sublvds_exit(VI_PIPE ViPipe);
+extern int  imx327_sublvds_i2c_exit(VI_PIPE ViPipe);
 extern void imx327_sublvds_standby(VI_PIPE ViPipe);
 extern void imx327_sublvds_restart(VI_PIPE ViPipe);
 extern int  imx327_sublvds_write_register(VI_PIPE ViPipe, int addr, int data);

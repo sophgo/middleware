@@ -1,5 +1,8 @@
 SHELL = /bin/bash
 
+export CHIP_ARCH := CV186X
+export CVIARCH := CV186X
+
 include $(BUILD_PATH)/.config
 
 ## setup path ##
@@ -68,7 +71,7 @@ ISP_LIB := -lisp -lawb -lae -laf
 ISP_OBJ := $(MW_LIB)/libisp.a $(MW_LIB)/libae.a $(MW_LIB)/libawb.a $(MW_LIB)/libaf.a
 
 ifeq ($(CHIP_ARCH), CV183X)
-else ifeq ($(CHIP_ARCH), $(filter $(CHIP_ARCH), CV182X MARS PHOBOS CV181X CV180X ATHENA2))
+else ifeq ($(CHIP_ARCH), $(filter $(CHIP_ARCH), CV182X MARS PHOBOS CV181X CV180X CV186X))
 ISP_LIB += -lisp_algo
 ISP_OBJ += $(MW_LIB)/libisp_algo.a
 else
@@ -184,8 +187,8 @@ endif
 ifeq ("$(CVIARCH)", "CV180X")
 CFLAGS += -D__CV180X__
 endif
-ifeq ("$(CVIARCH)", "ATHENA2")
-CFLAGS += -D__ATHENA2__
+ifeq ("$(CVIARCH)", "CV186X")
+CFLAGS += -D__CV186X__
 endif
 
 ## COLOR ##

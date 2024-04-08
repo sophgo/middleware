@@ -26,12 +26,12 @@ static void pr2100_set_1080p(VI_PIPE ViPipe);
 static void pr2100_set_1080p_2ch(VI_PIPE ViPipe);
 static void pr2100_set_1080p_4ch(VI_PIPE ViPipe);
 
-const CVI_U8 pr2100_master_i2c_addr = 0x5C;        /* I2C slave address of PR2100 master chip*/
-const CVI_U8 pr2100_slave_i2c_addr = 0x5F;         /* I2C slave address of PR2100 slave chip*/
+const CVI_U8 pr2100_master_i2c_addr = 0x5F;        /* I2C slave address of PR2100 master chip*/
+const CVI_U8 pr2100_slave_i2c_addr = 0x5C;         /* I2C slave address of PR2100 slave chip*/
 const CVI_U32 pr2100_addr_byte = 1;
 const CVI_U32 pr2100_data_byte = 1;
 static int g_fd[VI_MAX_PIPE_NUM] = {[0 ... (VI_MAX_PIPE_NUM - 1)] = -1};
-static VI_PIPE slave_pipe = (VI_MAX_PIPE_NUM - 1);
+VI_PIPE slave_pipe = (VI_MAX_PIPE_NUM - 1);
 
 #define PR2100_TEST_PATTERN 0
 #define PR2100_SLAVE_TEST_PATTERN 0
@@ -376,15 +376,6 @@ void pr2100_init(VI_PIPE ViPipe)
 	pr2100_write_register(ViPipe, 0xff, 0x00);//page0
 }
 
-void pr2100_exit(VI_PIPE ViPipe)
-{
-	CVI_TRACE_SNS(CVI_DBG_INFO, "Exit Pixelplus PR2100 Sensor\n");
-
-	pr2100_i2c_exit(ViPipe);
-
-	if (g_pastPr2100[ViPipe]->u8ImgMode == PR2100_MODE_1080P_4CH)
-		pr2100_i2c_exit(slave_pipe);
-}
 
 static void pr2100_set_1080p(VI_PIPE ViPipe)
 {

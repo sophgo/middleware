@@ -1,0 +1,51 @@
+SHELL = /bin/bash
+ifeq ($(PARAM_FILE), )
+	PARAM_FILE:=../../Makefile.param
+	include $(PARAM_FILE)
+endif
+include ../self_test.mk
+
+SDIR = $(PWD)
+SRCS = $(wildcard $(SDIR)/*.c)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I../../sample/common -I$(KERNEL_INC) -I$(SYS_INC)
+OBJS = $(SRCS:.c=.o)
+DEPS = $(SRCS:.c=.d)
+
+#COMM_SRC += $(COMMON_DIR)/sample_common_platform.c
+#COMM_SRC += $(COMMON_DIR)/sample_common_sys.c
+#COMM_SRC += $(COMMON_DIR)/sample_common_vpss.c
+#COMM_OBJ := $(COMM_SRC:%.c=%.o)
+COMM_OBJ :=
+
+TARGET = tde_ut
+LIBS = -lsys -lcvi_tde -lvg_lite
+
+EXTRA_CFLAGS += $(DEFS) $(INCS)
+EXTRA_CFLAGS += -ffunction-sections -fdata-sections
+
+EXTRA_LDFLAGS += $(LIBS) -lpthread -lm -latomic
+
+ifneq ($(CONFIG_ENABLE_SDK_ASAN), y)
+ELFFLAGS += -static
+endif
+
+all : $(TARGET)
+
+$(COMMON_DIR)/%.o: $(COMMON_DIR)/%.c
+	@$(CC) $(DEPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
+	@echo [$(notdir $(CC))] $(notdir $@)
+
+$(SDIR)/%.o: $(SDIR)/%.c
+	$(CC) $(DEPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
+	@echo [$(notdir $(CC))] $(notdir $@)
+
+$(TARGET) : $(COMM_OBJ) $(OBJS) $(MW_LIB)/libsys.a
+	$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(MW_LIB)/libsys.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
+	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CC))] $(notdir $@)
+	@cp $(TARGET) ../auto_test/
+
+.PHONY : clean
+clean:
+	@rm -f $(OBJS) $(DEPS) $(COMM_OBJ) $(COMM_DEPS) $(TARGET)
+
+-include $(DEPS)

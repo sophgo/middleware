@@ -1,7 +1,7 @@
 #ifndef __CVI_AUDIO_PARSE_PARAM_H__
 #define __CVI_AUDIO_PARSE_PARAM_H__
 
-#if defined(__CV181X__) || defined(__CV180X__) || defined(__ATHENA2__)
+#if defined(__CV181X__) || defined(__CV180X__) || defined(__CV186X__)
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

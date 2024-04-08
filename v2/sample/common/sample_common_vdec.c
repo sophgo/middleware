@@ -153,14 +153,14 @@ static int write_yuv(FILE *out_f, VIDEO_FRAME_S stVFrame)
 		fwrite(w_ptr + i * stVFrame.u32Stride[0], 1, stVFrame.u32Width, out_f);
 	}
 
-	if (stVFrame.pu8VirAddr[1]) {
+	if (stVFrame.u32Length[1]) {
 		w_ptr = stVFrame.pu8VirAddr[1];
 		for (CVI_U32 i = 0; i < (stVFrame.u32Height >> c_h_shift); i++) {
 			fwrite(w_ptr + i * stVFrame.u32Stride[1], 1, stVFrame.u32Width >> c_w_shift, out_f);
 		}
 	}
 
-	if (stVFrame.pu8VirAddr[2]) {
+	if (stVFrame.u32Length[2]) {
 		w_ptr = stVFrame.pu8VirAddr[2];
 		for (CVI_U32 i = 0; i < (stVFrame.u32Height >> c_h_shift); i++) {
 			fwrite(w_ptr + i * stVFrame.u32Stride[2], 1, stVFrame.u32Width >> c_w_shift, out_f);
@@ -189,14 +189,14 @@ static int md5Sum_update(MD5_CTX *ptMD5Ctx, VIDEO_FRAME_S stVFrame)
 		MD5_Update(ptMD5Ctx, w_ptr + i * stVFrame.u32Stride[0], stVFrame.u32Width);
 	}
 	usleep(1000);
-	if (stVFrame.pu8VirAddr[1]) {
+	if (stVFrame.u32Length[1]) {
 		w_ptr = stVFrame.pu8VirAddr[1];
 		for (CVI_U32 i = 0; i < (stVFrame.u32Height >> c_h_shift); i++) {
 			MD5_Update(ptMD5Ctx, w_ptr + i * stVFrame.u32Stride[1], stVFrame.u32Width >> c_w_shift);
 		}
 	}
 	usleep(1000);
-	if (stVFrame.pu8VirAddr[2]) {
+	if (stVFrame.u32Length[2]) {
 		w_ptr = stVFrame.pu8VirAddr[2];
 		for (CVI_U32 i = 0; i < (stVFrame.u32Height >> c_h_shift); i++) {
 			MD5_Update(ptMD5Ctx, w_ptr + i * stVFrame.u32Stride[2], stVFrame.u32Width >> c_w_shift);

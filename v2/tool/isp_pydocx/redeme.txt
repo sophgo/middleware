@@ -1,0 +1,4 @@
+1.将 1880v2_API_parameters_to_registers_mapping_list.xlsx 文件放入 isp_pydocx/resource 目录。
+2.param2reg_json.py 文件中 module_list = ("BNR", "YNR", "CNR") 中加入想要产出文件的章节名，
+  python3 param2_reg_json.py 后会生成 resource/new.json 文件。
+3.运行 python3 json2docx.py 可根据 new.json 的内容生成 docx 文件。

@@ -572,7 +572,9 @@ static CVI_S32 cmos_get_inttime_max(VI_PIPE ViPipe, CVI_U16 u16ManRatioEnable, C
 		u32IntTimeMaxTmp  = (u32IntTimeMaxTmp > (g_astImx585_State[ViPipe].u32RHS1_MAX - 3)) ?
 						(g_astImx585_State[ViPipe].u32RHS1_MAX - 3) : u32IntTimeMaxTmp;
 		u32IntTimeMaxTmp  = (!u32IntTimeMaxTmp) ? 1 : u32IntTimeMaxTmp;
-
+		//TODO, limit max IntTime for wdr mode temporary
+		if (u32IntTimeMaxTmp > 1000)
+			u32IntTimeMaxTmp = 1000;
 	}
 
 	if (u32IntTimeMaxTmp >= u32ShortTimeMinLimit) {

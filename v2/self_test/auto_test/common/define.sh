@@ -1,0 +1,4 @@
+#!/bin/sh
+
+TEST_PASS="TEST-PASS"
+TEST_FAIL="TEST-FAIL"

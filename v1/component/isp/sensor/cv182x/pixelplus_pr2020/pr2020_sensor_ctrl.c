@@ -23,14 +23,13 @@
 #include "cvi_vi.h"
 #include "pr2020_cmos_ex.h"
 
-const CVI_U8 pr2020_i2c_addr = 0x5C;        /* I2C slave address of PR2020*/
 const CVI_U32 pr2020_addr_byte = 1;
 const CVI_U32 pr2020_data_byte = 1;
 static int g_fd[VI_MAX_PIPE_NUM] = {[0 ... (VI_MAX_PIPE_NUM - 1)] = -1};
 static pthread_t g_pr2020_thid;
 static PR2020_MODE_E signal_type = PR2020_MODE_NONE;
 
-#define PR2020_AUTO_DETECT 1
+#define PR2020_AUTO_DETECT 0
 
 /*gpio*/
 enum CVI_GPIO_NUM_E {
@@ -184,7 +183,7 @@ int pr2020_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, pr2020_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_aunPr2020_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -318,6 +317,7 @@ void pr2020_fw_init(VI_PIPE ViPipe)
 	pr2020_write_register(ViPipe, 0x0E, 0x5E);
 	pr2020_write_register(ViPipe, 0x0F, 0x5E);
 	pr2020_write_register(ViPipe, 0x10, 0x26);
+	CVI_TRACE_SNS(CVI_DBG_ERR, "PR2020 FW init success!\n");
 }
 
 void pr2020_set_cvbs_ntsc_60(VI_PIPE ViPipe)
@@ -1292,7 +1292,8 @@ void pr2020_set_1080p_25(VI_PIPE ViPipe)
 	pr2020_write_register(ViPipe, 0xd9, 0x08);
 	pr2020_write_register(ViPipe, 0xda, 0x21);
 	pr2020_write_register(ViPipe, 0xe0, 0x35);
-	pr2020_write_register(ViPipe, 0xe1, 0x80);//[6] 0:cb-y-cr-y 1:y-cb-y-cr
+	pr2020_write_register(ViPipe, 0xe1, 0x80);//[6] 0:cb-y-cr-y 1:y-cb-y-cr 148M
+	//pr2020_write_register(ViPipe, 0xe1, 0x90);//[6] 0:cb-y-cr-y 1:y-cb-y-cr 72M
 	pr2020_write_register(ViPipe, 0xe2, 0x18);
 	pr2020_write_register(ViPipe, 0xe3, 0x00);
 	pr2020_write_register(ViPipe, 0xe4, 0x00);
@@ -1866,7 +1867,7 @@ void pr2020_init(VI_PIPE ViPipe)
 		return;
 	}
 
-	CVI_TRACE_SNS(CVI_DBG_INFO, "Loading Pixelplus PR2020 sensor\n");
+	CVI_TRACE_SNS(CVI_DBG_ERR, "Loading Pixelplus PR2020 sensor\n");
 
 	pr2020_write_register(ViPipe, 0xff, 0x00);//reset
 	pr2020_write_register(ViPipe, 0x11, 0x00);
@@ -1883,7 +1884,7 @@ void pr2020_init(VI_PIPE ViPipe)
 	} else if (signal_type == PR2020_MODE_1080P_30) {
 		pr2020_set_1080p_30(ViPipe);
 	}
-	CVI_TRACE_SNS(CVI_DBG_INFO, "signal_type=%d\n", signal_type);
+	CVI_TRACE_SNS(CVI_DBG_ERR, "signal_type=%d\n", signal_type);
 	// wait for signal to stabilize
 	delay_ms(800);
 	pr2020_write_register(ViPipe, 0xff, 0x00);//page0

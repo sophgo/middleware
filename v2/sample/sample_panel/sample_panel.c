@@ -93,6 +93,8 @@ static optionExt long_option_ext[] = {
 		"pnswap sequence by order"},
 	{{"dsi-control",     no_argument, NULL, 'd'}, ARG_STRING, 0,   0,
 		"set/get dsi status or settings." },
+	{{"control_pins",  required_argument, NULL, 'c'},   ARG_STRING,   0,   0,
+		"control pins to config, pwr_gpio/rst_gpio/bl_gpio."},
 	{{"help",      no_argument, NULL, 'h'},       ARG_STRING, 0,   0,
 		"print usage."},
 	{{NULL, 0, NULL, 0}, ARG_INT, 0, 0, "no param: just init the panel."}
@@ -145,7 +147,8 @@ void printHelp(char **argv)
 
 	printf("\n.for mipi/lvds panel you can cfg lane seq or pnswap");
 	printf("\nEX.\n");
-	printf(" %s --panel=HX8394_EVB --laneid=1,2,0,3,4 --pnswap=0,0,0,0,0\n", argv[0]);
+	printf(" %s --panel=HX8394_EVB --laneid=1,2,0,3,4 --pnswap=0,0,0,0,0"
+		"--control_pins=399,304,400,\n", argv[0]);
 	printf("\n.for mipi panel You can also manually set the dsi by -d");
 	printf("\nEX.\n");
 	printf(" %s -d\n\n", argv[0]);
@@ -625,6 +628,43 @@ CVI_S32 SAMPLE_SET_PNSWAP(char *pPnswap)
 	return CVI_SUCCESS;
 }
 
+CVI_S32 SAMPLE_PANEL_CONTROL_PINS_CONFIG(char *pControlPins)
+{
+	CVI_S32 pwr_gpio, rst_gpio, bl_gpio;
+
+	if (pControlPins == NULL)
+		return CVI_FAILURE;
+
+	CVI_S32 n = sscanf(pControlPins, "%03d,%03d,%03d",
+		&pwr_gpio, &rst_gpio, &bl_gpio);
+
+	if (n != 3)
+		return CVI_FAILURE;
+
+	if (GPIO_IN_RANGE(pwr_gpio)) {
+		SAMPLE_COMM_GPIO_Export(pwr_gpio);
+		SAMPLE_COMM_GPIO_SetDirection(pwr_gpio, 1);
+		SAMPLE_COMM_GPIO_SetValue(pwr_gpio, 1);
+	}
+	if (GPIO_IN_RANGE(bl_gpio)) {
+		SAMPLE_COMM_GPIO_Export(bl_gpio);
+		SAMPLE_COMM_GPIO_SetDirection(bl_gpio, 1);
+		SAMPLE_COMM_GPIO_SetValue(bl_gpio, 1);
+	}
+	if (GPIO_IN_RANGE(rst_gpio)) {
+		SAMPLE_COMM_GPIO_Export(rst_gpio);
+		SAMPLE_COMM_GPIO_SetDirection(rst_gpio, 1);
+		SAMPLE_COMM_GPIO_SetValue(rst_gpio, 1);
+		usleep(10 * 1000);
+		SAMPLE_COMM_GPIO_SetValue(rst_gpio, 0);
+		usleep(10 * 1000);
+		SAMPLE_COMM_GPIO_SetValue(rst_gpio, 1);
+		usleep(10 * 1000);
+	}
+
+	return CVI_SUCCESS;
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc == 1) {
@@ -652,6 +692,13 @@ int main(int argc, char *argv[])
 	optind = 0;
 	while ((ch = getopt_long(argc, argv, "dh", long_options, &idx)) != -1) {
 		switch (ch) {
+		case 'c':
+			ret = SAMPLE_PANEL_CONTROL_PINS_CONFIG(optarg);
+			if (ret != CVI_SUCCESS) {
+				printf("panel control_pins config fail!\n");
+				return ret;
+			}
+			break;
 		case 'l':
 			ret = SAMPLE_SET_LANEID(optarg);
 			if (ret != CVI_SUCCESS) {

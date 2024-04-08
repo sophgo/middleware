@@ -12,7 +12,7 @@ VCODEC_SRCS = $(SDIR)/sample_vcodec.c
 VENC_INC=../../modules/venc
 SAMPLE_VENC_INC=$(SDIR)/include
 SAMPLE_VDEC_INC=$(SDIR)/../vdec/include
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(COMM_INC) -I$(VENC_INC) -I$(KERNEL_INC) -I$(SAMPLE_VENC_INC) -I$(SAMPLE_VDEC_INC) -I../common -I$(SYS_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) $(COMM_INC) -I$(VENC_INC) -I$(KERNEL_INC) -I$(SAMPLE_VENC_INC) -I$(SAMPLE_VDEC_INC) -I$(SYS_INC) $(COMM_INC)
 
 OBJS = $(SRCS:.c=.o)
 VENC_OBJS = $(VENC_SRCS:.c=.o)
@@ -42,12 +42,6 @@ MW_LIBS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs --define-
 LIBS = $(MW_LIBS)
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 DEFS += -DRPC_MULTI_PROCESS
-LIBS += -lnanomsg
-endif
-
-ifeq ($(CLI_DEBUG_SUPPORT), 1)
-DEFS += -DCLI_DEBUG_SUPPORT
-LIBS += -lcli
 endif
 
 EXTRA_CFLAGS = $(INCS) $(DEFS)
@@ -74,20 +68,20 @@ $(SDIR)/%.o: $(SDIR)/%.c
 	@$(CC) $(DEPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
 	@echo [$(notdir $(CC))] $(notdir $@)
 
-$(TARGET_VENC) : $(VENC_OBJS) $(OBJS) $(MW_LIB)/libvenc.a $(MW_LIB)/libsys.a
-	@$(CXX) -o $@ $(OBJS) $(VENC_OBJS) $(ELFFLAGS) $(EXTRA_LDFLAGS)
+$(TARGET_VENC) : $(COMM_OBJ) $(VENC_OBJS) $(OBJS) $(MW_LIB)/libvenc.a $(MW_LIB)/libsys.a
+	@$(CXX) -o $@ $(OBJS) $(VENC_OBJS) $(COMM_OBJ) $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CC))] $(notdir $@)
 
-$(TARGET_VCODEC) : $(VCODEC_OBJS) $(OBJS) $(MW_LIB)/libvenc.a $(MW_LIB)/libvdec.a $(MW_LIB)/libsys.a
-	@$(CXX) -o $@ $(OBJS) $(VCODEC_OBJS) $(ELFFLAGS) $(EXTRA_LDFLAGS)
+$(TARGET_VCODEC) : $(COMM_OBJ) $(VCODEC_OBJS) $(OBJS) $(MW_LIB)/libvenc.a $(MW_LIB)/libvdec.a $(MW_LIB)/libsys.a
+	@$(CXX) -o $@ $(OBJS) $(VCODEC_OBJS) $(COMM_OBJ) $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
 
-$(TARGET_VENC_WITH_ASAN) : $(VENC_OBJS) $(OBJS)
-	@$(CXX) -o $@ $(OBJS) $(VENC_OBJS) $(ELFFLAGS) $(EXTRA_LDFLAGS_WITH_ASAN)
+$(TARGET_VENC_WITH_ASAN) : $(COMM_OBJ) $(VENC_OBJS) $(OBJS)
+	@$(CXX) -o $@ $(OBJS) $(VENC_OBJS) $(COMM_OBJ) $(ELFFLAGS) $(EXTRA_LDFLAGS_WITH_ASAN)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CC))] $(notdir $@)
 
-$(TARGET_VCODEC_WITH_ASAN) : $(VCODEC_OBJS) $(OBJS)
-	@$(CXX) -o $@ $(OBJS) $(VCODEC_OBJS) $(ELFFLAGS) $(EXTRA_LDFLAGS_WITH_ASAN)
+$(TARGET_VCODEC_WITH_ASAN) : $(COMM_OBJ) $(VCODEC_OBJS) $(OBJS)
+	@$(CXX) -o $@ $(OBJS) $(VCODEC_OBJS) $(COMM_OBJ) $(ELFFLAGS) $(EXTRA_LDFLAGS_WITH_ASAN)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
 
 clean:

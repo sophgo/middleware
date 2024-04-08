@@ -20,7 +20,7 @@
 static void imx327_sublvds_wdr_1080p30_2to1_init(VI_PIPE ViPipe);
 static void imx327_sublvds_linear_1080p30_init(VI_PIPE ViPipe);
 
-const CVI_U8 imx327_sublvds_i2c_addr = 0x1A;
+
 const CVI_U32 imx327_sublvds_addr_byte = 2;
 const CVI_U32 imx327_sublvds_data_byte = 1;
 static int g_fd[VI_MAX_PIPE_NUM] = {[0 ... (VI_MAX_PIPE_NUM - 1)] = -1};
@@ -44,7 +44,7 @@ int imx327_sublvds_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, imx327_sublvds_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_aunImx327_sublvds_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -239,11 +239,6 @@ void imx327_sublvds_init(VI_PIPE ViPipe)
 		imx327_sublvds_linear_1080p30_init(ViPipe);
 	}
 	g_pastImx327_sublvds[ViPipe]->bInit = CVI_TRUE;
-}
-
-void imx327_sublvds_exit(VI_PIPE ViPipe)
-{
-	imx327_sublvds_i2c_exit(ViPipe);
 }
 
 /* 1080P30 and 1080P25 */

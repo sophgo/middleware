@@ -20,7 +20,7 @@
 #include <linux/vi_tun_cfg.h>
 #include <sys/ioctl.h>
 
-#define MAX_VENC_OPTIONS	128
+#define MAX_VENC_OPTIONS	256
 #define MAX_STRING_LEN		255
 #define MAX_FILENAME_LEN	64
 
@@ -184,6 +184,8 @@ static optionExt venc_long_option_ext[] = {
 		"tempLayer"},
 	{{"roiCfgFile", optional_argument, NULL, 0}, ARG_STRING, 0, 0,
 		"ROI configuration file"},
+	{{"jpegQTableCfgFile", optional_argument, NULL, 0}, ARG_STRING, 0, 0,
+		"jpeg/mjpeg Quality Table config file"},
 	{{"qpMapCfgFile", optional_argument, NULL, 0}, ARG_STRING, 0, 0,
 		"Roi-based qpMap file"},
 	{{"bgInterval", optional_argument, NULL, 0}, ARG_INT,
@@ -356,6 +358,20 @@ static optionExt venc_long_option_ext[] = {
 		"mirror direction [0, 3], default = 0"},
 	{{"cmdqueue", optional_argument, NULL, 0}, ARG_INT, 0, 16,
 		"cmdqueue depth [1, 16], default = 0"},
+	{{"setPredUnit", optional_argument, NULL, 0}, ARG_INT, 0, 1,
+		"h26x pred unit set enable [0, 1], default = 0"},
+	{{"intraPredFlag", optional_argument, NULL, 0}, ARG_INT, 0, 1,
+		"h26x intraPredFlag  [0, 1], default = 0"},
+	{{"smoothingEnableFlag", optional_argument, NULL, 0}, ARG_INT, 0, 1,
+		"h265 strong_intra_smoothing_enabled_flag  [0, 1], default = 0"},
+	{{"disableIDRCnt", optional_argument, NULL, 0}, ARG_UINT, 0, UINT32_MAX ,
+		"when send frame count equal disableIDRCnt disable IDR, default = 0"},
+	{{"enableIDRCnt", optional_argument, NULL, 0}, ARG_UINT, 0, UINT32_MAX,
+		"when send frame count equal enableIDRCnt enable IDR, default = 0"},
+	{{"SearchVer", optional_argument, NULL, 0}, ARG_UINT, 4, 32,
+		"set vertical search window, default = 0"},
+	{{"SearchHor", optional_argument, NULL, 0}, ARG_UINT, 4, 16,
+		"set horizontal search window, default = 0"},
 	{{NULL, 0, NULL, 0}, ARG_INT, 0, 0, ""}
 };
 
@@ -932,6 +948,8 @@ CVI_S32 parseEncArgv(sampleVenc *psv, chnInputCfg *pIc, CVI_S32 argc, char **arg
 				strcpy(pIc->roiCfgFile, optarg);
 			} else if (!strcmp(long_options[idx].name, "qpMapCfgFile")) {
 				strcpy(pIc->qpMapCfgFile, optarg);
+			} else if (!strcmp(long_options[idx].name, "jpegQTableCfgFile")) {
+				strcpy(pIc->jpegQTableCfgFile, optarg);
 			} else if (!strcmp(long_options[idx].name, "bgInterval")) {
 				pIc->bgInterval = arg.ival;
 			} else if (!strcmp(long_options[idx].name, "frame_lost")) {
@@ -1062,8 +1080,6 @@ CVI_S32 parseEncArgv(sampleVenc *psv, chnInputCfg *pIc, CVI_S32 argc, char **arg
 				pIc->betaOffset = arg.ival;
 			} else if (!strcmp(long_options[idx].name, "alphaoffset")) {
 				pIc->alphaOffset = arg.ival;
-			} else if (!strcmp(long_options[idx].name, "intraPred")) {
-				pIc->bIntraPred = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "goppreset")) {
 				pIc->u32GopPreset = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "sao")) {
@@ -1074,6 +1090,20 @@ CVI_S32 parseEncArgv(sampleVenc *psv, chnInputCfg *pIc, CVI_S32 argc, char **arg
 				pIc->u32MirrorDirection = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "cmdqueue")) {
 				pIc->u32CmdQueueDepth = arg.uval;
+			} else if (!strcmp(long_options[idx].name, "setPredUnit")) {
+				pIc->bSetPredUnit = arg.uval;
+			} else if (!strcmp(long_options[idx].name, "intraPredFlag")) {
+				pIc->u32IntraPredFlag = arg.uval;
+			} else if (!strcmp(long_options[idx].name, "smoothingEnableFlag")) {
+				pIc->u32SmoothingEnableFlag = arg.uval;
+			} else if (!strcmp(long_options[idx].name, "disableIDRCnt")) {
+				pIc->u32DisableIDRCount = arg.uval;
+			} else if (!strcmp(long_options[idx].name, "enableIDRCnt")) {
+				pIc->u32EnableIDRCount = arg.uval;
+			} else if (!strcmp(long_options[idx].name, "SearchVer")) {
+				pIc->u32SearchVer = arg.uval;
+			} else if (!strcmp(long_options[idx].name, "SearchHor")) {
+				pIc->u32SearchHor = arg.uval;
 			} else {
 				printf("not exist name = %s\n", long_options[idx].name);
 				print_help(argv);
@@ -2520,6 +2550,11 @@ static CVI_S32 checkInputCfg(chnInputCfg *pIc)
 		return -1;
 	}
 
+	if (pIc->u32EnableIDRCount < pIc->u32DisableIDRCount) {
+		printf("EnableIDRCount:%d < DisableIDRCount:%d\n", pIc->u32EnableIDRCount,  pIc->u32DisableIDRCount);
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -2715,7 +2750,7 @@ static CVI_S32 initSysAndVb(sampleVenc *psv)
 			u32BlkSize, VENC_ALIGN_W);
 #else
 		u32BlkSize += 0x1000 * 3;
-		printf("athena2 u32BlkSize[%d]align[%d]\n",
+		printf("cv186x u32BlkSize[%d]align[%d]\n",
 			u32BlkSize, VENC_ALIGN_W);
 #endif
 
@@ -2797,7 +2832,6 @@ static CVI_S32 _SAMPLE_VENC_LoadCfgFile(vencChnCtx *pvecc)
 			printf("malloc pu8QpMap\n");
 			return CVI_FAILURE;
 		}
-
 	} else if ((pvecc->enPayLoad == PT_H264 || pvecc->enPayLoad == PT_H265) && strlen(pIc->roiCfgFile) > 0) {
 		s32Ret = SAMPLE_COMM_VENC_LoadRoiCfgFile(pvecc->vencRoi, pIc->roiCfgFile);
 		if (s32Ret != CVI_SUCCESS) {
@@ -3045,6 +3079,16 @@ RETRY_SEND_FRAME:
 			free_frame(pvecc->pstFrameInfo);
 		}
 		i++;
+
+		if (pvecc->enPayLoad == PT_H264 || pvecc->enPayLoad == PT_H265) {
+			if (pIc->u32DisableIDRCount == i) {
+				CVI_VENC_EnableIDR(VencChn, CVI_FALSE);
+			}
+
+			if (pIc->u32EnableIDRCount == i) {
+				CVI_VENC_EnableIDR(VencChn, CVI_TRUE);
+			}
+		}
 
 		if (pvecc->enPayLoad == PT_JPEG || pvecc->enPayLoad == PT_MJPEG) {
 			do {

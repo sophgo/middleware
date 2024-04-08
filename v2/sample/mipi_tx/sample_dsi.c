@@ -144,7 +144,7 @@ void SAMPLE_DSI_Print_Control(void)
 
 void SAMPLE_DSI_Usage(char *sPrgNm)
 {
-	printf("Usage : %s [device(0/1)] [option]\n", sPrgNm);
+	printf("Usage : %s [device(0/1)] [option/pwr_gpio rst_gpio bl_gpio]\n", sPrgNm);
 	printf("no option: just init the panel.\n");
 	printf("-h: print usage.\n");
 	printf("-d: set/get dsi status or settings.\n");
@@ -153,6 +153,7 @@ void SAMPLE_DSI_Usage(char *sPrgNm)
 int main(int argc, char *argv[])
 {
 	int devno;
+	int pwr_gpio, rst_gpio, bl_gpio;
 	struct combo_dev_cfg_s dev_cfg;
 
 	memcpy(&dev_cfg, panel_desc.dev_cfg, sizeof(struct combo_dev_cfg_s));
@@ -173,7 +174,27 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	if (argc == 1 || argc == 2) {
+	if (argc == 1 || argc == 2 || argc == 5) {
+		if (argc == 5) {
+			pwr_gpio = atoi(argv[2]);
+			rst_gpio = atoi(argv[3]);
+			bl_gpio = atoi(argv[4]);
+			SAMPLE_PRT("pwr_gpio(%d) rst_gpio(%d) bl_gpio(%d)\n", pwr_gpio, rst_gpio, bl_gpio);
+			SAMPLE_COMM_GPIO_Export(pwr_gpio);
+			SAMPLE_COMM_GPIO_Export(rst_gpio);
+			SAMPLE_COMM_GPIO_Export(bl_gpio);
+			SAMPLE_COMM_GPIO_SetDirection(pwr_gpio, 1);
+			SAMPLE_COMM_GPIO_SetDirection(rst_gpio, 1);
+			SAMPLE_COMM_GPIO_SetDirection(bl_gpio, 1);
+			SAMPLE_COMM_GPIO_SetValue(pwr_gpio, 1);
+			SAMPLE_COMM_GPIO_SetValue(bl_gpio, 1);
+			SAMPLE_COMM_GPIO_SetValue(rst_gpio, 1);
+			usleep(10 * 1000);
+			SAMPLE_COMM_GPIO_SetValue(rst_gpio, 0);
+			usleep(10 * 1000);
+			SAMPLE_COMM_GPIO_SetValue(rst_gpio, 1);
+			usleep(10 * 1000);
+		}
 		mipi_tx_disable(fd);
 		mipi_tx_cfg(fd, (struct combo_dev_cfg_s *)&dev_cfg);
 		dsi_init(devno, panel_desc.dsi_init_cmds, panel_desc.dsi_init_cmds_size);

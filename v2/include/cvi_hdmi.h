@@ -30,8 +30,6 @@ CVI_S32 CVI_HDMI_SetHwSpec(const CVI_HDMI_HW_SPEC* hw_spec);
 CVI_S32 CVI_HDMI_GetHwSpec(CVI_HDMI_HW_SPEC* hw_spec);
 CVI_S32 CVI_HDMI_SetAvmute(const CVI_BOOL* aumute_en);
 CVI_S32 CVI_HDMI_SetAudioMute(const CVI_BOOL* audio_mute_en);
-CVI_S32 CVI_HDMI_SetModParam(const CVI_HDMI_MOD_PARAM* mod_param);
-CVI_S32 CVI_HDMI_GetModParam(CVI_HDMI_MOD_PARAM* mod_param);
 
 #ifdef __cplusplus
 #if __cplusplus

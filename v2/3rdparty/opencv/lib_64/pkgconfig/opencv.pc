@@ -1,0 +1,14 @@
+# Package Information for pkg-config
+
+prefix=/root/.jenkins/workspace/cv1835_release_build/install/soc_cv1835_asic_wevb_0002a/tpu/cvitek_tpu_sdk/opencv
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir_old=${prefix}/include/opencv
+includedir_new=${prefix}/include
+
+Name: OpenCV
+Description: Open Source Computer Vision Library
+Version: 3.2.0
+Libs: -L${exec_prefix}/lib -lopencv_imgcodecs -lopencv_imgproc -lopencv_core
+Libs.private: -L/root/.jenkins/workspace/cv1835_release_build/ramdisk/sysroot/sysroot-glibc-linaro-2.23-2017.05-aarch64-linux-gnu/lib -lz -ldl -lm -lpthread -lrt
+Cflags: -I${includedir_old} -I${includedir_new}

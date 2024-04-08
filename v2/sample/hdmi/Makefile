@@ -7,7 +7,7 @@ include ../sample.mk
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) -I../common/
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) $(COMM_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 
@@ -37,7 +37,7 @@ $(SDIR)/%.o: $(SDIR)/%.c
 	@echo [$(notdir $(CC))] $(notdir $@)
 
 $(TARGET): $(COMM_OBJ) $(OBJS) $(ISP_OBJ)  $(MW_LIB)/libsys.a $(MW_LIB)/libhdmitx.a
-	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJS) -lsys $(MW_LIB)/libhdmitx.a $(MW_LIB)/libsys.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
+	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(COMM_OBJS) -lsys $(MW_LIB)/libhdmitx.a $(MW_LIB)/libsys.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
 
 clean:

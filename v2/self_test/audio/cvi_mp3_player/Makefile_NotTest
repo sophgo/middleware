@@ -1,0 +1,75 @@
+SHELL = /bin/bash
+ifeq ($(PARAM_FILE), )
+ifeq ($(MW_VER), )
+PARAM_FILE:=../../../Makefile.param
+include $(PARAM_FILE)
+else
+PARAM_FILE:=../../../../$(shell echo $(MW_VER))/Makefile.param
+include $(PARAM_FILE)
+endif
+endif
+
+include ../../self_test.mk
+include $(MW_PATH)/modules/audio/audio.mk
+
+SDIR = $(PWD)
+SRCS = $(wildcard $(SDIR)/*.c)
+INCS = -I$(MW_INC) -I../common/ -I$(PWD)/include
+OBJS = $(SRCS:.c=.o)
+DEPS = $(SRCS:.c=.d)
+
+TARGET = cvi_mp3player
+
+EXTRA_CFLAGS = $(INCS)
+EXTRA_LDFLAGS += -lmad -lcvi_audio
+EXTRA_LDFLAGS +=  -lm -lpthread  -ldl -lcvi_mp3 -lcvi_VoiceEngine
+EXTRA_LDFLAGS +=  -lcvi_vqe -ltinyalsa -lcvi_RES1
+ifeq ($(SDK_VER), 32bit)
+EXTRA_LDFLAGS += -L $(PWD)/libmad/lib_32
+ifeq ($(SAMPLE_STATIC),1)
+LIB_DEP := $(PWD)/libmad/lib_32/libmad.a
+else
+LIB_DEP := $(PWD)/libmad/lib_32/libmad.so
+endif
+endif
+
+ifeq ($(SDK_VER), 64bit)
+EXTRA_LDFLAGS += -L $(PWD)/libmad/lib_64
+ifeq ($(SAMPLE_STATIC),1)
+LIB_DEP := $(PWD)/libmad/lib_64/libmad.a
+else
+LIB_DEP := $(PWD)/libmad/lib_64/libmad.so
+endif
+endif
+
+ifeq ($(SDK_VER), uclibc)
+EXTRA_LDFLAGS += -L $(PWD)/libmad/lib_uclibc
+ifeq ($(SAMPLE_STATIC),1)
+LIB_DEP := $(PWD)/libmad/lib_uclibc/libmad.a
+else
+LIB_DEP := $(PWD)/libmad/lib_uclibc/libmad.so
+endif
+endif
+
+ifeq ($(USE_SONIC_LIB), yes)
+EXTRA_CFLAGS += -DUSE_SONIC_LIB
+endif
+
+
+
+
+.PHONY : clean all
+all : $(TARGET)
+
+$(SDIR)/%.o : $(SDIR)/%.c
+	@$(CC) $(DEPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
+	@echo [$(notdir $(CC))] $(notdir $@)
+
+$(TARGET) : $(OBJS) $(LIB_DEP)
+	@$(CXX) -o $@ $(OBJS) $(ELFFLAGS) $(EXTRA_LDFLAGS)
+	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CC))] $(notdir $@)
+
+clean:
+	@rm -f $(OBJS) $(DEPS) $(TARGET)
+
+-include $(DEPS)

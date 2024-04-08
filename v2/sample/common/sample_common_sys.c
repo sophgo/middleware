@@ -136,6 +136,42 @@ CVI_S32 SAMPLE_COMM_VI_UnBind_VPSS(VI_PIPE ViPipe, VI_CHN ViChn, VPSS_GRP VpssGr
 	return CVI_SUCCESS;
 }
 
+CVI_S32 SAMPLE_COMM_VO_Bind_VPSS(VO_LAYER VoLayer, VO_CHN VoChn, VPSS_GRP VpssGrp)
+{
+	MMF_CHN_S stSrcChn;
+	MMF_CHN_S stDestChn;
+
+	stSrcChn.enModId = CVI_ID_VO;
+	stSrcChn.s32DevId = VoLayer;
+	stSrcChn.s32ChnId = VoChn;
+
+	stDestChn.enModId = CVI_ID_VPSS;
+	stDestChn.s32DevId = VpssGrp;
+	stDestChn.s32ChnId = 0;
+
+	CHECK_RET(CVI_SYS_Bind(&stSrcChn, &stDestChn), "CVI_SYS_Bind(VO-VPSS)");
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_COMM_VO_UnBind_VPSS(VO_LAYER VoLayer, VO_CHN VoChn, VPSS_GRP VpssGrp)
+{
+	MMF_CHN_S stSrcChn;
+	MMF_CHN_S stDestChn;
+
+	stSrcChn.enModId = CVI_ID_VO;
+	stSrcChn.s32DevId = VoLayer;
+	stSrcChn.s32ChnId = VoChn;
+
+	stDestChn.enModId = CVI_ID_VPSS;
+	stDestChn.s32DevId = VpssGrp;
+	stDestChn.s32ChnId = 0;
+
+	CHECK_RET(CVI_SYS_UnBind(&stSrcChn, &stDestChn), "CVI_SYS_UnBind(VO-VPSS)");
+
+	return CVI_SUCCESS;
+}
+
 CVI_S32 SAMPLE_COMM_VI_Bind_VENC(VI_PIPE ViPipe, VI_CHN ViChn, VENC_CHN VencChn)
 {
 	MMF_CHN_S stSrcChn;
@@ -168,6 +204,42 @@ CVI_S32 SAMPLE_COMM_VI_UnBind_VENC(VI_PIPE ViPipe, VI_CHN ViChn, VENC_CHN VencCh
 	stDestChn.s32ChnId = VencChn;
 
 	CHECK_RET(CVI_SYS_UnBind(&stSrcChn, &stDestChn), "CVI_SYS_UnBind(VI-VENC)");
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_COMM_VO_Bind_VO(VO_LAYER VoLayerSrc, VO_CHN VoChnSrc, VO_LAYER VoLayerDst, VO_CHN VoChnDst)
+{
+	MMF_CHN_S stSrcChn;
+	MMF_CHN_S stDestChn;
+
+	stSrcChn.enModId = CVI_ID_VO;
+	stSrcChn.s32DevId = VoLayerSrc;
+	stSrcChn.s32ChnId = VoChnSrc;
+
+	stDestChn.enModId = CVI_ID_VO;
+	stDestChn.s32DevId = VoLayerDst;
+	stDestChn.s32ChnId = VoChnDst;
+
+	CHECK_RET(CVI_SYS_Bind(&stSrcChn, &stDestChn), "CVI_SYS_Bind(VO-VO)");
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_COMM_VO_UnBind_VO(VO_LAYER VoLayerSrc, VO_CHN VoChnSrc, VO_LAYER VoLayerDst, VO_CHN VoChnDst)
+{
+	MMF_CHN_S stSrcChn;
+	MMF_CHN_S stDestChn;
+
+	stSrcChn.enModId = CVI_ID_VO;
+	stSrcChn.s32DevId = VoLayerSrc;
+	stSrcChn.s32ChnId = VoChnSrc;
+
+	stDestChn.enModId = CVI_ID_VO;
+	stDestChn.s32DevId = VoLayerDst;
+	stDestChn.s32ChnId = VoChnDst;
+
+	CHECK_RET(CVI_SYS_UnBind(&stSrcChn, &stDestChn), "CVI_SYS_UnBind(VO-VO)");
 
 	return CVI_SUCCESS;
 }

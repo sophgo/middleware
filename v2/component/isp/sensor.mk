@@ -1,3 +1,6 @@
+CHIP_ARCH := CV186X
+CVIARCH := CV186X
+
 ifeq ($(CHIP_ARCH),CV183X)
 sensor-$(CONFIG_SENSOR_GCORE_GC2053)         += gcore_gc2053
 sensor-$(CONFIG_SENSOR_GCORE_GC2053_SLAVE)   += gcore_gc2053_slave
@@ -48,7 +51,7 @@ sensor-$(CONFIG_SENSOR_TECHPOINT_TP2850)     += techpoint_tp2850
 sensor-$(CONFIG_SENSOR_VIVO_MCS369)          += vivo_mcs369
 sensor-$(CONFIG_SENSOR_VIVO_MCS369Q)         += vivo_mcs369q
 sensor-$(CONFIG_SENSOR_VIVO_MM308M2)         += vivo_mm308m2
-else ifeq ($(CHIP_ARCH), $(filter $(CHIP_ARCH),  CV180X CV181X CV182X ATHENA2))
+else ifeq ($(CHIP_ARCH), $(filter $(CHIP_ARCH),  CV180X CV181X CV182X CV186X))
 sensor-$(CONFIG_SENSOR_BRIGATES_BG0808)      += brigates_bg0808
 sensor-$(CONFIG_SENSOR_GCORE_GC02M1)         += gcore_gc02m1
 sensor-$(CONFIG_SENSOR_GCORE_GC1054)         += gcore_gc1054
@@ -61,10 +64,12 @@ sensor-$(CONFIG_SENSOR_GCORE_GC4023)         += gcore_gc4023
 sensor-$(CONFIG_SENSOR_GCORE_GC4653)         += gcore_gc4653
 sensor-$(CONFIG_SENSOR_NEXTCHIP_N5)          += nextchip_n5
 sensor-$(CONFIG_SENSOR_NEXTCHIP_N6)          += nextchip_n6
+sensor-$(CONFIG_SENSOR_ONSEMI_AR2020)        += onsemi_ar2020
 sensor-$(CONFIG_SENSOR_OV_OS04A10)           += ov_os04a10
 sensor-$(CONFIG_SENSOR_OV_OS04C10)           += ov_os04c10
 sensor-$(CONFIG_SENSOR_OV_OS04E10)           += ov_os04e10
 sensor-$(CONFIG_SENSOR_OV_OS08A20)           += ov_os08a20
+sensor-$(CONFIG_SENSOR_OV_OS08B10)           += ov_os08b10
 sensor-$(CONFIG_SENSOR_OV_OV2736)       	 += ov_ov2736
 sensor-$(CONFIG_SENSOR_OV_OV4689)            += ov_ov4689
 sensor-$(CONFIG_SENSOR_OV_OV6211)            += ov_ov6211
@@ -106,5 +111,5 @@ sensor-$(CONFIG_SENSOR_SONY_IMX585)          += sony_imx585
 sensor-$(CONFIG_SENSOR_TECHPOINT_TP2860)     += techpoint_tp2860
 sensor-$(CONFIG_SENSOR_LONTIUM_LT6911)       += lontium_lt6911
 else
-$(error not supported chip arch cv180x/cv181x/cv182x/cv183x/athena2)
+$(error not supported chip arch cv180x/cv181x/cv182x/cv183x/cv186x)
 endif

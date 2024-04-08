@@ -34,7 +34,7 @@
 #elif defined(__CV181X__) || defined(__CV180X__)
 #define ACODEC_ADC	"/dev/cvitekaadc"
 #define ACODEC_DAC	"/dev/cvitekadac"
-#elif defined(__ATHENA2__)
+#elif defined(__CV186X__)
 #define ACODEC_ADC	"/dev/misccvitekadc_0"
 #define ACODEC_DAC	"/dev/misccvitekdac_1"
 #else

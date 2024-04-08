@@ -50,11 +50,13 @@ typedef struct _PR2020_MODE_S {
 
 extern ISP_SNS_STATE_S *g_pastPr2020[VI_MAX_PIPE_NUM];
 extern ISP_SNS_COMMBUS_U g_aunPr2020_BusInfo[];
+extern ISP_SNS_COMMADDR_U g_aunPr2020_AddrInfo[];
 extern const CVI_U8 pr2020_i2c_addr;
 extern const CVI_U32 pr2020_addr_byte;
 extern const CVI_U32 pr2020_data_byte;
 extern void pr2020_init(VI_PIPE ViPipe);
 extern void pr2020_exit(VI_PIPE ViPipe);
+extern int pr2020_i2c_exit(VI_PIPE ViPipe);
 extern void pr2020_standby(VI_PIPE ViPipe);
 extern void pr2020_restart(VI_PIPE ViPipe);
 extern int  pr2020_write_register(VI_PIPE ViPipe, int addr, int data);

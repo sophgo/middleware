@@ -7,7 +7,7 @@ include ../sample.mk
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c) $(wildcard $(SDIR)/src/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I../common/ -I$(KERNEL_INC) -I./inc
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) -I./inc $(COMM_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 
@@ -17,7 +17,7 @@ TARGET = sensor_test_asan
 endif
 
 PKG_CONFIG_PATH = $(MW_PATH)/pkgconfig
-REQUIRES = cvi_common cvi_sample
+REQUIRES = cvi_common
 
 MW_LIBS = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs --define-variable=mw_dir=$(MW_PATH) $(REQUIRES))
 
@@ -25,7 +25,6 @@ LIBS = $(MW_LIBS)
 LIBS += -lcvi_ispd2 -ljson-c -lsys
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 DEFS += -DRPC_MULTI_PROCESS
-LIBS += -lnanomsg
 endif
 
 EXTRA_CFLAGS = $(INCS) $(DEFS)
@@ -56,7 +55,7 @@ $(SDIR)/%.o: $(SDIR)/%.c
 	@echo [$(notdir $(CC))] $(notdir $@)
 
 $(TARGET): $(COMM_OBJ) $(OBJS) $(ISP_OBJ) $(MW_LIB)/libsys.a
-	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJS) -lsys $(MW_LIB)/libsys.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
+	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(COMM_OBJS) -lsys $(MW_LIB)/libsys.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
 
 clean:

@@ -274,7 +274,7 @@ CVI_S32 SAMPLE_COMM_VO_StartChn(VO_LAYER VoLayer, SAMPLE_VO_MODE_E enMode)
 	CVI_U32 u32Col = 0;
 	CVI_U32 u32Width = 0;
 	CVI_U32 u32Height = 0;
-	VO_CHN_ATTR_S stChnAttr;
+	VO_CHN_ATTR_S stChnAttr = { 0 };
 	VO_VIDEO_LAYER_ATTR_S stLayerAttr;
 
 	switch (enMode) {
@@ -347,12 +347,14 @@ CVI_S32 SAMPLE_COMM_VO_StartChn(VO_LAYER VoLayer, SAMPLE_VO_MODE_E enMode)
 			stChnAttr.stRect.u32Width = ALIGN_DOWN(u32Width / u32Square, 2);
 			stChnAttr.stRect.u32Height = ALIGN_DOWN(u32Height / u32Square, 2);
 			stChnAttr.u32Priority = 0;
+			stChnAttr.u32Depth = 0;
 		} else if (enMode == VO_MODE_2X4) {
 			stChnAttr.stRect.s32X = ALIGN_DOWN((u32Width / u32Col) * (i % u32Col), 2);
 			stChnAttr.stRect.s32Y = ALIGN_DOWN((u32Height / u32Row) * (i / u32Col), 2);
 			stChnAttr.stRect.u32Width = ALIGN_DOWN(u32Width / u32Col, 2);
 			stChnAttr.stRect.u32Height = ALIGN_DOWN(u32Height / u32Row, 2);
 			stChnAttr.u32Priority = 0;
+			stChnAttr.u32Depth = 0;
 		}
 
 		s32Ret = CVI_VO_SetChnAttr(VoLayer, i, &stChnAttr);
@@ -447,7 +449,6 @@ CVI_S32 SAMPLE_COMM_VO_StartVO(SAMPLE_VO_CONFIG_S *pstVoConfig)
 	VO_DEV VoDev = 0;
 	VO_LAYER VoLayer = 0;
 	SAMPLE_VO_MODE_E enVoMode = 0;
-	VO_PUB_ATTR_S stVoPubAttr = { 0 };
 	VO_VIDEO_LAYER_ATTR_S stLayerAttr = { 0 };
 	CVI_S32 s32Ret = CVI_SUCCESS;
 
@@ -472,7 +473,7 @@ CVI_S32 SAMPLE_COMM_VO_StartVO(SAMPLE_VO_CONFIG_S *pstVoConfig)
 	 * Set and start layer VoDev#.
 	 ********************************/
 
-	s32Ret = SAMPLE_COMM_VO_GetWH(stVoPubAttr.enIntfSync, &stLayerAttr.stDispRect.u32Width,
+	s32Ret = SAMPLE_COMM_VO_GetWH(pstVoConfig->stVoPubAttr.enIntfSync, &stLayerAttr.stDispRect.u32Width,
 				      &stLayerAttr.stDispRect.u32Height, &stLayerAttr.u32DispFrmRt);
 	if (s32Ret != CVI_SUCCESS) {
 		SAMPLE_PRT("SAMPLE_COMM_VO_GetWH failed!\n");
@@ -505,6 +506,8 @@ CVI_S32 SAMPLE_COMM_VO_StartVO(SAMPLE_VO_CONFIG_S *pstVoConfig)
 			SAMPLE_COMM_VO_StopDev(VoDev);
 			return s32Ret;
 		}
+		//for get screen frame
+		stLayerAttr.u32Depth = 0;
 	}
 
 	s32Ret = SAMPLE_COMM_VO_StartLayer(VoLayer, &stLayerAttr);

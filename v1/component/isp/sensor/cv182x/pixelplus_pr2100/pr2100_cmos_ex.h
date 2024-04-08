@@ -50,11 +50,12 @@ extern const CVI_U32 pr2100_addr_byte;
 extern const CVI_U32 pr2100_data_byte;
 extern void pr2100_init(VI_PIPE ViPipe);
 extern void pr2100_exit(VI_PIPE ViPipe);
+extern int  pr2100_i2c_exit(VI_PIPE ViPipe);
 extern void pr2100_standby(VI_PIPE ViPipe);
 extern void pr2100_restart(VI_PIPE ViPipe);
 extern int  pr2100_write_register(VI_PIPE ViPipe, int addr, int data);
 extern int  pr2100_read_register(VI_PIPE ViPipe, int addr);
-
+extern  VI_PIPE slave_pipe;
 #ifdef __cplusplus
 #if __cplusplus
 }

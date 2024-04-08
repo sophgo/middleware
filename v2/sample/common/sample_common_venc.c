@@ -254,7 +254,7 @@ CVI_VOID SAMPLE_COMM_VENC_InitChnInputCfg(chnInputCfg *pIc)
 	pIc->bSensorEn = CVI_H26X_SENSOR_EN_DEFAULT;
 
 	pIc->u32SliceCnt = 1;
-	pIc->bIntraPred = 0;
+	pIc->u32IntraPredFlag = 0;
 	pIc->u32GopPreset = GOP_PRESET_IDX_IPPPP;
 	pIc->u32SaoEnable = 1;
 	pIc->u32Rotation = 0;
@@ -1043,6 +1043,18 @@ CVI_S32 SAMPLE_COMM_VENC_Create(
 			printf("SAMPLE_COMM_VENC_SetH265Sao, %d\n", s32Ret);
 			goto ERR_SAMPLE_COMM_VENC_CREATE;
 		}
+
+		s32Ret = SAMPLE_COMM_VENC_SetH265PredUnit(pIc, VencChn);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("SAMPLE_COMM_VENC_SetH265PredUnit, %d\n", s32Ret);
+			goto ERR_SAMPLE_COMM_VENC_CREATE;
+		}
+
+		s32Ret = SAMPLE_COMM_VENC_SetSearchWindow(pIc, VencChn);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("SAMPLE_COMM_VENC_SetSearchWindow, %d\n", s32Ret);
+			goto ERR_SAMPLE_COMM_VENC_CREATE;
+		}
 	}
 
 	s32Ret = SAMPLE_COMM_VENC_SetChnParam(pIc, VencChn);
@@ -1056,6 +1068,15 @@ CVI_S32 SAMPLE_COMM_VENC_Create(
 		s32Ret = SAMPLE_COMM_VENC_SetJpegParam(pIc, VencChn);
 		if (s32Ret != CVI_SUCCESS) {
 			printf("SAMPLE_COMM_VENC_SetJpegParam, %d\n", s32Ret);
+			CVI_VENC_DestroyChn(VencChn);
+			goto ERR_SAMPLE_COMM_VENC_CREATE;
+		}
+	}
+
+	if (enType == PT_MJPEG) {
+		s32Ret = SAMPLE_COMM_VENC_SetMjpegParam(pIc, VencChn);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("SAMPLE_COMM_VENC_SetMjpegParam, %d\n", s32Ret);
 			CVI_VENC_DestroyChn(VencChn);
 			goto ERR_SAMPLE_COMM_VENC_CREATE;
 		}
@@ -1770,10 +1791,60 @@ CVI_S32 SAMPLE_COMM_VENC_SetModParam(const commonInputCfg *pCic)
 	return CVI_SUCCESS;
 }
 
+static CVI_S32 SAMPLE_COMM_VENC_LoadJpegQTable(CVI_U32 *pu32QTable, CVI_CHAR *cfgFileName)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	FILE *cfgFile = NULL;
+	char line[256] = { 0 };
+	CVI_U32 i = 0;
+
+	cfgFile = fopen(cfgFileName, "r");
+	if (cfgFile == NULL) {
+		printf("Missing Jpeg Quality Table config file, %s\n", cfgFileName);
+		return CVI_FAILURE_ILLEGAL_PARAM;
+	}
+
+	if (!pu32QTable) {
+		printf("NULL Pointer \n");
+		return CVI_FAILURE_ILLEGAL_PARAM;
+	}
+
+	while (fgets(line, 256, cfgFile) != NULL) {
+		if ((line[0] == '#') || (line[0] == ';') || (line[0] == ':'))
+			continue;
+
+		if (sscanf(line, "%d , %d , %d , %d , %d , %d , %d , %d ,",
+				&pu32QTable[i],
+				&pu32QTable[i+1],
+				&pu32QTable[i+2],
+				&pu32QTable[i+3],
+				&pu32QTable[i+4],
+				&pu32QTable[i+5],
+				&pu32QTable[i+6],
+				&pu32QTable[i+7]
+				) == 0) {
+			printf("Failed to parse jpeg table files\n");
+			s32Ret = -1;
+			break;
+		}
+
+		i += 8;
+		// only u8YQt, u8CbQt
+		if (i >= 128)
+			break;
+	}
+	fclose(cfgFile);
+
+	return s32Ret;
+}
+
+
 CVI_S32 SAMPLE_COMM_VENC_SetJpegParam(chnInputCfg *pIc, VENC_CHN VencChn)
 {
 	VENC_JPEG_PARAM_S stJpegParam, *pstJpegParam = &stJpegParam;
 	CVI_S32 s32Ret = CVI_SUCCESS;
+	CVI_U32 i;
+	CVI_U32 u32QTable[192] = {0};
 
 	s32Ret = CVI_VENC_GetJpegParam(VencChn, pstJpegParam);
 	if (s32Ret != CVI_SUCCESS) {
@@ -1781,12 +1852,83 @@ CVI_S32 SAMPLE_COMM_VENC_SetJpegParam(chnInputCfg *pIc, VENC_CHN VencChn)
 		return CVI_FAILURE;
 	}
 
-	pstJpegParam->u32Qfactor = pIc->quality;
-	pstJpegParam->u32MCUPerECS = pIc->MCUPerECS;
+	if (strlen(pIc->jpegQTableCfgFile)) {
+		s32Ret = SAMPLE_COMM_VENC_LoadJpegQTable(u32QTable, pIc->jpegQTableCfgFile);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("LoadJpegQTable fail\n");
+			return CVI_FAILURE;
+		}
+		// use q-table must set 50
+		stJpegParam.u32Qfactor = 50;
+		for (i = 0; i < 64;i ++) {
+			pstJpegParam->u8YQt[i] = (CVI_U8) (u32QTable[i] & 0xFF);
+			pstJpegParam->u8CbQt[i] = (CVI_U8) (u32QTable[i+64] & 0xFF);
+		}
+	}
+	else {
+		pstJpegParam->u32Qfactor = pIc->quality;
+	}
 
+	pstJpegParam->u32MCUPerECS = pIc->MCUPerECS;
 	s32Ret = CVI_VENC_SetJpegParam(VencChn, pstJpegParam);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("CVI_VENC_SetJpegParam fail\n");
+		return CVI_FAILURE;
+	}
+
+	return s32Ret;
+}
+
+CVI_S32 SAMPLE_COMM_VENC_SetMjpegParam(chnInputCfg *pIc, VENC_CHN VencChn)
+{
+	VENC_MJPEG_PARAM_S stMjpegParam, *pstMjpegParam = &stMjpegParam;
+	VENC_CHN_ATTR_S stChnAttr;
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	CVI_U32 u32QTable[192] = {0};
+	CVI_U32 i;
+
+	s32Ret = CVI_VENC_GetMjpegParam(VencChn, pstMjpegParam);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("CVI_VENC_GetJpegParam\n");
+		return CVI_FAILURE;
+	}
+
+	if (strlen(pIc->jpegQTableCfgFile)) {
+		s32Ret = CVI_VENC_GetChnAttr(VencChn, &stChnAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("get venc attr fail, venc:%d ret:%d\n", VencChn, s32Ret);
+			return CVI_FAILURE;
+		}
+
+		if (stChnAttr.stRcAttr.enRcMode != VENC_RC_MODE_MJPEGFIXQP) {
+			printf("venc:%d rcMode:%d not MJPEGFIXQP \n", VencChn, stChnAttr.stRcAttr.enRcMode);
+			return CVI_FAILURE;
+		}
+
+		stChnAttr.stRcAttr.stMjpegFixQp.u32Qfactor = 50;
+		s32Ret = CVI_VENC_SetChnAttr(VencChn, &stChnAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("set venc attr fail, venc:%d ret:%d\n", VencChn, s32Ret);
+			return CVI_FAILURE;
+		}
+
+		s32Ret = SAMPLE_COMM_VENC_LoadJpegQTable(u32QTable, pIc->jpegQTableCfgFile);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("LoadJpegQTable fail\n");
+			return CVI_FAILURE;
+		}
+
+		for (i = 0; i < 64;i ++) {
+			pstMjpegParam->u8YQt[i] = (CVI_U8) (u32QTable[i] & 0xFF);
+			pstMjpegParam->u8CbQt[i] = (CVI_U8) (u32QTable[i+64] & 0xFF);
+		}
+	}
+
+	pstMjpegParam->u32MCUPerECS = pIc->MCUPerECS;
+
+	s32Ret = CVI_VENC_SetMjpegParam(VencChn, pstMjpegParam);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("CVI_VENC_SetMjpegParam fail\n");
 		return CVI_FAILURE;
 	}
 
@@ -2013,6 +2155,31 @@ CVI_S32 SAMPLE_COMM_VENC_SetChnParam(chnInputCfg *pIc, VENC_CHN VencChn)
 	return s32Ret;
 }
 
+CVI_S32 SAMPLE_COMM_VENC_SetSearchWindow(chnInputCfg *pIc, VENC_CHN VencChn)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	VENC_SEARCH_WINDOW_S stVencSearchWindow;
+
+	s32Ret = CVI_VENC_GetSearchWindow(VencChn, &stVencSearchWindow);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("GetSearchWindow fail\n");
+		return CVI_FAILURE;
+	}
+
+	if (pIc->u32SearchVer > 0 && pIc->u32SearchHor > 0) {
+		stVencSearchWindow.mode = SEARCH_MODE_MANUAL;
+		stVencSearchWindow.u32Ver = pIc->u32SearchVer;
+		stVencSearchWindow.u32Hor = pIc->u32SearchHor;
+		s32Ret = CVI_VENC_SetSearchWindow(VencChn, &stVencSearchWindow);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("SetSearchWindow fail\n");
+			return CVI_FAILURE;
+		}
+	}
+
+	return s32Ret;
+}
+
 CVI_S32 SAMPLE_COMM_VENC_SetH264SliceSplit(
 	chnInputCfg *pIc,
 	VENC_CHN VencChn)
@@ -2119,9 +2286,7 @@ CVI_S32 SAMPLE_COMM_VENC_SetH265Dblk(chnInputCfg *pIc, VENC_CHN VencChn)
 	return s32Ret;
 }
 
-CVI_S32 SAMPLE_COMM_VENC_SetH264IntraPred(
-	chnInputCfg *pIc,
-	VENC_CHN VencChn)
+CVI_S32 SAMPLE_COMM_VENC_SetH264IntraPred(chnInputCfg *pIc, VENC_CHN VencChn)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	VENC_H264_INTRA_PRED_S stH264IntraPred, *pstH264IntraPred = &stH264IntraPred;
@@ -2132,11 +2297,42 @@ CVI_S32 SAMPLE_COMM_VENC_SetH264IntraPred(
 		return CVI_FAILURE;
 	}
 
-	pstH264IntraPred->constrained_intra_pred_flag = pIc->bIntraPred;
+	pstH264IntraPred->constrained_intra_pred_flag = pIc->u32IntraPredFlag;
 
 	s32Ret = CVI_VENC_SetH264IntraPred(VencChn, pstH264IntraPred);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("SetH264IntraPred failed!\n");
+		return CVI_FAILURE;
+	}
+
+	return s32Ret;
+}
+
+CVI_S32 SAMPLE_COMM_VENC_SetH265PredUnit(chnInputCfg *pIc, VENC_CHN VencChn)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	VENC_H265_PU_S stH265PredUnit, *pstH265PredUnit = &stH265PredUnit;
+
+	s32Ret = CVI_VENC_GetH265PredUnit(VencChn, pstH265PredUnit);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("GetH265PredUnit failed!\n");
+		return CVI_FAILURE;
+	}
+
+	if (pIc->bSetPredUnit) {
+		pstH265PredUnit->constrained_intra_pred_flag = pIc->u32IntraPredFlag;
+		pstH265PredUnit->strong_intra_smoothing_enabled_flag = pIc->u32SmoothingEnableFlag;
+	}
+
+	s32Ret = CVI_VENC_SetH265PredUnit(VencChn, pstH265PredUnit);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("SetH265PredUnit failed!\n");
+		return CVI_FAILURE;
+	}
+
+	s32Ret = CVI_VENC_GetH265PredUnit(VencChn, pstH265PredUnit);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("GetH265PredUnit failed!\n");
 		return CVI_FAILURE;
 	}
 

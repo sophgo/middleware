@@ -30,10 +30,13 @@ ISP_SNS_COMMBUS_U g_aunPr2100_BusInfo[VI_MAX_PIPE_NUM] = {
 };
 
 ISP_SNS_STATE_S *g_pastPr2100[VI_MAX_PIPE_NUM] = {CVI_NULL};
+SNS_COMBO_DEV_ATTR_S *g_pastPr2100ComboDevArray[VI_MAX_PIPE_NUM] = {CVI_NULL};
 
 #define PR2100_SENSOR_GET_CTX(dev, pstCtx)   (pstCtx = g_pastPr2100[dev])
 #define PR2100_SENSOR_SET_CTX(dev, pstCtx)   (g_pastPr2100[dev] = pstCtx)
 #define PR2100_SENSOR_RESET_CTX(dev)         (g_pastPr2100[dev] = CVI_NULL)
+#define PR2100_SENSOR_SET_COMBO(dev, pstCtx)   (g_pastPr2100ComboDevArray[dev] = pstCtx)
+#define PR2100_SENSOR_GET_COMBO(dev, pstCtx)   (pstCtx = g_pastPr2100ComboDevArray[dev])
 
 #define PR2100_RES_IS_2M(w, h)      ((w) <= 1920 && (h) <= 1080)
 #define PR2100_ID 2100
@@ -134,12 +137,16 @@ static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 {
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+	SNS_COMBO_DEV_ATTR_S *pstRxAttrSrc = CVI_NULL;
 
 	PR2100_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	PR2100_SENSOR_GET_COMBO(ViPipe, pstRxAttrSrc);
+
 	CMOS_CHECK_POINTER(pstSnsState);
 	CMOS_CHECK_POINTER(pstRxAttr);
+	CMOS_CHECK_POINTER(pstRxAttrSrc);
 
-	memcpy(pstRxAttr, &pr2100_multi_rx_attr, sizeof(*pstRxAttr));
+	memcpy(pstRxAttr, pstRxAttrSrc, sizeof(*pstRxAttr));
 
 	pstRxAttr->img_size.width = g_astPr2100_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Width;
 	pstRxAttr->img_size.height = g_astPr2100_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Height;
@@ -153,10 +160,18 @@ static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 	return CVI_SUCCESS;
 }
 
-static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
+static CVI_S32 sensor_patch_rx_attr(VI_PIPE ViPipe, RX_INIT_ATTR_S *pstRxInitAttr)
 {
-	SNS_COMBO_DEV_ATTR_S *pstRxAttr = &pr2100_multi_rx_attr;
+	SNS_COMBO_DEV_ATTR_S *pstRxAttr = CVI_NULL;
 	int i;
+
+	if (!g_pastPr2100ComboDevArray[ViPipe]) {
+		pstRxAttr = malloc(sizeof(SNS_COMBO_DEV_ATTR_S));
+	} else {
+		PR2100_SENSOR_GET_COMBO(ViPipe, pstRxAttr);
+	}
+	memcpy(pstRxAttr, &pr2100_multi_rx_attr, sizeof(SNS_COMBO_DEV_ATTR_S));
+	PR2100_SENSOR_SET_COMBO(ViPipe, pstRxAttr);
 
 	CMOS_CHECK_POINTER(pstRxInitAttr);
 
@@ -185,6 +200,21 @@ static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
 	}
 
 	return CVI_SUCCESS;
+}
+
+
+void pr2100_exit(VI_PIPE ViPipe)
+{
+	CVI_TRACE_SNS(CVI_DBG_INFO, "Exit Pixelplus PR2100 Sensor\n");
+
+	if (g_pastPr2100ComboDevArray[ViPipe]) {
+		free(g_pastPr2100ComboDevArray[ViPipe]);
+		g_pastPr2100ComboDevArray[ViPipe] = CVI_NULL;
+	}
+	pr2100_i2c_exit(ViPipe);
+
+	if (g_pastPr2100[ViPipe]->u8ImgMode == PR2100_MODE_1080P_4CH)
+		pr2100_i2c_exit(slave_pipe);
 }
 
 static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExpFunc)
