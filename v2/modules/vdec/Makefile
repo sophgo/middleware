@@ -38,5 +38,7 @@ clean:
 
 prepare:
 	@echo "SDK_VER = ${SDK_VER}"
+	@head=`git rev-parse --verify --short HEAD`
+	@date=`git show -s --format=%cd --date=short ${head}`
 
 -include $(DEPS)
