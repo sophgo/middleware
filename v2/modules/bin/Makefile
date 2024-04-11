@@ -30,10 +30,10 @@ TARGET_A = $(MW_LIB)/libcvi_bin.a
 TARGET_SO = $(MW_LIB)/libcvi_bin.so
 
 EXTRA_CFLAGS = $(INCS) -fpack-struct=8
-EXTRA_CFLAGS += -DMMF_VERSION=\"$(shell git describe --always)\"
+EXTRA_CFLAGS += -DMMF_VERSION=\"6990ee0\"
 EXTRA_CFLAGS += -DSDK_VER=\"$(SDK_VER)\"
-EXTRA_CFLAGS += -DISP_COMMIT=\"$(shell git rev-parse --short HEAD)\"
-EXTRA_CFLAGS += -DISP_GERRIT=\"$(shell git log -n1 | grep Reviewed-on | tail -n1 | sed "s/.*+\///g")\"
+EXTRA_CFLAGS += -DISP_COMMIT=\"6990ee0\"
+EXTRA_CFLAGS += -DISP_GERRIT=\"6990ee0\"
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 EXTRA_CFLAGS += -DRPC_MULTI_PROCESS
 endif

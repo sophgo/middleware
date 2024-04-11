@@ -29,7 +29,7 @@ TARGET_SO = $(MW_LIB)/libsys.so
 INCS = -I$(MW_INC) -I$(KERNEL_INC) -I$(SYS_INC)
 
 EXTRA_CFLAGS = $(INCS) -fpack-struct=8
-EXTRA_CFLAGS += -DMMF_VERSION=\"$(shell git describe --always)\"
+EXTRA_CFLAGS += -DMMF_VERSION=\"6990ee0\"
 EXTRA_CFLAGS += -DSDK_VER=\"$(SDK_VER)\"
 ifeq ($(SDK_VER), 32bit)
 EXTRA_CFLAGS += -D_FILE_OFFSET_BITS=64
