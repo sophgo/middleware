@@ -93,6 +93,7 @@ typedef struct {
 	int ChnCnt;
 	unsigned int u32PtNumPerFrm;
 	FILE *fp_playfile;
+	int stop_flag;
 } ST_VQE_PLAY_TEST_STRUCT;
 
 typedef struct {
@@ -2254,7 +2255,7 @@ void *VQE_PLAY_SEND_FRAME(void *parg)
 
 	char *pBuffer = malloc(s32FrameBytes);
 
-	while (running) {
+	while (running && !pstVqePlay->stop_flag) {
 
 		memset(pBuffer, 0, s32FrameBytes);
 		num_readbytes = fread(pBuffer, 1, s32FrameBytes, pstVqePlay->fp_playfile);
@@ -2434,6 +2435,7 @@ CVI_S32 SAMPLE_AUDIO_AEC_LOOP_TEST(void *argv)
 	st_PlayThreadStruct.ChnCnt = channel;
 	st_PlayThreadStruct.u32PtNumPerFrm = AudoutAttr.u32PtNumPerFrm;
 	st_PlayThreadStruct.fp_playfile = fp_play;
+	st_PlayThreadStruct.stop_flag = 0;
 
 	pthread_create(&st_PlayThread, 0, VQE_PLAY_SEND_FRAME,
 		       &st_PlayThreadStruct);
@@ -2447,6 +2449,7 @@ CVI_S32 SAMPLE_AUDIO_AEC_LOOP_TEST(void *argv)
 	if (bVqeOn == CVI_FALSE)
 		CVI_AI_DisableVqe(AiDev, AiChn);
 
+	st_PlayThreadStruct.stop_flag = 1;
 	CVI_AI_DisableChn(AiDev, AiChn);
 	CVI_AI_Disable(AiDev);
 	s32Ret = CVI_AO_DisableChn(AoDev, AoChn);
@@ -2556,18 +2559,3 @@ CVI_S32 main(int argc, char *argv[])
 
 	return s32Ret;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
