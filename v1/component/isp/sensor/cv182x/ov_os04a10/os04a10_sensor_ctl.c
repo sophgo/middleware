@@ -462,15 +462,15 @@ static void os04a10_linear_1520p30_12BIT_init(VI_PIPE ViPipe)
 	os04a10_write_register(ViPipe, 0x3806, 0x05);
 	os04a10_write_register(ViPipe, 0x3807, 0xff);
 	os04a10_write_register(ViPipe, 0x3808, 0x0a);
-	os04a10_write_register(ViPipe, 0x3809, 0x80);
+	os04a10_write_register(ViPipe, 0x3809, 0x00);
 	os04a10_write_register(ViPipe, 0x380a, 0x05);
-	os04a10_write_register(ViPipe, 0x380b, 0xf0);
+	os04a10_write_register(ViPipe, 0x380b, 0xa0);
 	os04a10_write_register(ViPipe, 0x380c, 0x05);
 	os04a10_write_register(ViPipe, 0x380d, 0xcc);
 	os04a10_write_register(ViPipe, 0x380e, 0x09);
 	os04a10_write_register(ViPipe, 0x380f, 0x80);
-	os04a10_write_register(ViPipe, 0x3811, 0x08);
-	os04a10_write_register(ViPipe, 0x3813, 0x08);
+	os04a10_write_register(ViPipe, 0x3811, 0x48);
+	os04a10_write_register(ViPipe, 0x3813, 0x30);
 	os04a10_write_register(ViPipe, 0x3814, 0x01);
 	os04a10_write_register(ViPipe, 0x3815, 0x01);
 	os04a10_write_register(ViPipe, 0x3816, 0x01);
@@ -597,7 +597,7 @@ static void os04a10_linear_1520p30_12BIT_init(VI_PIPE ViPipe)
 
 	usleep(200 * 1000);
 
-	printf("ViPipe:%d,===OS04A10 1520P 30fps 12bit LINE Init OK!===\n", ViPipe);
+	printf("ViPipe:%d,===OS04A10 1440P 30fps 12bit LINE Init OK!===\n", ViPipe);
 }
 
 static void os04a10_linear_1520p30_10BIT_2L_init(VI_PIPE ViPipe)
@@ -909,7 +909,7 @@ static void os04a10_linear_1520p30_10BIT_2L_init(VI_PIPE ViPipe)
 	os04a10_write_register(ViPipe, 0x0100, 0x01);
 	usleep(200 * 1000);
 
-	printf("ViPipe:%d,===OS04A10 1520P 30fps 10bit 2L LINE Init OK!===\n", ViPipe);
+	printf("ViPipe:%d,===OS04A10 1440P 30fps 10bit 2L LINE Init OK!===\n", ViPipe);
 }
 
 static void os04a10_linear_1520p30_10BIT_2L_master_init(VI_PIPE ViPipe)

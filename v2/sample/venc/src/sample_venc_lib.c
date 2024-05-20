@@ -2694,16 +2694,23 @@ static CVI_U32 _SAMPLE_VENC_INIT_CHANNEL(sampleVenc *psv, CVI_U32 chnNum)
 		pvecc->num_frames = pIc->num_frames;
 	}
 
-	SAMPLE_COMM_VENC_GetFilePostfix(pvecc->enPayLoad, file_ext);
-	snprintf(pIc->outputFileName, MAX_STRING_LEN, "%s%s",
-			pIc->output_path, file_ext);
 
-	printf("Begin to send frames ..., bsMode = %d\n", pIc->bsMode);
+	if (strncmp(pIc->output_path, "/dev/null", 9) == 0) {
+		pvecc->perf = 1;
+	} else {
+		SAMPLE_COMM_VENC_GetFilePostfix(pvecc->enPayLoad, file_ext);
+		snprintf(pIc->outputFileName, MAX_STRING_LEN, "%s%s",
+				pIc->output_path, file_ext);
 
-	pvecc->pFile = fopen(pIc->outputFileName, "wb");
-	if (pvecc->pFile == NULL) {
-		printf("open file err, %s\n", pIc->outputFileName);
-		return CVI_FAILURE;
+		printf("Begin to send frames ..., bsMode = %d\n", pIc->bsMode);
+	}
+
+	if (!(pvecc->perf == 1)) {
+		pvecc->pFile = fopen(pIc->outputFileName, "wb");
+		if (pvecc->pFile == NULL) {
+			printf("open file err, %s\n", pIc->outputFileName);
+			return CVI_FAILURE;
+		}
 	}
 
 	return CVI_SUCCESS;
@@ -3008,10 +3015,10 @@ static CVI_VOID *SAMPLE_VENC_SendVencFrameProc(CVI_VOID *pArgs)
 	chnInputCfg *pIc = &pvecc->chnIc;
 	VIDEO_FRAME_INFO_S stVideoFrame, *pstFrameInfo = &stVideoFrame;
 	CVI_CHAR TaskName[64];
-	CVI_S32 s32Ret;
+	CVI_S32 s32Ret = 0;
 	CVI_U32 i;
 	SIZE_S inFrmSize;
-
+	CVI_S32 jpeg_perf_test = (pvecc->enPayLoad == PT_JPEG && pvecc->perf == 1);
 	sprintf(TaskName, "chn%dVencSendFrame", VencChn);
 	prctl(PR_SET_NAME, TaskName, 0, 0, 0);
 
@@ -3031,7 +3038,7 @@ static CVI_VOID *SAMPLE_VENC_SendVencFrameProc(CVI_VOID *pArgs)
 	}
 
 	i = 0;
-	while (pvecc->chnStat == CHN_STAT_START && pvecc->pFile) {
+	while (pvecc->chnStat == CHN_STAT_START) {
 		if ((pvecc->enPayLoad == PT_JPEG || pvecc->enPayLoad == PT_MJPEG) && (i >= pvecc->num_frames)) {
 			break;
 		}
@@ -3042,14 +3049,16 @@ static CVI_VOID *SAMPLE_VENC_SendVencFrameProc(CVI_VOID *pArgs)
 			} else {
 				inFrmSize = pvecc->stSize;
 			}
-			pvecc->pstFrameInfo = allocate_frame(inFrmSize, pvecc->enPixelFormat, pvecc);
+			if (!jpeg_perf_test || i == 0)
+				pvecc->pstFrameInfo = allocate_frame(inFrmSize, pvecc->enPixelFormat, pvecc);
+
 
 			if (!pvecc->pstFrameInfo) {
 				continue;
 			}
 			pvecc->pstVFrame = &pvecc->pstFrameInfo->stVFrame;
-
-			s32Ret = _getNonBindModeSrcFrame(pvecc, pstFrameInfo);
+			if (!jpeg_perf_test || i == 0)
+				s32Ret = _getNonBindModeSrcFrame(pvecc, pstFrameInfo);
 			if (s32Ret != CVI_SUCCESS) {
 				printf("(chn %d) _getNonBindModeSrcFrame fail\n", VencChn);
 				break;
@@ -3075,9 +3084,13 @@ RETRY_SEND_FRAME:
 			break;
 		}
 
+
 		if (pIc->bind_mode == VENC_BIND_DISABLE) {
-			free_frame(pvecc->pstFrameInfo);
+			if (!jpeg_perf_test) {
+				free_frame(pvecc->pstFrameInfo);
+			}
 		}
+
 		i++;
 
 		if (pvecc->enPayLoad == PT_H264 || pvecc->enPayLoad == PT_H265) {
@@ -3093,15 +3106,14 @@ RETRY_SEND_FRAME:
 		if (pvecc->enPayLoad == PT_JPEG || pvecc->enPayLoad == PT_MJPEG) {
 			do {
 				s32Ret = _SAMPLE_VENC_GetStream(pvecc);
-				usleep(1000);
 			} while (s32Ret == CVI_ERR_VENC_BUSY);
 
 			if (s32Ret != CVI_SUCCESS) {
 				printf("_SAMPLE_VENC_GetStream, %d\n", s32Ret);
 				break;
 			}
+
 		}
-		usleep(1000);
 	}
 	printf("venc send task%d end\n", pvecc->VencChn);
 
@@ -3141,7 +3153,7 @@ static CVI_VOID *SAMPLE_VENC_GetVencStreamProc(CVI_VOID *pArgs)
 		}
 	}
 
-	while (pvecc->chnStat == CHN_STAT_START && pvecc->pFile) {
+	while (pvecc->chnStat == CHN_STAT_START ) {
 		s32Ret = _SAMPLE_VENC_GetStream(pvecc);
 		if (s32Ret == CVI_ERR_VENC_BUSY) {
 			usleep(1000);

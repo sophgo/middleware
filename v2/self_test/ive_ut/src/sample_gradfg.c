@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,9 +24,6 @@ int test_gradfg(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data_MIN = NULL;
-	// char *output_data_CUR = NULL;
 	char input_data[64];
 	char output_data_MIN[64];
 	char output_data_CUR[64];
@@ -37,9 +33,6 @@ int test_gradfg(int bTileMode, int bWrite, int bInstant)
 	if (bTileMode) {
 		input_w = 640;
 		input_h = 480;
-		// input_data = data_tile_640x480_y;
-		// output_data_MIN = data_tile_GradFg_MIN;
-		// output_data_CUR = data_tile_GradFg_CUR;
 		strcpy(input_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_data_MIN, "res/ive/result/sample_tile_GradFg_FIND_MIN_GRAD.out");
 		strcpy(output_data_CUR, "res/ive/result/sample_tile_GradFg_USE_CUR_GRAD.out");
@@ -48,9 +41,6 @@ int test_gradfg(int bTileMode, int bWrite, int bInstant)
 	} else {
 		input_w = 352;
 		input_h = 288;
-		// input_data = data_00_352x288_y;
-		// output_data_MIN = data_GradFg_MIN;
-		// output_data_CUR = data_GradFg_CUR;
 		strcpy(input_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_data_MIN, "res/ive/result/sample_GradFg_FIND_MIN_GRAD.out");
 		strcpy(output_data_CUR, "res/ive/result/sample_GradFg_USE_CUR_GRAD.out");

@@ -12,8 +12,54 @@
 #include "cvi_vb.h"
 #include "cvi_dpu.h"
 #include "dpu_ut_comm.h"
-
+#include "cvi_base.h"
+#include "../../modules/dpu/include/dpu_ioctl.h"
 #define ALIGN_16   16
+static CVI_S32 dpu_fd = -1;
+static pthread_mutex_t dpu_fd_lock = PTHREAD_MUTEX_INITIALIZER;
+static CVI_S32 get_dpu_fd(CVI_VOID)
+{
+	pthread_mutex_lock(&dpu_fd_lock);
+	if (dpu_fd <= 0) {
+		if (open_device(DPU_DEV_NAME, &dpu_fd) == -1) {
+			perror("dpu open fail\n");
+			dpu_fd = -1;
+		}
+	}
+	pthread_mutex_unlock(&dpu_fd_lock);
+
+	return dpu_fd;
+}
+
+void CVI_DPU_CheckRegWrite(void)
+{
+	CVI_S32 fd = get_dpu_fd();
+	dpu_check_reg_write(fd);
+}
+
+void CVI_DPU_CheckRegRead(void)
+{
+	CVI_S32 fd = get_dpu_fd();
+	dpu_check_reg_read(fd);
+}
+
+void CVI_DPU_CheckSgbmStatus(void)
+{
+	CVI_S32 fd = get_dpu_fd();
+	dpu_get_sgbm_status(fd);
+}
+
+void CVI_DPU_CheckFgsStatus(void)
+{
+	CVI_S32 fd = get_dpu_fd();
+	dpu_get_fgs_status(fd);
+}
+
+void CVI_DPU_Reset(void)
+{
+	CVI_S32 fd = get_dpu_fd();
+	dpu_reset(fd);
+}
 
 CVI_CHAR * GetFmtName(PIXEL_FORMAT_E enPixFmt)
 {

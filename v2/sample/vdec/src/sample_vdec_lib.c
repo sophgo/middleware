@@ -57,10 +57,7 @@ static CVI_S32 vdecInitVBPoolH26X(sampleVdec *psvdec);
 static void initVdecThreadParam(
 		vdecChnCtx *pvdchnCtx,
 		VDEC_THREAD_PARAM_S *pvtp,
-		char *path_in,
-		CVI_S32 s32MilliSec_in,
-		char *path_out,
-		CVI_S32 s32MilliSec_out);
+		vdecChnInputCfg *pvdcic);
 static CVI_S32 checkArg(CVI_S32 entryIdx, SAMPLE_ARG *pArg);
 static void outputMD5Sum(VDEC_THREAD_PARAM_S *pvdtpg);
 
@@ -75,8 +72,8 @@ static optionExt long_option_ext[] = {
 		"source bitstream"},
 	{{"output",    optional_argument, NULL, 'o'}, ARG_STRING, 0,   0,
 		"output yuv file"},
-	{{"dump",      optional_argument, NULL, 'd'}, ARG_INT,    0,   1,
-		"dump yuv for md5sum check"},
+	{{"dump",      optional_argument, NULL, 'd'}, ARG_INT,    0,   2,
+		"dump yuv for md5sum check.0: save md5 file 1:dump yuv 2:no yuv,no md5, for perf test"},
 	{{"bufwidth",     optional_argument, NULL, 0}, ARG_UINT,      0,   VB_WIDTH,
 		"set max width for alloc frame buffer"},
 	{{"bufheight",    optional_argument, NULL, 0}, ARG_UINT,      0,   VB_HEIGHT,
@@ -219,13 +216,7 @@ CVI_S32 SAMPLE_VDEC_START(sampleVdec *psvdec)
 			}
 		}
 
-		initVdecThreadParam(
-				pvdchnCtx,
-				pvdtps,
-				pvdcic->input_path,
-				pvdcic->s32sendstream_timeout,
-				pvdcic->output_path,
-				pvdcic->s32getframe_timeout);
+		initVdecThreadParam(pvdchnCtx, pvdtps, pvdcic);
 
 		if (pic->u32BindMode == VDEC_BIND_VPSS_VENC) {
 			pvdtps->s32IntervalTime = VDEC_BIND_VPSS_VENC_DELAY;
@@ -239,6 +230,9 @@ CVI_S32 SAMPLE_VDEC_START(sampleVdec *psvdec)
 			}
 		}
 
+		if (pvdtps->bDumpYUV == 2) {
+			pvdtps->s32IntervalTime = 100;
+		}
 		SAMPLE_COMM_VDEC_StartSendStream(pvdtps, &pvdchnCtx->vdecThreadSend);
 
 		memset(pvdtpg, 0, sizeof(*pvdtps));
@@ -462,19 +456,14 @@ static CVI_S32 vdecInitVBPoolH26X(sampleVdec *psvdec)
 }
 
 
-static void initVdecThreadParam(
-		vdecChnCtx *pvdchnCtx,
-		VDEC_THREAD_PARAM_S *pvtp,
-		char *path_in,
-		CVI_S32 s32MilliSec_in,
-		char *path_out,
-		CVI_S32 s32MilliSec_out)
+static void initVdecThreadParam(vdecChnCtx *pvdchnCtx, VDEC_THREAD_PARAM_S *pvtp,
+		vdecChnInputCfg *pvdcic)
 {
 	SAMPLE_VDEC_ATTR *psvdattr = &pvdchnCtx->stSampleVdecAttr;
 	snprintf(pvtp->inFileName,
-			sizeof(pvtp->inFileName), path_in);
+			sizeof(pvtp->inFileName), pvdcic->input_path);
 	snprintf(pvtp->outFileName,
-			sizeof(pvtp->outFileName), path_out);
+			sizeof(pvtp->outFileName), pvdcic->output_path);
 	snprintf(pvtp->inFilePath,
 			sizeof(pvtp->inFilePath), "%s",
 			SAMPLE_STREAM_PATH);
@@ -489,9 +478,9 @@ static void initVdecThreadParam(
 	pvtp->u64PtsIncrease = 0;
 	pvtp->eThreadCtrl = THREAD_CTRL_START;
 	pvtp->bCircleSend = CVI_FALSE;
-	pvtp->s32MilliSec_in = s32MilliSec_in; // block mode
-	pvtp->s32MilliSec_out = s32MilliSec_out;
-	pvtp->s32MinBufSize = (psvdattr->u32Width * psvdattr->u32Height * 3) >> 1;
+	pvtp->s32MilliSec_in = pvdcic->s32sendstream_timeout; // block mode
+	pvtp->s32MilliSec_out = pvdcic->s32getframe_timeout;
+	pvtp->s32MinBufSize = (psvdattr->u32Width * psvdattr->u32Height * 3) >> 3;
 	pvtp->bFileEnd = CVI_FALSE;
 }
 

@@ -18,8 +18,8 @@
 | sample_filter          | Width | Height | input image path  | none              | ./sample_filter 352 288 data/00_352x288_y.yuv                | 确保filter功能正常          |
 | sample_filterandcsc    | Width | Height | input image path  | none              | ./sample_filterandcsc 352 288 data/00_352x288_SP420.yuv      | 确保filterandcsc功能正常    |
 | sample_framediffmotion | Width | Height | input image1 path | input image2 path | ./sample_framediffmotion 480 480 data/md1_480x480.yuv data/md2_480x480.yuv | 确保framediffmotion功能正常 |
-| sample_gmm             | Width | Height | input image path  | none              | ./sample_gmm 352 288 data/u8c1.1_100.yuv                     | 确保gmm功能正常             |
-| sample_gmm2            | Width | Height | input image path  | none              | ./sample_gmm2 352 288 data/u8c1.1_100.yuv                    | 确保gmm2功能正常            |
+| sample_gmm             | Width | Height | input image path  | none              | ./sample_gmm 352 288 data/campus.u8c1.1_100.raw                      | 确保gmm功能正常             |
+| sample_gmm2            | Width | Height | input image path  | none              | ./sample_gmm2 352 288 data/campus.u8c1.1_100.raw                     | 确保gmm2功能正常            |
 | sample_gradfg          | Width | Height | input image path  | none              | ./sample_gradfg 352 288 data/00_352x288_y.yuv                | 确保gradfg功能正常          |
 | sample_hist            | Width | Height | input image path  | none              | ./sample_hist 352 288 data/00_352x288_y.yuv                  | 确保hist功能正常            |
 | sample_integ           | Width | Height | input image path  | none              | ./sample_integ 352 288 data/00_352x288_y.yuv                 | 确保integ功能正常           |

@@ -30,7 +30,7 @@ TARGET_SO = ./lib/$(TARGET_NAME).so
 INCS = -I$(MW_INC) -I$(KERNEL_INC) -I$(SYS_INC) -I$(VPU_INC) -I./include
 
 EXTRA_CFLAGS = $(INCS) -fpack-struct=8 -Wno-unused-parameter -Wno-missing-braces
-EXTRA_CFLAGS += -DMMF_VERSION=\"badb759\"
+EXTRA_CFLAGS += -DMMF_VERSION=\"$(shell git describe --always)\"
 EXTRA_CFLAGS += -DSDK_VER=\"$(SDK_VER)\"
 EXTRA_CFLAGS += -DENABLE_PCIE -Wno-unused-variable
 # EXTRA_CFLAGS += -DGL_DEBUG

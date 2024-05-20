@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,8 +8,6 @@ int test_imgtoodma(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data = NULL;
 	char input_data[64];
 	char output_data[64];
 	char output_file[64];
@@ -18,16 +15,12 @@ int test_imgtoodma(int bTileMode, int bWrite, int bInstant)
 	if (bTileMode) {
 		input_w = 640;
 		input_h = 480;
-		// input_data = data_tile_640x480_y;
-		// output_data = data_tile_640x480_y;
 		strcpy(input_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_file, "sample_tile_ImgToOdma_sky_640x480_y.yuv");
 	} else {
 		input_w = 352;
 		input_h = 288;
-		// input_data = data_00_352x288_y;
-		// output_data = data_00_352x288_y;
 		strcpy(input_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_file, "sample_ImgToOdma_00_352x288_y.yuv");

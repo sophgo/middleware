@@ -19,5 +19,7 @@ CVI_S32 dwa_add_affine_task(CVI_S32 fd, struct dwa_task_attr *attr);
 CVI_S32 dwa_set_job_identity(CVI_S32 fd, struct dwa_identity_attr *indentity);
 CVI_S32 dwa_get_work_job(CVI_S32 fd, struct dwa_handle_data *cfg);
 CVI_S32 dwa_get_chn_frm(CVI_S32 fd, struct dwa_chn_frm_cfg *cfg);
+CVI_S32 dwa_suspend(CVI_S32 fd);
+CVI_S32 dwa_resume(CVI_S32 fd);
 
 #endif /* MODULES_VPU_INCLUDE_DWA_IOCTL_H_ */

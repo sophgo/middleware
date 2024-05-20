@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,9 +8,6 @@ int test_erode(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data_3x3 = NULL;
-	// char *output_data_5x5 = NULL;
 	char input_data[64];
 	char output_data_3x3[64];
 	char output_data_5x5[64];
@@ -19,9 +15,6 @@ int test_erode(int bTileMode, int bWrite, int bInstant)
 	char output_file_5x5[64];
 
 	if (bTileMode) {
-		// input_data = data_tile_640x480_y;
-		// output_data_3x3 = data_tile_Erode_3x3;
-		// output_data_5x5 = data_tile_Erode_5x5;
 		strcpy(input_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_data_3x3, "res/ive/result/sample_tile_Erode_3x3.yuv");
 		strcpy(output_data_5x5, "res/ive/result/sample_tile_Erode_5x5.yuv");
@@ -30,9 +23,6 @@ int test_erode(int bTileMode, int bWrite, int bInstant)
 		strcpy(output_file_3x3, "sample_tile_Erode_3x3.yuv");
 		strcpy(output_file_5x5, "sample_tile_Erode_5x5.yuv");
 	} else {
-		// input_data = data_bin_352x288_y;
-		// output_data_3x3 = data_Erode_3x3;
-		// output_data_5x5 = data_Erode_5x5;
 		strcpy(input_data, "res/ive/bin_352x288_y.yuv");
 		strcpy(output_data_3x3, "res/ive/result/sample_Erode_3x3.bin.only_erode");
 		strcpy(output_data_5x5, "res/ive/result/sample_Erode_5x5.bin.only_erode");

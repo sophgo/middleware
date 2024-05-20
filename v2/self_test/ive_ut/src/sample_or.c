@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,23 +8,17 @@ int test_or(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data = NULL;
 	char input_data[64];
 	char output_data[64];
 	char output_file[64];
 
 	if (bTileMode) {
-		// input_data = data_tile_640x480_y;
-		// output_data = data_tile_Or;
 		strcpy(input_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_data, "res/ive/result/sample_tile_Or.yuv");
 		input_w = 640;
 		input_h = 480;
 		strcpy(output_file, "sample_tile_Or.yuv");
 	} else {
-		// input_data = data_00_352x288_y;
-		// output_data = data_Or;
 		strcpy(input_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_data, "res/ive/result/sample_Or.yuv");
 		input_w = 352;

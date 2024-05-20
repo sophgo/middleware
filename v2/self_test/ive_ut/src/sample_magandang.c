@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-#include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,13 +8,6 @@ int test_magandang(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data_3x3_Mag = NULL;
-	// char *output_data_3x3_Ang = NULL;
-	// char *output_data_3x3_MagThr = NULL;
-	// char *output_data_5x5_Mag = NULL;
-	// char *output_data_5x5_Ang = NULL;
-	// char *output_data_5x5_MagThr = NULL;
 	char input_data[64];
 	char output_data_3x3_Mag[64];
 	char output_data_3x3_Ang[64];
@@ -34,13 +26,6 @@ int test_magandang(int bTileMode, int bWrite, int bInstant)
 	char output_file_5x5_Thresh[64];
 
 	if (bTileMode) {
-		// input_data = data_tile_640x480_y;
-		// output_data_3x3_Mag = data_tile_MagAndAng_3x3_Mag;
-		// output_data_3x3_Ang = data_tile_MagAndAng_3x3_Ang;
-		// output_data_3x3_MagThr = data_tile_MagAndAng_3x3_MagThr;
-		// output_data_5x5_Mag = data_tile_MagAndAng_5x5_Mag;
-		// output_data_5x5_Ang = data_tile_MagAndAng_5x5_Ang;
-		// output_data_5x5_MagThr = data_tile_MagAndAng_5x5_MagThr;
 		strcpy(input_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_data_3x3_Mag, "res/ive/result/sample_tile_MagAndAng_MagAndAng3x3_Mag.yuv");
 		strcpy(output_data_3x3_Ang, "res/ive/result/sample_tile_MagAndAng_MagAndAng3x3_Ang.yuv");
@@ -67,13 +52,6 @@ int test_magandang(int bTileMode, int bWrite, int bInstant)
 		strcpy(output_file_5x5_Thresh,
 		       "sample_tile_MagAndAng_Thresh5x5_Mag.yuv");
 	} else {
-		// input_data = data_00_352x288_y;
-		// output_data_3x3_Mag = data_MagAndAng_3x3_Mag;
-		// output_data_3x3_Ang = data_MagAndAng_3x3_Ang;
-		// output_data_3x3_MagThr = data_MagAndAng_3x3_MagThr;
-		// output_data_5x5_Mag = data_MagAndAng_5x5_Mag;
-		// output_data_5x5_Ang = data_MagAndAng_5x5_Ang;
-		// output_data_5x5_MagThr = data_MagAndAng_5x5_MagThr;
 		strcpy(input_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_data_3x3_Mag, "res/ive/result/sample_MagAndAng_MagAndAng3x3_Mag.yuv");
 		strcpy(output_data_3x3_Ang, "res/ive/result/sample_MagAndAng_MagAndAng3x3_Ang.yuv");

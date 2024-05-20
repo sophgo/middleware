@@ -65,3 +65,13 @@ CVI_S32 gdc_get_chn_frm(CVI_S32 fd, struct gdc_chn_frm_cfg *cfg)
 	return ioctl(fd, CVI_LDC_GET_CHN_FRM, cfg);
 }
 
+CVI_S32 gdc_suspend(CVI_S32 fd)
+{
+	return ioctl(fd, CVI_LDC_SUSPEND);
+}
+
+CVI_S32 gdc_resume(CVI_S32 fd)
+{
+	return ioctl(fd, CVI_LDC_RESUME);
+}
+

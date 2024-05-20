@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-#include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,15 +8,6 @@ int test_filter(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data1 = NULL;
-	// char *input_data2 = NULL;
-	// char *input_data3 = NULL;
-	// char *output_data1 = NULL;
-	// char *output_data2 = NULL;
-	// char *output_data3 = NULL;
-	// char *output_data4 = NULL;
-	// char *output_data5 = NULL;
-	// char *output_data6 = NULL;
 	char input_data1[64];
 	char input_data2[64];
 	char input_data3[64];
@@ -36,9 +26,6 @@ int test_filter(int bTileMode, int bWrite, int bInstant)
 
 	//TODO:tilemode.
 	if (bTileMode) {
-		// input_data1 = data_tile_640x480_y;
-		// output_data1 = result_Filter_Y3x3;
-		// output_data2 = result_Filter_Y5x5;
 		strcpy(input_data1, "res/ive/sky_640x480.yuv");
 		strcpy(output_data1, "res/ive/result/sample_tile_Filter_Y3x3.yuv");
 		strcpy(output_data2, "res/ive/result/sample_tile_Filter_Y5x5.yuv");
@@ -47,15 +34,6 @@ int test_filter(int bTileMode, int bWrite, int bInstant)
 		strcpy(output_file1, "sample_tile_Filter_Y3x3.yuv");
 		strcpy(output_file4, "sample_tile_Filter_Y5x5.yuv");
 	} else {
-		// input_data1 = data_00_352x288_y;
-		// input_data2 = data_00_352x288_SP420;
-		// input_data3 = data_00_352x288_SP422;
-		// output_data1 = result_Filter_Y3x3;
-		// output_data2 = result_Filter_Y5x5;
-		// output_data3 = result_Filter_420SP3x3;
-		// output_data4 = result_Filter_420SP5x5;
-		// output_data5 = result_Filter_422SP3x3;
-		// output_data6 = result_Filter_422SP5x5;
 		strcpy(input_data1, "res/ive/00_352x288_y.yuv");
 		strcpy(input_data2, "res/ive/00_352x288_SP420.yuv");
 		strcpy(input_data3, "res/ive/00_352x288_SP422.yuv");

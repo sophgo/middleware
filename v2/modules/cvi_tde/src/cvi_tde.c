@@ -73,35 +73,36 @@ CVI_S32 cvi_tde_begin_job(CVI_VOID)
 
 CVI_S32 cvi_tde_end_job(CVI_S32 handle, CVI_BOOL is_sync, CVI_BOOL is_block, CVI_U32 time_out)
 {
-    UNUSED(handle);
-    UNUSED(is_sync);
-    UNUSED(is_block);
-    UNUSED(time_out);
+	UNUSED(handle);
+	UNUSED(is_sync);
+	UNUSED(time_out);
 
-    if (is_block) {
-        vg_lite_finish();
-    } else {
-        vg_lite_flush();
-    }
+	if (is_block) {
+		vg_lite_finish();
+	} else {
+		vg_lite_flush();
+	}
 
-    return CVI_SUCCESS;
+	return CVI_SUCCESS;
 }
 
 CVI_S32 cvi_tde_cancel_job(CVI_S32 handle)
 {
-    UNUSED(handle);
-    return CVI_SUCCESS;
+	UNUSED(handle);
+	return CVI_SUCCESS;
 }
 
 CVI_S32 cvi_tde_wait_the_task_done(CVI_S32 handle)
 {
-    UNUSED(handle);
-    return CVI_SUCCESS;
+	UNUSED(handle);
+	return CVI_SUCCESS;
 }
 
 CVI_S32 cvi_tde_wait_all_task_done(CVI_VOID)
 {
-    return CVI_SUCCESS;
+	vg_lite_finish();
+
+	return CVI_SUCCESS;
 }
 
 

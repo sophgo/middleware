@@ -140,6 +140,7 @@ typedef CVI_S32 (*p_func)(void);
 
 static CVI_BOOL bEnProc;
 static CVI_BOOL g_gdc_save_file;
+static CVI_BOOL needSuspend;
 
 typedef enum _GDC_TEST_OP {
 	GDC_TEST_ROT = 0,
@@ -162,6 +163,9 @@ typedef enum _GDC_TEST_OP {
 	GDC_TEST_LOAD_GRID_INFO,
 	GDC_TEST_LOAD_GRID_INFO2,
 	GDC_TEST_RST,
+	GDC_TEST_SUSPEND,
+	GDC_TEST_RESUME,
+	GDC_TEST_RUN_SUSPEND,
 	GDC_TEST_PRESURE_SIZE_FOR_EACH = 98,
 	GDC_TEST_AUTO_REGRESSION = 99,
 	GDC_TEST_USER_CONFIG = 100,
@@ -1873,6 +1877,19 @@ static CVI_S32 gdc_test_async(void)
 			goto exit2;
 		}
 
+		if (needSuspend) {
+			s32Ret = CVI_GDC_Suspend();
+			if (s32Ret != CVI_SUCCESS) {
+				GDC_UT_PRT("CVI_GDC_Suspend fail. s32Ret: 0x%x !\n", s32Ret);
+				goto exit2;
+			}
+			s32Ret = CVI_GDC_Resume();
+			if (s32Ret != CVI_SUCCESS) {
+				GDC_UT_PRT("CVI_GDC_Resume fail. s32Ret: 0x%x !\n", s32Ret);
+				goto exit2;
+			}
+		}
+
 		usleep(1000*500);
 
 		if ((s32Ret = CVI_GDC_GetChnFrame(&param.identity, &param.stVideoFrameOut, 5000)) != CVI_SUCCESS)
@@ -2967,6 +2984,47 @@ static CVI_S32 gdc_test_ldc_grid_info2(CVI_VOID)
 	return s32Ret;
 }
 
+static CVI_S32 gdc_test_suspend(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	s32Ret = CVI_GDC_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		GDC_UT_PRT("CVI_GDC_Init failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_GDC_Suspend();
+	if (s32Ret != CVI_SUCCESS) {
+		GDC_UT_PRT("CVI_GDC_Suspend failed!\n");
+		return s32Ret;
+	}
+
+	return s32Ret;
+}
+
+static CVI_S32 gdc_test_resume(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	s32Ret = CVI_GDC_Resume();
+	if (s32Ret != CVI_SUCCESS) {
+		GDC_UT_PRT("CVI_GDC_Resume failed!\n");
+		return s32Ret;
+	}
+
+	return s32Ret;
+}
+
+static CVI_S32 gdc_test_running_suspend(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	needSuspend = CVI_TRUE;
+	s32Ret = gdc_test_async();
+	needSuspend = CVI_FALSE;
+	return s32Ret;
+}
 
 static CVI_S32 gdc_test_auto_regression(CVI_VOID)
 {
@@ -3188,6 +3246,15 @@ static CVI_S32 _gdc_handle_op(CVI_S32 op)
 	case GDC_TEST_RST:
 		s32Ret = gdc_test_reset();
 		break;
+	case GDC_TEST_SUSPEND:
+		s32Ret = gdc_test_suspend();
+		break;
+	case GDC_TEST_RESUME:
+		s32Ret = gdc_test_resume();
+		break;
+	case GDC_TEST_RUN_SUSPEND:
+		s32Ret = gdc_test_running_suspend();
+		break;
 	case GDC_TEST_PRESURE_SIZE_FOR_EACH:
 		s32Ret = gdc_test_presure_size_for_each();
 		break;
@@ -3233,6 +3300,9 @@ static void gdc_show_help(void)
 	GDC_UT_PRT("%4d: gdc basic test grid_info\n", GDC_TEST_LOAD_GRID_INFO);
 	GDC_UT_PRT("%4d: gdc basic test grid_info2\n", GDC_TEST_LOAD_GRID_INFO2);
 	GDC_UT_PRT("%4d: gdc basic test reset\n", GDC_TEST_RST);
+	GDC_UT_PRT("%4d: gdc basic test suspend\n", GDC_TEST_SUSPEND);
+	GDC_UT_PRT("%4d: gdc basic test resume\n", GDC_TEST_RESUME);
+	GDC_UT_PRT("%4d: gdc basic test running suspend\n", GDC_TEST_RUN_SUSPEND);
 	GDC_UT_PRT("%4d: gdc test presure size for each\n", GDC_TEST_PRESURE_SIZE_FOR_EACH);
 	GDC_UT_PRT("%4d: gdc test auto regression\n", GDC_TEST_AUTO_REGRESSION);
 	GDC_UT_PRT("%4d: gdc user cofig test\n", GDC_TEST_USER_CONFIG);

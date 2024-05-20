@@ -158,6 +158,54 @@ CVI_S32 hdmi_ut_stop(void)
 	return s32Ret;
 }
 
+static CVI_U32 _vo_set_hdmi_param(int enCscMatrix){
+	VO_DEV VoDev = 1;
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	VO_HDMI_PARAM_S hdmi_param;
+	SAMPLE_VO_CONFIG_S stVoConfig;
+
+	s32Ret = SAMPLE_COMM_VO_GetDefConfig(&stVoConfig);
+	if(s32Ret) {
+		SAMPLE_PRT("SAMPLE_COMM_VO_GetDefConfig error with %#x\n", s32Ret);
+		return s32Ret;
+	}
+
+	stVoConfig.VoDev	 = VoDev;
+	stVoConfig.stVoPubAttr.enIntfType  = VO_INTF_HDMI;
+
+	s32Ret = CVI_VO_SetPubAttr(VoDev, &stVoConfig.stVoPubAttr);
+	if(s32Ret) {
+		SAMPLE_PRT("CVI_VO_SetPubAttr error with %#x\n", s32Ret);
+		return s32Ret;
+	}
+
+	hdmi_param.stHDMICSC.enCscMatrix = enCscMatrix;
+	s32Ret = CVI_VO_SetHDMIParam(VoDev, &hdmi_param);
+	if(s32Ret) {
+		SAMPLE_PRT("CVI_VO_SetHDMIParam error with %#x\n", s32Ret);
+		return s32Ret;
+	}
+
+	return s32Ret;
+}
+
+static CVI_U32 _vo_reset_hdmi_param(){
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	s32Ret = CVI_HDMI_Stop();
+
+	s32Ret = CVI_HDMI_DeInit();
+
+	s32Ret = _vo_set_hdmi_param(VO_CSC_MATRIX_IDENTITY);
+
+	if(s32Ret) {
+		SAMPLE_PRT("_vo_set_hdmi_param error with %#x\n", s32Ret);
+		return s32Ret;
+	}
+
+	return s32Ret;
+}
+
 static CVI_S32 _hdmi_ut_handle_op(CVI_S32 op)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
@@ -198,6 +246,70 @@ static CVI_S32 _hdmi_ut_handle_op(CVI_S32 op)
 		s32Ret = _hdmi_video_output(&setAttr);
 		if(s32Ret){
 			SAMPLE_PRT("HDMI video output error with %#x\n", s32Ret);
+			break;
+		}
+
+		break;
+	}
+	case 2:{
+		CVI_HDMI_ATTR setAttr;
+		int enCscMatrix;
+
+		memset(&setAttr, 0, sizeof(setAttr));
+		printf("Mcode: ");
+		scanf("%d", &Video_Mcode);
+		getchar();
+		printf("Pixel_Clk: ");
+		scanf("%d", &Pixel_Clk);
+		getchar();
+		printf("enCscMatrix [5 6 7 8]:");
+		scanf("%d", &enCscMatrix);
+
+		if(Video_Mcode == 0) {
+			printf("Video_Mcode should not be zero\n");
+			break;
+		}
+		if(Pixel_Clk > 594000 || Pixel_Clk <= 0) {
+			printf("Invalid Pixel_Clk Value\n");
+			break;
+		}
+
+		if(enCscMatrix < 5 || enCscMatrix > 8) {
+			printf("Invalid enCscMatrix Value\n");
+			break;
+		}
+
+		setAttr.hdmi_en = true;
+		setAttr.audio_en = false;
+		setAttr.hdcp14_en = false;
+		setAttr.video_format = Video_Mcode;
+		setAttr.pix_clk = Pixel_Clk;
+		setAttr.hdmi_force_output = CVI_HDMI_FORCE_NULL;
+		setAttr.hdmi_video_input = CSC_YUV444;
+		setAttr.hdmi_video_output = CSC_YUV444;
+		setAttr.bit_depth = CVI_HDMI_BIT_DEPTH_24;
+		setAttr.deep_color_mode = CVI_HDMI_DEEP_COLOR_24BIT;
+
+		s32Ret = _vo_set_hdmi_param(enCscMatrix);
+
+		if(s32Ret) {
+			SAMPLE_PRT("VOSetHDMIParam error with %#x\n", s32Ret);
+			break;
+		}
+		s32Ret = _hdmi_video_output(&setAttr);
+		if(s32Ret){
+			SAMPLE_PRT("HDMI video input[YUV444] error with %#x\n", s32Ret);
+			break;
+		}
+
+		printf("Press q Exit The Current Case \n");
+		while(1){
+			if(getchar() =='q') break;
+		}
+
+		s32Ret = _vo_reset_hdmi_param();
+		if(s32Ret) {
+			SAMPLE_PRT("_vo_reset_hdmi_param error with %#x\n", s32Ret);
 			break;
 		}
 
@@ -829,11 +941,12 @@ int main(int argc, char *argv[])
 	} else {
 		do {
 			SAMPLE_PRT("1:   HDMI test video output\n");
+			SAMPLE_PRT("2:   HDMI test video input : YUV444\n");
 			SAMPLE_PRT("9:   HDMI test HDCP1.4 (1920x1080p-60 video output)\n");
 			SAMPLE_PRT("10:  HDMI test CSC (RGB888 in YUV444 out)\n");
 			SAMPLE_PRT("11:  HDMI test CSC (RGB888 in YUV422 out)\n");
 			SAMPLE_PRT("12:  HDMI test audio: 1920x1080p-60 video output and 44.1Khz 24bit 2ch audio output\n");
-			SAMPLE_PRT("15:  HDMI test audio: 3840x2160p-60 video output and 192Khz 24bit 2ch audio output\n");
+			SAMPLE_PRT("15:  HDMI test audio: 3840x2160p-60 video output and 192Khz 24bit 8ch audio output\n");
 			SAMPLE_PRT("30:  HDMI test force get edid \n");
 			SAMPLE_PRT("50:  HDMI test Set/Get attrbute\n");
 			SAMPLE_PRT("60:  HDMI test Get sink capability\n");

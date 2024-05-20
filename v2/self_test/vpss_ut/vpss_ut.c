@@ -19,6 +19,8 @@
 #define DEFAULT_H 1080
 #define DEFAULT_FBCTABLE_LENGTH 69632
 
+#define THREAD_CNT 16
+
 #ifndef FPGA_PORTING
 #define UT_TIMEOUT_MS 1000
 #define TEST_CNT0 10000
@@ -1459,7 +1461,7 @@ exit0:
 static CVI_VOID *multi_thread_run(CVI_VOID *arg)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
-	CVI_S32 i, s32Repeat = TEST_CNT0;
+	CVI_S32 i, s32Repeat = TEST_CNT0, s32AvgFrameRate;
 	VPSS_GRP VpssGrp;
 	VPSS_CHN VpssChn = VPSS_CHN0;
 	VPSS_GRP_ATTR_S stVpssGrpAttr = {0};
@@ -1469,8 +1471,9 @@ static CVI_VOID *multi_thread_run(CVI_VOID *arg)
 	PIXEL_FORMAT_E enFormatOut = PIXEL_FORMAT_NV21;
 	SIZE_S stSizeIn = {DEFAULT_W, DEFAULT_H};
 	CVI_CHAR *pFileNameIn = VPSS_DEFAULT_FILE_IN;
-	CVI_U64 u64PTS, u64CurPTS, u64StartPTS, u64EndPTS;
+	CVI_U64 u64PTS, u64StartPTS, u64EndPTS, u64CurPTS1, u64CurPTS2, u64CostTime;
 	CVI_U32 u32FrameCnt;
+	CVI_U64 u64MinCostTime = 10000, u64MaxCostTime = 0;
 
 	arg = arg;
 
@@ -1537,6 +1540,7 @@ static CVI_VOID *multi_thread_run(CVI_VOID *arg)
 	u64StartPTS = u64PTS;
 
 	for (i = 0; i < s32Repeat; i++) {
+		CVI_SYS_GetCurPTS(&u64CurPTS1);
 		s32Ret = CVI_VPSS_SendFrame(VpssGrp, &stVideoFrameIn, 1000);
 		if (s32Ret != CVI_SUCCESS) {
 			VPSS_UT_PRT("CVI_VPSS_SendFrame fail.\n");
@@ -1548,6 +1552,7 @@ static CVI_VOID *multi_thread_run(CVI_VOID *arg)
 			VPSS_UT_PRT("CVI_VPSS_GetChnFrame fail. s32Ret: 0x%x !\n", s32Ret);
 			goto exit3;
 		}
+		CVI_SYS_GetCurPTS(&u64CurPTS2);
 
 		s32Ret = CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut);
 		if (s32Ret != CVI_SUCCESS) {
@@ -1555,18 +1560,29 @@ static CVI_VOID *multi_thread_run(CVI_VOID *arg)
 			goto exit3;
 		}
 
-		CVI_SYS_GetCurPTS(&u64CurPTS);
 		u32FrameCnt++;
+		u64CostTime = u64CurPTS2 - u64CurPTS1;
+		u64MinCostTime = u64CostTime < u64MinCostTime ? u64CostTime : u64MinCostTime;
+		u64MaxCostTime = u64CostTime > u64MaxCostTime ? u64CostTime : u64MaxCostTime;
 
-		if ((u64CurPTS - u64PTS) >= 1000000) {
+		if ((u64CurPTS2 - u64PTS) >= 1000000) {
 			VPSS_UT_PRT("[VpssGrp%d] FrameRate:%d fps\n", VpssGrp, u32FrameCnt);
 			u32FrameCnt = 0;
-			u64PTS = u64CurPTS;
+			u64PTS = u64CurPTS2;
 		}
+
 	}
 	CVI_SYS_GetCurPTS(&u64EndPTS);
-	VPSS_UT_PRT("[VpssGrp%d] average FrameRate:%ld fps\n", VpssGrp,
-		s32Repeat / ((u64EndPTS - u64StartPTS) / 1000000));
+	s32AvgFrameRate = s32Repeat / ((u64EndPTS - u64StartPTS) / 1000000);
+#if 0
+	if ((u64MaxCostTime - u64MinCostTime) > 4000)
+		s32Ret = -1;
+	if (s32AvgFrameRate < (2400/THREAD_CNT - 5))
+		s32Ret = -1;
+#endif
+	VPSS_UT_PRT("\n[VpssGrp%d] 1080P cost time: Min-Max: (%ld, %ld)us, offset=%ld\n", VpssGrp,
+		u64MinCostTime, u64MaxCostTime, u64MaxCostTime - u64MinCostTime);
+	VPSS_UT_PRT("\n[VpssGrp%d] average FrameRate:%d fps\n", VpssGrp, s32AvgFrameRate);
 
 exit3:
 	CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(stVideoFrameIn.stVFrame.u64PhyAddr[0]));
@@ -1591,8 +1607,8 @@ static CVI_S32 vpss_test_multi_thread(CVI_VOID)
 	CVI_S32 i, s32Ret = CVI_SUCCESS;
 	VB_CONFIG_S stVbConf;
 	CVI_U32 u32BlkSizeIn, u32BlkSizeOut;
-	CVI_S32 s32ThreadNum = 10;
-	pthread_t thread[10] = {[0 ... 9] = -1};
+	CVI_S32 s32ThreadNum = THREAD_CNT;
+	pthread_t thread[THREAD_CNT] = {[0 ... THREAD_CNT - 1] = -1};
 
 	memset(&stVbConf, 0, sizeof(VB_CONFIG_S));
 
@@ -2371,6 +2387,7 @@ static CVI_S32 vpss_test_format(CVI_VOID)
 		PIXEL_FORMAT_YVYU,
 		PIXEL_FORMAT_UYVY,
 		PIXEL_FORMAT_VYUY,
+		PIXEL_FORMAT_YUV_444,
 		PIXEL_FORMAT_YUV_PLANAR_420,
 		PIXEL_FORMAT_YUV_PLANAR_422,
 		PIXEL_FORMAT_YUV_PLANAR_444,
@@ -2389,6 +2406,7 @@ static CVI_S32 vpss_test_format(CVI_VOID)
 		PIXEL_FORMAT_YVYU,
 		PIXEL_FORMAT_UYVY,
 		PIXEL_FORMAT_VYUY,
+		PIXEL_FORMAT_YUV_444,
 		PIXEL_FORMAT_YUV_PLANAR_420,
 		PIXEL_FORMAT_YUV_PLANAR_422,
 		PIXEL_FORMAT_YUV_PLANAR_444,
@@ -3589,6 +3607,8 @@ static CVI_S32 vpss_test_perf(CVI_VOID)
 	SIZE_S stSize = {1920, 1080};
 	PIXEL_FORMAT_E enPixelFormat = PIXEL_FORMAT_YUV_PLANAR_420;
 	CVI_CHAR *pstFileNameIn = VPSS_DEFAULT_FILE_IN;
+	CVI_U64 u64CurPTS1, u64CurPTS2, u64CostTime;
+	CVI_U64 u64MinCostTime = 10000, u64MaxCostTime = 0;
 
 	/************************************************
 	 * step1:  Init SYS and common VB
@@ -3675,7 +3695,8 @@ static CVI_S32 vpss_test_perf(CVI_VOID)
 		goto exit4;
 	}
 
-	for (i = 0; i <= 10; i++) {
+	for (i = 0; i < TEST_CNT0; i++) {
+		CVI_SYS_GetCurPTS(&u64CurPTS1);
 		s32Ret = CVI_VPSS_SendFrame(VpssGrp, &stVideoFrameIn, 1000);
 		if (s32Ret != CVI_SUCCESS) {
 			VPSS_UT_PRT("CVI_VPSS_SendFrame fail.\n");
@@ -3686,13 +3707,24 @@ static CVI_S32 vpss_test_perf(CVI_VOID)
 			VPSS_UT_PRT("CVI_VPSS_GetChnFrame fail. s32Ret: 0x%x !\n", s32Ret);
 			goto exit5;
 		}
+		CVI_SYS_GetCurPTS(&u64CurPTS2);
+		u64CostTime = u64CurPTS2 - u64CurPTS1;
+		u64MinCostTime = u64CostTime < u64MinCostTime ? u64CostTime : u64MinCostTime;
+		u64MaxCostTime = u64CostTime > u64MaxCostTime ? u64CostTime : u64MaxCostTime;
+
 		s32Ret = CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut);
 		if (s32Ret != CVI_SUCCESS) {
 			VPSS_UT_PRT("CVI_VPSS_ReleaseChnFrame for grp0 chn0. s32Ret: 0x%x !\n", s32Ret);
 			goto exit5;
 		}
-		system("cat /proc/soph/vpss");
+		//system("cat /proc/soph/vpss");
 	}
+	if ((u64MaxCostTime - u64MinCostTime) > 500) {
+		s32Ret = -1;
+		VPSS_UT_PRT("Time fluctuation anomaly !!!\n");
+	}
+	VPSS_UT_PRT("1080P cost time: Min-Max: (%ld, %ld)us, offset=%ld\n", u64MinCostTime,
+		u64MaxCostTime, u64MaxCostTime - u64MinCostTime);
 
 exit5:
 	CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(stVideoFrameIn.stVFrame.u64PhyAddr[0]));
@@ -4332,6 +4364,7 @@ static CVI_S32 vpss_test_auto(CVI_VOID)
 	s32Ret |= vpss_test_fisheye();
 	s32Ret |= vpss_test_fbd_basic();
 	s32Ret |= vpss_test_pressure();
+	s32Ret |= vpss_test_perf();
 	s32Ret |= vpss_mp_get_chn_frm_test();
 	s32Ret |= vpss_test_stitch();
 	s32Ret |= vpss_test_stitch_pip();

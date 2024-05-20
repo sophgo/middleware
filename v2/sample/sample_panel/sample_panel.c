@@ -49,13 +49,12 @@ typedef enum {
 	DSI_PANEL_LT9611_1024x768_60,
 	DSI_PANEL_LT9611_1280x1024_60,
 	DSI_PANEL_LT9611_1600x1200_60,
+	DSI_PANEL_LT9611_2560x1440_60,
 	DSI_PANEL_NT35521,
 	DSI_PANEL_OTA7290B_1920,
 	DSI_PANEL_OTA7290B,
 	DSI_PANEL_ST7701,
 	LVDS_PANEL_LCM185X56,
-	BT_PANEL_TP2803_BT656_1280x720_25FPS_72M,
-	I80_PANEL_ST7789V3_HW_MCU_240x320_60FPS,
 	PANEL_MAX
 } PANEL_MODEL;
 
@@ -65,6 +64,7 @@ typedef struct _inputPara_ {
 	bool                    lane_pn_swap[LANE_MAX_NUM];
 	bool					lane_id_flag;
 	bool					pn_swap_flag;
+	bool					dev_flag;
 	CVI_U8					dev_no;
 } inputPara;
 
@@ -115,13 +115,12 @@ static char *s_panel_model_type_arr[] = {
 	"LT9611_1024x768_60",
 	"LT9611_1280x1024_60",
 	"LT9611_1600x1200_60",
+	"LT9611_2560x1440_60",
 	"NT35521",
 	"OTA7290B_1920",
 	"OTA7290B",
 	"ST7701",
 	"LCM185X56",
-	"TP2803_BT656_1280x720_25FPS_72M",
-	"ST7789V3_HW_MCU_RGB565_240x320_60FPS",
 };
 
 void printdsiHelp(void)
@@ -147,8 +146,8 @@ void printHelp(char **argv)
 
 	printf("\n.for mipi/lvds panel you can cfg lane seq or pnswap");
 	printf("\nEX.\n");
-	printf(" %s --panel=HX8394_EVB --laneid=1,2,0,3,4 --pnswap=0,0,0,0,0"
-		"--control_pins=399,304,400,\n", argv[0]);
+	printf(" %s --device=0 --panel=HX8394_EVB --laneid=1,2,0,3,4 --pnswap=0,0,0,0,0 --control_pins=399,304,400\n",
+	       argv[0]);
 	printf("\n.for mipi panel You can also manually set the dsi by -d");
 	printf("\nEX.\n");
 	printf(" %s -d\n\n", argv[0]);
@@ -217,11 +216,14 @@ CVI_S32 SAMPLE_MIPI_TX_ENABLE(void)
 		printf("mipi_tx_cfg fail!\n");
 		return CVI_FAILURE;
 	}
-	ret = dsi_init(VoDev, g_panel_desc.stdsicfg.dsi_init_cmds,
-				g_panel_desc.stdsicfg.dsi_init_cmds_size);
-	if (ret != CVI_SUCCESS) {
-		printf("dsi_init fail!\n");
-		return CVI_FAILURE;
+
+	if(g_panel_desc.stdsicfg.dsi_init_cmds_size) {
+		ret = dsi_init(VoDev, g_panel_desc.stdsicfg.dsi_init_cmds,
+					g_panel_desc.stdsicfg.dsi_init_cmds_size);
+		if (ret != CVI_SUCCESS) {
+			printf("dsi_init fail!\n");
+			return CVI_FAILURE;
+		}
 	}
 
 	ret = mipi_tx_set_hs_settle(fd, g_panel_desc.stdsicfg.hs_timing_cfg);
@@ -253,10 +255,22 @@ CVI_S32 SAMPLE_PANEL_ENABLE(void)
 			return CVI_FAILURE;
 		}
 	} else {
-		ret = CVI_VO_SetPubAttr(VoDev, &g_panel_desc.stVoPubAttr);
-		if (ret != CVI_SUCCESS) {
-			printf("failed with %#x!\n", ret);
-			return CVI_FAILURE;
+		if (g_panel_desc.panel_type == PANEL_MODE_LVDS) {
+			ret = CVI_VO_SetPubAttr(VoDev, &g_panel_desc.stlvdscfg.stVoPubAttr);
+			if (ret != CVI_SUCCESS) {
+				printf("failed with %#x!\n", ret);
+				return CVI_FAILURE;
+			}
+			ret = CVI_VO_SetLVDSParam(VoDev,  &g_panel_desc.stlvdscfg.LvdsAttr);
+			if (ret != CVI_SUCCESS) {
+				printf("failed with %#x!\n", ret);
+				return CVI_FAILURE;
+			}
+			ret = CVI_VO_GetLVDSParam(VoDev,  &g_panel_desc.stlvdscfg.LvdsAttr);
+			if (ret != CVI_SUCCESS) {
+				printf("failed with %#x!\n", ret);
+				return CVI_FAILURE;
+			}
 		}
 		printf("Init for Driver-%s Device-%d\n", g_panel_desc.panel_mode, VoDev);
 	}
@@ -424,48 +438,55 @@ void SAMPLE_SET_PANEL_DESC(void)
 		g_panel_desc.stdsicfg.dsi_init_cmds = dsi_init_cmds_gm8775c;
 		g_panel_desc.stdsicfg.dsi_init_cmds_size = ARRAY_SIZE(dsi_init_cmds_gm8775c);
 		break;
-	// case DSI_PANEL_LT9611_1920x1080_60:
-	// 	g_panel_desc.panel_type = PANEL_MODE_DSI;
-	// 	g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1920x1080_60Hz;
-	// 	g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
-	// 	break;
-	// case DSI_PANEL_LT9611_1920x1080_30:
-	// 	g_panel_desc.panel_type = PANEL_MODE_DSI;
-	// 	g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1920x1080_30Hz;
-	// 	g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
-	// 	break;
-	// case DSI_PANEL_LT9611_1280x720_60:
-	// 	g_panel_desc.panel_type = PANEL_MODE_DSI;
-	// 	g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1280x720_60Hz;
-	// 	g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
-	// 	break;
-	// case DSI_PANEL_LT9611_1024x768_60:
-	// 	g_panel_desc.panel_type = PANEL_MODE_DSI;
-	// 	g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1024x768_60Hz;
-	// 	g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
-	// 	break;
-	// case DSI_PANEL_LT9611_1280x1024_60:
-	// 	g_panel_desc.panel_type = PANEL_MODE_DSI;
-	// 	g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1280x1024_60Hz;
-	// 	g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
-	// 	break;
-	// case DSI_PANEL_LT9611_1600x1200_60:
-	// 	g_panel_desc.panel_type = PANEL_MODE_DSI;
-	// 	g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1600x1200_60Hz;
-	// 	g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
-	// 	g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
-		// break;
+	case DSI_PANEL_LT9611_1920x1080_60:
+		g_panel_desc.panel_type = PANEL_MODE_DSI;
+		g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1920x1080_60Hz;
+		g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
+		g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
+		g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
+		break;
+	case DSI_PANEL_LT9611_1920x1080_30:
+		g_panel_desc.panel_type = PANEL_MODE_DSI;
+		g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1920x1080_30Hz;
+		g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
+		g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
+		g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
+		break;
+	case DSI_PANEL_LT9611_1280x720_60:
+		g_panel_desc.panel_type = PANEL_MODE_DSI;
+		g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1280x720_60Hz;
+		g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
+		g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
+		g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
+		break;
+	case DSI_PANEL_LT9611_1024x768_60:
+		g_panel_desc.panel_type = PANEL_MODE_DSI;
+		g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1024x768_60Hz;
+		g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
+		g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
+		g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
+		break;
+	case DSI_PANEL_LT9611_1280x1024_60:
+		g_panel_desc.panel_type = PANEL_MODE_DSI;
+		g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1280x1024_60Hz;
+		g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
+		g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
+		g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
+		break;
+	case DSI_PANEL_LT9611_1600x1200_60:
+		g_panel_desc.panel_type = PANEL_MODE_DSI;
+		g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_1600x1200_60Hz;
+		g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
+		g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
+		g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
+		break;
+	case DSI_PANEL_LT9611_2560x1440_60:
+		g_panel_desc.panel_type = PANEL_MODE_DSI;
+		g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_lt9611_2560x1440_60Hz;
+		g_panel_desc.stdsicfg.hs_timing_cfg = &hs_timing_cfg_lt9611;
+		g_panel_desc.stdsicfg.dsi_init_cmds = NULL;
+		g_panel_desc.stdsicfg.dsi_init_cmds_size = 0;
+		break;
 	case DSI_PANEL_HX8394_EVB:
 		g_panel_desc.panel_type = PANEL_MODE_DSI;
 		g_panel_desc.stdsicfg.dev_cfg = (struct combo_dev_cfg_s *)&dev_cfg_hx8394_720x1280;
@@ -475,37 +496,15 @@ void SAMPLE_SET_PANEL_DESC(void)
 		break;
 	case LVDS_PANEL_LCM185X56:
 		g_panel_desc.panel_type = PANEL_MODE_LVDS;
-		g_panel_desc.stVoPubAttr.enIntfType = VO_INTF_LCD_24BIT;
-		g_panel_desc.stVoPubAttr.enIntfSync = VO_OUTPUT_USER;
+		g_panel_desc.stlvdscfg.stVoPubAttr.enIntfType = VO_INTF_LCD_24BIT;
+		g_panel_desc.stlvdscfg.stVoPubAttr.enIntfSync = VO_OUTPUT_USER;
 		VO_SYNC_INFO_S stLcm185x56_SyncInfo = {.bSynm = 1, .bIop = 1, .u16FrameRate = 60
 		, .u16Vact = 768, .u16Vbb = 20, .u16Vfb = 10
 		, .u16Hact = 1366, .u16Hbb = 100, .u16Hfb = 88
 		, .u16Vpw = 2, .u16Hpw = 20, .bIdv = 0, .bIhs = 0, .bIvs = 0};
-		g_panel_desc.stVoPubAttr.stSyncInfo = stLcm185x56_SyncInfo;
-		g_panel_desc.stVoPubAttr.stLvdsAttr = lvds_lcm185x56_cfg;
+		g_panel_desc.stlvdscfg.stVoPubAttr.stSyncInfo = stLcm185x56_SyncInfo;
+		g_panel_desc.stlvdscfg.LvdsAttr = lvds_lcm185x56_cfg;
 		break;
-	// case BT_PANEL_TP2803_BT656_1280x720_25FPS_72M:
-	// 	g_panel_desc.panel_type = PANEL_MODE_BT;
-	// 	g_panel_desc.stVoPubAttr.enIntfType = VO_INTF_BT656;
-	// 	g_panel_desc.stVoPubAttr.enIntfSync = VO_OUTPUT_USER;
-	// 	VO_SYNC_INFO_S stTp2803_SyncInfo = {.bSynm = 1, .bIop = 1, .u16FrameRate = 50
-	// 	, .u16Vact = 720, .u16Vbb = 20, .u16Vfb = 5
-	// 	, .u16Hact = 1280, .u16Hbb = 200, .u16Hfb = 400
-	// 	, .u16Vpw = 5, .u16Hpw = 40, .bIdv = 0, .bIhs = 0, .bIvs = 0};
-	// 	g_panel_desc.stVoPubAttr.stSyncInfo = stTp2803_SyncInfo;
-		// g_panel_desc.stVoPubAttr.stBtAttr = stTP2803Cfg;
-		// break;
-	// case I80_PANEL_ST7789V3_HW_MCU_240x320_60FPS:
-	// 	g_panel_desc.panel_type = PANEL_MODE_MCU;
-	// 	g_panel_desc.stVoPubAttr.enIntfType = VO_INTF_HW_MCU;
-	// 	g_panel_desc.stVoPubAttr.enIntfSync = VO_OUTPUT_USER;
-	// 	VO_SYNC_INFO_S st7789V3_SyncInfo = {.bSynm = 1, .bIop = 1, .u16FrameRate = 60
-	// 	, .u16Vact = 320, .u16Vbb = 0, .u16Vfb = 32
-	// 	, .u16Hact = 240, .u16Hbb = 0, .u16Hfb = 16
-	// 	, .u16Vpw = 2, .u16Hpw = 2, .bIdv = 0, .bIhs = 1, .bIvs = 1};
-	// 	g_panel_desc.stVoPubAttr.stSyncInfo = st7789V3_SyncInfo;```````````````````````````````````````````````````````````
-		// g_panel_desc.stVoPubAttr.stMcuCfg = st7789v3Cfg;
-		// break;
 	default:
 		printf("default\n");
 		g_panel_desc.panel_type = PANEL_MODE_DSI;
@@ -518,7 +517,7 @@ void SAMPLE_SET_PANEL_DESC(void)
 	if (g_input_para.pn_swap_flag) {
 		if (g_panel_desc.panel_type == PANEL_MODE_LVDS) {
 			for (CVI_U32 i = 0; i < LANE_MAX_NUM; i++) {
-				g_panel_desc.stVoPubAttr.stLvdsAttr.lane_pn_swap[i] =
+				g_panel_desc.stlvdscfg.LvdsAttr.lane_pn_swap[i] =
 				(enum VO_LVDS_LANE_ID)g_input_para.lane_pn_swap[i];
 			}
 		} else if (g_panel_desc.panel_type == PANEL_MODE_DSI) {
@@ -530,12 +529,19 @@ void SAMPLE_SET_PANEL_DESC(void)
 	if (g_input_para.lane_id_flag) {
 		if (g_panel_desc.panel_type == PANEL_MODE_LVDS) {
 			for (CVI_U32 i = 0; i < LANE_MAX_NUM; i++) {
-				g_panel_desc.stVoPubAttr.stLvdsAttr.lane_id[i] =
+				g_panel_desc.stlvdscfg.LvdsAttr.lane_id[i] =
 				(enum VO_LVDS_LANE_ID)g_input_para.lane_id[i];
 			}
 		} else if (g_panel_desc.panel_type == PANEL_MODE_DSI) {
 			for (CVI_U32 i = 0; i < LANE_MAX_NUM; i++) {
 				g_panel_desc.stdsicfg.dev_cfg->lane_id[i] = g_input_para.lane_id[i];
+			}
+		}
+	}
+	if (g_input_para.dev_flag) {
+		if (g_panel_desc.panel_type == PANEL_MODE_DSI) {
+			for (CVI_U32 i = 0; i < LANE_MAX_NUM; i++) {
+				g_panel_desc.stdsicfg.dev_cfg->devno = g_input_para.dev_no;
 			}
 		}
 	}
@@ -577,6 +583,8 @@ CVI_S32 SAMPLE_SET_DEVICE(char *pinput_str)
 	}
 
 	g_input_para.dev_no = dev_no;
+	g_input_para.dev_flag = true;
+
 	return CVI_SUCCESS;
 }
 

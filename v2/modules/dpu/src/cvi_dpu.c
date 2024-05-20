@@ -60,11 +60,6 @@ static CVI_S32 get_dpu_fd(CVI_VOID)
 	return dpu_fd;
 }
 
-// CVI_S32 CVI_DPU_GetAssistBufSize(CVI_U16 u16_disp_num,CVI_U32 u32_dst_height,CVI_U32 * pu32_size)
-// {
-//     return 0;
-// }
-
 CVI_S32 CVI_DPU_CreateGrp(DPU_GRP DpuGrp, const DPU_GRP_ATTR_S *pstGrpAttr)
 {
     CVI_S32 fd = get_dpu_fd();
@@ -391,34 +386,4 @@ CVI_S32 CVI_DPU_ReleaseFrame(DPU_GRP DpuGrp,\
 	}
 
 	return CVI_SUCCESS;
-}
-
-void CVI_DPU_CheckRegWrite(void)
-{
-	CVI_S32 fd = get_dpu_fd();
-	dpu_check_reg_write(fd);
-}
-
-void CVI_DPU_CheckRegRead(void)
-{
-	CVI_S32 fd = get_dpu_fd();
-	dpu_check_reg_read(fd);
-}
-
-void CVI_DPU_CheckSgbmStatus(void)
-{
-	CVI_S32 fd = get_dpu_fd();
-	dpu_get_sgbm_status(fd);
-}
-
-void CVI_DPU_CheckFgsStatus(void)
-{
-	CVI_S32 fd = get_dpu_fd();
-	dpu_get_fgs_status(fd);
-}
-
-void CVI_DPU_Reset(void)
-{
-	CVI_S32 fd = get_dpu_fd();
-	dpu_reset(fd);
 }

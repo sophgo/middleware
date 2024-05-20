@@ -409,15 +409,17 @@ CVI_S32 SAMPLE_COMM_VENC_SaveChannelStream(vencChnCtx *pvecc)
 			}
 			pthread_mutex_unlock(&pvecc->frame_buffer_lock);
 		}
-
-		s32Ret = SAMPLE_COMM_VENC_SaveStream(
-				stVencChnAttr.stVencAttr.enType,
-				pvecc->pFile,
-				&stStream);
-		if (s32Ret != CVI_SUCCESS) {
-			printf("SAMPLE_COMM_VENC_SaveStream, s32Ret = %d\n", s32Ret);
-			break;
+		if (!(pvecc->perf == 1)) {
+			s32Ret = SAMPLE_COMM_VENC_SaveStream(
+					stVencChnAttr.stVencAttr.enType,
+					pvecc->pFile,
+					&stStream);
+			if (s32Ret != CVI_SUCCESS) {
+				printf("SAMPLE_COMM_VENC_SaveStream, s32Ret = %d\n", s32Ret);
+				break;
+			}
 		}
+
 
 		s32Ret = CVI_VENC_QueryStatus(VencChn, &stStat);
 		if (s32Ret != CVI_SUCCESS) {

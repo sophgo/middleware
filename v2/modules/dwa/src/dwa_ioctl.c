@@ -70,3 +70,13 @@ CVI_S32 dwa_get_chn_frm(CVI_S32 fd, struct dwa_chn_frm_cfg *cfg)
 	return ioctl(fd, CVI_DWA_GET_CHN_FRM, cfg);
 }
 
+CVI_S32 dwa_suspend(CVI_S32 fd)
+{
+	return ioctl(fd, CVI_DWA_SUSPEND);
+}
+
+CVI_S32 dwa_resume(CVI_S32 fd)
+{
+	return ioctl(fd, CVI_DWA_RESUME);
+}
+

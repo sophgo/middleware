@@ -137,6 +137,8 @@ int vg_lite_load_pkm_info_to_buffer(vg_lite_buffer_t * buffer, const char * name
 int vg_lite_load_dev_info_to_buffer(vg_lite_buffer_t * buffer, const char * name);
 int vg_lite_load_decnano_compressd_data(vg_lite_buffer_t * buffer, const char * name);
 int vg_lite_save_decnano_compressd_data(const char *name, vg_lite_buffer_t *buffer);
+int vg_lite_save_decnano_2_0_compressd_data(const char* name, vg_lite_buffer_t* buffer);
+
 
 #ifdef __cplusplus
 }

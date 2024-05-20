@@ -20,9 +20,6 @@ int test_gmm2(int bTileMode, int bWrite, int bInstant)
 	IVE_DST_IMAGE_S stMatchModelInfo;
 
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data_bg = NULL;
-	// char *output_data_fg = NULL;
 	char input_data[64];
 	char output_data_bg[64];
 	char output_data_fg[64];
@@ -33,9 +30,6 @@ int test_gmm2(int bTileMode, int bWrite, int bInstant)
 	if (bTileMode) {
 		input_w = 704;
 		input_h = 288;
-		// input_data = data_campus_raw;
-		// output_data_fg = data_tile_GMM2_FG;
-		// output_data_bg = data_tile_GMM2_BG;
 		strcpy(input_data, "res/ive/campus.u8c1.1_100.raw");
 		strcpy(output_data_fg, "res/ive/result/sample_tile_GMM2_U8C1_fg_31.yuv");
 		strcpy(output_data_bg, "res/ive/result/sample_tile_GMM2_U8C1_bg_31.yuv");
@@ -44,16 +38,12 @@ int test_gmm2(int bTileMode, int bWrite, int bInstant)
 	} else {
 		input_w = 352;
 		input_h = 288;
-		// input_data = data_campus_raw;
-		// output_data_fg = data_GMM2_FG;
-		// output_data_bg = data_GMM2_BG;
 		strcpy(input_data, "res/ive/campus.u8c1.1_100.raw");
 		strcpy(output_data_fg, "res/ive/result/sample_GMM2_U8C1_fg_31.yuv");
 		strcpy(output_data_bg, "res/ive/result/sample_GMM2_U8C1_bg_31.yuv");
 		strcpy(output_file_bg, "sample_GMM2_U8C1_bg_31.yuv");
 		strcpy(output_file_fg, "sample_GMM2_U8C1_fg_31.yuv");
 	}
-	//Read Array from file.
 	//Read Array from file.
 	FILE *fp;
 	int buf_size = 32 * input_w * input_h;

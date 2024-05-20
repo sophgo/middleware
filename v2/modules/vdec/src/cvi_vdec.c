@@ -450,4 +450,3 @@ CVI_S32 CVI_VDEC_SetDisplayMode(VDEC_CHN VdChn, VIDEO_DISPLAY_MODE_E enDisplayMo
 
 	return CVI_FAILURE;
 }
-

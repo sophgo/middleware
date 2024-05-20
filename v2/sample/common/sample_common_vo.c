@@ -21,6 +21,7 @@
 
 #include "dsi_hx8394_evb.h"
 #include "i80_st7789v.h"
+#include "lvds_lcm185x56.h"
 
 static CVI_S32 sample_vo_i2c_file = -1;
 static CVI_S32 sample_vo_i2c_slave_addr;
@@ -161,53 +162,39 @@ CVI_S32 SAMPLE_COMM_VO_GetWH(VO_INTF_SYNC_E enIntfSync, CVI_U32 *pu32W, CVI_U32 
 	return CVI_SUCCESS;
 }
 
-CVI_S32 SAMPLE_COMM_VO_FillIntfAttr(VO_PUB_ATTR_S *pstPubAttr)
-{
-	if (pstPubAttr == NULL) {
-		SAMPLE_PRT("Error:argument can not be NULL\n");
-		return CVI_FAILURE;
-	}
-
-	switch (pstPubAttr->enIntfType) {
-	case VO_INTF_I80:
-		pstPubAttr->sti80Cfg = stI80Cfg;
-		break;
-	case VO_INTF_CVBS:
-	case VO_INTF_YPBPR:
-	case VO_INTF_VGA:
-	case VO_INTF_BT656:
-	case VO_INTF_BT1120:
-	case VO_INTF_LCD:
-	case VO_INTF_LCD_18BIT:
-	case VO_INTF_LCD_24BIT:
-	case VO_INTF_LCD_30BIT:
-	case VO_INTF_HDMI:
-		break;
-	case VO_INTF_MIPI:
-	case VO_INTF_MIPI_SLAVE:
-		//no need, MIPI-DSI is setup by mipi-tx
-		break;
-	default:
-		break;
-	}
-
-	return CVI_SUCCESS;
-}
-
 CVI_S32 SAMPLE_COMM_VO_StartDev(VO_DEV VoDev, VO_PUB_ATTR_S *pstPubAttr)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
-
-	s32Ret = SAMPLE_COMM_VO_FillIntfAttr(pstPubAttr);
-	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("failed with %#x!\n", s32Ret);
-		return CVI_FAILURE;
-	}
 
 	s32Ret = CVI_VO_SetPubAttr(VoDev, pstPubAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		SAMPLE_PRT("failed with %#x!\n", s32Ret);
 		return CVI_FAILURE;
+	}
+
+	if (pstPubAttr->enIntfType >= VO_INTF_LCD_18BIT && pstPubAttr->enIntfType <= VO_INTF_LCD_30BIT) {
+		VO_LVDS_ATTR_S stLvdsAttr = lvds_lcm185x56_cfg;
+		s32Ret = CVI_VO_SetLVDSParam(VoDev, &stLvdsAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("failed with %#x!\n", s32Ret);
+			return CVI_FAILURE;
+		}
+	}else if (pstPubAttr->enIntfType == VO_INTF_I80) {
+		VO_I80_CFG_S sti80Cfg = stI80Cfg;
+		VO_I80_INSTR_S sti80cmd[sizeof(init_cmds) / sizeof(init_cmds[0])] = {0};
+
+		memcpy(sti80cmd, init_cmds, sizeof(init_cmds));
+
+		s32Ret = CVI_VO_SetI80Param(VoDev, &sti80Cfg);
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("failed with %#x!\n", s32Ret);
+			return CVI_FAILURE;
+		}
+		s32Ret = CVI_VO_I80Init(VoDev, sti80cmd, sizeof(sti80cmd) / sizeof(sti80cmd[0]));
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("failed with %#x!\n", s32Ret);
+			return CVI_FAILURE;
+		}
 	}
 
 	s32Ret = CVI_VO_Enable(VoDev);

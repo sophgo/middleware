@@ -106,7 +106,7 @@ typedef enum _RGN_TEST_OP {
 	RGN_VPSS_COVEREX_TEST = 20,
 	RGN_VPSS_MOSAIC_TEST,
 	RGN_VO_OSD = 50,
-	RGN_VO_COVEREX_TEST,
+	RGN_VO_COVER_TEST,
 	RGN_CREATE_DESTROY = 100,
 	RGN_CREATE_ATTACTH_DETACH_DESTROY,
 	RGN_ATTR_TEST,
@@ -1186,7 +1186,7 @@ EXIT0:
 	return s32Ret;
 }
 
-static CVI_S32 rgn_vo_coverex_test(void)
+static CVI_S32 rgn_vo_cover_test(void)
 {
 #ifndef __CV180X__
 	CVI_S32 s32Ret = CVI_SUCCESS;
@@ -1203,7 +1203,7 @@ static CVI_S32 rgn_vo_coverex_test(void)
 	 ************************************************/
 	memset(&param, 0, sizeof(param));
 	param.stChn.enModId = CVI_ID_VO;
-	param.stChn.s32DevId = 1;
+	param.stChn.s32DevId = VO_OVERLAY_G1;
 	param.stChn.s32ChnId = VPSS_CHN0;
 	param.stInputSize.u32Width = 1280;
 	param.stInputSize.u32Height = 720;
@@ -1227,8 +1227,8 @@ static CVI_S32 rgn_vo_coverex_test(void)
 	/************************************************
 	 * Init RGN
 	 ************************************************/
-	param.u32HdlNum = 4;
-	param.enType = COVEREX_RGN;
+	param.u32HdlNum = 1;
+	param.enType = COVER_RGN;
 
 	s32Ret = SAMPLE_COMM_REGION_Create(param.u32HdlNum, param.enType, 0);
 	if (s32Ret != CVI_SUCCESS) {
@@ -1243,13 +1243,13 @@ static CVI_S32 rgn_vo_coverex_test(void)
 		goto EXIT2;
 	}
 
-	Handle = SAMPLE_COMM_REGION_GetMinHandle(param.enType) + 3;
+	Handle = SAMPLE_COMM_REGION_GetMinHandle(param.enType);
 
 	CVI_RGN_GetDisplayAttr(Handle, &param.stChn, &stRgnChnAttr);
-	stRgnChnAttr.unChnAttr.stCoverExChn.u32Color = 0x00ff0000;
-	stRgnChnAttr.unChnAttr.stCoverExChn.u32Layer = 0;
-	stRgnChnAttr.unChnAttr.stCoverExChn.stRect.s32X = 500;
-	stRgnChnAttr.unChnAttr.stCoverExChn.stRect.s32Y = 500;
+	stRgnChnAttr.unChnAttr.stCoverChn.u32Color = 0x00ff0000;
+	stRgnChnAttr.unChnAttr.stCoverChn.u32Layer = 0;
+	stRgnChnAttr.unChnAttr.stCoverChn.stRect.s32X = 500;
+	stRgnChnAttr.unChnAttr.stCoverChn.stRect.s32Y = 500;
 	CVI_RGN_SetDisplayAttr(Handle, &param.stChn, &stRgnChnAttr);
 
 	//send frame
@@ -1723,7 +1723,7 @@ static CVI_S32 rgn_vo_osd_test(void)
 	HandleNum = 1;
 	enType = OVERLAY_RGN;
 	stChn.enModId = CVI_ID_VO;
-	stChn.s32DevId = 1;
+	stChn.s32DevId = VO_OVERLAY_G1;
 	stChn.s32ChnId = 0;
 	Path_BMP = test_bmp;
 	PIXEL_FORMAT_E enPixelFormat;
@@ -3016,8 +3016,8 @@ static CVI_S32 _rgn_ut_handle_op(CVI_S32 op)
 		s32Ret = rgn_vpss_coverex_test();
 		break;
 
-	case RGN_VO_COVEREX_TEST:
-		s32Ret = rgn_vo_coverex_test();
+	case RGN_VO_COVER_TEST:
+		s32Ret = rgn_vo_cover_test();
 		break;
 
 	case RGN_VPSS_MOSAIC_TEST:
@@ -3129,7 +3129,7 @@ int main(int argc, char *argv[])
 			RGN_UT_PRT("%03d: vpss mosaic test.\n", RGN_VPSS_MOSAIC_TEST);
 
 			RGN_UT_PRT("%03d: vo RGN test.\n", RGN_VO_OSD);
-			RGN_UT_PRT("%03d: vo coverex test.\n", RGN_VO_COVEREX_TEST);
+			RGN_UT_PRT("%03d: vo cover test.\n", RGN_VO_COVER_TEST);
 			RGN_UT_PRT("========================== CVI API testcase ==========================\n");
 			RGN_UT_PRT("%03d: create->destroy.\n", RGN_CREATE_DESTROY);
 			RGN_UT_PRT("%03d: create->attach->detach->destroy.\n", RGN_CREATE_ATTACTH_DETACH_DESTROY);

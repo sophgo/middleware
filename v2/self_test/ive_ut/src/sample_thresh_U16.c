@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,9 +8,6 @@ int test_thresh_u16(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data1 = NULL;
-	// char *output_data2 = NULL;
 	char input_data[64];
 	char output_data1[64];
 	char output_data2[64];
@@ -20,9 +16,6 @@ int test_thresh_u16(int bTileMode, int bWrite, int bInstant)
 
 	//TODO:tilemode
 	if (bTileMode) {
-		// input_data = data_00_704x576_u16;
-		// output_data1 = data_ThreshU16_MinMidMax;
-		// output_data2 = data_ThreshU16_MinOriMax;
 		strcpy(input_data, "res/ive/00_704x576.u16");
 		strcpy(output_data1, "res/ive/result/sample_tile_Thresh_U16_To_U8_MinMidMax.yuv");
 		strcpy(output_data2, "res/ive/result/sample_tile_Thresh_U16_To_U8_MinOriMax.yuv");
@@ -31,9 +24,6 @@ int test_thresh_u16(int bTileMode, int bWrite, int bInstant)
 		strcpy(output_file1, "sample_tile_Thresh_U16_To_U8_MinMidMax.yuv");
 		strcpy(output_file2, "sample_tile_Thresh_U16_To_U8_MinOriMax.yuv");
 	} else {
-		// input_data = data_00_704x576_u16;
-		// output_data1 = data_ThreshU16_MinMidMax;
-		// output_data2 = data_ThreshU16_MinOriMax;
 		strcpy(input_data, "res/ive/00_704x576.u16");
 		strcpy(output_data1, "res/ive/result/sample_Thresh_U16_To_U8_MinMidMax.yuv");
 		strcpy(output_data2, "res/ive/result/sample_Thresh_U16_To_U8_MinOriMax.yuv");

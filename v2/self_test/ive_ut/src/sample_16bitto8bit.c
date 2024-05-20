@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,12 +8,6 @@ int test_16botto8bit(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data1 = NULL;
-	// char *input_data2 = NULL;
-	// char *output_data1 = NULL;
-	// char *output_data2 = NULL;
-	// char *output_data3 = NULL;
-	// char *output_data4 = NULL;
 	char input_data1[64];
 	char input_data2[64];
 	char output_data1[64];
@@ -27,12 +20,6 @@ int test_16botto8bit(int bTileMode, int bWrite, int bInstant)
 	char output_file4[64];
 
 	if (bTileMode) {
-		// input_data1 = data_00_704x576_u16;
-		// input_data2 = data_00_704x576_s16;
-		// output_data1 = data_U16ToU8_U16ToU8;
-		// output_data2 = data_U16ToU8_Abs;
-		// output_data3 = data_U16ToU8_S16ToS8;
-		// output_data4 = data_U16ToU8_Shift;
 		strcpy(input_data1, "res/ive/00_704x576.u16");
 		strcpy(input_data2, "res/ive/00_704x576.s16");
 		strcpy(output_data1, "res/ive/result/sample_16BitTo8Bit_U16ToU8.yuv");
@@ -46,12 +33,6 @@ int test_16botto8bit(int bTileMode, int bWrite, int bInstant)
 		strcpy(output_file3, "sample_tile_16BitTo8Bit_Shift.yuv");
 		strcpy(output_file4, "sample_tile_16BitTo8Bit_U16ToU8.yuv");
 	} else {
-		// input_data1 = data_00_704x576_u16;
-		// input_data2 = data_00_704x576_s16;
-		// output_data1 = data_U16ToU8_U16ToU8;
-		// output_data2 = data_U16ToU8_Abs;
-		// output_data3 = data_U16ToU8_S16ToS8;
-		// output_data4 = data_U16ToU8_Shift;
 		strcpy(input_data1, "res/ive/00_704x576.u16");
 		strcpy(input_data2, "res/ive/00_704x576.s16");
 		strcpy(output_data1, "res/ive/result/sample_16BitTo8Bit_U16ToU8.yuv");

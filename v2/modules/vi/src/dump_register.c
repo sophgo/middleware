@@ -2254,7 +2254,7 @@ CVI_S32 dump_register_cv186x(VI_PIPE ViPipe, FILE *fp, VI_DUMP_REGISTER_TABLE_S 
 	}
 
 	/* stop tuning update */
-	sprintf(cmd, "echo %d,1,1,1 > /sys/module/soph_vi/parameters/tuning_dis",  1);
+	sprintf(cmd, "echo %d,1,1,1 > /sys/module/soph_vi/parameters/tuning_dis",  ViPipe + 1);
 	system(cmd);
 
 	/* In the worst case, have to wait two frames to stop tuning update. */

@@ -13,7 +13,7 @@ CFLAGS += -DHAVE_FBDEV
 
 LIBS += vg_lite m
 LDFLAGS += -L$(SDK_DIR)/drivers -L$(OUT) $(addprefix -l,$(LIBS))
-LDFLAGS += -fPIC -shared  -Wl,-z,defs
+LDFLAGS += -fPIC -shared -Wl,-z,defs
 
 all : $(OUT)/$(NAME)
 
@@ -26,3 +26,4 @@ $(OUT) :
 $(OUT)/$(NAME) : $(OUT) $(SOURCES)
 	@echo $(CC) $(CFLAGS) -o $@ $(SOURCES) $(LDFLAGS)
 	@$(CC) $(CFLAGS) -o $@ $(SOURCES) $(LDFLAGS)
+

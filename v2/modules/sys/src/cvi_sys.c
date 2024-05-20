@@ -21,8 +21,9 @@
 #include <linux/base_uapi.h>
 #include <linux/sys_uapi.h>
 
-
 #define TPUDEVNAME "/dev/cvi-tpu0"
+
+#define MMF_VERSION  (CVI_CHIP_NAME MMF_VER_PRIX MK_VERSION(VER_X, VER_Y, VER_Z) VER_D)
 
 
 static int devm_fd = -1, devm_cached_fd = -1;
@@ -293,9 +294,6 @@ CVI_S32 CVI_SYS_GetVersion(MMF_VERSION_S *pstVersion)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstVersion);
 
-#ifndef MMF_VERSION
-#define MMF_VERSION  (CVI_CHIP_NAME MMF_VER_PRIX MK_VERSION(VER_X, VER_Y, VER_Z) VER_D)
-#endif
 	snprintf(pstVersion->version, VERSION_NAME_MAXLEN, "%s-%s", MMF_VERSION, SDK_VER);
 	return CVI_SUCCESS;
 }

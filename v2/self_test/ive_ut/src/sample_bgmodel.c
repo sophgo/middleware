@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,8 +113,6 @@ int test_bgmodel(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data = NULL;
 	char input_data[64];
 	char output_data[64];
 	char output_file1[64];
@@ -124,8 +121,6 @@ int test_bgmodel(int bTileMode, int bWrite, int bInstant)
 	char output_file4[64];
 
 	if (bTileMode) {
-		// input_data = data_campus_raw;
-		// output_data = data_tile_BgMdl;
 		strcpy(input_data, "res/ive/campus.u8c1.1_100.raw");
 		strcpy(output_data, "res/ive/result/sample_tile_BgModelSample2_BgMdl_100.bin");
 		input_w = 352 * 2;
@@ -139,8 +134,6 @@ int test_bgmodel(int bTileMode, int bWrite, int bInstant)
 		strcpy(output_file4,
 		       "sample_tile_BgModelSample2_FgFlag_100.bin");
 	} else {
-		// input_data = data_campus_raw;
-		// output_data = data_BgMdl;
 		strcpy(input_data, "res/ive/campus.u8c1.1_100.raw");
 		strcpy(output_data, "res/ive/result/sample_BgModelSample2_BgMdl_100.bin");
 		input_w = 352;

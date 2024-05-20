@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,9 +13,6 @@ int test_gmm(int bTileMode, int bWrite, int bInstant)
 	IVE_GMM_CTRL_S stGMMCtrl;
 
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data_bg = NULL;
-	// char *output_data_fg = NULL;
 	char input_data[64];
 	char output_data_bg[64];
 	char output_data_fg[64];
@@ -32,9 +28,6 @@ int test_gmm(int bTileMode, int bWrite, int bInstant)
 	stGMMCtrl.u8ModelNum = 3;
 
 	if (bTileMode) {
-		// input_data = data_campus_raw;
-		// output_data_fg = data_tile_GMM_FG;
-		// output_data_bg = data_tile_GMM_BG;
 		strcpy(input_data, "res/ive/campus.u8c1.1_100.raw");
 		strcpy(output_data_fg, "res/ive/result/sample_tile_GMM_U8C1_fg_31.yuv");
 		strcpy(output_data_bg, "res/ive/result/sample_tile_GMM_U8C1_bg_31.yuv");
@@ -43,9 +36,6 @@ int test_gmm(int bTileMode, int bWrite, int bInstant)
 		strcpy(output_file_bg, "sample_tile_GMM_U8C1_bg_31.yuv");
 		strcpy(output_file_fg, "sample_tile_GMM_U8C1_fg_31.yuv");
 	} else {
-		// input_data = data_campus_raw;
-		// output_data_fg = data_GMM_FG;
-		// output_data_bg = data_GMM_BG;
 		strcpy(input_data, "res/ive/campus.u8c1.1_100.raw");
 		strcpy(output_data_fg, "res/ive/result/sample_GMM_U8C1_fg_31.yuv");
 		strcpy(output_data_bg, "res/ive/result/sample_GMM_U8C1_bg_31.yuv");

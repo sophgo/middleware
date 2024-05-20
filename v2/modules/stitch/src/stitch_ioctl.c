@@ -111,3 +111,13 @@ CVI_S32 cvi_stitch_dump_reginfo(CVI_S32 fd)
 	return ioctl(fd, CVI_STITCH_DUMP_REGS);
 }
 
+CVI_S32 cvi_stitch_suspend(CVI_S32 fd)
+{
+	return ioctl(fd, CVI_STITCH_SUSPEND);
+}
+
+CVI_S32 cvi_stitch_resume(CVI_S32 fd)
+{
+	return ioctl(fd, CVI_STITCH_RESUME);
+}
+

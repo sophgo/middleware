@@ -149,26 +149,38 @@ static CVI_S32 gdc_comm_cfg_frame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, 
 	return CVI_SUCCESS;
 }
 
+/**************************************************************************
+ *   Public APIs.
+ **************************************************************************/
+
 CVI_S32 CVI_GDC_Suspend(void)
 {
-	CVI_TRACE_GDC(CVI_DBG_DEBUG, "+\n");
+	CVI_S32 s32Ret;
+	CVI_S32 fd = get_ldc_fd();
 
-	CVI_TRACE_GDC(CVI_DBG_DEBUG, "-\n");
+	s32Ret = gdc_suspend(fd);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_GDC(CVI_DBG_ERR, "suspend fail\n");
+		return s32Ret;
+	}
+
 	return CVI_SUCCESS;
 }
 
 CVI_S32 CVI_GDC_Resume(void)
 {
-	CVI_TRACE_GDC(CVI_DBG_DEBUG, "+\n");
+	CVI_S32 s32Ret;
+	CVI_S32 fd = get_ldc_fd();
 
-	CVI_TRACE_GDC(CVI_DBG_DEBUG, "-\n");
+	s32Ret = gdc_resume(fd);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_GDC(CVI_DBG_ERR, "resume fail\n");
+		return s32Ret;
+	}
 
 	return CVI_SUCCESS;
 }
 
-/**************************************************************************
- *   Public APIs.
- **************************************************************************/
 CVI_S32 CVI_GDC_Init(void)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;

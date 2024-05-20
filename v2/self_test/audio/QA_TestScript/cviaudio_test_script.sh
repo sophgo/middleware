@@ -317,7 +317,7 @@ function unit_pcm_write_test()
 	_check_keyworkd_exist $tmp_result $pass_keyword
 	if [ "$?" = "1" ]
 	then
-		echo "unit_pcm_write_test TEST_PASS" >> $output_result
+		echo "unit_pcm_write_test TEST-PASS" >> $output_result
 	else
 		echo "unit_pcm_write_test NG" >> $output_result
 	fi
@@ -548,6 +548,16 @@ function main_function()
 	audio_leave_test
 }
 
+function check_all_pass()
+{
+	if grep -q NG "$output_result" || ! grep -q TEST-PASS "$output_result"
+	then
+		echo $1 "TEST-FAILD, check file $output_result for more details"
+	else
+		echo $1 "TEST-ALL-PASS"
+	fi
+}
+
 #----------------------------------start call
 #audio test start---here
 export cviaudio_level=2
@@ -560,4 +570,5 @@ rm $output_result
 fi
 main_function $1
 cat $output_result
+check_all_pass $1
 #----------------------------------stop call

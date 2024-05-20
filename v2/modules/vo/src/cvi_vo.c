@@ -452,6 +452,104 @@ CVI_S32 CVI_VO_GetHDMIParam(VO_DEV VoDev, VO_HDMI_PARAM_S *pstHDMIParam)
 	return CVI_SUCCESS;
 }
 
+CVI_S32 CVI_VO_SetLVDSParam(VO_DEV VoDev, const VO_LVDS_ATTR_S *pstLVDSParam)
+{
+	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstLVDSParam);
+	CHECK_VO_DEV_VALID(VoDev);
+
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_lvds_param_cfg cfg;
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoDev = VoDev;
+	memcpy(&cfg.stLVDSParam, pstLVDSParam, sizeof(VO_LVDS_ATTR_S));
+
+	s32Ret = vo_sdk_set_lvdsparam(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) Set LVDS param fail\n", VoDev);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_GetLVDSParam(VO_DEV VoDev, VO_LVDS_ATTR_S *pstLVDSParam)
+{
+	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstLVDSParam);
+	CHECK_VO_DEV_VALID(VoDev);
+
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_lvds_param_cfg cfg;
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoDev = VoDev;
+
+	s32Ret = vo_sdk_get_lvdsparam(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) Get LVDS param fail\n", VoDev);
+		return s32Ret;
+	}
+
+	memcpy(pstLVDSParam, &cfg.stLVDSParam, sizeof(VO_LVDS_ATTR_S));
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_SetI80Param(VO_DEV VoDev, const VO_I80_CFG_S *pstI80Param)
+{
+	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstI80Param);
+	CHECK_VO_DEV_VALID(VoDev);
+
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_I80_param_cfg cfg;
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoDev = VoDev;
+	memcpy(&cfg.stI80Param, pstI80Param, sizeof(VO_I80_CFG_S));
+
+	s32Ret = vo_sdk_set_I80param(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) Set I80 param fail\n", VoDev);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_GetI80Param(VO_DEV VoDev, VO_I80_CFG_S *pstI80Param)
+{
+	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstI80Param);
+	CHECK_VO_DEV_VALID(VoDev);
+
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_I80_param_cfg cfg;
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoDev = VoDev;
+
+	s32Ret = vo_sdk_get_I80param(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) Get HDMI param fail\n", VoDev);
+		return s32Ret;
+	}
+
+	memcpy(pstI80Param, &cfg.stI80Param, sizeof(VO_I80_CFG_S));
+
+	return CVI_SUCCESS;
+}
+
 CVI_S32 CVI_VO_I80Init(VO_DEV VoDev, const VO_I80_INSTR_S *pi80Instr, CVI_U8 size)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, pi80Instr);
@@ -938,7 +1036,7 @@ CVI_S32 CVI_VO_SetPlayToleration(VO_LAYER VoLayer, CVI_U32 u32Toleration)
 
 	s32Ret = vo_sdk_set_layer_toleration(fd, &cfg);
 	if (s32Ret != CVI_SUCCESS) {
-		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Set Chn Toleration fail\n", VoLayer);
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Set Toleration fail\n", VoLayer);
 		return s32Ret;
 	}
 
@@ -960,11 +1058,129 @@ CVI_S32 CVI_VO_GetPlayToleration(VO_LAYER VoLayer, CVI_U32 *pu32Toleration)
 
 	s32Ret = vo_sdk_get_layer_toleration(fd, &cfg);
 	if (s32Ret != CVI_SUCCESS) {
-		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Get Chn Toleration fail\n", VoLayer);
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Get Toleration fail\n", VoLayer);
 		return s32Ret;
 	}
 
 	*pu32Toleration = cfg.u32Toleration;
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_SetLayerPriority(VO_LAYER VoLayer, CVI_U32 u32Priority)
+{
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_layer_priority_cfg cfg;
+
+	if ((VoLayer >= (VO_MAX_LAYER_NUM + VO_MAX_OVERLAY_NUM)) || (VoLayer < 0)) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);
+		return CVI_ERR_VO_INVALID_LAYERID;
+	}
+
+	if (VoLayer < VO_MAX_LAYER_NUM) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Video layer unsurpport set priority.\n", VoLayer);
+		return CVI_ERR_VO_INVALID_LAYERID;
+	}
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoLayer = VoLayer;
+	cfg.u32Priority = u32Priority;
+
+	s32Ret = vo_sdk_set_layer_priority(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Set Priority fail\n", VoLayer);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_GetLayerPriority(VO_LAYER VoLayer, CVI_U32 *pu32Priority)
+{
+	MOD_CHECK_NULL_PTR(CVI_ID_VO, pu32Priority);
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_layer_priority_cfg cfg;
+
+	if ((VoLayer >= (VO_MAX_LAYER_NUM + VO_MAX_OVERLAY_NUM)) || (VoLayer < 0)) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);
+		return CVI_ERR_VO_INVALID_LAYERID;
+	}
+
+	if (VoLayer < VO_MAX_LAYER_NUM) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Video layer unsurpport get priority.\n", VoLayer);
+		return CVI_ERR_VO_INVALID_LAYERID;
+	}
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoLayer = VoLayer;
+
+	s32Ret = vo_sdk_get_layer_priority(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Get Priority fail\n", VoLayer);
+		return s32Ret;
+	}
+
+	*pu32Priority = cfg.u32Priority;
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_BindLayer(VO_LAYER VoLayer, VO_DEV VoDev)
+{
+	CHECK_VO_DEV_VALID(VoDev);
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_video_layer_bind_cfg cfg;
+
+	if ((VoLayer >= (VO_MAX_LAYER_NUM + VO_MAX_OVERLAY_NUM)) || (VoLayer < 0)) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);
+		return CVI_ERR_VO_INVALID_LAYERID;
+	}
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoLayer = VoLayer;
+	cfg.VoDev = VoDev;
+
+	s32Ret = vo_sdk_bind_layer(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Bind VoDev(%d)\n", VoLayer, VoDev);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_UnBindLayer(VO_LAYER VoLayer, VO_DEV VoDev)
+{
+	CHECK_VO_DEV_VALID(VoDev);
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_video_layer_bind_cfg cfg;
+
+	if ((VoLayer >= (VO_MAX_LAYER_NUM + VO_MAX_OVERLAY_NUM)) || (VoLayer < 0)) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);
+		return CVI_ERR_VO_INVALID_LAYERID;
+	}
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoLayer = VoLayer;
+	cfg.VoDev = VoDev;
+
+	s32Ret = vo_sdk_unbind_layer(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) UnBind VoDev(%d)\n", VoLayer, VoDev);
+		return s32Ret;
+	}
 
 	return CVI_SUCCESS;
 }

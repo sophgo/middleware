@@ -10,7 +10,6 @@
 #define CVI_COMMON_TDE_H
 
 #include "cvi_type.h"
-#include "cvi_tde_type.h"
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -20,6 +19,8 @@ extern "C" {
 
 /* tde start err no. */
 #define CVI_ERR_TDE_BASE ((CVI_S32)(((0x80UL + 0x20UL) << 24) | (100 << 16) | (4 << 13) | 1))
+
+typedef unsigned long int        td_phys_addr_t;
 
 typedef enum {
     CVI_ERR_TDE_DEV_NOT_OPEN = CVI_ERR_TDE_BASE, /* tde device not open yet */

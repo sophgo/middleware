@@ -207,7 +207,10 @@ typedef enum _STITCH_TEST_OP {
 	STITCH_TEST_DUP_FD = 101,
 	STITCH_TEST_RST_FD = 102,
 	STITCH_TEST_CHECK_SUM = 103,
-	STITCH_TEST_AUTO_LOOP = 105,
+	STITCH_TEST_SUSPEND = 104,
+	STITCH_TEST_RESUME = 105,
+	STITCH_TEST_RUN_SUSPEND = 106,
+	STITCH_TEST_AUTO_LOOP = 107,
 } STITCH_TEST_OP;
 
 typedef struct _STITCH_BASIC_TEST_PARAM {
@@ -225,6 +228,7 @@ typedef struct _STITCH_BASIC_TEST_PARAM {
 	VIDEO_FRAME_INFO_S stVideoFrameOut;
 	STITCH_TEST_OP op;
 	CVI_BOOL needPef;
+	CVI_BOOL needSuspend;
 	CVI_BOOL needDumpReg;
 } STITCH_BASIC_TEST_PARAM;
 
@@ -421,6 +425,19 @@ static CVI_S32 basic(STITCH_BASIC_TEST_PARAM *pParam, CVI_S32 times)
 			s32Ret = FileSendToStitch((STITCH_SRC_IDX)i, &pParam->srcAttr.size[i], fmt_in, pParam->filename_in[i]);
 			if (s32Ret != CVI_SUCCESS) {
 				STITCH_UT_PRT("FileSendToStitch[%d] fail, s32Ret: 0x%x !\n", i, s32Ret);
+				goto exit3;
+			}
+		}
+
+		if (pParam->needSuspend) {
+			s32Ret = CVI_STITCH_Suspend();
+			if (s32Ret != CVI_SUCCESS) {
+				STITCH_UT_PRT("CVI_STITCH_Suspend fail. s32Ret: 0x%x !\n", s32Ret);
+				goto exit3;
+			}
+			s32Ret = CVI_STITCH_Resume();
+			if (s32Ret != CVI_SUCCESS) {
+				STITCH_UT_PRT("CVI_STITCH_Resume fail. s32Ret: 0x%x !\n", s32Ret);
 				goto exit3;
 			}
 		}
@@ -3262,6 +3279,113 @@ free:
 	return s32Ret;
 }
 
+static CVI_S32 stitch_test_suspend(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	s32Ret = CVI_STITCH_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_Init failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_STITCH_Suspend();
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_Suspend failed!\n");
+		return s32Ret;
+	}
+
+	return s32Ret;
+}
+
+static CVI_S32 stitch_test_resume(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	s32Ret = CVI_STITCH_Resume();
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_Resume failed!\n");
+		return s32Ret;
+	}
+
+	return s32Ret;
+}
+
+static CVI_S32 stitch_test_running_suspend(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	int i, times = STITCH_REPECT_TIMES;
+	STITCH_BASIC_TEST_PARAM param = {0};
+	CVI_U64 u64PhyAddr[STITCH_MAX_SRC_NUM] = {0};
+	CVI_VOID *VirAddr[STITCH_MAX_SRC_NUM] = {0};
+	char *wgt_name[STITCH_MAX_SRC_NUM] = {STITCH_FILE_IN_WGT_ALPHA, STITCH_FILE_IN_WGT_BETA};
+	char *filename_in[STITCH_MAX_SRC_NUM] = {STITCH_FILE_IN_LFT, STITCH_FILE_IN_RHT};
+	char *filename_out = STITCH_FILE_OUT;
+	char *filename_pef = STITCH_FILE_PEF;
+
+	param.needSuspend = CVI_TRUE;
+	param.needPef = CVI_FALSE;
+	param.needDumpReg = CVI_FALSE;
+	param.srcNum = 2;
+	param.srcAttr.size[0].u32Width = 4608;
+	param.srcAttr.size[0].u32Height = 288;
+	param.srcAttr.size[1].u32Width = 4608;
+	param.srcAttr.size[1].u32Height = 288;
+
+	param.chnAttr.size.u32Width = 6912;
+	param.chnAttr.size.u32Height = 288;
+
+	param.srcAttr.fmt_in = PIXEL_FORMAT_YUV_PLANAR_420;
+	param.chnAttr.fmt_out = PIXEL_FORMAT_YUV_PLANAR_420;
+
+	param.srcAttr.way_num = STITCH_2_WAY;
+
+	param.srcAttr.bd_attr.bd_lx[0] = 0;//left img, bd_attr from algo
+	param.srcAttr.bd_attr.bd_rx[0] = 0;
+	param.srcAttr.bd_attr.bd_lx[1] = 0;//right img, bd_attr from algo
+	param.srcAttr.bd_attr.bd_rx[1] = 0;
+
+	param.srcAttr.ovlap_attr.ovlp_lx[0] = 2304;//ovlap_attr from algo
+	param.srcAttr.ovlap_attr.ovlp_rx[0] = 4607;
+
+	param.opAttr.data_src = STITCH_DATA_SRC_DDR;
+	param.opAttr.wgt_mode = STITCH_WGT_YUV_SHARE;
+
+	param.wgtAttr.size_wgt[0].u32Width =
+		ALIGN(param.srcAttr.ovlap_attr.ovlp_rx[0] - param.srcAttr.ovlap_attr.ovlp_lx[0] + 1, STITCH_ALIGN);
+	param.wgtAttr.size_wgt[0].u32Height = param.srcAttr.size[0].u32Height;
+
+	strcpy(param.filename_out, filename_out);
+	strcpy(param.filename_pef, filename_pef);
+	for (i = 0; i < param.srcNum; i++) {
+		strcpy(param.wgt_name[i], wgt_name[i]);
+		strcpy(param.filename_in[i], filename_in[i]);
+
+		s32Ret = cfg_wgt_image(param.wgtAttr.size_wgt[0], param.opAttr.wgt_mode
+			, param.wgt_name[i], &u64PhyAddr[i], &VirAddr[i]);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("cfg_wgt_image src[%d] failed!\n", i);
+			return s32Ret;
+		}
+		param.wgtAttr.phy_addr_wgt[0][i] = (__u64)u64PhyAddr[i];
+	}
+
+	s32Ret = basic(&param, times);
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("Test failed.\n");
+		goto free;
+	}
+
+free:
+	for (i = 0; i < param.srcNum; i++) {
+		if (u64PhyAddr[i] && VirAddr[i])
+			CVI_SYS_IonFree(u64PhyAddr[i], VirAddr[i]);
+	}
+
+	STITCH_TEST_CHECK_RET(s32Ret);
+	return s32Ret;
+}
+
 static CVI_S32 stitch_test_auto_regression(CVI_VOID)
 {
 	CVI_S32 s32Ret[100] = {[0 ... 99] = CVI_SUCCESS};
@@ -3543,6 +3667,15 @@ static CVI_S32 _stitch_handle_op(CVI_S32 op)
 		break;
 	case STITCH_TEST_CHECK_SUM:
 		s32Ret = stitch_test_check_sum();
+		break;
+	case STITCH_TEST_SUSPEND:
+		s32Ret = stitch_test_suspend();
+		break;
+	case STITCH_TEST_RESUME:
+		s32Ret = stitch_test_resume();
+		break;
+	case STITCH_TEST_RUN_SUSPEND:
+		s32Ret = stitch_test_running_suspend();
 		break;
 	case STITCH_TEST_AUTO_LOOP:
 		while(1) {

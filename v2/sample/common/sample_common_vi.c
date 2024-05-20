@@ -439,6 +439,9 @@ CVI_S32 SAMPLE_COMM_VI_GetDevAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, VI_DEV_ATTR_
 	case SOI_K06_MIPI_4M_25FPS_10BIT:
 		pstViDevAttr->enBayerFormat = BAYER_FORMAT_GB;
 		break;
+	case OV_OV2736_MIPI_2M_30FPS_12BIT_WDR2TO1:
+	case OV_OV2736_MIPI_2M_30FPS_12BIT:
+		pstViDevAttr->enBayerFormat = BAYER_FORMAT_BGRGI;
 	default:
 		pstViDevAttr->enBayerFormat = BAYER_FORMAT_BG;
 		break;

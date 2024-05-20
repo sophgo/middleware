@@ -17,6 +17,8 @@ CVI_S32 gdc_add_ldc_task(CVI_S32 fd, struct gdc_task_attr *attr);
 CVI_S32 gdc_set_job_identity(CVI_S32 fd, struct gdc_identity_attr *indentity);
 CVI_S32 gdc_get_work_job(CVI_S32 fd, struct gdc_handle_data *cfg);
 CVI_S32 gdc_get_chn_frm(CVI_S32 fd, struct gdc_chn_frm_cfg *cfg);
+CVI_S32 gdc_suspend(CVI_S32 fd);
+CVI_S32 gdc_resume(CVI_S32 fd);
 
 /* INTERNAL */
 CVI_S32 gdc_set_chn_buf_wrap(CVI_S32 fd, const struct ldc_buf_wrap_cfg *cfg);

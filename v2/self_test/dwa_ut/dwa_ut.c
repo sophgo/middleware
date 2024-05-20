@@ -162,6 +162,7 @@ typedef CVI_S32 (*p_func)(void);
 
 static CVI_BOOL bEnProc;
 static CVI_BOOL g_dwa_save_file;
+static CVI_BOOL needSuspend;
 
 typedef enum _DWA_TEST_OP {
 	DWA_TEST_FISHEYE = 0,
@@ -186,6 +187,9 @@ typedef enum _DWA_TEST_OP {
 	DWA_TEST_LDC_GRID_INFO,
 	DWA_TEST_FISHEYE_GRID_INFO,
 	DWA_TEST_RST,
+	DWA_TEST_SUSPEND,
+	DWA_TEST_RESUME,
+	DWA_TEST_RUN_SUSPEND,
 	DWA_TEST_PRESURE_SIZE_FOR_EACH = 98,
 	DWA_TEST_AUTO_REGRESSION = 99,
 	DWA_TEST_USER_CONFIG = 100,
@@ -1896,6 +1900,19 @@ static CVI_S32 dwa_test_async(void)
 		if (s32Ret) {
 			DWA_UT_PRT("CVI_DWA_EndJob failed!\n");
 			goto exit2;
+		}
+
+		if (needSuspend) {
+			s32Ret = CVI_DWA_Suspend();
+			if (s32Ret != CVI_SUCCESS) {
+				DWA_UT_PRT("CVI_DWA_Suspend fail. s32Ret: 0x%x !\n", s32Ret);
+				goto exit2;
+			}
+			s32Ret = CVI_DWA_Resume();
+			if (s32Ret != CVI_SUCCESS) {
+				DWA_UT_PRT("CVI_DWA_Resume fail. s32Ret: 0x%x !\n", s32Ret);
+				goto exit2;
+			}
 		}
 
 		usleep(1000*500);
@@ -3731,6 +3748,48 @@ err:
 	return s32Ret;
 }
 
+static CVI_S32 dwa_test_suspend(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	s32Ret = CVI_DWA_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		DWA_UT_PRT("CVI_DWA_Init failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_DWA_Suspend();
+	if (s32Ret != CVI_SUCCESS) {
+		DWA_UT_PRT("CVI_DWA_Suspend failed!\n");
+		return s32Ret;
+	}
+
+	return s32Ret;
+}
+
+static CVI_S32 dwa_test_resume(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	s32Ret = CVI_DWA_Resume();
+	if (s32Ret != CVI_SUCCESS) {
+		DWA_UT_PRT("CVI_DWA_Resume failed!\n");
+		return s32Ret;
+	}
+
+	return s32Ret;
+}
+
+static CVI_S32 dwa_test_running_suspend(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	needSuspend = CVI_TRUE;
+	s32Ret = dwa_test_async();
+	needSuspend = CVI_FALSE;
+	return s32Ret;
+}
+
 static CVI_S32 dwa_test_auto_regression(CVI_VOID)
 {
 	CVI_S32 s32Ret[100] = {[0 ... 99] = CVI_SUCCESS};
@@ -3957,6 +4016,15 @@ static CVI_S32 _dwa_handle_op(CVI_S32 op)
 	case DWA_TEST_RST:
 		s32Ret = dwa_test_reset();
 		break;
+	case DWA_TEST_SUSPEND:
+		s32Ret = dwa_test_suspend();
+		break;
+	case DWA_TEST_RESUME:
+		s32Ret = dwa_test_resume();
+		break;
+	case DWA_TEST_RUN_SUSPEND:
+		s32Ret = dwa_test_running_suspend();
+		break;
 	case DWA_TEST_PRESURE_SIZE_FOR_EACH:
 		s32Ret = dwa_test_presure_size_for_each();
 		break;
@@ -4004,6 +4072,9 @@ static void dwa_show_help(void)
 	DWA_UT_PRT("%4d: dwa basic test ldc grid_info\n", DWA_TEST_LDC_GRID_INFO);
 	DWA_UT_PRT("%4d: dwa basic test fisheye grid_info\n", DWA_TEST_FISHEYE_GRID_INFO);
 	DWA_UT_PRT("%4d: dwa basic test reset\n", DWA_TEST_RST);
+	DWA_UT_PRT("%4d: dwa basic test suspend\n", DWA_TEST_SUSPEND);
+	DWA_UT_PRT("%4d: dwa basic test resume\n", DWA_TEST_RESUME);
+	DWA_UT_PRT("%4d: dwa basic test running suspend\n", DWA_TEST_RUN_SUSPEND);
 	DWA_UT_PRT("%4d: dwa test presure size for each\n", DWA_TEST_PRESURE_SIZE_FOR_EACH);
 	DWA_UT_PRT("%4d: dwa test auto regression\n", DWA_TEST_AUTO_REGRESSION);
 	DWA_UT_PRT("%4d: dwa user cofig test\n", DWA_TEST_USER_CONFIG);

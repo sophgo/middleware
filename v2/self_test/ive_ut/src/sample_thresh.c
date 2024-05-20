@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,15 +8,6 @@ int test_threshold(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data1 = NULL;
-	// char *output_data2 = NULL;
-	// char *output_data3 = NULL;
-	// char *output_data4 = NULL;
-	// char *output_data5 = NULL;
-	// char *output_data6 = NULL;
-	// char *output_data7 = NULL;
-	// char *output_data8 = NULL;
 	char input_data[64];
 	char output_data1[64];
 	char output_data2[64];
@@ -37,15 +27,6 @@ int test_threshold(int bTileMode, int bWrite, int bInstant)
 	char output_file_OriMidOri[64];
 
 	if (bTileMode) {
-		// input_data = data_tile_640x480_y;
-		// output_data1 = data_tile_Thresh_Binary;
-		// output_data2 = data_tile_Thresh_Trunc;
-		// output_data3 = data_tile_Thresh_ToMinVal;
-		// output_data4 = data_tile_Thresh_MinMidMax;
-		// output_data5 = data_tile_Thresh_MinMidOri;
-		// output_data6 = data_tile_Thresh_MinOriMax;
-		// output_data7 = data_tile_Thresh_OriMidMax;
-		// output_data8 = data_tile_Thresh_OriMidOri;
 		strcpy(input_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_data1, "res/ive/result/sample_tile_Thresh_Binary.yuv");
 		strcpy(output_data2, "res/ive/result/sample_tile_Thresh_Trunc.yuv");
@@ -71,15 +52,6 @@ int test_threshold(int bTileMode, int bWrite, int bInstant)
 		strcpy(output_file_OriMidOri,
 		       "sample_tile_Thresh_OriMidOri.yuv");
 	} else {
-		// input_data = data_00_352x288_y;
-		// output_data1 = data_Thresh_Binary;
-		// output_data2 = data_Thresh_Trunc;
-		// output_data3 = data_Thresh_ToMinVal;
-		// output_data4 = data_Thresh_MinMidMax;
-		// output_data5 = data_Thresh_MinMidOri;
-		// output_data6 = data_Thresh_MinOriMax;
-		// output_data7 = data_Thresh_OriMidMax;
-		// output_data8 = data_Thresh_OriMidOri;
 		strcpy(input_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_data1, "res/ive/result/sample_Thresh_Binary.yuv");
 		strcpy(output_data2, "res/ive/result/sample_Thresh_Trunc.yuv");

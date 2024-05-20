@@ -661,6 +661,7 @@ typedef struct SAMPLE_VENC_GETSTREAM_PARA_S {
 typedef struct _commonInputCfg_ {
 	CVI_U32 testMode;
 	CVI_S32 numChn;
+	CVI_S32 perf;
 	CVI_S32 ifInitVb;
 	CVI_U32 bindmode;
 	CVI_U32 u32ViWidth;		// frame width of VI input or VPSS input
@@ -869,6 +870,7 @@ typedef struct _vencChnCtx_ {
 	CVI_U32 u32BlkSize;
 	frame_buffer_param frameUnusedQueue[MAX_SRC_FRAM_CNT];
 	pthread_mutex_t frame_buffer_lock;
+	CVI_S32 perf;
 } vencChnCtx;
 
 typedef struct _SAMPLE_INI_CFG_S {

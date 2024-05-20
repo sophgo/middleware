@@ -162,6 +162,26 @@ int vo_sdk_set_pubattr(int fd, struct vo_pub_attr_cfg *cfg)
 	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_SET_PUBATTR);
 }
 
+int vo_sdk_set_lvdsparam(int fd, struct vo_lvds_param_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_SET_LVDSPARAM);
+}
+
+int vo_sdk_get_lvdsparam(int fd, struct vo_lvds_param_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_GET_LVDSPARAM);
+}
+
+int vo_sdk_set_I80param(int fd, struct vo_I80_param_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_SET_I80PARAM);
+}
+
+int vo_sdk_get_I80param(int fd, struct vo_I80_param_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_GET_I80PARAM);
+}
+
 int vo_sdk_set_hdmiparam(int fd, struct vo_hdmi_param_cfg *cfg)
 {
 	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_SET_HDMIPARAM);
@@ -240,6 +260,26 @@ int vo_sdk_set_layer_toleration(int fd, struct vo_layer_toleration_cfg *cfg)
 int vo_sdk_get_layer_toleration(int fd, struct vo_layer_toleration_cfg *cfg)
 {
 	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_GET_LAYERTOLERATION);
+}
+
+int vo_sdk_set_layer_priority(int fd, struct vo_layer_priority_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_SET_LAYERPRRIORITY);
+}
+
+int vo_sdk_get_layer_priority(int fd, struct vo_layer_priority_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_GET_LAYERPRRIORITY);
+}
+
+int vo_sdk_bind_layer(int fd, struct vo_video_layer_bind_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_BIND_LAYER);
+}
+
+int vo_sdk_unbind_layer(int fd, struct vo_video_layer_bind_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_UNBIND_LAYER);
 }
 
 int vo_sdk_get_screen_frame(int fd, struct vo_screen_frame *cfg)

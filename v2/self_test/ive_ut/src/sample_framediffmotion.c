@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,9 +9,6 @@ int test_framediffmotion(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data1 = NULL;
-	// char *input_data2 = NULL;
-	// char *output_data = NULL;
 	char input_data1[64];
 	char input_data2[64];
 	char output_data[64];
@@ -69,9 +65,6 @@ int test_framediffmotion(int bTileMode, int bWrite, int bInstant)
 			memcpy(&input_array2[i * 480 * 2 + 480],
 			       &data_md2_480x480_y[i * 480], 480);
 		}
-		// input_data1 = input_array1;
-		// input_data2 = input_array2;
-		// output_data = data_tile_MD;
 		strcpy(output_data, "res/ive/result/sample_tile_FrameDiffMotion.yuv");
 		input_w = 480 * 2;
 		input_h = 480;
@@ -83,9 +76,6 @@ int test_framediffmotion(int bTileMode, int bWrite, int bInstant)
 					input_w, input_h);
 
 	} else {
-		// input_data1 = data_md1_480x480_y;
-		// input_data2 = data_md2_480x480_y;
-		// output_data = data_MD;
 		strcpy(output_data, "res/ive/result/sample_FrameDiffMotion.yuv");
 		input_w = 480;
 		input_h = 480;

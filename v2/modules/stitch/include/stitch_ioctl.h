@@ -26,5 +26,7 @@ CVI_S32 cvi_stitch_release_chn_frame(CVI_S32 fd, struct stitch_chn_frm_cfg *cfg)
 CVI_S32 cvi_stitch_attach_vbpool(CVI_S32 fd, const struct stitch_vb_pool_cfg *cfg);
 CVI_S32 cvi_stitch_detach_vbpool(CVI_S32 fd, const struct stitch_vb_pool_cfg *cfg);
 CVI_S32 cvi_stitch_dump_reginfo(CVI_S32 fd);
+CVI_S32 cvi_stitch_suspend(CVI_S32 fd);
+CVI_S32 cvi_stitch_resume(CVI_S32 fd);
 
 #endif /* MODULES_VPU_INCLUDE_STITCH_IOCTL_H_ */

@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,10 +8,6 @@ int test_ordstatfilter(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data1 = NULL;
-	// char *output_data2 = NULL;
-	// char *output_data3 = NULL;
 	char input_data[64];
 	char output_data1[64];
 	char output_data2[64];
@@ -22,10 +17,6 @@ int test_ordstatfilter(int bTileMode, int bWrite, int bInstant)
 	char output_file3[64];
 
 	if (bTileMode) {
-		// input_data = data_tile_640x480_y;
-		// output_data1 = data_OrdStaFilter_Max;
-		// output_data2 = data_OrdStaFilter_Min;
-		// output_data3 = data_OrdStaFilter_Median;
 		strcpy(input_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_data1, "res/ive/result/sample_tile_OrdStaFilter_Max.yuv");
 		strcpy(output_data2, "res/ive/result/sample_tile_OrdStaFilter_Min.yuv");
@@ -36,10 +27,6 @@ int test_ordstatfilter(int bTileMode, int bWrite, int bInstant)
 		strcpy(output_file2, "sample_tile_OrdStaFilter_Min.yuv");
 		strcpy(output_file3, "sample_tile_OrdStaFilter_Median.yuv");
 	} else {
-		// input_data = data_00_352x288_y;
-		// output_data1 = data_OrdStaFilter_Max;
-		// output_data2 = data_OrdStaFilter_Min;
-		// output_data3 = data_OrdStaFilter_Median;
 		strcpy(input_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_data1, "res/ive/result/sample_OrdStaFilter_Max.yuv");
 		strcpy(output_data2, "res/ive/result/sample_OrdStaFilter_Min.yuv");

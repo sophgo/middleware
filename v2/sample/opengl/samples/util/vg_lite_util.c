@@ -26,6 +26,10 @@ static vg_lite_float_t _calc_decnano_compress_ratio(
         case VG_LITE_RGBX8888:
             ratio = 0.5;
             break;
+        case VG_LITE_RGB888:
+        case VG_LITE_BGR888:
+            ratio = 0.667;
+            break;
         default:
             return ratio;
         }
@@ -37,6 +41,8 @@ static vg_lite_float_t _calc_decnano_compress_ratio(
         case VG_LITE_ARGB8888:
         case VG_LITE_BGRA8888:
         case VG_LITE_RGBA8888:
+        case VG_LITE_RGB888:
+        case VG_LITE_BGR888:
             ratio = 0.5;
             break;
         case VG_LITE_XBGR8888:
@@ -71,6 +77,67 @@ static vg_lite_float_t _calc_decnano_compress_ratio(
     default:
         return ratio;
     }
+    return ratio;
+}
+
+static vg_lite_float_t _calc_decnano_compress_ratio_2_0(
+    vg_lite_buffer_format_t format,
+    vg_lite_compress_mode_t compress_mode
+)
+{
+    vg_lite_float_t ratio = 1.0f;
+
+    switch (compress_mode) {
+    case VG_LITE_DEC_NON_SAMPLE:
+        switch (format) {
+        case VG_LITE_BGRA8888:
+        case VG_LITE_BGR888:
+            ratio = 0.5f;
+            break;
+        case VG_LITE_BGRX8888:
+            ratio = 0.385f;
+            break;
+        default:
+            return ratio;
+        }
+        break;
+
+    case VG_LITE_DEC_HSAMPLE:
+        switch (format) {
+        case VG_LITE_BGRA8888:
+            ratio = 0.385f;
+            break;
+        case VG_LITE_BGRX8888:
+            ratio = 0.25f;
+            break;
+        case VG_LITE_BGR888:
+            ratio = 0.334f;
+            break;
+        default:
+            return ratio;
+        }
+        break;
+
+    case VG_LITE_DEC_HV_SAMPLE:
+        switch (format) {
+        case VG_LITE_BGRA8888:
+            ratio = 0.385f;
+            break;
+        case VG_LITE_BGRX8888:
+            ratio = 0.25f;
+            break;
+        case VG_LITE_BGR888:
+            ratio = 0.334f;
+            break;
+        default:
+            return ratio;
+        }
+        break;
+
+    default:
+        return ratio;
+    }
+
     return ratio;
 }
 #endif
@@ -223,31 +290,43 @@ int vg_lite_load_raw_yuv(vg_lite_buffer_t * buffer, const char * name)
 
     switch (buffer->format) {
         case VG_LITE_NV12:
-            Y_height=height;
-            U_height=height/2;
-            V_height=0;
-            Y_width=width;
-            U_width=width;
-            V_width=0;
+        case VG_LITE_NV12_TILED:
+            Y_height = height;
+            U_height = height / 2;
+            V_height = 0;
+            Y_width = width;
+            U_width = width;
+            V_width = 0;
             break;
 
         case VG_LITE_YV12:
-            Y_height=height;
-            U_height=height/2;
-            V_height=height/2;
-            Y_width=width;
-            U_width=width/2;
-            V_width=width/2;
+            Y_height = height;
+            U_height = height / 2;
+            V_height = height / 2;
+            Y_width = width;
+            U_width = width / 2;
+            V_width = width / 2;
             break;
 
-       case VG_LITE_NV16:
-            Y_height=height;
-            U_height=height;
-            V_height=0;
-            Y_width=width;
-            U_width=width;
-            V_width=0;
+        case VG_LITE_NV16:
+            Y_height = height;
+            U_height = height;
+            V_height = 0;
+            Y_width = width;
+            U_width = width;
+            V_width = 0;
             break;
+       
+        case VG_LITE_YUY2:
+        case VG_LITE_YUY2_TILED:
+            Y_height = height;
+            U_height = 0;
+            V_height = 0;
+            Y_width = 2 * width;
+            U_width = 0;
+            V_width = 0;
+            break;
+            
        default:
             return -1;
     }
@@ -371,6 +450,7 @@ int vg_lite_load_raw(vg_lite_buffer_t * buffer, const char * name)
 
     // Set status.
     int status = 1;
+    int format;
     // Check the result with golden.
     fp = fopen(name, "rb");
     if (fp != NULL) {
@@ -380,7 +460,16 @@ int vg_lite_load_raw(vg_lite_buffer_t * buffer, const char * name)
         buffer->width  = read_long(fp);
         buffer->height = read_long(fp);
         buffer->stride = read_long(fp);
-        buffer->format = read_long(fp);
+        format = read_long(fp);
+
+        switch (format) {
+        case 0:
+            buffer->format = VG_LITE_RGBA8888;
+            break;
+        default:
+            buffer->format = VG_LITE_RGBA8888;
+        }
+
         // Allocate the VGLite buffer memory.
         if (vg_lite_allocate(buffer) != VG_LITE_SUCCESS)
         {
@@ -516,6 +605,36 @@ int vg_lite_save_decnano_compressd_data(const char *name, vg_lite_buffer_t *buff
         write_int(fp, buffer->format);
 
         ratio = _calc_decnano_compress_ratio(buffer->format, buffer->compress_mode);
+        stride = (int)(buffer->stride * ratio);
+
+        fwrite(buffer->memory, 1, stride * buffer->height, fp);
+
+        fclose(fp);
+        fp = NULL;
+
+        status = 0;
+    }
+
+    return status;
+}
+
+int vg_lite_save_decnano_2_0_compressd_data(const char* name, vg_lite_buffer_t* buffer)
+{
+    FILE* fp;
+    int status = 1;
+    int stride = 0;
+    vg_lite_float_t ratio = 1.0f;
+    fp = fopen(name, "wb");
+
+    if (fp != NULL) {
+
+        write_long(fp, buffer->width);
+        write_long(fp, buffer->height);
+        write_long(fp, buffer->stride);
+        write_int(fp, buffer->compress_mode);
+        write_int(fp, buffer->format);
+
+        ratio = _calc_decnano_compress_ratio_2_0(buffer->format, buffer->compress_mode);
         stride = (int)(buffer->stride * ratio);
 
         fwrite(buffer->memory, 1, stride * buffer->height, fp);

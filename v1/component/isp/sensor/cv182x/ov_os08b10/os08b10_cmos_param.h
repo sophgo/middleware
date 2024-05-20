@@ -43,14 +43,14 @@ static const OS08B10_MODE_S g_astos08b10_mode[OS08B10_MODE_NUM] = {
 		.u32HtsDef = 0x054B,
 		.u32VtsDef = 0x0453,
 		.stExp[0] = {
-			.u16Min = 8,
+			.u16Min = 1,
 			.u16Max = 0x0453 - 8,
 			.u16Def = 0x0140,
 			.u16Step = 1,
 		},
 		.stAgain[0] = {
 			.u32Min = 1024,
-			.u32Max = 16384,
+			.u32Max = 67900,
 			.u32Def = 1024,
 			.u32Step = 1,
 		},
@@ -117,13 +117,13 @@ static const OS08B10_MODE_S g_astos08b10_mode[OS08B10_MODE_NUM] = {
 		},
 		.stAgain[0] = {
 			.u32Min = 1024,
-			.u32Max = 16384,
+			.u32Max = 67900,
 			.u32Def = 1024,
 			.u32Step = 1,
 		},
 		.stAgain[1] = {
 			.u32Min = 1024,
-			.u32Max = 16384,
+			.u32Max = 67900,
 			.u32Def = 1024,
 			.u32Step = 1,
 		},

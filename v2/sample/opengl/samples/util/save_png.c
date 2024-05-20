@@ -12,17 +12,6 @@ int vg_lite_save_png(const char *name, vg_lite_buffer_t *buffer)
     int status;
     uint16_t color;
 
-#if 1
-    char *raw_name;
-    int32_t raw_name_len = strlen(name) + 10;
-
-    raw_name = (char *)malloc(raw_name_len);
-    snprintf(raw_name, raw_name_len, "%s.gen.raw", name);
-    vg_lite_save_raw(raw_name, buffer);
-    free (raw_name);
-    raw_name = NULL;
-#endif
-
     if (buffer->format == VG_LITE_L8) {
         /* Construct the PNG image structure. */
         png_image image;
@@ -126,21 +115,46 @@ int vg_lite_save_png(const char *name, vg_lite_buffer_t *buffer)
 
                 case VG_LITE_RGBA8888:
                 case VG_LITE_RGBX8888:
+                case OPENVG_sABGR_8888:
+                case OPENVG_sXBGR_8888:
                     q[0] = p[0];
                     q[1] = p[1];
                     q[2] = p[2];
                     p += 4;
                     break;
 
+                case VG_LITE_ARGB8888:
+                case VG_LITE_XRGB8888:
+                case OPENVG_sBGRA_8888:
+                case OPENVG_sBGRX_8888:
+                    q[0] = p[1];
+                    q[1] = p[2];
+                    q[2] = p[3];
+                    p += 4;
+                    break;
+
                 case VG_LITE_BGRA8888:
                 case VG_LITE_BGRX8888:
+                case OPENVG_sARGB_8888:
+                case OPENVG_sXRGB_8888:
                     q[0] = p[2];
                     q[1] = p[1];
                     q[2] = p[0];
                     p += 4;
                     break;
 
+                case VG_LITE_ABGR8888:
+                case VG_LITE_XBGR8888:
+                case OPENVG_sRGBA_8888:
+                case OPENVG_sRGBX_8888:
+                    q[0] = p[3];
+                    q[1] = p[2];
+                    q[2] = p[1];
+                    p += 4;
+                    break;
+
                 case VG_LITE_RGBA4444:
+                case OPENVG_sABGR_4444:
                     color = *(uint16_t*)p;
                     p += 2;
                     q[0] = (color & 0x000F) << 4;
@@ -149,6 +163,7 @@ int vg_lite_save_png(const char *name, vg_lite_buffer_t *buffer)
                     break;
 
                 case VG_LITE_BGRA4444:
+                case OPENVG_sARGB_4444:
                     color = *(uint16_t*)p;
                     p += 2;
                     q[2] = (color & 0x000F) << 4;
@@ -157,6 +172,7 @@ int vg_lite_save_png(const char *name, vg_lite_buffer_t *buffer)
                     break;
 
                 case VG_LITE_ABGR4444:
+                case OPENVG_sRGBA_4444:
                     color = *(uint16_t*)p;
                     color = (color >> 4);
                     p += 2;
@@ -166,6 +182,7 @@ int vg_lite_save_png(const char *name, vg_lite_buffer_t *buffer)
                     break;
 
                 case VG_LITE_ARGB4444:
+                case OPENVG_sBGRA_4444:
                     color = *(uint16_t*)p;
                     color = (color >> 4);
                     p += 2;
@@ -175,6 +192,7 @@ int vg_lite_save_png(const char *name, vg_lite_buffer_t *buffer)
                     break;
 
                 case VG_LITE_BGRA5551:
+                case OPENVG_sARGB_1555:
                     color = *(uint16_t*)p;
                     p += 2;
                     q[0] = ((color & 0x7C00) >> 7) | ((color & 0x7000) >> 12);
@@ -183,6 +201,7 @@ int vg_lite_save_png(const char *name, vg_lite_buffer_t *buffer)
                     break;
 
                 case VG_LITE_ABGR1555:
+                case OPENVG_sRGBA_5551:
                     color = *(uint16_t*)p;
                     color = (color >> 1);
                     p += 2;
@@ -192,6 +211,7 @@ int vg_lite_save_png(const char *name, vg_lite_buffer_t *buffer)
                     break;
 
                 case VG_LITE_RGBA5551:
+                case OPENVG_sABGR_1555:
                     color = *(uint16_t*)p;
                     p += 2;
                     q[2] = ((color & 0x7C00) >> 7) | ((color & 0x7000) >> 12);
@@ -200,6 +220,7 @@ int vg_lite_save_png(const char *name, vg_lite_buffer_t *buffer)
                     break;
 
                 case VG_LITE_ARGB1555:
+                case OPENVG_sBGRA_5551:
                     color = *(uint16_t*)p;
                     color = (color >> 1);
                     p += 2;

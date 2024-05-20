@@ -104,25 +104,38 @@ static CVI_S32 dwa_rotation_check_size(ROTATION_E enRotation, const GDC_TASK_ATT
 	return CVI_SUCCESS;
 }
 
+/**************************************************************************
+ *   Public APIs.
+ **************************************************************************/
+
 CVI_S32 CVI_DWA_Suspend(void)
 {
-	CVI_TRACE_DWA(CVI_DBG_DEBUG, "+\n");
+	CVI_S32 s32Ret;
+	CVI_S32 fd = get_dwa_fd();
 
-	CVI_TRACE_DWA(CVI_DBG_DEBUG, "-\n");
+	s32Ret = dwa_suspend(fd);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_DWA(CVI_DBG_ERR, "suspend fail\n");
+		return s32Ret;
+	}
+
 	return CVI_SUCCESS;
 }
 
 CVI_S32 CVI_DWA_Resume(void)
 {
-	CVI_TRACE_DWA(CVI_DBG_DEBUG, "+\n");
+	CVI_S32 s32Ret;
+	CVI_S32 fd = get_dwa_fd();
 
-	CVI_TRACE_DWA(CVI_DBG_DEBUG, "-\n");
+	s32Ret = dwa_resume(fd);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_DWA(CVI_DBG_ERR, "resume fail\n");
+		return s32Ret;
+	}
+
 	return CVI_SUCCESS;
 }
 
-/**************************************************************************
- *   Public APIs.
- **************************************************************************/
 CVI_S32 CVI_DWA_BeginJob(GDC_HANDLE *phHandle)
 {
 	CVI_S32 fd = get_dwa_fd();

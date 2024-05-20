@@ -58,17 +58,29 @@ CVI_S32 get_stitch_fd(CVI_VOID)
 
 CVI_S32 CVI_STITCH_Suspend(void)
 {
-	CVI_TRACE_STITCH(CVI_DBG_DEBUG, "+\n");
-	CVI_TRACE_STITCH(CVI_DBG_NOTICE, "Not Support\n");
-	CVI_TRACE_STITCH(CVI_DBG_DEBUG, "-\n");
+	CVI_S32 s32Ret;
+	CVI_S32 fd = get_stitch_fd();
+
+	s32Ret = cvi_stitch_suspend(fd);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_STITCH(CVI_DBG_ERR, "suspend fail\n");
+		return s32Ret;
+	}
+
 	return CVI_SUCCESS;
 }
 
 CVI_S32 CVI_STITCH_Resume(void)
 {
-	CVI_TRACE_STITCH(CVI_DBG_DEBUG, "+\n");
-	CVI_TRACE_STITCH(CVI_DBG_NOTICE, "Not Support\n");
-	CVI_TRACE_STITCH(CVI_DBG_DEBUG, "-\n");
+	CVI_S32 s32Ret;
+	CVI_S32 fd = get_stitch_fd();
+
+	s32Ret = cvi_stitch_resume(fd);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_STITCH(CVI_DBG_ERR, "resume fail\n");
+		return s32Ret;
+	}
+
 	return CVI_SUCCESS;
 }
 

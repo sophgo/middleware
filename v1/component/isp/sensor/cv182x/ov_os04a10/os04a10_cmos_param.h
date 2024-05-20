@@ -24,18 +24,18 @@ static const OS04A10_MODE_S g_astOs04a10_mode[OS04A10_MODE_NUM] = {
 		.name = "1440p30_12bit",
 		.astImg[0] = {
 			.stSnsSize = {
-				.u32Width = 2688,
-				.u32Height = 1520,
+				.u32Width = 2560,
+				.u32Height = 1440,
 			},
 			.stWndRect = {
-				.s32X = 64,
-				.s32Y = 40,
+				.s32X = 0,
+				.s32Y = 0,
 				.u32Width = 2560,
 				.u32Height = 1440,
 			},
 			.stMaxSize = {
-				.u32Width = 2688,
-				.u32Height = 1520,
+				.u32Width = 2560,
+				.u32Height = 1440,
 			},
 		},
 		.f32MaxFps = 30,

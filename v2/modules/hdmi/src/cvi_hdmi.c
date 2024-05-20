@@ -292,12 +292,12 @@ CVI_S32 CVI_HDMI_GetHwSpec(CVI_HDMI_HW_SPEC* hw_spec)
     return CVI_SUCCESS;
 }
 
-CVI_S32 CVI_HDMI_SetAvmute(const CVI_BOOL* aumute_en)
+CVI_S32 CVI_HDMI_SetAvmute(const CVI_BOOL* avmute_en)
 {
     CVI_S32 s32Ret;
     CVI_S32 fd = get_hdmi_fd();
 
-    s32Ret =  _cvi_hdmi_set_avmute(fd, aumute_en);
+    s32Ret =  _cvi_hdmi_set_avmute(fd, avmute_en);
     if (s32Ret != CVI_SUCCESS) {
 		CVI_TRACE_HDMI(CVI_DBG_ERR, "HDMI set avmute failed\n");
 		return s32Ret;

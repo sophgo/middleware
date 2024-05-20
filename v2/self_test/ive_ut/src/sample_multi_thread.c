@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,8 +13,6 @@ void *ive_thread_func0(void *arg)
 	multi_thread_param *param = (multi_thread_param *)arg;
 	int bTileMode, bWrite, bInstant, loop;
 	int input_w, input_h, k;
-	// char *input_data = NULL;
-	// char *output_data = NULL;
 	char input_data[64];
 	char output_data[64];
 	char output_file[64];
@@ -27,16 +24,12 @@ void *ive_thread_func0(void *arg)
 
 	printf("bInstant:%d\n", bInstant);
 	if (bTileMode) {
-		// input_data = data_tile_640x480_y;
-		// output_data = data_tile_Add;
 		strcpy(input_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_data, "res/ive/result/sample_tile_Add.yuv");
 		input_w = 640;
 		input_h = 480;
 		strcpy(output_file, "sample_tile_Add.yuv");
 	} else {
-		// input_data = data_00_352x288_y;
-		// output_data = data_Add;
 		strcpy(input_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_data, "res/ive/result/sample_Add.yuv");
 		input_w = 352;
@@ -101,8 +94,6 @@ void *ive_thread_func1(void *arg)
 	multi_thread_param *param = (multi_thread_param *)arg;
 	int bTileMode, bWrite, bInstant, loop, k;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data = NULL;
 	char input_data[64];
 	char output_data[64];
 	char output_file[64];
@@ -114,16 +105,12 @@ void *ive_thread_func1(void *arg)
 
 	printf("bInstant:%d\n", bInstant);
 	if (bTileMode) {
-		// input_data = data_tile_640x480_y;
-		// output_data = result_Map;
 		strcpy(input_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_data, "res/ive/result/sample_tile_Map.yuv");
 		input_w = 640;
 		input_h = 480;
 		strcpy(output_file, "sample_tile_Map.yuv");
 	} else {
-		// input_data = data_00_352x288_y;
-		// output_data = result_Map;
 		strcpy(input_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_data, "res/ive/result/sample_Map.yuv");
 		input_w = 352;
@@ -650,9 +637,6 @@ void *ive_thread_func8(void *arg)
 		input_h = 288;
 		strcpy(output_file1, "sample_tile_LBP_Normal.yuv");
 	} else {
-		// input_data = data_00_352x288_y;
-		// output_data1 = result_LBP_Normal;
-		// output_data2 = result_LBP_Abs;
 		strcpy(input_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_data1, "res/ive/result/sample_LBP_Normal.yuv");
 		input_w = 352;

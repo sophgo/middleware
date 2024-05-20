@@ -3,7 +3,7 @@
 
 #include <linux/cvi_comm_vo.h>
 
-const VO_LVDS_ATTR_S lvds_lcm185x56_cfg = {
+VO_LVDS_ATTR_S lvds_lcm185x56_cfg = {
 	.lvds_vesa_mode = VO_LVDS_MODE_VESA,
 	.out_bits = VO_LVDS_OUT_8BIT,
 	.chn_num = 1,

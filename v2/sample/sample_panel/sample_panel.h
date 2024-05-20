@@ -27,10 +27,8 @@ extern "C" {
 #include "dsi_st7701.h"
 #include "dsi_hx8399_1080p.h"
 #include "dsi_gm8775c.h"
-// #include "dsi_lt9611.h"
+#include "dsi_lt9611.h"
 #include "lvds_lcm185x56.h"
-// #include "hw_mcu_st7789v3.h"
-// #include "bt656_tp2803.h"
 
 typedef enum {
 	PANEL_MODE_DSI,
@@ -46,12 +44,17 @@ typedef struct dsi_panel_desc_s {
 	int dsi_init_cmds_size;
 } dsi_panel_desc;
 
+typedef struct lvds_panel_desc_s {
+	VO_PUB_ATTR_S stVoPubAttr;
+	VO_LVDS_ATTR_S LvdsAttr;
+} lvds_panel_desc;
+
 struct panel_desc_s {
 	char *panel_mode;
 	PANEL_TYPE panel_type;
 	union {
 		dsi_panel_desc stdsicfg;
-		VO_PUB_ATTR_S stVoPubAttr;
+		lvds_panel_desc stlvdscfg;
 	};
 };
 

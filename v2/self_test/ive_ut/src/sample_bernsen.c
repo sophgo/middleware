@@ -1,5 +1,4 @@
 #include "cvi_ive.h"
-// #include "cvi_pattern.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,13 +8,6 @@ int test_bernsen(int bTileMode, int bWrite, int bInstant)
 {
 	int ret = CVI_SUCCESS;
 	int input_w, input_h;
-	// char *input_data = NULL;
-	// char *output_data1 = NULL;
-	// char *output_data2 = NULL;
-	// char *output_data3 = NULL;
-	// char *output_data4 = NULL;
-	// char *output_data5 = NULL;
-	// char *output_data6 = NULL;
 	char input_data[64];
 	char output_data1[64];
 	char output_data2[64];
@@ -31,13 +23,6 @@ int test_bernsen(int bTileMode, int bWrite, int bInstant)
 	char output_file6[64];
 
 	if (bTileMode) {
-		// input_data = data_tile_640x480_y;
-		// output_data1 = result_Bernsen_5x5_Normal;
-		// output_data2 = result_Bernsen_5x5_Thresh;
-		// output_data3 = result_Bernsen_5x5_Paper;
-		// output_data4 = result_Bernsen_3x3_Normal;
-		// output_data5 = result_Bernsen_3x3_Thresh;
-		// output_data6 = result_Bernsen_3x3_Paper;
 		strcpy(input_data, "res/ive/sky_640x480.yuv");
 		strcpy(output_data1, "res/ive/result/sample_Bernsen_5x5.yuv");
 		strcpy(output_data2, "res/ive/result/sample_Bernsen_5x5_Thresh.yuv");
@@ -54,13 +39,6 @@ int test_bernsen(int bTileMode, int bWrite, int bInstant)
 		strcpy(output_file5, "sample_tile_Bernsen_3x3_Thresh.yuv");
 		strcpy(output_file6, "sample_tile_Bernsen_3x3_Paper.yuv");
 	} else {
-		// input_data = data_00_352x288_y;
-		// output_data1 = result_Bernsen_5x5_Normal;
-		// output_data2 = result_Bernsen_5x5_Thresh;
-		// output_data3 = result_Bernsen_5x5_Paper;
-		// output_data4 = result_Bernsen_3x3_Normal;
-		// output_data5 = result_Bernsen_3x3_Thresh;
-		// output_data6 = result_Bernsen_3x3_Paper;
 		strcpy(input_data, "res/ive/00_352x288_y.yuv");
 		strcpy(output_data1, "res/ive/result/sample_Bernsen_5x5.yuv");
 		strcpy(output_data2, "res/ive/result/sample_Bernsen_5x5_Thresh.yuv");
