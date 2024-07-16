@@ -19,7 +19,7 @@ $(error UNKNOWN chip architecture - $(CHIP_ARCH))
 endif
 
 SRCS_ASM = $(wildcard $(SDIR)/*.S)
-INCS = -I$(MW_INC) -I$(KERNEL_INC) -I$(SYS_INC) -I$(ISP_INC) -Iinclude
+INCS = -I$(MW_INC) -I$(MOD_INC) -I$(SYS_INC) -I$(ISP_INC) -Iinclude
 INCS += -I$(MW_PATH)/modules/vpss/include
 INCS += -I$(SYS_INC) -I$(OSS_MODULE_INCLUDE_PATH)/cvi_json-c -I$(ISP_BIN_DIR) -I$(OSS_MODULE_INCLUDE_PATH)/cvi_miniz
 OBJS = $(SRCS:.c=.o)

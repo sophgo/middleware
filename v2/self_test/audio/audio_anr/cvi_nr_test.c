@@ -14,13 +14,8 @@
 #include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
-#if defined(__CV181X__) || defined(__CV180X__) || defined(__CV186X__)
-#include <linux/cvi_type.h>
-#include <linux/cvi_defines.h>
-#else
 #include "cvi_type.h"
 #include "cvi_defines.h"
-#endif
 #include "cvi_comm_aio.h"
 #include "cvi_audio.h"
 #include "cvi_audio_vqe.h"

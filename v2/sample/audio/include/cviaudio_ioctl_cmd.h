@@ -1,11 +1,7 @@
 #ifndef __CVIAUDIO_IOCTL_CMD_H__
 #define __CVIAUDIO_IOCTL_CMD_H__
 
-#if defined(__CV181X__) || defined(__CV180X__) || defined(__CV186X__)
-#include <linux/cvi_defines.h>
-#else
 #include <cvi_defines.h>
-#endif
 #include <cvi_comm_aio.h>
 //#include <cvi_defines.h//watch out for corresponding device node minor id
 //minor id should map to channel id

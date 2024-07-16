@@ -1,8 +1,7 @@
 #ifndef _MIPI_TX_PARAM_ICN9707_H_
 #define _MIPI_TX_PARAM_ICN9707_H_
 
-#include <linux/cvi_mipi_tx.h>
-#include <linux/cvi_comm_mipi_tx.h>
+#include <cvi_comm_mipi_tx.h>
 
 struct combo_dev_cfg_s dev_cfg_icn9707_480x1920 = {
 	.devno = 0,
@@ -26,7 +25,7 @@ struct combo_dev_cfg_s dev_cfg_icn9707_480x1920 = {
 	.pixel_clk = 69660,
 };
 
-const struct hs_settle_s hs_timing_cfg_icn9707_480x1920 = { .prepare = 6, .zero = 32, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_icn9707_480x1920 = { .prepare = 6, .zero = 32, .trail = 1 };
 
 static CVI_U8 data_icn9707_0[] = { 0xf0, 0x5a, 0x59 };
 static CVI_U8 data_icn9707_1[] = { 0xf1, 0xa5, 0xa6 };
@@ -90,7 +89,7 @@ static CVI_U8 data_icn9707_27[] = { 0x11 };
 static CVI_U8 data_icn9707_28[] = { 0x29 };
 #endif
 
-const struct dsc_instr dsi_init_cmds_icn9707_480x1920[] = {
+struct dsc_instr dsi_init_cmds_icn9707_480x1920[] = {
 #ifdef _MIPI_TX_BIST_MODE
 	{ .delay = 120, .data_type = 0x05, .size = 1, .data = data_icn9707_23 },
 	{ .delay = 0, .data_type = 0x29, .size = 3, .data = data_icn9707_24 },

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <errno.h>
 
-#include "linux/stitch_uapi.h"
+#include "stitch_uapi.h"
 #include "stitch_ioctl.h"
 
 CVI_S32 cvi_stitch_init(CVI_S32 fd)

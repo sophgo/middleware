@@ -16,7 +16,7 @@ function verify() {
 	rm -rf $TMP_RES_FOLDER
     fi
     mkdir $TMP_RES_FOLDER
-    mv *.raw *.bmp $TMP_RES_FOLDER/
+    mv *.bmp $TMP_RES_FOLDER/
 
     diff $TMP_RES_FOLDER ./res/tde
 

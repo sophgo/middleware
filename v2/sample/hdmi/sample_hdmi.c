@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <getopt.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include "cvi_buffer.h"
@@ -21,8 +22,26 @@
 	} while (0)
 #define MCODE_720P 69
 
+static struct option long_options[] = {
+	{"mcode", required_argument, NULL, 'm'},
+	{"pixel_clk", required_argument, NULL, 'p'},
+	{"force_output", required_argument, NULL, 'f'},
+	{"pixel_repeat", required_argument, NULL, 'r'},
+	{"hdcp14_en", required_argument, NULL, 'h'},
+	{"csc_en", required_argument, NULL, 'c'},
+	{"audio_en", required_argument, NULL, 'a'},
+	{"fmt_in", required_argument, NULL, 'i'},
+	{"fmt_out", required_argument, NULL, 'o'},
+	{"avmute", required_argument, NULL, 'v'},
+	{"audio_mute", required_argument, NULL, 'u'},
+	{"set_infoframe", required_argument, NULL, 's'},
+	{"exit_flag", required_argument, NULL, 'e'},
+	{"audio_file", required_argument, NULL, 'n'},
+	{NULL, 0, NULL, 0}
+};
+
 CVI_S32 AUDIO_MAP(CVI_HDMI_ATTR* attr, CVI_CHAR * filename, CVI_U64* pu64PhyAddr,
-				  CVI_VOID ** ppVirAddr, const CVI_CHAR* strName)
+				CVI_VOID ** ppVirAddr, const CVI_CHAR* strName)
 {
 	FILE *fd;
 	CVI_U32 u32Len;
@@ -55,7 +74,7 @@ CVI_S32 AUDIO_MAP(CVI_HDMI_ATTR* attr, CVI_CHAR * filename, CVI_U64* pu64PhyAddr
 	SAMPLE_PRT("Start_addr:0x%lx, Stop_addr:0x%lx\n",attr->audio_start_paddr, attr->audio_stop_paddr);
 	SAMPLE_PRT("vaddr:%p\n", *ppVirAddr);
 
-    free(p);
+	free(p);
 	return 0;
 }
 
@@ -72,14 +91,14 @@ CVI_S32 Get_Attr()
 
 	printf("-- HDMI Attribution --\n");
 	printf("HDMI Enable ? %d\n", GetAttr.hdmi_en);
-    printf("HDMI Video Format : %d\n", GetAttr.video_format);
-   	printf("HDMI Deep Color Mode : %d\n", GetAttr.deep_color_mode);
-    printf("HDMI Pixel Clk : %u\n", GetAttr.pix_clk);
+	printf("HDMI Video Format : %d\n", GetAttr.video_format);
+	printf("HDMI Deep Color Mode : %d\n", GetAttr.deep_color_mode);
+	printf("HDMI Pixel Clk : %u\n", GetAttr.pix_clk);
 	printf("HDMI Video Input : %d\n", GetAttr.hdmi_video_input);
 	printf("HDMI Video Output : %d\n", GetAttr.hdmi_video_output);
 	printf("HDMI Hdcp1.4 On ? %d\n", GetAttr.hdcp14_en);
 	printf("HDMI Audio Enable ? %d\n", GetAttr.audio_en);
-    printf("HDMI Audio Sample Rate : %u\n", GetAttr.sample_rate);
+	printf("HDMI Audio Sample Rate : %u\n", GetAttr.sample_rate);
 	printf("HDMI Audio Sample Size : %u\n", GetAttr.bit_depth);
 	printf("-- END --\n");
 
@@ -211,25 +230,25 @@ CVI_S32 Get_Sink_Cap()
 	printf("sink's current aspect_ratio_w : %d\n", capability.detailed_timing.detail_timing[0].aspect_ratio_w);
 	printf("sink's current aspect_ratio_h : %d\n", capability.detailed_timing.detail_timing[0].aspect_ratio_h);
 	printf("sink's current Pixel Clock : %d\n", capability.detailed_timing.detail_timing[0].pixel_clk);
-	printf("sink's  audio info number : %d\n", capability.audio_info_num);
+	printf("sink's audio info number : %d\n", capability.audio_info_num);
 	printf("sink's max audio channels : %d\n", capability.audio_info[0].audio_chn);
 	printf("supported max sample rate by sink:%uhz\n", capability.audio_info[0].max_bit_rate);
 	printf("supported sample rate by sink:\n");
 
 	for(i=0; i<(int)(capability.audio_info[0].support_sample_rate_num); i++){
-		printf("  %uhz\n", capability.audio_info[0].support_sample_rate[i]);
+		printf(" %uhz\n", capability.audio_info[0].support_sample_rate[i]);
 	}
 
 	printf("supported max bit depth by sink:%ubit\n", capability.audio_info[0].support_bit_depth[0]);
 	printf("supported bit depth by sink:\n");
 	for(i=0; i<(int)(capability.audio_info[0].support_bit_depth_num); i++){
-		printf("  %ubit\n", capability.audio_info[0].support_bit_depth[i]);
+		printf(" %ubit\n", capability.audio_info[0].support_bit_depth[i]);
 	}
 
-	printf("sink's  video latency : %d\n", capability.video_latency);
-	printf("sink's  audio latency : %d\n", capability.audio_latency);
-	printf("sink's  interlaced video latency : %d\n", capability.interlaced_video_latency);
-	printf("sink's  interlaced audio latency : %d\n", capability.interlaced_audio_latency);
+	printf("sink's video latency : %d\n", capability.video_latency);
+	printf("sink's audio latency : %d\n", capability.audio_latency);
+	printf("sink's interlaced video latency : %d\n", capability.interlaced_video_latency);
+	printf("sink's interlaced audio latency : %d\n", capability.interlaced_audio_latency);
 	printf("-- End --\n");
 
 	return ret;
@@ -258,8 +277,8 @@ CVI_VOID Hdmi_EventProc(CVI_HDMI_EVENT_TYPE event, CVI_VOID *private_data)
 
 CVI_VOID SAMPLE_HDMI_Usage(CVI_CHAR *sPrgNm)
 {
-	printf("Usage : %s <mCode> <pixel_clk> <force_output> <pixel_repeat> <hdcp14_en> <csc_en> <audio_en> <csc_fmt_in> <csc_fmt_out> \
-					   <avmute_en> <audio_mute_en> <set_infoframe> <audio_file>\n", sPrgNm);
+	printf("Usage : %s <mCode> <pixel_clk> <force_output> <pixel_repeat> <hdcp14_en> <csc_en> <audio_en> <csc_fmt_in> <csc_fmt_out> " \
+	       "<avmute_en> <audio_mute_en> <set_infoframe> <exit_flag> <audio_file>\n", sPrgNm);
 	printf("     mCode:\n");
 	printf("\t     1:   640x480p-60\n");
 	printf("\t     2:   720x480p-60\n");
@@ -273,8 +292,10 @@ CVI_VOID SAMPLE_HDMI_Usage(CVI_CHAR *sPrgNm)
 	printf("\t   0  :  RGB888\n");
 	printf("\t   1  :  YUV444\n");
 	printf("\t   2  :  YUV422\n");
-	printf("Example : ./sample_hdmi 16 148500 0 0 0 0 0 0 0 0 0 0 ./audio.file \n");
+	printf("Example : ./sample_hdmi --mcode 16 --pixel_clk 148500 --force_output 0 --pixel_repeat 0 --hdcp14_en 0 --csc_en 0 --audio_en 0 " \
+	       "--fmt_in 0 --fmt_out 0 --avmute 0 --audio_mute 0 --set_infoframe 0 --exit_flag 1 --audio_file ./audio.raw \n");
 	printf("          (test pixel repeat should set set_infoframe = 1) \n");
+	printf("          (loopback test should set exit_flag = 0) \n");
 }
 
 CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
@@ -284,11 +305,12 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 	CVI_HDMI_CALLBACK_FUNC callback_func;
 	CVI_U64 u64PhyAddr = 0;
 	CVI_VOID *pVirAddr;
+	CVI_CHAR* filename = "";
 	CVI_CHAR strName[] = "hdmi_sample";
-	CVI_S32 mcode, pixel_clk, hdcp14_en, csc_en, audio_en, fmt_in, fmt_out, avmute,
-			audio_mute, set_infoframe, force_output, pixel_repeat;
+	CVI_S32 mcode = 0, pixel_clk = 0, hdcp14_en = 0, csc_en = 0, audio_en = 0, fmt_in = 0, fmt_out = 0, avmute = 0,
+			audio_mute = 0, set_infoframe = 0, force_output = 0, pixel_repeat = 0, exit_flag = 0, opt = 0, option_index = 0;
 
-	if (argc < 13) {
+	if (argc < 14) {
 		SAMPLE_HDMI_Usage(argv[0]);
 		return CVI_FAILURE;
 	}
@@ -298,18 +320,55 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 		return CVI_SUCCESS;
 	}
 
-	mcode = atoi(argv[1]);
-	pixel_clk = atoi(argv[2]);
-	force_output = atoi(argv[3]);
-	pixel_repeat = atoi(argv[4]);
-	hdcp14_en = atoi(argv[5]);
-	csc_en = atoi(argv[6]);
-	audio_en = atoi(argv[7]);
-	fmt_in = atoi(argv[8]);
-	fmt_out = atoi(argv[9]);
-	avmute = atoi(argv[10]);
-	audio_mute = atoi(argv[11]);
-	set_infoframe = atoi(argv[12]);
+	while ((opt = getopt_long(argc, argv, "m:p:f:r:h:c:a:i:o:v:u:s:e:n", long_options, &option_index)) != -1) {
+        	switch (opt) {
+        	case 'm':
+            	mcode = atoi(optarg);
+            	break;
+       		case 'p':
+            	pixel_clk = atoi(optarg);
+            	break;
+        	case 'f':
+            	force_output = atoi(optarg);
+            	break;
+        	case 'r':
+            	pixel_repeat = atoi(optarg);
+            	break;
+        	case 'h':
+            	hdcp14_en = atoi(optarg);
+            	break;
+        	case 'c':
+            	csc_en = atoi(optarg);
+            	break;
+        	case 'a':
+            	audio_en = atoi(optarg);
+            	break;
+        	case 'i':
+            	fmt_in = atoi(optarg);
+            	break;
+        	case 'o':
+            	fmt_out = atoi(optarg);
+            	break;
+        	case 'v':
+            	avmute = atoi(optarg);
+            	break;
+        	case 'u':
+            	audio_mute = atoi(optarg);
+            	break;
+        	case 's':
+            	set_infoframe = atoi(optarg);
+            	break;
+        	case 'e':
+            	exit_flag = atoi(optarg);
+            	break;
+		case 'n':
+		filename = optarg;
+		break;
+        	default:
+            	SAMPLE_HDMI_Usage(argv[0]);
+            	return CVI_FAILURE;
+        }
+    }
 
 	memset(&setAttr, 0, sizeof(setAttr));
 
@@ -320,8 +379,6 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 	}
 
 	if(audio_en){
-		CVI_CHAR* filename;
-		filename = argv[13];
 		if(!filename) {
 			printf("audio file is not set\n");
 			return CVI_FAILURE;
@@ -329,7 +386,11 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 		int ret = AUDIO_MAP(&setAttr, filename, &u64PhyAddr, &pVirAddr, strName);
 		if(ret){
 			printf("AUDIO MAP error\n");
-			goto audio_err;
+			if(u64PhyAddr || pVirAddr) {
+				CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
+				CVI_SYS_Exit();
+			}
+			return CVI_FAILURE;
 		}
 	}
 
@@ -356,7 +417,7 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 		setAttr.hdmi_video_output = 0;
 	}
 
-	s32Ret =  CVI_HDMI_Init();
+	s32Ret = CVI_HDMI_Init();
 	if(s32Ret){
 		printf("HDMI init error\n");
 		return CVI_FAILURE;
@@ -390,7 +451,7 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 		}
 	}
 
-	s32Ret =  CVI_HDMI_Start();
+	s32Ret = CVI_HDMI_Start();
 	if(s32Ret){
 		printf("HDMI start error\n");
 		return CVI_FAILURE;
@@ -448,40 +509,34 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 		return CVI_FAILURE;
 	}
 
-	printf("\n");
-	printf("-- Press Enter to Exit --\n");
-	getchar();
+	if(exit_flag){
+		printf("\n");
+		printf("-- Press Enter to Exit --\n");
+		getchar();
 
-	s32Ret = CVI_HDMI_UnRegisterCallback(&callback_func);
-	if(s32Ret){
-		printf("HDMI UnRegisterCallback error\n");
-		return CVI_FAILURE;
+		s32Ret = CVI_HDMI_UnRegisterCallback(&callback_func);
+		if(s32Ret){
+			printf("HDMI UnRegisterCallback error\n");
+			return CVI_FAILURE;
+		}
+
+		s32Ret = CVI_HDMI_Stop();
+		if (s32Ret != CVI_SUCCESS)
+			SAMPLE_HDMI_PRT("HDMI STOP abnormally!\n");
+
+		s32Ret = CVI_HDMI_DeInit();
+		if (s32Ret != CVI_SUCCESS)
+			SAMPLE_HDMI_PRT("HDMI DeInit abnormally!\n");
+
+		if (audio_en)
+			CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
+
+		s32Ret = CVI_SYS_Exit();
+		if (s32Ret != CVI_SUCCESS)
+			SAMPLE_HDMI_PRT("CVI_SYS_Exit error!\n");
+
+		SAMPLE_HDMI_PRT("SAMPLE HDMI EXIT SUCCESS !\n");
+
+		return s32Ret;
 	}
-
-	s32Ret = CVI_HDMI_Stop();
-	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_HDMI_PRT("HDMI STOP abnormally!\n");
-
-	s32Ret = CVI_HDMI_DeInit();
-	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_HDMI_PRT("HDMI DeInit abnormally!\n");
-
-	CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
-
-	s32Ret = CVI_SYS_Exit();
-	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_HDMI_PRT("CVI_SYS_Exit error!\n");
-
-	SAMPLE_HDMI_PRT("SAMPLE HDMI EXIT SUCCESS !\n");
-
-	return s32Ret;
-
-audio_err:
-	if(u64PhyAddr || pVirAddr) {
-		CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
-		CVI_SYS_Exit();
-		return CVI_FAILURE;
-	}
-	return CVI_FAILURE;
 }
-

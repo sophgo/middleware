@@ -8,7 +8,7 @@ include ../../sample.mk
 COMMON_DIR = $(PWD)/../../common
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c) $(filter-out $(COMMON_DIR)/sample_common_vo.c, $(wildcard $(COMMON_DIR)/*.c))
-INCS = -I$(KERNEL_INC) -I$(MW_INC) -I$(ISP_INC) -I$(COMMON_DIR) -I$(COMMON_DIR)/../../component/panel/$(shell echo $(CVIARCH) | tr A-Z a-z)
+INCS = -I$(KERNEL_INC) -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(COMMON_DIR) -I$(COMMON_DIR)/../../component/panel/$(shell echo $(CVIARCH) | tr A-Z a-z)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 

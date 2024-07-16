@@ -87,7 +87,8 @@ int load_meshdata(const char *path, MESH_DATA_ALL_S *pmeshdata, const char *bind
 	pmeshdata->unit_ry = info[8];  // unit: mesh_h
 	pmeshdata->_nbr_mesh_x = info[9];	// total meshes in horizontal
 	pmeshdata->_nbr_mesh_y = info[10];	// total meshes in vertical
-	memcpy(pmeshdata->corners, info + 11, sizeof(int) * 8);
+	memcpy(pmeshdata->corners, info + 11, sizeof(int) * 10);
+	pmeshdata->grid_mode = (enum grid_info_mode)info[21]; //grid_info_mode
 
 	int _nbr_mesh_y = pmeshdata->mesh_vercnt; // for roi, not for whole image
 	int _nbr_mesh_x = pmeshdata->mesh_horcnt;
@@ -103,39 +104,43 @@ int load_meshdata(const char *path, MESH_DATA_ALL_S *pmeshdata, const char *bind
 	pmeshdata->pnode_src = (int *)calloc(pmeshdata->node_index*2, sizeof(int));
 	pmeshdata->pnode_dst = (int *)calloc(pmeshdata->node_index*2, sizeof(int));
 
-	CVI_TRACE_GDC(CVI_DBG_DEBUG, "mesh_horcnt,mesh_vercnt,_nbr_mesh_x, _nbr_mesh_y, count_grid, num_nodes: %d %d %d %d %d %d \n"
+	CVI_TRACE_GDC(CVI_DBG_INFO, "mesh_horcnt,mesh_vercnt,_nbr_mesh_x, _nbr_mesh_y, count_grid, num_nodes: %d %d %d %d %d %d \n"
 		, pmeshdata->mesh_horcnt, pmeshdata->mesh_vercnt, _nbr_mesh_x, _nbr_mesh_y, count_grid, pmeshdata->node_index);
-	CVI_TRACE_GDC(CVI_DBG_DEBUG, "imgw, imgh, mesh_w, mesh_h ,unit_rx,unit_ry: %d %d %d %d %d %d \n"
-		, pmeshdata->imgw, pmeshdata->imgh, pmeshdata->mesh_w, pmeshdata->mesh_h, pmeshdata->unit_rx, pmeshdata->unit_ry);
+	CVI_TRACE_GDC(CVI_DBG_INFO, "imgw, imgh, mesh_w, mesh_h ,unit_rx,unit_ry,grid_mode: %d %d %d %d %d %d %d\n"
+		, pmeshdata->imgw, pmeshdata->imgh, pmeshdata->mesh_w, pmeshdata->mesh_h, pmeshdata->unit_rx, pmeshdata->unit_ry, pmeshdata->grid_mode);
 
-	if (fread(pmeshdata->pgrid_src, sizeof(int), (count_grid * 2), fpGrid) != (size_t)(count_grid * 2)) {
-		CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
-		return -1;
-	}
+	if (count_grid > 0) {
+		if (fread(pmeshdata->pgrid_src, sizeof(int), (count_grid * 2), fpGrid) != (size_t)(count_grid * 2)) {
+			CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
+			return -1;
+		}
 
-	if (fread(pmeshdata->pgrid_dst, sizeof(int), (count_grid * 2), fpGrid) != (size_t)(count_grid * 2)) {
-		CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
-		return -1;
-	}
-	// hw mesh
-	if (fread(pmeshdata->pmesh_src, sizeof(int), (count_grid * 2 * 4), fpGrid) != (size_t)(count_grid * 2 * 4)) {
-		CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
-		return -1;
-	}
-	if (fread(pmeshdata->pmesh_dst, sizeof(int), (count_grid * 2 * 4), fpGrid) != (size_t)(count_grid * 2 * 4)) {
-		CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
-		return -1;
-	}
-	// hw node
-	if (fread(pmeshdata->pnode_src, sizeof(int), (pmeshdata->node_index * 2), fpGrid) != (size_t)(pmeshdata->node_index * 2)) {
-		CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
-		return -1;
-	}
-	if (fread(pmeshdata->pnode_dst, sizeof(int), (pmeshdata->node_index * 2), fpGrid) != (size_t)(pmeshdata->node_index * 2)) {
-		CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
-		return -1;
+		if (fread(pmeshdata->pgrid_dst, sizeof(int), (count_grid * 2), fpGrid) != (size_t)(count_grid * 2)) {
+			CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
+			return -1;
+		}
+		// hw mesh
+		if (fread(pmeshdata->pmesh_src, sizeof(int), (count_grid * 2 * 4), fpGrid) != (size_t)(count_grid * 2 * 4)) {
+			CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
+			return -1;
+		}
+		if (fread(pmeshdata->pmesh_dst, sizeof(int), (count_grid * 2 * 4), fpGrid) != (size_t)(count_grid * 2 * 4)) {
+			CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
+			return -1;
+		}
 	}
 
+	if (pmeshdata->node_index > 0) {
+		// hw node
+		if (fread(pmeshdata->pnode_src, sizeof(int), (pmeshdata->node_index * 2), fpGrid) != (size_t)(pmeshdata->node_index * 2)) {
+			CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
+			return -1;
+		}
+		if (fread(pmeshdata->pnode_dst, sizeof(int), (pmeshdata->node_index * 2), fpGrid) != (size_t)(pmeshdata->node_index * 2)) {
+			CVI_TRACE_GDC(CVI_DBG_ERR, "read file fail, %s\n", path);
+			return -1;
+		}
+	}
 	fclose(fpGrid);
 
 	pmeshdata->balloc = true;

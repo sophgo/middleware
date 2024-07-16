@@ -10,7 +10,7 @@ SRCS = $(wildcard $(SDIR)/src/core/*.c)
 SRCS += $(wildcard $(SDIR)/src/sample/*.c)
 SRCS += $(wildcard $(SDIR)/tools/iniparser/src/*.c)
 
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) $(COMM_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(KERNEL_INC) $(COMM_INC)
 INCS += -I./include/core
 INCS += -I./include/sample
 INCS += -I./tools/iniparser/src

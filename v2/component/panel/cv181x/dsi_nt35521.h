@@ -1,8 +1,7 @@
 #ifndef _MIPI_TX_PARAM_NT35521_H_
 #define _MIPI_TX_PARAM_NT35521_H_
 
-#include <linux/cvi_mipi_tx.h>
-#include <linux/cvi_comm_mipi_tx.h>
+#include <cvi_comm_mipi_tx.h>
 
 struct combo_dev_cfg_s dev_cfg_nt35521_800x1280 = {
 	.devno = 0,
@@ -26,7 +25,7 @@ struct combo_dev_cfg_s dev_cfg_nt35521_800x1280 = {
 	.pixel_clk = 90962,
 };
 
-const struct hs_settle_s hs_timing_cfg_nt35521_800x1280 = { .prepare = 6, .zero = 32, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_nt35521_800x1280 = { .prepare = 6, .zero = 32, .trail = 1 };
 
 //=====================Page 0 relative===================
 static CVI_U8 data_nt35521_0[] = { 0xf0, 0x55, 0xaa, 0x52, 0x08, 0x00 };
@@ -124,7 +123,7 @@ static CVI_U8 data_nt35521_62[] = { 0xF0, 0x55, 0xAA, 0x52, 0x08, 0x00 };
 static CVI_U8 data_nt35521_63[] = { 0xEE, 0x87, 0x78, 0xff, 0xff };
 #endif
 
-const struct dsc_instr dsi_init_cmds_nt35521_800x1280[] = {
+struct dsc_instr dsi_init_cmds_nt35521_800x1280[] = {
 #ifdef _MIPI_TX_BIST_MODE
 	//=====================BIST relative===================
 	{ .delay = 0, .data_type = 0x05, .size = 1, .data = data_nt35521_61 },

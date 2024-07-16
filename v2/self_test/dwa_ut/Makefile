@@ -8,7 +8,7 @@ include ../self_test.mk
 SDIR = $(PWD)
 #SRCS = $(wildcard $(SDIR)/*.c)
 SRCS := $(SDIR)/dwa_ut.c $(SDIR)/dwa_ut_comm.c
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) -I$(SYS_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(KERNEL_INC) -I$(SYS_INC)
 
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)

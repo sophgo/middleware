@@ -13,7 +13,7 @@
 #include "sample_comm.h"
 #include "sample_dpu.h"
 #include "cvi_sys.h"
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 
 // #define GRID_INFO_FIEL_L  "meshdatagrid_info_63_31_1953_128_40_2048x800.dat"
 // #define GRID_INFO_FIEL_R  "meshdatagrid_info_62_31_1922_128_40_2048x800.dat"

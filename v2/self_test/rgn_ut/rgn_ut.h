@@ -19,15 +19,20 @@ extern "C" {
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/prctl.h>
+#include <sys/time.h>
 
-#include <cvi_base.h>
-#include <linux/cvi_common.h>
-#include "sample_comm.h"
+#include <cvi_common.h>
+#include <cvi_comm_vpss.h>
+#include <cvi_comm_vb.h>
+#include "cvi_region.h"
 #include "cvi_sys.h"
-#include "cvi_osdc.h"
-#include <linux/cvi_type.h>
-#include <linux/cvi_vip.h>
-#include <linux/rgn_uapi.h>
+#include "cvi_vpss.h"
+#include "cvi_buffer.h"
+#include "cvi_vo.h"
+#include "cvi_vb.h"
+#include "fontmod.h"
+#include "rgn_ut_fun.h"
 
 #define S_CTRL_PTR(_fd, _cfg, _ioctl)\
 	do {\
@@ -53,9 +58,6 @@ extern "C" {
 			return -1;\
 		} \
 	} while (0)
-
-int _sc_set_rgn(int fd, struct cvi_rgn_cfg *cfg);
-int _disp_set_rgn(int fd, struct cvi_rgn_cfg *cfg);
 
 #ifdef __cplusplus
 #if __cplusplus

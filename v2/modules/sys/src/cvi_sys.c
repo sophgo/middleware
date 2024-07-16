@@ -17,11 +17,8 @@
 #include "cvi_base.h"
 #include "cvi_sys.h"
 #include "hashmap.h"
-#include <linux/cvi_tpu_ioctl.h>
-#include <linux/base_uapi.h>
-#include <linux/sys_uapi.h>
-
-#define TPUDEVNAME "/dev/cvi-tpu0"
+#include "base_uapi.h"
+#include "sys_uapi.h"
 
 #define MMF_VERSION  (CVI_CHIP_NAME MMF_VER_PRIX MK_VERSION(VER_X, VER_Y, VER_Z) VER_D)
 
@@ -681,9 +678,9 @@ CVI_S32 CVI_SYS_CDMACopy(CVI_U64 u64PhyDst, CVI_U64 u64PhySrc, CVI_U32 u32Len)
 		CVI_TRACE_SYS(CVI_DBG_ERR, "Can't open device, cvi-sys.\n");
 		return CVI_ERR_SYS_NOTREADY;
 	}
-	cfg.u64PhyDst = u64PhyDst;
-	cfg.u64PhySrc = u64PhySrc;
-	cfg.u32Len = u32Len;
+	cfg.phy_addr_dst = u64PhyDst;
+	cfg.phy_addr_src = u64PhySrc;
+	cfg.len = u32Len;
 
 	return ioctl(fd, SYS_IOC_CDMA_COPY, &cfg);
 }

@@ -57,7 +57,7 @@ nextchip_n5:
 	$(call MAKE_SENSOR, ${@})
 
 nextchip_n6:
-	$(call MAKE_SENSOR, ${@}
+	$(call MAKE_SENSOR, ${@})
 
 onsemi_ar2020:
 	$(call MAKE_SENSOR, ${@})

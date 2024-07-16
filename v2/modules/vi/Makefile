@@ -4,16 +4,20 @@ ifeq ($(PARAM_FILE), )
      include $(PARAM_FILE)
 endif
 
-SDIR = $(PWD)/src
-SRCS = $(wildcard $(SDIR)/*.c)
 INCS = -I$(MW_INC) -I$(KERNEL_INC) -I$(SYS_INC) -I$(ISP_INC) -I$(BIN_INC) -I./include
-OBJS = $(SRCS:.c=.o)
-DEPS = $(SRCS:.c=.d)
-TARGET_A = $(MW_LIB)/libvi.a
-TARGET_SO = $(MW_LIB)/libvi.so
 
 EXTRA_CFLAGS = $(INCS)
 
+ifeq ($(V4L2_ISP_ENABLE),1)
+	EXTRA_CFLAGS += -DV4L2_ISP_ENABLE
+else
+	SDIR = $(PWD)/src
+	SRCS = $(wildcard $(SDIR)/*.c)
+	OBJS = $(SRCS:.c=.o)
+	DEPS = $(SRCS:.c=.d)
+	TARGET_A = $(MW_LIB)/libvi.a
+	TARGET_SO = $(MW_LIB)/libvi.so
+endif
 
 .PHONY : clean all
 all : $(TARGET_A) $(TARGET_SO)

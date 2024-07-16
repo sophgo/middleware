@@ -17,10 +17,9 @@
 
 #include "sample_comm.h"
 
-#include "mipi_tx.h"
+#include "cvi_mipi_tx.h"
 
 #include "dsi_hx8394_evb.h"
-#include "i80_st7789v.h"
 #include "lvds_lcm185x56.h"
 
 static CVI_S32 sample_vo_i2c_file = -1;
@@ -172,25 +171,9 @@ CVI_S32 SAMPLE_COMM_VO_StartDev(VO_DEV VoDev, VO_PUB_ATTR_S *pstPubAttr)
 		return CVI_FAILURE;
 	}
 
-	if (pstPubAttr->enIntfType >= VO_INTF_LCD_18BIT && pstPubAttr->enIntfType <= VO_INTF_LCD_30BIT) {
+	if (pstPubAttr->enIntfType == VO_INTF_LVDS) {
 		VO_LVDS_ATTR_S stLvdsAttr = lvds_lcm185x56_cfg;
 		s32Ret = CVI_VO_SetLVDSParam(VoDev, &stLvdsAttr);
-		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("failed with %#x!\n", s32Ret);
-			return CVI_FAILURE;
-		}
-	}else if (pstPubAttr->enIntfType == VO_INTF_I80) {
-		VO_I80_CFG_S sti80Cfg = stI80Cfg;
-		VO_I80_INSTR_S sti80cmd[sizeof(init_cmds) / sizeof(init_cmds[0])] = {0};
-
-		memcpy(sti80cmd, init_cmds, sizeof(init_cmds));
-
-		s32Ret = CVI_VO_SetI80Param(VoDev, &sti80Cfg);
-		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("failed with %#x!\n", s32Ret);
-			return CVI_FAILURE;
-		}
-		s32Ret = CVI_VO_I80Init(VoDev, sti80cmd, sizeof(sti80cmd) / sizeof(sti80cmd[0]));
 		if (s32Ret != CVI_SUCCESS) {
 			SAMPLE_PRT("failed with %#x!\n", s32Ret);
 			return CVI_FAILURE;
@@ -544,11 +527,11 @@ CVI_VOID SAMPLE_COMM_VO_Exit(void)
 {
 	CVI_S32 i = 0, j = 0;
 
-	for (i = 0; i < VO_MAX_LAYER_NUM; i++)
+	for (i = 0; i < VO_MAX_VIDEO_LAYER_NUM; i++)
 		for (j = 0; j < VO_MAX_CHN_NUM; j++)
 			CVI_VO_DisableChn(i, j);
 
-	for (i = 0; i < VO_MAX_LAYER_NUM; i++)
+	for (i = 0; i < VO_MAX_VIDEO_LAYER_NUM; i++)
 		CVI_VO_DisableVideoLayer(i);
 
 	for (i = 0; i < VO_MAX_DEV_NUM; i++)
@@ -1002,12 +985,12 @@ int SAMPLE_COMM_VO_MIPI_INIT(int fd, int devno, const struct dsc_instr *cmds, in
 			.cmd = (void *)instr->data
 		};
 
-		ret = ioctl(fd, CVI_VIP_MIPI_TX_SET_CMD, &cmd_info);
+		ret = ioctl(fd, MIPI_TX_SET_CMD, &cmd_info);
 		if (instr->delay)
 			usleep(instr->delay * 1000);
 
 		if (ret == -1) {
-			perror("CVI_VIP_MIPI_TX_SET_CMD");
+			perror("MIPI_TX_SET_CMD");
 			SAMPLE_PRT("dsi init failed at %d instr.\n", i);
 			return CVI_FAILURE;
 		}
@@ -1030,22 +1013,22 @@ CVI_S32 SAMPLE_COMM_VO_Init_MIPI_HX8394(void *pvData)
 		return -1;
 	}
 
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_DISABLE, NULL)) {
-		perror("CVI_VIP_MIPI_TX_DISABLE");
+	if (-1 == ioctl(fd, MIPI_TX_DISABLE, NULL)) {
+		perror("MIPI_TX_DISABLE");
 		return -1;
 	}
 
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_SET_DEV_CFG, &dev_cfg_hx8394_720x1280)) {
-		perror("CVI_VIP_MIPI_TX_SET_DEV_CFG");
+	if (-1 == ioctl(fd, MIPI_TX_SET_DEV_CFG, &dev_cfg_hx8394_720x1280)) {
+		perror("MIPI_TX_SET_DEV_CFG");
 		return -1;
 	}
 	SAMPLE_COMM_VO_MIPI_INIT(fd, 0, dsi_init_cmds_hx8394_720x1280, ARRAY_SIZE(dsi_init_cmds_hx8394_720x1280));
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_SET_HS_SETTLE, &hs_timing_cfg_hx8394_720x1280)) {
-		perror("CVI_VIP_MIPI_TX_SET_HS_SETTLE");
+	if (-1 == ioctl(fd, MIPI_TX_SET_HS_SETTLE, &hs_timing_cfg_hx8394_720x1280)) {
+		perror("MIPI_TX_SET_HS_SETTLE");
 		return -1;
 	}
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_ENABLE, NULL)) {
-		perror("CVI_VIP_MIPI_TX_ENABLE");
+	if (-1 == ioctl(fd, MIPI_TX_ENABLE, NULL)) {
+		perror("MIPI_TX_ENABLE");
 		return -1;
 	}
 

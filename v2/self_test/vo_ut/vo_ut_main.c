@@ -287,12 +287,13 @@ CVI_S32 vo_ut_vpss_deinit(void)
 
 }
 
+#ifdef VO_SUSPEND_RESUME_IMPLEMENT
 CVI_S32 _vo_ut_resume_function(void *pvData)
 {
 	UNUSED(pvData);
-
 	return 0;
 }
+#endif
 
 CVI_S32 vo_ut_sys_init(void)
 {
@@ -371,14 +372,14 @@ static CVI_S32 _vo_open_device(void)
 
 	vo_fd = open(VO_DEVNODE, O_RDWR, 0);
 	if (-1 == vo_fd) {
-		fprintf(stderr, "Cannot open '%s': (%d), %s\n", VO_DEVNODE, errno, strerror(errno));
+		fprintf(stderr, "Cannot open '%s'\n", VO_DEVNODE);
 		printf("Cannot open '%s'\n", VO_DEVNODE);
 		return -1;
 	}
 
 	if (-1 == fstat(vo_fd, &st)) {
 		close(vo_fd);
-		fprintf(stderr, "Cannot identify '%s': %d, %s\n", VO_DEVNODE, errno, strerror(errno));
+		fprintf(stderr, "Cannot identify '%s'\n", VO_DEVNODE);
 		printf("Cannot identify '%s'\n", VO_DEVNODE);
 		return -1;
 	}
@@ -387,7 +388,7 @@ static CVI_S32 _vo_open_device(void)
 		close(vo_fd);
 		fprintf(stderr, "%s is no device\n", VO_DEVNODE);
 		printf("'%s' is no device\n", VO_DEVNODE);
-		return -ENODEV;
+		return -1;
 	}
 
 	return CVI_SUCCESS;

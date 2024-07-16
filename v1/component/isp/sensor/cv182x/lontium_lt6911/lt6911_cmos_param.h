@@ -12,9 +12,9 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "lt6911_cmos_ex.h"
@@ -81,7 +81,7 @@ static LT6911_MODE_S g_astLt6911_mode[LT6911_MODE_NUM] = {
 
 struct combo_dev_attr_s lt6911_rx_attr = {
 	.input_mode = INPUT_MODE_MIPI,
-	.mac_clk = RX_MAC_CLK_600M,
+	.mac_clk = RX_MAC_CLK_900M,
 	.mipi_attr = {
 		.raw_data_type = YUV422_8BIT,
 		.lane_id = {2, 0, 1, 3, 4, -1, -1, -1, -1}, //3, 0, 1, 2, 4  ;   1, 4, 3, 2, 0  2, 0, 1, 3, 4   3, 1, 2, 4, 0

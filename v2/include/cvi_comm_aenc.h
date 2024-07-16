@@ -8,8 +8,8 @@
 #ifndef __CVI_COMM_AENC_H__
 #define __CVI_COMM_AENC_H__
 
-#include <linux/cvi_type.h>
-#include <linux/cvi_common.h>
+#include <cvi_type.h>
+#include <cvi_common.h>
 #include "cvi_comm_aio.h"
 
 

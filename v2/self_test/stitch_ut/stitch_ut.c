@@ -2114,7 +2114,7 @@ static CVI_S32 stitch_test_4way(CVI_VOID)
 	VB_CONFIG_S stVbConf;
 	CVI_U32 u32BlkSize[STITCH_MAX_SRC_NUM + 1];
 
-	param.needPef = CVI_TRUE;
+	param.needPef = CVI_FALSE;
 	param.needDumpReg = CVI_FALSE;
 	param.srcNum = 4;
 	param.srcAttr.size[0].u32Width = 4608;
@@ -2258,7 +2258,7 @@ static CVI_S32 stitch_test_4way_middle(CVI_VOID)
 	VB_CONFIG_S stVbConf;
 	CVI_U32 u32BlkSize[STITCH_MAX_SRC_NUM + 1];
 
-	param.needPef = CVI_TRUE;
+	param.needPef = CVI_FALSE;
 	param.needDumpReg = CVI_FALSE;
 	param.srcNum = 4;
 	param.srcAttr.size[0].u32Width = 1024;

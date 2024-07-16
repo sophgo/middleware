@@ -14,8 +14,8 @@ extern "C" {
 #endif
 #endif /* End of #ifdef __cplusplus */
 // #include "../../modules/sys/include/dwa_mesh.h"
-#include <linux/cvi_common.h>
-#include <linux/cvi_comm_video.h>
+#include <cvi_common.h>
+#include <cvi_comm_video.h>
 #include "sample_common_dpu.h"
 
 

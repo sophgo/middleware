@@ -6,7 +6,7 @@ endif
 
 SDIR = $(PWD)/src
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I./include -I$(MW_INC) -I$(KERNEL_INC) -I$(SYS_INC) -I../../3rdparty
+INCS = -I$(MW_INC) -I$(KERNEL_INC) -I$(SYS_INC) -I../../3rdparty -I./include
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 TARGET_A = $(MW_LIB)/libcvi_ive.a
@@ -14,11 +14,8 @@ TARGET_SO = $(MW_LIB)/libcvi_ive.so
 
 EXTRA_CFLAGS = $(INCS)
 
-.PHONY : clean all install
-all : $(TARGET_A) $(TARGET_SO) install
-
-install:
-	@cp include/cvi_ive.h $(MW_INC)
+.PHONY : clean all
+all : $(TARGET_A) $(TARGET_SO)
 
 $(SDIR)/%.o: $(SDIR)/%.c
 	@$(CC) $(DEPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<

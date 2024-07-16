@@ -12,9 +12,9 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 
@@ -54,6 +54,7 @@ typedef struct _SC4336_MODE_S {
 
 extern ISP_SNS_STATE_S *g_pastSC4336[VI_MAX_PIPE_NUM];
 extern ISP_SNS_COMMBUS_U g_aunSC4336_BusInfo[];
+extern ISP_SNS_COMMADDR_U g_aunSC4336_AddrInfo[];
 extern CVI_U16 g_au16SC4336_GainMode[];
 extern CVI_U16 g_au16SC4336_L2SMode[];
 extern CVI_U8 sc4336_i2c_addr;
@@ -61,6 +62,7 @@ extern const CVI_U32 sc4336_addr_byte;
 extern const CVI_U32 sc4336_data_byte;
 extern void sc4336_init(VI_PIPE ViPipe);
 extern void sc4336_exit(VI_PIPE ViPipe);
+extern int  sc4336_i2c_exit(VI_PIPE ViPipe);
 extern void sc4336_standby(VI_PIPE ViPipe);
 extern void sc4336_restart(VI_PIPE ViPipe);
 extern int  sc4336_write_register(VI_PIPE ViPipe, int addr, int data);

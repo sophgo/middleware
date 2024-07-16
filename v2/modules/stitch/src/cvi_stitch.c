@@ -12,7 +12,7 @@
 #include <sys/prctl.h>
 #include <sys/mman.h>
 
-#include "linux/cvi_errno.h"
+#include "cvi_errno.h"
 
 #include "cvi_buffer.h"
 #include "cvi_base.h"

@@ -16,7 +16,7 @@
 
 #include "sample_comm.h"
 #include "cvi_sys.h"
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 #include "fontmod.h"
 #ifdef __ENABLE_RTSP__
 #include "rtsp.h"

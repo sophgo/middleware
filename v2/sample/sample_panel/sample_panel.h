@@ -14,7 +14,7 @@ extern "C" {
 #endif
 #endif /* End of #ifdef __cplusplus */
 
-#include <linux/cvi_comm_vo.h>
+#include <cvi_comm_vo.h>
 #include "dsi_hx8394_evb.h"
 #include "dsi_ili9881c.h"
 #include "dsi_ili9881d.h"
@@ -29,6 +29,9 @@ extern "C" {
 #include "dsi_gm8775c.h"
 #include "dsi_lt9611.h"
 #include "lvds_lcm185x56.h"
+#include "bt656_pt1000k.h"
+#include "bt1120_pt1000k.h"
+#include "panel_i2c.h"
 
 typedef enum {
 	PANEL_MODE_DSI,
@@ -49,12 +52,18 @@ typedef struct lvds_panel_desc_s {
 	VO_LVDS_ATTR_S LvdsAttr;
 } lvds_panel_desc;
 
+typedef struct bt_panel_desc_s {
+	VO_PUB_ATTR_S stVoPubAttr;
+	VO_BT_ATTR_S BtAttr;
+} bt_panel_desc;
+
 struct panel_desc_s {
 	char *panel_mode;
 	PANEL_TYPE panel_type;
 	union {
 		dsi_panel_desc stdsicfg;
 		lvds_panel_desc stlvdscfg;
+		bt_panel_desc stbtcfg;
 	};
 };
 

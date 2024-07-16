@@ -9,9 +9,9 @@
 #ifndef __CVI_DWA_H__
 #define __CVI_DWA_H__
 
-#include <linux/cvi_common.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/cvi_comm_gdc.h>
+#include <cvi_common.h>
+#include <cvi_comm_video.h>
+#include <cvi_comm_gdc.h>
 
 #ifdef __cplusplus
 #if __cplusplus

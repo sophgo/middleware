@@ -7,9 +7,9 @@
 #include <pthread.h>
 #include <inttypes.h>
 
-#include <linux/cvi_common.h>
-#include <linux/cvi_math.h>
-#include <linux/cvi_comm_video.h>
+#include <cvi_common.h>
+#include <cvi_math.h>
+#include <cvi_comm_video.h>
 
 #include "cvi_base.h"
 #include "cvi_sys.h"
@@ -21,7 +21,7 @@
 #define DEWARP_COORD_MBITS 13
 #define DEWARP_COORD_NBITS 18
 #define NUMBER_Y_LINE_A_SUBTILE 4
-#define WITHOUT_BIAS (0)
+#define WITHOUT_BIAS (1) //without result offset and ratio
 
 #define MESH_ID_FST 0xfffa // frame start
 #define MESH_ID_FSS 0xfffb // slice start
@@ -36,7 +36,6 @@
 #define DWA_MESH_SLICE_BASE_W 2048
 #define DWA_MESH_SLICE_BASE_H (DWA_MESH_SLICE_BASE_W)
 
-#define DPU_MODE 1
 static int meshHor = MESH_HOR_DEFAULT;
 static int meshVer = MESH_HOR_DEFAULT;
 //  0--1
@@ -1516,7 +1515,6 @@ static int _get_region_all_mesh_data_memory(FISHEYE_REGION_ATTR *FISHEYE_REGION
 
 	// register:
 #if !WITHOUT_BIAS
-#if !DPU_MODE
 	bool bAspect = (bool)FISHEYE_REGION[rgn].ZoomV;
 	int XYRatio = minmax(FISHEYE_REGION[rgn].Pan, 0, 100);
 	int XRatio, YRatio;
@@ -1531,7 +1529,6 @@ static int _get_region_all_mesh_data_memory(FISHEYE_REGION_ATTR *FISHEYE_REGION
 	int CenterXOffset = minmax(FISHEYE_REGION[rgn].InRadius, -511, 511);
 	int CenterYOffset = minmax(FISHEYE_REGION[rgn].OutRadius, -511, 511);
 	CenterXOffset = CenterYOffset = 0;
-#endif
 #endif
 	//int DistortionRatio = minmax(FISHEYE_REGION[rgn].PanEnd, -300, 500);
 	//double norm = sqrt((view_w / 2) * (view_w / 2) + (view_h / 2) * (view_h / 2));
@@ -1571,7 +1568,6 @@ static int _get_region_all_mesh_data_memory(FISHEYE_REGION_ATTR *FISHEYE_REGION
 		for (int j = 0; j < 4; j++) {
 			x = pmeshinfo->pmesh_dst[2 * j];
 			y = pmeshinfo->pmesh_dst[2 * j + 1];
-#if !DPU_MODE
 			x = x - CenterXOffset;
 			y = y - CenterYOffset;
 
@@ -1582,7 +1578,6 @@ static int _get_region_all_mesh_data_memory(FISHEYE_REGION_ATTR *FISHEYE_REGION
 				x = x * (1 - 0.333 * (50 - XRatio) / 100);
 				y = y * (1 - 0.333 * (50 - YRatio) / 100);
 			}
-#endif
 			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[j].xcor = x;
 			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[j].ycor = y;
 		}
@@ -1608,7 +1603,6 @@ static int _get_region_all_mesh_data_memory(FISHEYE_REGION_ATTR *FISHEYE_REGION
 #else
 		int x = pmeshinfo->pnode_dst[2 * i];
 		int y = pmeshinfo->pnode_dst[2 * i + 1];
-#if !DPU_MODE
 		x = x - CenterXOffset;
 		y = y - CenterYOffset;
 
@@ -1619,8 +1613,6 @@ static int _get_region_all_mesh_data_memory(FISHEYE_REGION_ATTR *FISHEYE_REGION
 			x = x * (1 - 0.333 * (50 - XRatio) / 100);
 			y = y * (1 - 0.333 * (50 - YRatio) / 100);
 		}
-#endif
-
 		FISHEYE_REGION[rgn].DstRgnNodeInfo[i].node.xcor = x;
 		FISHEYE_REGION[rgn].DstRgnNodeInfo[i].node.ycor = y;
 #endif
@@ -2278,7 +2270,7 @@ static int generate_mesh_on_fisheye(const GRID_INFO_ATTR_S* pstGridInfoAttr, FIS
 {
 	int mesh_tbl_num;	// get number of meshes
 	double x0, y0, r;	// infos of src_img, (x0,y0) = center of image,  r = radius of image.
-
+	int grid_idx = -1;
 	struct timespec start, end;
 
 	clock_gettime(CLOCK_MONOTONIC, &start);
@@ -2294,7 +2286,7 @@ static int generate_mesh_on_fisheye(const GRID_INFO_ATTR_S* pstGridInfoAttr, FIS
 			return -1;
 		}
 		if (FISHEYE_REGION[rgn_idx].ViewMode == PROJECTION_STEREO_FIT) {
-			int grid_idx = get_free_meshdata(pstGridInfoAttr->gridBindName);
+			grid_idx = get_free_meshdata(pstGridInfoAttr->gridBindName);
 			if (grid_idx < 0 || grid_idx >= MESH_DATA_MAX_NUM) {
 				CVI_TRACE_DWA(CVI_DBG_ERR, "meshData buf full.\n");
 				return -1;
@@ -2319,18 +2311,39 @@ static int generate_mesh_on_fisheye(const GRID_INFO_ATTR_S* pstGridInfoAttr, FIS
 	//combine all region meshs - mesh projection done.
 	_get_frame_mesh_list(FISHEYE_CONFIG, FISHEYE_REGION);
 
-	mesh_tbl_num	= FISHEYE_CONFIG->TotalMeshNum;
+	mesh_tbl_num = FISHEYE_CONFIG->TotalMeshNum;
 	float src_x_mesh_tbl[mesh_tbl_num][4];
 	float src_y_mesh_tbl[mesh_tbl_num][4];
 	float dst_x_mesh_tbl[mesh_tbl_num][4];
 	float dst_y_mesh_tbl[mesh_tbl_num][4];
-	for (int mesh_idx = 0; mesh_idx < FISHEYE_CONFIG->TotalMeshNum; mesh_idx++) {
-		for (int knotidx = 0; knotidx < 4; knotidx++) {
-			src_x_mesh_tbl[mesh_idx][knotidx] = FISHEYE_CONFIG->SrcRgnMeshInfo[mesh_idx].knot[knotidx].xcor;
-			src_y_mesh_tbl[mesh_idx][knotidx] = FISHEYE_CONFIG->SrcRgnMeshInfo[mesh_idx].knot[knotidx].ycor;
-			dst_x_mesh_tbl[mesh_idx][knotidx] = FISHEYE_CONFIG->DstRgnMeshInfo[mesh_idx].knot[knotidx].xcor;
-			dst_y_mesh_tbl[mesh_idx][knotidx] = FISHEYE_CONFIG->DstRgnMeshInfo[mesh_idx].knot[knotidx].ycor;
+
+	switch (g_MeshData[grid_idx].grid_mode) {
+	case GRID_MODE_REGION_BASE:
+		for (int mesh_idx = 0; mesh_idx < FISHEYE_CONFIG->TotalMeshNum; mesh_idx++) {
+			for (int knotidx = 0; knotidx < 4; knotidx++) {
+				src_x_mesh_tbl[mesh_idx][knotidx] = FISHEYE_CONFIG->SrcRgnMeshInfo[mesh_idx].knot[knotidx].xcor;
+				src_y_mesh_tbl[mesh_idx][knotidx] = FISHEYE_CONFIG->SrcRgnMeshInfo[mesh_idx].knot[knotidx].ycor;
+				dst_x_mesh_tbl[mesh_idx][knotidx] = FISHEYE_CONFIG->DstRgnMeshInfo[mesh_idx].knot[knotidx].xcor;
+				dst_y_mesh_tbl[mesh_idx][knotidx] = FISHEYE_CONFIG->DstRgnMeshInfo[mesh_idx].knot[knotidx].ycor;
+			}
 		}
+		break;
+	case GRID_MODE_MESH_BASE:
+		FISHEYE_CONFIG->TotalMeshNum = g_MeshData[grid_idx].num_pairs;
+		mesh_tbl_num = FISHEYE_CONFIG->TotalMeshNum;
+
+		for (int mesh_idx = 0; mesh_idx < FISHEYE_CONFIG->TotalMeshNum; mesh_idx++) {
+			for (int knotidx = 0; knotidx < 4; knotidx++) {
+				dst_x_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_dst[8 * mesh_idx + 2 * knotidx + 0];
+				dst_y_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_dst[8 * mesh_idx + 2 * knotidx + 1];
+				src_x_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_src[8 * mesh_idx + 2 * knotidx + 0];
+				src_y_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_src[8 * mesh_idx + 2 * knotidx + 1];
+			}
+		}
+		break;
+	default:
+		CVI_TRACE_DWA(CVI_DBG_ERR, "not supported\n");
+		return CVI_ERR_DWA_NOT_SUPPORT;
 	}
 
 	int dst_height, dst_width;
@@ -2371,7 +2384,6 @@ static int generate_mesh_on_fisheye(const GRID_INFO_ATTR_S* pstGridInfoAttr, FIS
 	fpIntmesh = fopen("intmesh.bin", "wb");
 	for (int i = 0; i < mesh_tbl_num; i++) {
 		for (int j = 0; j < 4; j++) {
-
 			fwrite(&isrc_x_mesh_tbl[i][j], sizeof(int), 1, fpIntmesh);
 			fwrite(&isrc_y_mesh_tbl[i][j], sizeof(int), 1, fpIntmesh);
 			fwrite(&idst_x_mesh_tbl[i][j], sizeof(int), 1, fpIntmesh);
@@ -2486,16 +2498,17 @@ CVI_S32 dwa_mesh_gen_fisheye(SIZE_S in_size, SIZE_S out_size, const FISHEYE_ATTR
 	FISHEYE_ATTR *FISHEYE_CONFIG;
 	FISHEYE_REGION_ATTR *FISHEYE_REGION;
 	USAGE_MODE UseMode;
+	CVI_S32 ret;
 
 	FISHEYE_CONFIG = (FISHEYE_ATTR *)calloc(1, sizeof(*FISHEYE_CONFIG));
 	if (!FISHEYE_CONFIG) {
 		CVI_TRACE_DWA(CVI_DBG_ERR, "memory insufficient for fisheye config\n");
-		return CVI_ERR_GDC_NOMEM;
+		return CVI_ERR_DWA_NOMEM;
 	}
 	FISHEYE_REGION = (FISHEYE_REGION_ATTR *)calloc(1, sizeof(*FISHEYE_REGION) * MAX_REGION_NUM);
 	if (!FISHEYE_REGION) {
 		CVI_TRACE_DWA(CVI_DBG_ERR, "memory insufficient for fisheye region config\n");
-		return CVI_ERR_GDC_NOMEM;
+		return CVI_ERR_DWA_NOMEM;
 	}
 
 	CVI_TRACE_DWA(CVI_DBG_DEBUG, "in_size(%d %d) out_size(%d %d)\n"
@@ -2560,18 +2573,19 @@ CVI_S32 dwa_mesh_gen_fisheye(SIZE_S in_size, SIZE_S out_size, const FISHEYE_ATTR
 
 	// Provide virtual address to write mesh.
 	reorder_mesh_tbl[0] = mesh_vir_addr + (mesh_tbl_phy_addr - mesh_id_phy_addr);
-	if(pstFishEyeAttr->stGridInfoAttr.Enable)
-		generate_mesh_on_fisheye(&(pstFishEyeAttr->stGridInfoAttr), FISHEYE_CONFIG, FISHEYE_REGION, X_TILE_NUMBER, Y_TILE_NUMBER
+	if (pstFishEyeAttr->stGridInfoAttr.Enable)
+		ret = generate_mesh_on_fisheye(&(pstFishEyeAttr->stGridInfoAttr), FISHEYE_CONFIG, FISHEYE_REGION, X_TILE_NUMBER, Y_TILE_NUMBER
 		, (uint16_t *)mesh_vir_addr
 		, reorder_mesh_tbl, mesh_tbl_phy_addr);
 	else
-		generate_mesh_on_fisheye(NULL, FISHEYE_CONFIG, FISHEYE_REGION, X_TILE_NUMBER, Y_TILE_NUMBER
+		ret = generate_mesh_on_fisheye(NULL, FISHEYE_CONFIG, FISHEYE_REGION, X_TILE_NUMBER, Y_TILE_NUMBER
 		, (uint16_t *)mesh_vir_addr
 		, reorder_mesh_tbl, mesh_tbl_phy_addr);
+
 	free(FISHEYE_CONFIG);
 	free(FISHEYE_REGION);
 
-	return CVI_SUCCESS;
+	return ret;
 }
 
 CVI_S32 dwa_mesh_gen_warp(SIZE_S in_size, SIZE_S out_size, const WARP_ATTR_S *pstWarpAttr
@@ -2579,16 +2593,17 @@ CVI_S32 dwa_mesh_gen_warp(SIZE_S in_size, SIZE_S out_size, const WARP_ATTR_S *ps
 {
 	FISHEYE_ATTR *FISHEYE_CONFIG;
 	FISHEYE_REGION_ATTR *FISHEYE_REGION;
+	CVI_S32 ret;
 
 	FISHEYE_CONFIG = (FISHEYE_ATTR *)calloc(1, sizeof(*FISHEYE_CONFIG));
 	if (!FISHEYE_CONFIG) {
 		CVI_TRACE_DWA(CVI_DBG_ERR, "memory insufficient for fisheye config\n");
-		return CVI_ERR_GDC_NOMEM;
+		return CVI_ERR_DWA_NOMEM;
 	}
 	FISHEYE_REGION = (FISHEYE_REGION_ATTR *)calloc(1, sizeof(*FISHEYE_REGION) * MAX_REGION_NUM);
 	if (!FISHEYE_REGION) {
 		CVI_TRACE_DWA(CVI_DBG_ERR, "memory insufficient for fisheye region config\n");
-		return CVI_ERR_GDC_NOMEM;
+		return CVI_ERR_DWA_NOMEM;
 	}
 
 	CVI_TRACE_DWA(CVI_DBG_DEBUG, "in_size(%d %d) out_size(%d %d)\n"
@@ -2609,12 +2624,16 @@ CVI_S32 dwa_mesh_gen_warp(SIZE_S in_size, SIZE_S out_size, const WARP_ATTR_S *ps
 	FISHEYE_REGION[0].RegionValid = 1;
 	FISHEYE_REGION[0].ViewMode = PROJECTION_STEREO_FIT;
 
-	int X_TILE_NUMBER, Y_TILE_NUMBER;
+	int X_TILE_NUMBER, Y_TILE_NUMBER, TMP_X_TILE_NUMBER, TMP_Y_TILE_NUMBER;
 	CVI_U32 mesh_id_size, mesh_tbl_size;
 	CVI_U64 mesh_id_phy_addr, mesh_tbl_phy_addr;
 
 	X_TILE_NUMBER = DIV_UP(in_size.u32Width, DWA_MESH_SLICE_BASE_W);
 	Y_TILE_NUMBER = DIV_UP(in_size.u32Height, DWA_MESH_SLICE_BASE_H);
+	TMP_X_TILE_NUMBER = DIV_UP(out_size.u32Width, DWA_MESH_SLICE_BASE_W);
+	TMP_Y_TILE_NUMBER = DIV_UP(out_size.u32Height, DWA_MESH_SLICE_BASE_H);
+	X_TILE_NUMBER = MAX(X_TILE_NUMBER, TMP_X_TILE_NUMBER);
+	Y_TILE_NUMBER = MAX(Y_TILE_NUMBER, TMP_Y_TILE_NUMBER);
 
 	// calculate mesh_id/mesh_tbl's size in bytes.
 	mesh_tbl_size = 0x60000;
@@ -2631,13 +2650,13 @@ CVI_S32 dwa_mesh_gen_warp(SIZE_S in_size, SIZE_S out_size, const WARP_ATTR_S *ps
 
 	// Provide virtual address to write mesh.
 	reorder_mesh_tbl[0] = mesh_vir_addr + (mesh_tbl_phy_addr - mesh_id_phy_addr);
-	generate_mesh_on_fisheye(&(pstWarpAttr->stGridInfoAttr), FISHEYE_CONFIG, FISHEYE_REGION, X_TILE_NUMBER, Y_TILE_NUMBER
+	ret = generate_mesh_on_fisheye(&(pstWarpAttr->stGridInfoAttr), FISHEYE_CONFIG, FISHEYE_REGION, X_TILE_NUMBER, Y_TILE_NUMBER
 		, (uint16_t *)mesh_vir_addr
 		, reorder_mesh_tbl, mesh_tbl_phy_addr);
 	free(FISHEYE_CONFIG);
 	free(FISHEYE_REGION);
 
-	return CVI_SUCCESS;
+	return ret;
 }
 
 void _ldc_attr_map(const LDC_ATTR_S *pstLDCAttr, SIZE_S out_size, FISHEYE_ATTR *FISHEYE_CONFIG
@@ -2702,12 +2721,12 @@ int dwa_set_mesh_size(int mesh_hor, int mesh_ver)
 {
 	if (mesh_hor <= 0 || mesh_ver <= 0) {
 		CVI_TRACE_DWA(CVI_DBG_ERR, "bad param , mesh_hor:(%d), mesh_ver:(%d)\n", mesh_hor, mesh_ver);
-		return CVI_ERR_GDC_ILLEGAL_PARAM;
+		return CVI_ERR_DWA_ILLEGAL_PARAM;
 	}
 
 	if (mesh_hor * mesh_ver > MESH_MAX_SIZE) {
 		CVI_TRACE_DWA(CVI_DBG_ERR, "mesh size is too large, max mesh size is (%d).\n", MESH_MAX_SIZE);
-		return CVI_ERR_GDC_ILLEGAL_PARAM;
+		return CVI_ERR_DWA_ILLEGAL_PARAM;
 	}
 	meshHor = mesh_hor;
 	meshVer = mesh_ver;
@@ -2717,15 +2736,15 @@ int dwa_set_mesh_size(int mesh_hor, int mesh_ver)
 
 int dwa_get_mesh_size(int *p_mesh_hor, int *p_mesh_ver)
 {
-	MOD_CHECK_NULL_PTR(CVI_ID_GDC, p_mesh_hor);
-	MOD_CHECK_NULL_PTR(CVI_ID_GDC, p_mesh_ver);
+	MOD_CHECK_NULL_PTR(CVI_ID_DWA, p_mesh_hor);
+	MOD_CHECK_NULL_PTR(CVI_ID_DWA, p_mesh_ver);
 	*p_mesh_hor = meshHor;
 	*p_mesh_ver = meshVer;
 
 	return CVI_SUCCESS;
 }
 
-void dwa_mesh_gen_rotation(SIZE_S in_size, SIZE_S out_size, ROTATION_E rot
+CVI_S32 dwa_mesh_gen_rotation(SIZE_S in_size, SIZE_S out_size, ROTATION_E rot
 	, uint64_t mesh_phy_addr, void *mesh_vir_addr)
 {
 	FISHEYE_ATTR *FISHEYE_CONFIG;
@@ -2733,16 +2752,17 @@ void dwa_mesh_gen_rotation(SIZE_S in_size, SIZE_S out_size, ROTATION_E rot
 		.s32CenterXOffset = 0, .s32CenterYOffset = 0, .s32DistortionRatio = 0 };
 	FISHEYE_REGION_ATTR *FISHEYE_REGION;
 	int nMeshhor, nMeshVer;
+	CVI_S32 ret;
 
 	FISHEYE_CONFIG = (FISHEYE_ATTR *)calloc(1, sizeof(*FISHEYE_CONFIG));
 	if (!FISHEYE_CONFIG) {
 		CVI_TRACE_DWA(CVI_DBG_ERR, "memory insufficient for fisheye config\n");
-		return;
+		return CVI_ERR_DWA_NOMEM;
 	}
 	FISHEYE_REGION = (FISHEYE_REGION_ATTR *)calloc(1, sizeof(*FISHEYE_REGION) * MAX_REGION_NUM);
 	if (!FISHEYE_REGION) {
 		CVI_TRACE_DWA(CVI_DBG_ERR, "memory insufficient for fisheye region config\n");
-		return;
+		return CVI_ERR_DWA_NOMEM;
 	}
 
 	CVI_TRACE_DWA(CVI_DBG_DEBUG, "in_size(%d %d) out_size(%d %d)\n"
@@ -2782,12 +2802,14 @@ void dwa_mesh_gen_rotation(SIZE_S in_size, SIZE_S out_size, ROTATION_E rot
 
 	// Provide virtual address to write mesh.
 	reorder_mesh_tbl[0] = mesh_vir_addr + (mesh_tbl_phy_addr - mesh_id_phy_addr);
-	generate_mesh_on_fisheye(NULL, FISHEYE_CONFIG, FISHEYE_REGION, X_TILE_NUMBER, Y_TILE_NUMBER
+	ret = generate_mesh_on_fisheye(NULL, FISHEYE_CONFIG, FISHEYE_REGION, X_TILE_NUMBER, Y_TILE_NUMBER
 		, (uint16_t *)mesh_vir_addr
 		, reorder_mesh_tbl, mesh_tbl_phy_addr);
 
 	free(FISHEYE_CONFIG);
 	free(FISHEYE_REGION);
+
+	return ret;
 }
 
 CVI_S32 dwa_mesh_gen_ldc(SIZE_S in_size, SIZE_S out_size, const LDC_ATTR_S *pstLDCAttr,
@@ -2795,16 +2817,17 @@ CVI_S32 dwa_mesh_gen_ldc(SIZE_S in_size, SIZE_S out_size, const LDC_ATTR_S *pstL
 {
 	FISHEYE_ATTR *FISHEYE_CONFIG;
 	FISHEYE_REGION_ATTR *FISHEYE_REGION;
+	CVI_S32 ret;
 
 	FISHEYE_CONFIG = (FISHEYE_ATTR *)calloc(1, sizeof(*FISHEYE_CONFIG));
 	if (!FISHEYE_CONFIG) {
 		CVI_TRACE_DWA(CVI_DBG_ERR, "memory insufficient for fisheye config\n");
-		return CVI_ERR_GDC_NOMEM;
+		return CVI_ERR_DWA_NOMEM;
 	}
 	FISHEYE_REGION = (FISHEYE_REGION_ATTR *)calloc(1, sizeof(*FISHEYE_REGION) * MAX_REGION_NUM);
 	if (!FISHEYE_REGION) {
 		CVI_TRACE_DWA(CVI_DBG_ERR, "memory insufficient for fisheye region config\n");
-		return CVI_ERR_GDC_NOMEM;
+		return CVI_ERR_DWA_NOMEM;
 	}
 
 	CVI_TRACE_DWA(CVI_DBG_DEBUG, "in_size(%d %d) out_size(%d %d)\n"
@@ -2841,13 +2864,17 @@ CVI_S32 dwa_mesh_gen_ldc(SIZE_S in_size, SIZE_S out_size, const LDC_ATTR_S *pstL
 
 	// Provide virtual address to write mesh.
 	reorder_mesh_tbl[0] = mesh_vir_addr + (mesh_tbl_phy_addr - mesh_id_phy_addr);
-	generate_mesh_on_fisheye(&(pstLDCAttr->stGridInfoAttr), FISHEYE_CONFIG, FISHEYE_REGION, X_TILE_NUMBER, Y_TILE_NUMBER
+	ret = generate_mesh_on_fisheye(&(pstLDCAttr->stGridInfoAttr), FISHEYE_CONFIG, FISHEYE_REGION, X_TILE_NUMBER, Y_TILE_NUMBER
 		, (uint16_t *)mesh_vir_addr
 		, reorder_mesh_tbl, mesh_tbl_phy_addr);
+	if (ret) {
+		CVI_TRACE_DWA(CVI_DBG_ERR, "generate_mesh_on_fisheye fail\n");
+	}
+
 	free(FISHEYE_CONFIG);
 	free(FISHEYE_REGION);
 
-	return CVI_SUCCESS;
+	return ret;
 }
 
 int CNV_MESH_EDGE[4][2] = { { 0, 1 }, { 1, 3 }, { 2, 0 }, { 3, 2 } };

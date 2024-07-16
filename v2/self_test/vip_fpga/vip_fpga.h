@@ -14,7 +14,7 @@ extern "C" {
 #endif
 #endif /* End of #ifdef __cplusplus */
 
-#include <linux/cvi_common.h>
+#include <cvi_common.h>
 
 CVI_S32 VIP_FPGA_1822_TEST(void);
 

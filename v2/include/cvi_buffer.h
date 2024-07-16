@@ -17,10 +17,10 @@ extern "C" {
 
 #include <stdbool.h>
 #include <string.h>
-#include <linux/cvi_math.h>
-#include <linux/cvi_type.h>
-#include <linux/cvi_common.h>
-#include <linux/cvi_comm_video.h>
+#include <cvi_math.h>
+#include <cvi_type.h>
+#include <cvi_common.h>
+#include <cvi_comm_video.h>
 
 #ifndef UNUSED
 #define UNUSED(x) ((void)(x))
@@ -229,11 +229,11 @@ static inline CVI_U32 VI_GetRawBufferSize(CVI_U32 u32Width, CVI_U32 u32Height, P
 
 	/* u32Align: 0 is automatic mode, alignment size following system. Non-0 for specified alignment size */
 	if (u32Align == 0)
-		u32Align = DEFAULT_ALIGN;
+		u32Align = 16;
 	else if (u32Align > MAX_ALIGN)
 		u32Align = MAX_ALIGN;
 	else
-		u32Align = (ALIGN(u32Align, DEFAULT_ALIGN));
+		u32Align = (ALIGN(u32Align, 16));
 
 	switch (enPixelFormat) {
 	case PIXEL_FORMAT_RGB_BAYER_8BPP: {

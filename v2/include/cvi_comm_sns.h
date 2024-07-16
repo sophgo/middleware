@@ -14,11 +14,10 @@ extern "C" {
 #endif
 #endif
 
-#include <linux/cvi_type.h>
-#include <linux/cvi_defines.h>
+#include <cvi_type.h>
+#include <cvi_defines.h>
 #include "cvi_debug.h"
 #include "cvi_comm_isp.h"
-#include "linux/cif_uapi.h"
 
 // ++++++++ If you want to change these interfaces, please contact the isp team. ++++++++
 

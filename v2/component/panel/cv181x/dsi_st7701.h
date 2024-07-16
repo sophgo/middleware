@@ -1,8 +1,7 @@
 #ifndef _MIPI_TX_PARAM_ST_7701_H_
 #define _MIPI_TX_PARAM_ST_7701_H_
 
-#include <linux/cvi_mipi_tx.h>
-#include <linux/cvi_comm_mipi_tx.h>
+#include <cvi_comm_mipi_tx.h>
 
 #define PANEL_NAME "NETEASE-2"
 
@@ -41,7 +40,7 @@ struct combo_dev_cfg_s dev_cfg_st7701_480x800 = {
 	.pixel_clk = PIXEL_CLK(ST7701_NETEASE),
 };
 
-const struct hs_settle_s hs_timing_cfg_st7701_480x800 = { .prepare = 6, .zero = 32, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_st7701_480x800 = { .prepare = 6, .zero = 32, .trail = 1 };
 
 static CVI_U8 data_st7701_0[] = { 0xff, 0x77, 0x01, 0x00, 0x00, 0x13 };
 static CVI_U8 data_st7701_1[] = { 0xef, 0x08 };
@@ -112,7 +111,7 @@ static CVI_U8 data_st7701_38[] = { 0x29 };
 static CVI_U8 data_st7701_39[] = { 0x36, 0x00 };
 static CVI_U8 data_st7701_40[] = { 0x35, 0x00 };
 
-const struct dsc_instr dsi_init_cmds_st7701_480x800[] = {
+struct dsc_instr dsi_init_cmds_st7701_480x800[] = {
 	{.delay = 0, .data_type = 0x39, .size = 6, .data = data_st7701_0 },
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_st7701_1 },
 	{.delay = 0, .data_type = 0x39, .size = 6, .data = data_st7701_2 },

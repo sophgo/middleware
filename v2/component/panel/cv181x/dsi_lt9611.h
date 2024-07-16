@@ -1,7 +1,7 @@
 #ifndef _HDMI_LT9611_H_
 #define _HDMI_LT9611_H_
 
-#include "linux/cvi_comm_video.h"
+#include <cvi_comm_mipi_tx.h>
 
 struct combo_dev_cfg_s dev_cfg_lt9611_1920x1080_60Hz = {
 	.devno = 0,
@@ -157,6 +157,6 @@ struct combo_dev_cfg_s dev_cfg_lt9611_2560x1440_60Hz = {
 	.pixel_clk = 266580,
 };
 
-static struct hs_settle_s hs_timing_cfg_lt9611 = { .prepare = 6, .zero = 32, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_lt9611 = { .prepare = 6, .zero = 32, .trail = 1 };
 
 #endif // _HDMI_LT9611_H_

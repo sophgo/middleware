@@ -2,8 +2,8 @@
 #include "stdlib.h"
 #include "cvi_bin.h"
 #include "cvi_vi.h"
-#include <linux/cvi_comm_sys.h>
-#include <linux/cvi_comm_vi.h>
+#include <cvi_comm_sys.h>
+#include <cvi_comm_vi.h>
 #include "rw_json.h"
 #include "isp_bin.h"
 #include "vpss_bin.h"

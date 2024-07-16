@@ -1,8 +1,4 @@
-#include <sys/prctl.h>
-#include <sys/time.h>
-#include "cvi_base.h"
 #include "rgn_ut.h"
-#include "fontmod.h"
 
 #define VPSS_FILENAME_IN   "res/rgn/golden.yuv422"
 #define VPSS_FILENAME_IN1  "res/rgn/4608_8188_nv21.bin"
@@ -198,7 +194,7 @@ CVI_S32 rgn_TimeBitmap(char *szStr, BITMAP_S *pstBitmap, CVI_U32 u32Color, CVI_U
 	pstBitmap->u32Height = u32CanvasHeight;
 	pstBitmap->pData = malloc(2 * (pstBitmap->u32Width) * (pstBitmap->u32Height));
 	if (pstBitmap->pData == NULL)
-		SAMPLE_PRT("malloc osd memroy err!\n");
+		RGN_UT_PRT("malloc osd memroy err!\n");
 
 	CVI_U16 *puBmData = (CVI_U16 *)pstBitmap->pData;
 	CVI_U32 u32BmRow, u32BmCol;
@@ -234,7 +230,7 @@ CVI_S32 rgn_TimeBitmap(char *szStr, BITMAP_S *pstBitmap, CVI_U32 u32Color, CVI_U
 					continue;
 				}
 			}
-			SAMPLE_PRT("GetFontMod Fail\n");
+			RGN_UT_PRT("GetFontMod Fail\n");
 			return CVI_FAILURE;
 		}
 	}
@@ -259,16 +255,16 @@ static void dump_mem(VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_U32 size)
 		pstVideoFrame->stVFrame.pu8VirAddr[i]
 				= CVI_SYS_Mmap(pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
 
-		SAMPLE_PRT("plane(%d): paddr(0x%llx) vaddr(0x%llx) stride(%d)\n", i,
+		RGN_UT_PRT("plane(%d): paddr(0x%llx) vaddr(0x%llx) stride(%d)\n", i,
 			   (unsigned long long)pstVideoFrame->stVFrame.u64PhyAddr[i],
 			   (unsigned long long)(intptr_t)pstVideoFrame->stVFrame.pu8VirAddr[i],
 			   pstVideoFrame->stVFrame.u32Stride[i]);
-		SAMPLE_PRT(" data_len(%d) plane_len(%d)\n",
+		RGN_UT_PRT(" data_len(%d) plane_len(%d)\n",
 			   u32DataLen, pstVideoFrame->stVFrame.u32Length[i]);
 
 		for (CVI_U32 j = 0; j < u32DataLen/16; j += 16) {
 			CVI_U32 *buf = (CVI_U32 *)(pstVideoFrame->stVFrame.pu8VirAddr[i] + j);
-			SAMPLE_PRT("[%d]%04x: %08x %08x %08x %08x\n",
+			RGN_UT_PRT("[%d]%04x: %08x %08x %08x %08x\n",
 				   i, j, buf[0], buf[1], buf[2], buf[3]);
 		}
 
@@ -305,7 +301,7 @@ static CVI_S32 rgn_send_file_test_body(VPSS_TEST_PARAM *pParam)
 	/************************************************
 	 * step1:  Init SYS and common VB
 	 ************************************************/
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 
 	memset(&stVbConf, 0, sizeof(VB_CONFIG_S));
 	stVbConf.u32MaxPoolCnt = 1;
@@ -319,20 +315,20 @@ static CVI_S32 rgn_send_file_test_body(VPSS_TEST_PARAM *pParam)
 		u32BlkSize = u32BlkSize > u32BlkSizeOut ? u32BlkSize : u32BlkSizeOut;
 		stVbConf.astCommPool[0].u32BlkSize	= u32BlkSize;
 		stVbConf.astCommPool[0].u32BlkCnt	= 5;
-		SAMPLE_PRT("common pool[0] BlkSize %d\n", u32BlkSize);
+		RGN_UT_PRT("common pool[0] BlkSize %d\n", u32BlkSize);
 	} else {
 		stVbConf.u32MaxPoolCnt                  = 2;
 		stVbConf.astCommPool[0].u32BlkSize	= u32BlkSize;
 		stVbConf.astCommPool[0].u32BlkCnt	= 1;	// Only one to send frame
 		stVbConf.astCommPool[1].u32BlkSize	= u32BlkSizeOut;
 		stVbConf.astCommPool[1].u32BlkCnt	= 1;
-		SAMPLE_PRT("common pool[0] BlkSize %d\n", u32BlkSize);
-		SAMPLE_PRT("common pool[1] BlkSize %d\n", u32BlkSizeOut);
+		RGN_UT_PRT("common pool[0] BlkSize %d\n", u32BlkSize);
+		RGN_UT_PRT("common pool[1] BlkSize %d\n", u32BlkSizeOut);
 	}
 
-	s32Ret = SAMPLE_COMM_SYS_Init(&stVbConf);
+	s32Ret = RGN_COMM_SYS_Init(&stVbConf);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("system init failed with %#x\n", s32Ret);
+		RGN_UT_PRT("system init failed with %#x\n", s32Ret);
 		return -1;
 	}
 
@@ -382,32 +378,32 @@ static CVI_S32 rgn_send_file_test_body(VPSS_TEST_PARAM *pParam)
 
 	/*start vpss*/
 	abChnEnable[0] = CVI_TRUE;
-	s32Ret = SAMPLE_COMM_VPSS_Init(VpssGrp, abChnEnable, &stVpssGrpAttr, astVpssChnAttr);
+	s32Ret = RGN_COMM_VPSS_Init(VpssGrp, abChnEnable, &stVpssGrpAttr, astVpssChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("init vpss group failed. s32Ret: 0x%x !\n", s32Ret);
+		RGN_UT_PRT("init vpss group failed. s32Ret: 0x%x !\n", s32Ret);
 		goto EXIT0;
 	}
 
-	s32Ret = SAMPLE_COMM_VPSS_Start(VpssGrp, abChnEnable, &stVpssGrpAttr, astVpssChnAttr);
+	s32Ret = RGN_COMM_VPSS_Start(VpssGrp, abChnEnable, &stVpssGrpAttr, astVpssChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("start vpss group failed. s32Ret: 0x%x !\n", s32Ret);
+		RGN_UT_PRT("start vpss group failed. s32Ret: 0x%x !\n", s32Ret);
 		goto EXIT0;
 	}
 
 	if (yRatio != 0.0) {
 		s32Ret = CVI_VPSS_SetChnYRatio(VpssGrp, VpssChn, yRatio);
 		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("CVI_VPSS_SetChnYRatio failed. s32Ret: 0x%x !\n", s32Ret);
+			RGN_UT_PRT("CVI_VPSS_SetChnYRatio failed. s32Ret: 0x%x !\n", s32Ret);
 			goto EXIT1;
 		}
 
 		s32Ret = CVI_VPSS_GetChnYRatio(VpssGrp, VpssChn, &yRatioOut);
 		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("CVI_VPSS_GetChnYRatio failed. s32Ret: 0x%x !\n", s32Ret);
+			RGN_UT_PRT("CVI_VPSS_GetChnYRatio failed. s32Ret: 0x%x !\n", s32Ret);
 			goto EXIT1;
 		}
 		if (yRatio != yRatioOut) {
-			SAMPLE_PRT("CVI_VPSS_GetChnYRatio failed. ratio set=%f, get=%f !\n", yRatio, yRatioOut);
+			RGN_UT_PRT("CVI_VPSS_GetChnYRatio failed. ratio set=%f, get=%f !\n", yRatio, yRatioOut);
 			goto EXIT1;
 		}
 	}
@@ -416,13 +412,13 @@ static CVI_S32 rgn_send_file_test_body(VPSS_TEST_PARAM *pParam)
 	    pixelFormatOut == PIXEL_FORMAT_YUV_400) {
 		s32Ret = CVI_VPSS_SetChnRotation(VpssGrp, VpssChn, enRotation);
 		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("set vpss chn rotation failed. s32Ret: 0x%x !\n", s32Ret);
+			RGN_UT_PRT("set vpss chn rotation failed. s32Ret: 0x%x !\n", s32Ret);
 			goto EXIT1;
 		}
 
 		s32Ret = CVI_VPSS_GetChnRotation(VpssGrp, VpssChn, &enRotationOut);
 		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("CVI_VPSS_GetChnRotation failed. s32Ret: 0x%x !\n", s32Ret);
+			RGN_UT_PRT("CVI_VPSS_GetChnRotation failed. s32Ret: 0x%x !\n", s32Ret);
 			goto EXIT1;
 		}
 		if (enRotation != enRotationOut) {
@@ -434,14 +430,14 @@ static CVI_S32 rgn_send_file_test_body(VPSS_TEST_PARAM *pParam)
 
 	s32Ret = CVI_VPSS_SetChnCrop(0, 0, pstCropInfo);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("set vpss chn crop failed. s32Ret: 0x%x !\n", s32Ret);
+		RGN_UT_PRT("set vpss chn crop failed. s32Ret: 0x%x !\n", s32Ret);
 		goto EXIT1;
 	}
 
 	if (bAttachVb) {
 		s32Ret = CVI_VPSS_AttachVbPool(0, 0, 1);
 		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("vpss attach vb pool failed. s32Ret: 0x%x !\n", s32Ret);
+			RGN_UT_PRT("vpss attach vb pool failed. s32Ret: 0x%x !\n", s32Ret);
 			goto EXIT1;
 		}
 	}
@@ -449,7 +445,7 @@ static CVI_S32 rgn_send_file_test_body(VPSS_TEST_PARAM *pParam)
 	if (bChnScaleCoef) {
 		s32Ret = CVI_VPSS_SetChnScaleCoefLevel(VpssGrp, VpssChn, enCoef);
 		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("vpss set chn scale coef failed. s32Ret: 0x%x !\n", s32Ret);
+			RGN_UT_PRT("vpss set chn scale coef failed. s32Ret: 0x%x !\n", s32Ret);
 			goto EXIT1;
 		}
 	}
@@ -472,24 +468,24 @@ static CVI_S32 rgn_send_file_test_body(VPSS_TEST_PARAM *pParam)
 	Path_BMP = test_bmp;
 	enPixelFormat = PIXEL_FORMAT_ARGB_1555;
 
-	s32Ret = SAMPLE_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
+	s32Ret = RGN_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(HandleNum, enType, &stChn);
+	s32Ret = RGN_COMM_REGION_AttachToChn(HandleNum, enType, &stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT2;
 	}
 
 	if (enType == OVERLAY_RGN || enType == OVERLAYEX_RGN) {
-		MinHandle = SAMPLE_COMM_REGION_GetMinHandle(enType);
+		MinHandle = RGN_COMM_REGION_GetMinHandle(enType);
 
 		for (i = MinHandle; i < MinHandle + HandleNum; i++) {
-			s32Ret = SAMPLE_COMM_REGION_GetUpCanvas(i, Path_BMP);
+			s32Ret = RGN_COMM_REGION_GetUpCanvas(i, Path_BMP);
 			if (s32Ret != CVI_SUCCESS) {
-				SAMPLE_PRT("SAMPLE_COMM_REGION_GetUpCanvas failed!\n");
+				RGN_UT_PRT("RGN_COMM_REGION_GetUpCanvas failed!\n");
 				goto EXIT3;
 			}
 		}
@@ -500,9 +496,9 @@ static CVI_S32 rgn_send_file_test_body(VPSS_TEST_PARAM *pParam)
 	 ************************************************/
 	for (int i = 0; i < 1/*10*/; i++) {
 		VIDEO_FRAME_INFO_S stVideoFrame;
-		s32Ret = SAMPLE_COMM_VPSS_SendFrame(0, &stSize, pixelFormat, fileName);
+		s32Ret = RGN_COMM_VPSS_SendFrame(0, &stSize, pixelFormat, fileName);
 		if (s32Ret != CVI_SUCCESS) {
-			CVI_TRACE_LOG(CVI_DBG_ERR, "[%d] SAMPLE_COMM_VPSS_SendFrame for grp0 chn0. s32Ret: 0x%x !\n",
+			CVI_TRACE_LOG(CVI_DBG_ERR, "[%d] RGN_COMM_VPSS_SendFrame for grp0 chn0. s32Ret: 0x%x !\n",
 				i, s32Ret);
 			goto EXIT3;
 		}
@@ -531,17 +527,17 @@ static CVI_S32 rgn_send_file_test_body(VPSS_TEST_PARAM *pParam)
 				bInOutSame = CVI_FALSE;
 		}
 
-		if (bInOutSame && !SAMPLE_COMM_FRAME_CompareWithFile(fileName, &stVideoFrame)) {
-			CVI_TRACE_LOG(CVI_DBG_ERR, "[%d] SAMPLE_COMM_FRAME_CompareWithFile for grp0 chn0 fail\n", i);
+		if (bInOutSame && !RGN_COMM_FRAME_CompareWithFile(fileName, &stVideoFrame)) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "[%d] RGN_COMM_FRAME_CompareWithFile for grp0 chn0 fail\n", i);
 			s32Ret = CVI_FAILURE;
 			dump_mem(&stVideoFrame, 32);
 			//goto ERR_VPSS_COMBINE;
 			// keep going
 		}
 
-		s32Ret = SAMPLE_COMM_FRAME_SaveToFile(fileNameOut, &stVideoFrame);
+		s32Ret = RGN_COMM_FRAME_SaveToFile(fileNameOut, &stVideoFrame);
 		if (s32Ret != CVI_SUCCESS) {
-			CVI_TRACE_LOG(CVI_DBG_WARN, "[%d] SAMPLE_COMM_FRAME_SaveToFile. s32Ret: 0x%x !\n",
+			CVI_TRACE_LOG(CVI_DBG_WARN, "[%d] RGN_COMM_FRAME_SaveToFile. s32Ret: 0x%x !\n",
 				i, s32Ret);
 			//goto ERR_VPSS_COMBINE;
 			// keep going
@@ -556,17 +552,17 @@ static CVI_S32 rgn_send_file_test_body(VPSS_TEST_PARAM *pParam)
 	}
 
 EXIT3:
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(HandleNum, enType, &stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(HandleNum, enType, &stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT2:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(HandleNum, enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(HandleNum, enType);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(VpssGrp, abChnEnable);
+	RGN_COMM_VPSS_Stop(VpssGrp, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 
 	return s32Ret;
 }
@@ -622,9 +618,9 @@ static inline CVI_S32 rgn_vb_init(RGN_TEST_PARAM *param)
 	u32BlkSize = u32BlkSize > u32BlkSizeOut ? u32BlkSize : u32BlkSizeOut;
 	stVbConf.astCommPool[0].u32BlkSize	= u32BlkSize;
 	stVbConf.astCommPool[0].u32BlkCnt	= 5;
-	SAMPLE_PRT("common pool[0] BlkSize %d\n", u32BlkSize);
+	RGN_UT_PRT("common pool[0] BlkSize %d\n", u32BlkSize);
 
-	s32Ret = SAMPLE_COMM_SYS_Init(&stVbConf);
+	s32Ret = RGN_COMM_SYS_Init(&stVbConf);
 	if (s32Ret != CVI_SUCCESS) {
 		CVI_TRACE_LOG(CVI_DBG_ERR, "system init failed with %#x\n", s32Ret);
 		return -1;
@@ -670,15 +666,15 @@ static inline CVI_S32 rgn_vpss_init(RGN_TEST_PARAM *param)
 
 	/*start vpss*/
 	abChnEnable[VpssChn] = CVI_TRUE;
-	s32Ret = SAMPLE_COMM_VPSS_Init(VpssGrp, abChnEnable, &stVpssGrpAttr, astVpssChnAttr);
+	s32Ret = RGN_COMM_VPSS_Init(VpssGrp, abChnEnable, &stVpssGrpAttr, astVpssChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("init vpss group failed. s32Ret: 0x%x !\n", s32Ret);
+		RGN_UT_PRT("init vpss group failed. s32Ret: 0x%x !\n", s32Ret);
 		return s32Ret;
 	}
 
-	s32Ret = SAMPLE_COMM_VPSS_Start(VpssGrp, abChnEnable, &stVpssGrpAttr, astVpssChnAttr);
+	s32Ret = RGN_COMM_VPSS_Start(VpssGrp, abChnEnable, &stVpssGrpAttr, astVpssChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("start vpss group failed. s32Ret: 0x%x !\n", s32Ret);
+		RGN_UT_PRT("start vpss group failed. s32Ret: 0x%x !\n", s32Ret);
 		return s32Ret;
 	}
 	return s32Ret;
@@ -698,9 +694,9 @@ static CVI_S32 rgn_ut_vpss_send_frame(RGN_TEST_PARAM *param)
 	for (i = 0; i < param->u32RepeatCnt; i++) {
 		VIDEO_FRAME_INFO_S stVideoFrame;
 
-		s32Ret = SAMPLE_COMM_VPSS_SendFrame(VpssGrp, &stSize, pixelFormat, fileName);
+		s32Ret = RGN_COMM_VPSS_SendFrame(VpssGrp, &stSize, pixelFormat, fileName);
 		if (s32Ret != CVI_SUCCESS) {
-			CVI_TRACE_LOG(CVI_DBG_ERR, "[%d] SAMPLE_COMM_VPSS_SendFrame fail. s32Ret: 0x%x !\n",
+			CVI_TRACE_LOG(CVI_DBG_ERR, "[%d] RGN_COMM_VPSS_SendFrame fail. s32Ret: 0x%x !\n",
 				i, s32Ret);
 			break;
 		}
@@ -714,9 +710,9 @@ static CVI_S32 rgn_ut_vpss_send_frame(RGN_TEST_PARAM *param)
 
 		dump_mem(&stVideoFrame, 32);
 
-		s32Ret = SAMPLE_COMM_FRAME_SaveToFile(fileNameOut, &stVideoFrame);
+		s32Ret = RGN_COMM_FRAME_SaveToFile(fileNameOut, &stVideoFrame);
 		if (s32Ret != CVI_SUCCESS) {
-			CVI_TRACE_LOG(CVI_DBG_WARN, "[%d] SAMPLE_COMM_FRAME_SaveToFile. s32Ret: 0x%x !\n",
+			CVI_TRACE_LOG(CVI_DBG_WARN, "[%d] RGN_COMM_FRAME_SaveToFile. s32Ret: 0x%x !\n",
 				i, s32Ret);
 			// keep going
 		}
@@ -734,7 +730,7 @@ static CVI_S32 rgn_ut_vpss_send_frame(RGN_TEST_PARAM *param)
 #ifndef __CV180X__
 static CVI_S32 vo_ut_plat_vo_init(void)
 {
-	SAMPLE_VO_CONFIG_S stVoConfig;
+	VO_CONFIG_S stVoConfig;
 	RECT_S stDefDispRect  = {0, 0, 720, 1280};
 	SIZE_S stDefImageSize = {720, 1280};
 	CVI_S32 s32Ret = CVI_SUCCESS;
@@ -759,9 +755,9 @@ static CVI_S32 vo_ut_plat_vo_init(void)
 		stDefImageSize.u32Height = stVoPubAttr.stSyncInfo.u16Vact;
 	}
 
-	s32Ret = SAMPLE_COMM_VO_GetDefConfig(&stVoConfig);
+	s32Ret = RGN_COMM_VO_GetDefConfig(&stVoConfig);
 	if (s32Ret != CVI_SUCCESS) {
-		printf("SAMPLE_COMM_VO_GetDefConfig failed with %#x\n", s32Ret);
+		printf("RGN_COMM_VO_GetDefConfig failed with %#x\n", s32Ret);
 		goto error;
 	}
 
@@ -772,9 +768,9 @@ static CVI_S32 vo_ut_plat_vo_init(void)
 	stVoConfig.stImageSize	 = stDefImageSize;
 	stVoConfig.enPixFormat = PIXEL_FORMAT_NV21;
 	stVoConfig.enVoMode	 = VO_MODE_1MUX;
-	s32Ret = SAMPLE_COMM_VO_StartVO(&stVoConfig);
+	s32Ret = RGN_COMM_VO_StartVO(&stVoConfig);
 	if (s32Ret != CVI_SUCCESS) {
-		printf("SAMPLE_COMM_VO_StartVO failed with %#x\n", s32Ret);
+		printf("RGN_COMM_VO_StartVO failed with %#x\n", s32Ret);
 	}
 
 error:
@@ -806,14 +802,14 @@ static CVI_S32 rgn_set_bitmap_with_vpss_sendframe_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -826,26 +822,26 @@ static CVI_S32 rgn_set_bitmap_with_vpss_sendframe_test(void)
 	PIXEL_FORMAT_E enPixelFormat;
 
 	enPixelFormat = PIXEL_FORMAT_ARGB_1555;
-	s32Ret = SAMPLE_COMM_REGION_Create(param.u32HdlNum, param.enType, enPixelFormat);
+	s32Ret = RGN_COMM_REGION_Create(param.u32HdlNum, param.enType, enPixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
 
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(param.u32HdlNum,
+	s32Ret = RGN_COMM_REGION_AttachToChn(param.u32HdlNum,
 		param.enType, &param.stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT2;
 	}
 
 	if (param.enType == OVERLAY_RGN || param.enType == OVERLAYEX_RGN) {
-		MinHandle = SAMPLE_COMM_REGION_GetMinHandle(param.enType);
+		MinHandle = RGN_COMM_REGION_GetMinHandle(param.enType);
 
 		for (i = MinHandle; i < MinHandle + param.u32HdlNum; i++) {
-			s32Ret = SAMPLE_COMM_REGION_SetBitMap(i, Path_BMP, enPixelFormat, false);
+			s32Ret = RGN_COMM_REGION_SetBitMap(i, Path_BMP, enPixelFormat, false);
 			if (s32Ret != CVI_SUCCESS) {
-				SAMPLE_PRT("SAMPLE_COMM_REGION_SetBitMap failed!\n");
+				RGN_UT_PRT("RGN_COMM_REGION_SetBitMap failed!\n");
 				goto EXIT3;
 			}
 		}
@@ -865,21 +861,21 @@ static CVI_S32 rgn_set_bitmap_with_vpss_sendframe_test(void)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 	}
 
 EXIT3:
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT2:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -907,14 +903,14 @@ static CVI_S32 rgn_update_canvas_with_vpss_sendframe_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -927,26 +923,26 @@ static CVI_S32 rgn_update_canvas_with_vpss_sendframe_test(void)
 	PIXEL_FORMAT_E enPixelFormat;
 
 	enPixelFormat = PIXEL_FORMAT_ARGB_1555;
-	s32Ret = SAMPLE_COMM_REGION_Create(param.u32HdlNum, param.enType, enPixelFormat);
+	s32Ret = RGN_COMM_REGION_Create(param.u32HdlNum, param.enType, enPixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
 
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(param.u32HdlNum,
+	s32Ret = RGN_COMM_REGION_AttachToChn(param.u32HdlNum,
 		param.enType, &param.stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT2;
 	}
 
 	if (param.enType == OVERLAY_RGN || param.enType == OVERLAYEX_RGN) {
-		MinHandle = SAMPLE_COMM_REGION_GetMinHandle(param.enType);
+		MinHandle = RGN_COMM_REGION_GetMinHandle(param.enType);
 
 		for (i = MinHandle; i < MinHandle + param.u32HdlNum; i++) {
-			s32Ret = SAMPLE_COMM_REGION_GetUpCanvas(i, Path_BMP);
+			s32Ret = RGN_COMM_REGION_GetUpCanvas(i, Path_BMP);
 			if (s32Ret != CVI_SUCCESS) {
-				SAMPLE_PRT("SAMPLE_COMM_REGION_GetUpCanvas failed!\n");
+				RGN_UT_PRT("RGN_COMM_REGION_GetUpCanvas failed!\n");
 				goto EXIT3;
 			}
 		}
@@ -966,21 +962,21 @@ static CVI_S32 rgn_update_canvas_with_vpss_sendframe_test(void)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 	}
 
 EXIT3:
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT2:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -1009,14 +1005,14 @@ static CVI_S32 rgn_8bit_mode_canvas_with_vpss_sendframe_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -1029,23 +1025,23 @@ static CVI_S32 rgn_8bit_mode_canvas_with_vpss_sendframe_test(void)
 	PIXEL_FORMAT_E enPixelFormat;
 
 	enPixelFormat = PIXEL_FORMAT_8BIT_MODE;
-	s32Ret = SAMPLE_COMM_REGION_Create(param.u32HdlNum, param.enType, enPixelFormat);
+	s32Ret = RGN_COMM_REGION_Create(param.u32HdlNum, param.enType, enPixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
 
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(param.u32HdlNum, param.enType, &param.stChn);
+	s32Ret = RGN_COMM_REGION_AttachToChn(param.u32HdlNum, param.enType, &param.stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT2;
 	}
 
 	/* Use indexed palettes format of bmp file in OVERLAY example. */
 	for (i = OverlayMinHandle; i < OverlayMinHandle + param.u32HdlNum; i++) {
-		s32Ret = SAMPLE_COMM_REGION_SetBitMap(i, Path_BMP, enPixelFormat, false);
+		s32Ret = RGN_COMM_REGION_SetBitMap(i, Path_BMP, enPixelFormat, false);
 		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("SAMPLE_COMM_REGION_SetBitMap failed!\n");
+			RGN_UT_PRT("RGN_COMM_REGION_SetBitMap failed!\n");
 			goto EXIT3;
 		}
 	}
@@ -1055,7 +1051,7 @@ static CVI_S32 rgn_8bit_mode_canvas_with_vpss_sendframe_test(void)
 	stPalette.pixelFormat = RGN_COLOR_FMT_RGB888;
 	s32Ret = CVI_RGN_SetChnPalette(OverlayMinHandle, &param.stChn, &stPalette);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_SetChnPalette failed!\n");
+		RGN_UT_PRT("CVI_RGN_SetChnPalette failed!\n");
 		goto EXIT3;
 	}
 
@@ -1074,21 +1070,21 @@ static CVI_S32 rgn_8bit_mode_canvas_with_vpss_sendframe_test(void)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 	}
 
 EXIT3:
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT2:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -1119,14 +1115,14 @@ static CVI_S32 rgn_vpss_coverex_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -1136,20 +1132,20 @@ static CVI_S32 rgn_vpss_coverex_test(void)
 	param.u32HdlNum = 4;
 	param.enType = COVEREX_RGN;
 
-	s32Ret = SAMPLE_COMM_REGION_Create(param.u32HdlNum, param.enType, 0);
+	s32Ret = RGN_COMM_REGION_Create(param.u32HdlNum, param.enType, 0);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
 
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(param.u32HdlNum,
+	s32Ret = RGN_COMM_REGION_AttachToChn(param.u32HdlNum,
 		param.enType, &param.stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT2;
 	}
 
-	Handle = SAMPLE_COMM_REGION_GetMinHandle(param.enType) + 3;
+	Handle = RGN_COMM_REGION_GetMinHandle(param.enType) + 3;
 
 	CVI_RGN_GetDisplayAttr(Handle, &param.stChn, &stRgnChnAttr);
 	stRgnChnAttr.unChnAttr.stCoverExChn.u32Color = 0x00ff0000;
@@ -1169,20 +1165,20 @@ static CVI_S32 rgn_vpss_coverex_test(void)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 	}
 
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT2:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -1203,7 +1199,7 @@ static CVI_S32 rgn_vo_cover_test(void)
 	 ************************************************/
 	memset(&param, 0, sizeof(param));
 	param.stChn.enModId = CVI_ID_VO;
-	param.stChn.s32DevId = VO_OVERLAY_G1;
+	param.stChn.s32DevId = VO_LAYER_G1;
 	param.stChn.s32ChnId = VPSS_CHN0;
 	param.stInputSize.u32Width = 1280;
 	param.stInputSize.u32Height = 720;
@@ -1214,13 +1210,13 @@ static CVI_S32 rgn_vo_cover_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	s32Ret = vo_ut_plat_vo_init();
 	if (s32Ret) {
-		SAMPLE_PRT("vo_ut_plat_vo_init failed.\n");
+		RGN_UT_PRT("vo_ut_plat_vo_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -1230,20 +1226,20 @@ static CVI_S32 rgn_vo_cover_test(void)
 	param.u32HdlNum = 1;
 	param.enType = COVER_RGN;
 
-	s32Ret = SAMPLE_COMM_REGION_Create(param.u32HdlNum, param.enType, 0);
+	s32Ret = RGN_COMM_REGION_Create(param.u32HdlNum, param.enType, 0);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
 
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(param.u32HdlNum,
+	s32Ret = RGN_COMM_REGION_AttachToChn(param.u32HdlNum,
 		param.enType, &param.stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT2;
 	}
 
-	Handle = SAMPLE_COMM_REGION_GetMinHandle(param.enType);
+	Handle = RGN_COMM_REGION_GetMinHandle(param.enType);
 
 	CVI_RGN_GetDisplayAttr(Handle, &param.stChn, &stRgnChnAttr);
 	stRgnChnAttr.unChnAttr.stCoverChn.u32Color = 0x00ff0000;
@@ -1254,15 +1250,15 @@ static CVI_S32 rgn_vo_cover_test(void)
 
 	//send frame
 	snprintf(fileName, sizeof(fileName)-1, "%s", VO_FILENAME_IN);
-	s32Ret = SAMPLE_COMM_FRAME_LoadFromFile(fileName, &stVideoFrame, &param.stOutputSize,
+	s32Ret = RGN_COMM_FRAME_LoadFromFile(fileName, &stVideoFrame, &param.stOutputSize,
 		param.eOutputFmt);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_FRAME_LoadFromFile failed!\n");
+		RGN_UT_PRT("RGN_COMM_FRAME_LoadFromFile failed!\n");
 		goto EXIT3;
 	}
 	s32Ret = CVI_VO_SendFrame(1, 0, &stVideoFrame, 1000);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_VO_SendFrame failed!\n");
+		RGN_UT_PRT("CVI_VO_SendFrame failed!\n");
 		goto EXIT3;
 	}
 
@@ -1271,18 +1267,18 @@ static CVI_S32 rgn_vo_cover_test(void)
 	sleep(1);
 
 EXIT3:
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT2:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 
 EXIT1:
-	SAMPLE_COMM_VO_Exit();
+	RGN_COMM_VO_Exit();
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 #else
 	return CVI_SUCCESS;
@@ -1316,14 +1312,14 @@ static CVI_S32 rgn_vpss_mosaic_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -1333,20 +1329,20 @@ static CVI_S32 rgn_vpss_mosaic_test(void)
 	param.u32HdlNum = 3;
 	param.enType = MOSAIC_RGN;
 
-	s32Ret = SAMPLE_COMM_REGION_Create(param.u32HdlNum, param.enType, 0);
+	s32Ret = RGN_COMM_REGION_Create(param.u32HdlNum, param.enType, 0);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
 
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(param.u32HdlNum,
+	s32Ret = RGN_COMM_REGION_AttachToChn(param.u32HdlNum,
 		param.enType, &param.stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT2;
 	}
 
-	Handle = SAMPLE_COMM_REGION_GetMinHandle(param.enType);
+	Handle = RGN_COMM_REGION_GetMinHandle(param.enType);
 
 	CVI_RGN_GetDisplayAttr(Handle, &param.stChn, &stRgnChnAttr);
 	stRgnChnAttr.unChnAttr.stMosaicChn.stRect.s32X = 600;
@@ -1366,20 +1362,20 @@ static CVI_S32 rgn_vpss_mosaic_test(void)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 	}
 
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT2:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -1409,19 +1405,19 @@ static CVI_S32 rgn_create_destroy_test(void)
 	PIXEL_FORMAT_E enPixelFormat;
 
 	enPixelFormat = PIXEL_FORMAT_ARGB_1555;
-	s32Ret = SAMPLE_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
+	s32Ret = RGN_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
 
 EXIT1:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(HandleNum, enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(HandleNum, enType);
 	if (s32ExtRet != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 	}
 
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -1448,14 +1444,14 @@ static CVI_S32 rgn_create_attach_detach_destroy_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -1474,30 +1470,30 @@ static CVI_S32 rgn_create_attach_detach_destroy_test(void)
 	PIXEL_FORMAT_E enPixelFormat;
 
 	enPixelFormat = PIXEL_FORMAT_ARGB_1555;
-	s32Ret = SAMPLE_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
+	s32Ret = RGN_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
 
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(HandleNum, enType, &stChn);
+	s32Ret = RGN_COMM_REGION_AttachToChn(HandleNum, enType, &stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT2;
 	}
 
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(HandleNum, enType, &stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(HandleNum, enType, &stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT2:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(HandleNum, enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(HandleNum, enType);
 	if (s32ExtRet != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 	}
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -1519,7 +1515,7 @@ static CVI_S32 rgn_attr_test(void)
 	param.eOutputFmt = PIXEL_FORMAT_NV21;
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("rgn_vb_init failed!\n");
+		RGN_UT_PRT("rgn_vb_init failed!\n");
 		goto EXIT1;
 	}
 
@@ -1538,21 +1534,21 @@ static CVI_S32 rgn_attr_test(void)
 	PIXEL_FORMAT_E enPixelFormat;
 
 	enPixelFormat = PIXEL_FORMAT_ARGB_1555;
-	s32Ret = SAMPLE_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
+	s32Ret = RGN_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
 
 	if (enType == OVERLAY_RGN || enType == OVERLAYEX_RGN) {
-		MinHandle = SAMPLE_COMM_REGION_GetMinHandle(enType);
+		MinHandle = RGN_COMM_REGION_GetMinHandle(enType);
 
 		for (i = MinHandle; i < MinHandle + HandleNum; i++) {
 			s32Ret = CVI_RGN_GetAttr(MinHandle, &stRegion);
 			if (s32Ret != CVI_SUCCESS) {
-				SAMPLE_PRT("CVI_RGN_GetAttr failed!\n");
+				RGN_UT_PRT("CVI_RGN_GetAttr failed!\n");
 			}
-			SAMPLE_PRT("u32BgColor:	0x%x\n", stRegion.unAttr.stOverlay.u32BgColor);
+			RGN_UT_PRT("u32BgColor:	0x%x\n", stRegion.unAttr.stOverlay.u32BgColor);
 		}
 	}
 
@@ -1561,21 +1557,21 @@ static CVI_S32 rgn_attr_test(void)
 
 	s32Ret = CVI_RGN_SetAttr(MinHandle, &stRegion);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_SetAttr failed!\n");
+		RGN_UT_PRT("CVI_RGN_SetAttr failed!\n");
 	}
 	s32Ret = CVI_RGN_GetAttr(MinHandle, &stRegion);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_GetAttr failed!\n");
+		RGN_UT_PRT("CVI_RGN_GetAttr failed!\n");
 	}
-	SAMPLE_PRT("u32BgColor:	0x%x\n", stRegion.unAttr.stOverlay.u32BgColor);
+	RGN_UT_PRT("u32BgColor:	0x%x\n", stRegion.unAttr.stOverlay.u32BgColor);
 
 EXIT1:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(HandleNum, enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(HandleNum, enType);
 	if (s32ExtRet != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 	}
 
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -1602,14 +1598,14 @@ static CVI_S32 rgn_display_attr_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -1631,40 +1627,40 @@ static CVI_S32 rgn_display_attr_test(void)
 	PIXEL_FORMAT_E enPixelFormat;
 
 	enPixelFormat = PIXEL_FORMAT_ARGB_1555;
-	s32Ret = SAMPLE_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
+	s32Ret = RGN_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT1;
 	}
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(HandleNum, enType, &stChn);
+	s32Ret = RGN_COMM_REGION_AttachToChn(HandleNum, enType, &stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT2;
 	}
-	cover_hdl = SAMPLE_COMM_REGION_GetMinHandle(enType);
+	cover_hdl = RGN_COMM_REGION_GetMinHandle(enType);
 
 	CVI_RGN_GetDisplayAttr(cover_hdl, &stChn, &stRgnChnAttr);
-	SAMPLE_PRT("u32Color:	0x%x\n", stRgnChnAttr.unChnAttr.stCoverChn.u32Color);
+	RGN_UT_PRT("u32Color:	0x%x\n", stRgnChnAttr.unChnAttr.stCoverChn.u32Color);
 
-	SAMPLE_PRT("Change cover to green!\n");
+	RGN_UT_PRT("Change cover to green!\n");
 	stRgnChnAttr.unChnAttr.stCoverChn.u32Color = 0x0000ff00;
 	CVI_RGN_SetDisplayAttr(cover_hdl, &stChn, &stRgnChnAttr);
 
 	CVI_RGN_GetDisplayAttr(cover_hdl, &stChn, &stRgnChnAttr);
-	SAMPLE_PRT("u32Color:	0x%x\n", stRgnChnAttr.unChnAttr.stCoverChn.u32Color);
+	RGN_UT_PRT("u32Color:	0x%x\n", stRgnChnAttr.unChnAttr.stCoverChn.u32Color);
 
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(HandleNum, enType, &stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(HandleNum, enType, &stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT2:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(HandleNum, enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(HandleNum, enType);
 	if (s32ExtRet != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 	}
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -1693,21 +1689,21 @@ static CVI_S32 rgn_vo_osd_test(void)
 	//VB init for 1920x1080 yuv422 input, 1280x720 nv21 output
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 	//Create grp 0 and chn 0
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 	//init gVoCtx->rgn_handle in vo_set_chn_attr
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = vo_ut_plat_vo_init();
 	if (s32Ret) {
-		SAMPLE_PRT("vo_ut_plat_vo_init failed.\n");
+		RGN_UT_PRT("vo_ut_plat_vo_init failed.\n");
 		goto EXIT1;
 	}
 
@@ -1723,31 +1719,31 @@ static CVI_S32 rgn_vo_osd_test(void)
 	HandleNum = 1;
 	enType = OVERLAY_RGN;
 	stChn.enModId = CVI_ID_VO;
-	stChn.s32DevId = VO_OVERLAY_G1;
+	stChn.s32DevId = VO_LAYER_G1;
 	stChn.s32ChnId = 0;
 	Path_BMP = test_bmp;
 	PIXEL_FORMAT_E enPixelFormat;
 
 	enPixelFormat = PIXEL_FORMAT_ARGB_1555;
-	s32Ret = SAMPLE_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
+	s32Ret = RGN_COMM_REGION_Create(HandleNum, enType, enPixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT2;
 	}
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(HandleNum, enType, &stChn);
+	s32Ret = RGN_COMM_REGION_AttachToChn(HandleNum, enType, &stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT3;
 	}
 
 	if (enType == OVERLAY_RGN || enType == OVERLAYEX_RGN) {
-		MinHandle = SAMPLE_COMM_REGION_GetMinHandle(enType);
+		MinHandle = RGN_COMM_REGION_GetMinHandle(enType);
 
 		for (i = MinHandle; i < MinHandle + HandleNum; i++) {
-			//s32Ret = SAMPLE_COMM_REGION_SetBitMap(i, Path_BMP);
-			s32Ret = SAMPLE_COMM_REGION_GetUpCanvas(i, Path_BMP);
+			//s32Ret = RGN_COMM_REGION_SetBitMap(i, Path_BMP);
+			s32Ret = RGN_COMM_REGION_GetUpCanvas(i, Path_BMP);
 			if (s32Ret != CVI_SUCCESS) {
-				SAMPLE_PRT("SAMPLE_COMM_REGION_GetUpCanvas failed!\n");
+				RGN_UT_PRT("RGN_COMM_REGION_GetUpCanvas failed!\n");
 				goto EXIT4;
 			}
 		}
@@ -1755,20 +1751,20 @@ static CVI_S32 rgn_vo_osd_test(void)
 	sleep(1);
 
 EXIT4:
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(HandleNum, enType, &stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(HandleNum, enType, &stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT3:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(HandleNum, enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(HandleNum, enType);
 	if (s32ExtRet != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 	}
 EXIT2:
-	SAMPLE_COMM_VO_Exit();
+	RGN_COMM_VO_Exit();
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 #else
 	return CVI_SUCCESS;
@@ -1811,14 +1807,14 @@ static CVI_S32 rgn_compress_test(CVI_U32 u32RgnFormat)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -1827,7 +1823,7 @@ static CVI_S32 rgn_compress_test(CVI_U32 u32RgnFormat)
 	stChn.s32DevId = 0;
 	stChn.s32ChnId = 0;
 
-	MinHandle = SAMPLE_COMM_REGION_GetMinHandle(enType);
+	MinHandle = RGN_COMM_REGION_GetMinHandle(enType);
 
 	stRegion.enType = enType;
 	stRegion.unAttr.stOverlay.enPixelFormat = aenFormats[u32RgnFormat];
@@ -1840,7 +1836,7 @@ static CVI_S32 rgn_compress_test(CVI_U32 u32RgnFormat)
 
 	s32Ret = CVI_RGN_Create(MinHandle, &stRegion);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
 		goto EXIT1;
 	}
 
@@ -1850,7 +1846,7 @@ static CVI_S32 rgn_compress_test(CVI_U32 u32RgnFormat)
 	stChnAttr.unChnAttr.stOverlayChn.stPoint.s32Y = 0;
 	s32Ret = CVI_RGN_AttachToChn(MinHandle, &stChn, &stChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
 		goto EXIT2;
 	}
 
@@ -1860,7 +1856,7 @@ static CVI_S32 rgn_compress_test(CVI_U32 u32RgnFormat)
 
 	s32Ret = CVI_RGN_GetCanvasInfo(MinHandle, &stCanvasInfo);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_GetCanvasInfo failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_GetCanvasInfo failed with %#x!\n", s32Ret);
 		goto EXIT3;
 	}
 
@@ -1970,7 +1966,7 @@ static CVI_S32 rgn_compress_test(CVI_U32 u32RgnFormat)
 
 	s32Ret = CVI_RGN_UpdateCanvas(MinHandle);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_UpdateCanvas failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_UpdateCanvas failed with %#x!\n", s32Ret);
 		goto EXIT3;
 	}
 
@@ -1989,7 +1985,7 @@ static CVI_S32 rgn_compress_test(CVI_U32 u32RgnFormat)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 	}
 
 EXIT3:
@@ -1997,9 +1993,9 @@ EXIT3:
 EXIT2:
 	CVI_RGN_Destroy(MinHandle);
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -2034,14 +2030,14 @@ static CVI_S32 rgn_compress_simpleobjs_bitmap_test(CVI_VOID)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -2050,7 +2046,7 @@ static CVI_S32 rgn_compress_simpleobjs_bitmap_test(CVI_VOID)
 	stChn.s32DevId = 0;
 	stChn.s32ChnId = 0;
 
-	MinHandle = SAMPLE_COMM_REGION_GetMinHandle(enType);
+	MinHandle = RGN_COMM_REGION_GetMinHandle(enType);
 
 	stRegion.enType = OVERLAY_RGN;
 	stRegion.unAttr.stOverlay.enPixelFormat = PIXEL_FORMAT_ARGB_1555;
@@ -2063,7 +2059,7 @@ static CVI_S32 rgn_compress_simpleobjs_bitmap_test(CVI_VOID)
 
 	s32Ret = CVI_RGN_Create(MinHandle, &stRegion);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
 		goto EXIT1;
 	}
 
@@ -2073,7 +2069,7 @@ static CVI_S32 rgn_compress_simpleobjs_bitmap_test(CVI_VOID)
 	stChnAttr.unChnAttr.stOverlayChn.stPoint.s32Y = 0;
 	s32Ret = CVI_RGN_AttachToChn(MinHandle, &stChn, &stChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
 		goto EXIT2;
 	}
 
@@ -2083,7 +2079,7 @@ static CVI_S32 rgn_compress_simpleobjs_bitmap_test(CVI_VOID)
 
 	s32Ret = CVI_RGN_GetCanvasInfo(MinHandle, &stCanvasInfo);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_GetCanvasInfo failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_GetCanvasInfo failed with %#x!\n", s32Ret);
 		goto EXIT3;
 	}
 
@@ -2139,16 +2135,16 @@ static CVI_S32 rgn_compress_simpleobjs_bitmap_test(CVI_VOID)
 	pstObjAttr[11].stLine.u32Color = 0xe318;
 	pstObjAttr[11].enObjType = RGN_CMPR_LINE;
 
-	s32Ret = SAMPLE_COMM_REGION_MST_LoadBmp(tiger_bmp, &stBitmap, CVI_FALSE, 0x00,
+	s32Ret = RGN_COMM_REGION_MST_LoadBmp(tiger_bmp, &stBitmap, CVI_FALSE, 0x00,
 		pstCanvasCmprAttr->enPixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_MST_LoadBmp failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("RGN_COMM_REGION_MST_LoadBmp failed with %#x!\n", s32Ret);
 		goto EXIT3;
 	}
 	s32Ret = CVI_SYS_IonAlloc(&u64BitmapPhyAddr, (CVI_VOID **)&pBitmapVirAddr, "rgn_cmpr_bitmap1",
 			stBitmap.u32Width * stBitmap.u32Height * 2);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_SYS_IonAlloc failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_SYS_IonAlloc failed with %#x!\n", s32Ret);
 		goto EXIT4;
 	}
 	memcpy(pBitmapVirAddr, stBitmap.pData, stBitmap.u32Width * stBitmap.u32Height * 2);
@@ -2162,13 +2158,13 @@ static CVI_S32 rgn_compress_simpleobjs_bitmap_test(CVI_VOID)
 	rgn_GetTimeStr(NULL, szStr, MAX_STR_LEN);
 	s32Ret = rgn_TimeBitmap(szStr, &stBitmapText, 0x9ce7, 0x7fff);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("rgn_TimeBitmap failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("rgn_TimeBitmap failed with %#x!\n", s32Ret);
 		goto EXIT5;
 	}
 	s32Ret = CVI_SYS_IonAlloc(&u64BitmapTextPhyAddr, (CVI_VOID **)&pBitmapTextVirAddr,
 		"rgn_cmpr_bitmap2", stBitmapText.u32Width * stBitmapText.u32Height * 2);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_SYS_IonAlloc failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_SYS_IonAlloc failed with %#x!\n", s32Ret);
 		goto EXIT6;
 	}
 	memcpy(pBitmapTextVirAddr, stBitmapText.pData, stBitmapText.u32Width * stBitmapText.u32Height * 2);
@@ -2181,7 +2177,7 @@ static CVI_S32 rgn_compress_simpleobjs_bitmap_test(CVI_VOID)
 
 	s32Ret = CVI_RGN_UpdateCanvas(MinHandle);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_UpdateCanvas failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_UpdateCanvas failed with %#x!\n", s32Ret);
 		goto EXIT7;
 	}
 
@@ -2200,7 +2196,7 @@ static CVI_S32 rgn_compress_simpleobjs_bitmap_test(CVI_VOID)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 	}
 
 EXIT7:
@@ -2216,9 +2212,9 @@ EXIT3:
 EXIT2:
 	CVI_RGN_Destroy(MinHandle);
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -2253,14 +2249,14 @@ static CVI_S32 rgn_compressed_normal_mixed_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -2285,7 +2281,7 @@ static CVI_S32 rgn_compressed_normal_mixed_test(void)
 
 	s32Ret = CVI_RGN_Create(MinHandleOdec, &stRegion);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
 		goto EXIT1;
 	}
 
@@ -2295,7 +2291,7 @@ static CVI_S32 rgn_compressed_normal_mixed_test(void)
 	stChnAttr.unChnAttr.stOverlayChn.stPoint.s32Y = 0;
 	s32Ret = CVI_RGN_AttachToChn(MinHandleOdec, &stChn, &stChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
 		goto EXIT2;
 	}
 
@@ -2305,7 +2301,7 @@ static CVI_S32 rgn_compressed_normal_mixed_test(void)
 
 	s32Ret = CVI_RGN_GetCanvasInfo(MinHandleOdec, &stCanvasInfo);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_GetCanvasInfo failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_GetCanvasInfo failed with %#x!\n", s32Ret);
 		goto EXIT3;
 	}
 
@@ -2331,7 +2327,7 @@ static CVI_S32 rgn_compressed_normal_mixed_test(void)
 	}
 	s32Ret = CVI_RGN_UpdateCanvas(MinHandleOdec);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_UpdateCanvas failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_UpdateCanvas failed with %#x!\n", s32Ret);
 		goto EXIT3;
 	}
 
@@ -2342,26 +2338,26 @@ static CVI_S32 rgn_compressed_normal_mixed_test(void)
 	PIXEL_FORMAT_E OSDpixelFormat;
 
 	OSDpixelFormat = PIXEL_FORMAT_ARGB_1555;
-	s32Ret = SAMPLE_COMM_REGION_Create(param.u32HdlNum, param.enType, OSDpixelFormat);
+	s32Ret = RGN_COMM_REGION_Create(param.u32HdlNum, param.enType, OSDpixelFormat);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Create failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Create failed!\n");
 		goto EXIT3;
 	}
 
-	s32Ret = SAMPLE_COMM_REGION_AttachToChn(param.u32HdlNum,
+	s32Ret = RGN_COMM_REGION_AttachToChn(param.u32HdlNum,
 		param.enType, &param.stChn);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_AttachToChn failed!\n");
 		goto EXIT4;
 	}
 
 	if (param.enType == OVERLAY_RGN || param.enType == OVERLAYEX_RGN) {
-		MinHandle = SAMPLE_COMM_REGION_GetMinHandle(param.enType);
+		MinHandle = RGN_COMM_REGION_GetMinHandle(param.enType);
 
 		for (i = MinHandle; (CVI_S32)i < MinHandle + param.u32HdlNum; i++) {
-			s32Ret = SAMPLE_COMM_REGION_GetUpCanvas(i, Path_BMP);
+			s32Ret = RGN_COMM_REGION_GetUpCanvas(i, Path_BMP);
 			if (s32Ret != CVI_SUCCESS) {
-				SAMPLE_PRT("SAMPLE_COMM_REGION_GetUpCanvas failed!\n");
+				RGN_UT_PRT("RGN_COMM_REGION_GetUpCanvas failed!\n");
 				goto EXIT5;
 			}
 		}
@@ -2382,29 +2378,29 @@ static CVI_S32 rgn_compressed_normal_mixed_test(void)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 	}
 
 EXIT5:
-	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
+	s32ExtRet = RGN_COMM_REGION_DetachFrmChn(param.u32HdlNum, param.enType, &param.stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_DetachFrmChn failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_DetachFrmChn failed!\n");
 EXIT4:
-	s32ExtRet = SAMPLE_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
+	s32ExtRet = RGN_COMM_REGION_Destroy(param.u32HdlNum, param.enType);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
+		RGN_UT_PRT("RGN_COMM_REGION_Destroy failed!\n");
 EXIT3:
 	s32ExtRet = CVI_RGN_DetachFromChn(MinHandleOdec, &param.stChn);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_DetachFromChn failed!\n");
+		RGN_UT_PRT("CVI_RGN_DetachFromChn failed!\n");
 EXIT2:
 	s32ExtRet = CVI_RGN_Destroy(MinHandleOdec);
 	if (s32ExtRet != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_Destroy failed!\n");
+		RGN_UT_PRT("CVI_RGN_Destroy failed!\n");
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 #else
 	return CVI_SUCCESS;
@@ -2440,14 +2436,14 @@ static CVI_S32 rgn_vpss_formats_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -2464,7 +2460,7 @@ static CVI_S32 rgn_vpss_formats_test(void)
 	stRegion.unAttr.stOverlay.stCompressInfo.enOSDCompressMode = OSD_COMPRESS_MODE_NONE;
 	s32Ret = CVI_RGN_Create(Handle, &stRegion);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
 		goto EXIT1;
 	}
 
@@ -2477,12 +2473,12 @@ static CVI_S32 rgn_vpss_formats_test(void)
 	stChnAttr.unChnAttr.stOverlayChn.u32Layer = Handle;
 	s32Ret = CVI_RGN_AttachToChn(Handle, &param.stChn, &stChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
 		goto EXIT2;
 	}
 	fp = fopen(dog_argb8888_bin, "rb");
 	if (fp == NULL) {
-		SAMPLE_PRT("fopen failed!\n");
+		RGN_UT_PRT("fopen failed!\n");
 		goto EXIT3;
 	}
 	fseek(fp, 0L, SEEK_END);
@@ -2490,7 +2486,7 @@ static CVI_S32 rgn_vpss_formats_test(void)
 	rewind(fp);
 	stBitmap.pData = malloc(u32FileSize);
 	if (stBitmap.pData == NULL) {
-		SAMPLE_PRT("malloc size(%d) failed!\n", u32FileSize);
+		RGN_UT_PRT("malloc size(%d) failed!\n", u32FileSize);
 		fclose(fp);
 		goto EXIT3;
 	}
@@ -2503,7 +2499,7 @@ static CVI_S32 rgn_vpss_formats_test(void)
 
 	s32Ret = CVI_RGN_SetBitMap(Handle, &stBitmap);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_SetBitMap failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_SetBitMap failed with %#x!\n", s32Ret);
 		free(stBitmap.pData);
 		goto EXIT3;
 	}
@@ -2519,7 +2515,7 @@ static CVI_S32 rgn_vpss_formats_test(void)
 	stRegion.unAttr.stOverlay.stCompressInfo.enOSDCompressMode = OSD_COMPRESS_MODE_NONE;
 	s32Ret = CVI_RGN_Create(Handle, &stRegion);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
 		goto EXIT3;
 	}
 
@@ -2532,13 +2528,13 @@ static CVI_S32 rgn_vpss_formats_test(void)
 	stChnAttr.unChnAttr.stOverlayChn.u32Layer = Handle;
 	s32Ret = CVI_RGN_AttachToChn(Handle, &param.stChn, &stChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
 		goto EXIT4;
 	}
 
 	fp = fopen(dog_argb4444_bin, "rb");
 	if (fp == NULL) {
-		SAMPLE_PRT("fopen failed!\n");
+		RGN_UT_PRT("fopen failed!\n");
 		goto EXIT5;
 	}
 	fseek(fp, 0L, SEEK_END);
@@ -2546,7 +2542,7 @@ static CVI_S32 rgn_vpss_formats_test(void)
 	rewind(fp);
 	stBitmap.pData = malloc(u32FileSize);
 	if (stBitmap.pData == NULL) {
-		SAMPLE_PRT("malloc size(%d) failed!\n", u32FileSize);
+		RGN_UT_PRT("malloc size(%d) failed!\n", u32FileSize);
 		fclose(fp);
 		goto EXIT5;
 	}
@@ -2559,7 +2555,7 @@ static CVI_S32 rgn_vpss_formats_test(void)
 
 	s32Ret = CVI_RGN_SetBitMap(Handle, &stBitmap);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_SetBitMap failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_SetBitMap failed with %#x!\n", s32Ret);
 		free(stBitmap.pData);
 		goto EXIT5;
 	}
@@ -2575,7 +2571,7 @@ static CVI_S32 rgn_vpss_formats_test(void)
 	stRegion.unAttr.stOverlay.stCompressInfo.enOSDCompressMode = OSD_COMPRESS_MODE_NONE;
 	s32Ret = CVI_RGN_Create(Handle, &stRegion);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
 		goto EXIT5;
 	}
 
@@ -2588,13 +2584,13 @@ static CVI_S32 rgn_vpss_formats_test(void)
 	stChnAttr.unChnAttr.stOverlayChn.u32Layer = Handle;
 	s32Ret = CVI_RGN_AttachToChn(Handle, &param.stChn, &stChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
 		goto EXIT6;
 	}
 
 	fp = fopen(dog_argb1555_bin, "rb");
 	if (fp == NULL) {
-		SAMPLE_PRT("fopen failed!\n");
+		RGN_UT_PRT("fopen failed!\n");
 		goto EXIT7;
 	}
 	fseek(fp, 0L, SEEK_END);
@@ -2602,7 +2598,7 @@ static CVI_S32 rgn_vpss_formats_test(void)
 	rewind(fp);
 	stBitmap.pData = malloc(u32FileSize);
 	if (stBitmap.pData == NULL) {
-		SAMPLE_PRT("malloc size(%d) failed!\n", u32FileSize);
+		RGN_UT_PRT("malloc size(%d) failed!\n", u32FileSize);
 		fclose(fp);
 		goto EXIT7;
 	}
@@ -2615,7 +2611,7 @@ static CVI_S32 rgn_vpss_formats_test(void)
 
 	s32Ret = CVI_RGN_SetBitMap(Handle, &stBitmap);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_SetBitMap failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_SetBitMap failed with %#x!\n", s32Ret);
 		free(stBitmap.pData);
 		goto EXIT5;
 	}
@@ -2635,37 +2631,37 @@ static CVI_S32 rgn_vpss_formats_test(void)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 	}
 
 EXIT7:
 	s32Ret = CVI_RGN_DetachFromChn(2, &param.stChn);
 	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_DetachFromChn Handle(2) failed!\n");
+		RGN_UT_PRT("CVI_RGN_DetachFromChn Handle(2) failed!\n");
 EXIT6:
 	s32Ret = CVI_RGN_Destroy(2);
 	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_Destroy Handle(2) failed!\n");
+		RGN_UT_PRT("CVI_RGN_Destroy Handle(2) failed!\n");
 EXIT5:
 	s32Ret = CVI_RGN_DetachFromChn(1, &param.stChn);
 	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_DetachFromChn Handle(1) failed!\n");
+		RGN_UT_PRT("CVI_RGN_DetachFromChn Handle(1) failed!\n");
 EXIT4:
 	s32Ret = CVI_RGN_Destroy(1);
 	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_Destroy Handle(1) failed!\n");
+		RGN_UT_PRT("CVI_RGN_Destroy Handle(1) failed!\n");
 EXIT3:
 	s32Ret = CVI_RGN_DetachFromChn(0, &param.stChn);
 	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_DetachFromChn Handle(0) failed!\n");
+		RGN_UT_PRT("CVI_RGN_DetachFromChn Handle(0) failed!\n");
 EXIT2:
 	s32Ret = CVI_RGN_Destroy(0);
 	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_Destroy Handle(0) failed!\n");
+		RGN_UT_PRT("CVI_RGN_Destroy Handle(0) failed!\n");
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -2698,14 +2694,14 @@ static CVI_S32 rgn_vpss_sc_v1_capability_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN0] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -2717,7 +2713,7 @@ static CVI_S32 rgn_vpss_sc_v1_capability_test(void)
 	stChn.s32DevId = 0;
 	stChn.s32ChnId = 0;
 
-	MinHandle = SAMPLE_COMM_REGION_GetMinHandle(enType);
+	MinHandle = RGN_COMM_REGION_GetMinHandle(enType);
 
 	stRegion.enType = enType;
 	stRegion.unAttr.stOverlay.enPixelFormat = PIXEL_FORMAT_ARGB_8888;
@@ -2730,7 +2726,7 @@ static CVI_S32 rgn_vpss_sc_v1_capability_test(void)
 
 	s32Ret = CVI_RGN_Create(MinHandle, &stRegion);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
 		goto EXIT1;
 	}
 
@@ -2740,7 +2736,7 @@ static CVI_S32 rgn_vpss_sc_v1_capability_test(void)
 	stChnAttr.unChnAttr.stOverlayChn.stPoint.s32Y = 0;
 	s32Ret = CVI_RGN_AttachToChn(MinHandle, &stChn, &stChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
 		goto EXIT2;
 	}
 
@@ -2750,7 +2746,7 @@ static CVI_S32 rgn_vpss_sc_v1_capability_test(void)
 
 	s32Ret = CVI_RGN_GetCanvasInfo(MinHandle, &stCanvasInfo);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_GetCanvasInfo failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_GetCanvasInfo failed with %#x!\n", s32Ret);
 		goto EXIT3;
 	}
 
@@ -2799,7 +2795,7 @@ static CVI_S32 rgn_vpss_sc_v1_capability_test(void)
 
 	s32Ret = CVI_RGN_UpdateCanvas(MinHandle);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_UpdateCanvas failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_UpdateCanvas failed with %#x!\n", s32Ret);
 		goto EXIT3;
 	}
 
@@ -2819,22 +2815,22 @@ static CVI_S32 rgn_vpss_sc_v1_capability_test(void)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 		goto EXIT3;
 	}
 
 EXIT3:
 	s32Ret = CVI_RGN_DetachFromChn(MinHandle, &param.stChn);
 	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_DetachFromChn MinHandle failed!\n");
+		RGN_UT_PRT("CVI_RGN_DetachFromChn MinHandle failed!\n");
 EXIT2:
 	s32Ret = CVI_RGN_Destroy(MinHandle);
 	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_Destroy MinHandle failed!\n");
+		RGN_UT_PRT("CVI_RGN_Destroy MinHandle failed!\n");
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -2866,14 +2862,14 @@ static CVI_S32 rgn_vpss_sc_v2_capability_test(void)
 
 	s32Ret = rgn_vb_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vb_init failed.\n");
+		RGN_UT_PRT("rgn_vb_init failed.\n");
 		return s32Ret;
 	}
 
 	abChnEnable[VPSS_CHN1] = true;
 	s32Ret = rgn_vpss_init(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_vpss_init failed.\n");
+		RGN_UT_PRT("rgn_vpss_init failed.\n");
 		goto EXIT0;
 	}
 
@@ -2890,7 +2886,7 @@ static CVI_S32 rgn_vpss_sc_v2_capability_test(void)
 	stRegion.unAttr.stOverlay.stCompressInfo.enOSDCompressMode = OSD_COMPRESS_MODE_NONE;
 	s32Ret = CVI_RGN_Create(Handle, &stRegion);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_Create failed with %#x!\n", s32Ret);
 		goto EXIT1;
 	}
 	memset(&stChnAttr, 0, sizeof(stChnAttr));
@@ -2902,12 +2898,12 @@ static CVI_S32 rgn_vpss_sc_v2_capability_test(void)
 	stChnAttr.unChnAttr.stOverlayChn.u32Layer = Handle;
 	s32Ret = CVI_RGN_AttachToChn(Handle, &param.stChn, &stChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_AttachToChn failed with %#x!\n", s32Ret);
 		goto EXIT2;
 	}
 	fp = fopen(dog_argb8888_bin, "rb");
 	if (fp == NULL) {
-		SAMPLE_PRT("fopen failed!\n");
+		RGN_UT_PRT("fopen failed!\n");
 		goto EXIT3;
 	}
 	fseek(fp, 0L, SEEK_END);
@@ -2915,7 +2911,7 @@ static CVI_S32 rgn_vpss_sc_v2_capability_test(void)
 	rewind(fp);
 	stBitmap.pData = malloc(u32FileSize);
 	if (stBitmap.pData == NULL) {
-		SAMPLE_PRT("malloc size(%d) failed!\n", u32FileSize);
+		RGN_UT_PRT("malloc size(%d) failed!\n", u32FileSize);
 		fclose(fp);
 		goto EXIT3;
 	}
@@ -2927,7 +2923,7 @@ static CVI_S32 rgn_vpss_sc_v2_capability_test(void)
 
 	s32Ret = CVI_RGN_SetBitMap(Handle, &stBitmap);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_RGN_SetBitMap failed with %#x!\n", s32Ret);
+		RGN_UT_PRT("CVI_RGN_SetBitMap failed with %#x!\n", s32Ret);
 		free(stBitmap.pData);
 		goto EXIT3;
 	}
@@ -2948,22 +2944,22 @@ static CVI_S32 rgn_vpss_sc_v2_capability_test(void)
 	param.u32RepeatCnt = 1;
 	s32Ret = rgn_ut_vpss_send_frame(&param);
 	if (s32Ret) {
-		SAMPLE_PRT("rgn_ut_vpss_send_frame failed.\n");
+		RGN_UT_PRT("rgn_ut_vpss_send_frame failed.\n");
 		goto EXIT3;
 	}
 
 EXIT3:
 	s32Ret = CVI_RGN_DetachFromChn(Handle, &param.stChn);
 	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_DetachFromChn Handle(0) failed!\n");
+		RGN_UT_PRT("CVI_RGN_DetachFromChn Handle(0) failed!\n");
 EXIT2:
 	s32Ret = CVI_RGN_Destroy(Handle);
 	if (s32Ret != CVI_SUCCESS)
-		SAMPLE_PRT("CVI_RGN_Destroy Handle(0) failed!\n");
+		RGN_UT_PRT("CVI_RGN_Destroy Handle(0) failed!\n");
 EXIT1:
-	SAMPLE_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
+	RGN_COMM_VPSS_Stop(param.stChn.s32DevId, abChnEnable);
 EXIT0:
-	SAMPLE_COMM_SYS_Exit();
+	RGN_COMM_SYS_Exit();
 	return s32Ret;
 }
 
@@ -3103,11 +3099,11 @@ int main(int argc, char *argv[])
 	if (argc >= 2) {
 		op = (CVI_S32)atoi(argv[1]);
 		s32Ret = _rgn_ut_handle_op(op);
-		SAMPLE_PRT("rgn ut op[%d] %s\n", op, s32Ret == CVI_SUCCESS ? "pass" : "fail");
+		RGN_UT_PRT("rgn ut op[%d] %s\n", op, s32Ret == CVI_SUCCESS ? "pass" : "fail");
 	} else {
 		do {
-			SAMPLE_PRT("========================== RGN testcase ==========================\n");
-			//SAMPLE_PRT("0 : ioctl\n");
+			RGN_UT_PRT("========================== RGN testcase ==========================\n");
+			//RGN_UT_PRT("0 : ioctl\n");
 			RGN_UT_PRT("%03d: send frame test from vpss_ut.c\n", RGN_WITH_VPSS_SEND_FRAME_TEST_ORIG);
 			RGN_UT_PRT("%03d: RGN set bit map.\n", RGN_BIT_MAP_WITH_VPSS_SEND_FRAME_TEST);
 			RGN_UT_PRT("%03d: RGN update canvas.\n", RGN_CANVAS_WITH_VPSS_SEND_FRAME_TEST);
@@ -3147,7 +3143,7 @@ int main(int argc, char *argv[])
 			RGN_UT_PRT("%03d: RGN on VPSS crop test.\n", RGN_VPSS_CROP_TEST);
 			RGN_UT_PRT("%03d: RGN on VPSS checksum test.\n", RGN_CHECKSUM_TEST);
 #endif
-			SAMPLE_PRT("255: exit\n");
+			RGN_UT_PRT("255: exit\n");
 			scanf("%d", &op);
 			s32Ret = _rgn_ut_handle_op(op);
 			if (s32Ret != CVI_SUCCESS) {

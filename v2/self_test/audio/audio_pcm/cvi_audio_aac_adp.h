@@ -10,11 +10,7 @@
 
 #include <stdio.h>
 #include "cvi_comm_aio.h"
-#if defined(__CV181X__) || defined(__CV180X__) || defined(__CV186X__)
-#include <linux/cvi_type.h>
-#else
 #include "cvi_type.h"
-#endif
 #ifdef SUPPORT_EXTERNAL_AAC
 #include "cvi_audio.h"
 #include "cvi_comm_aenc.h"

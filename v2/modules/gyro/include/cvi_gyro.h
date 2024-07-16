@@ -8,7 +8,7 @@
 #ifndef __CVI_GYRO_H__
 #define __CVI_GYRO_H__
 
-#include "linux/cvi_type.h"
+#include "cvi_type.h"
 #ifndef UNUSED
 #define UNUSED(x) ((void)(x))
 #endif

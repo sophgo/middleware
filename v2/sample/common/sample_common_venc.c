@@ -120,7 +120,6 @@ enum _SAMPLE_COMM_VENC_STAT_ {
 
 pthread_t gs_VencTask[VENC_MAX_CHN_NUM];
 pthread_t gs_VencSendTask[VENC_MAX_CHN_NUM];
-pthread_t gs_VencGetTask[VENC_MAX_CHN_NUM];
 
 static CVI_S32 SAMPLE_COMM_VENC_GetDataType(PAYLOAD_TYPE_E enType, VENC_PACK_S *ppack);
 static CVI_S32 SAMPLE_COMM_VENC_SetChnAttr(
@@ -159,12 +158,6 @@ CVI_VOID SAMPLE_COMM_VENC_InitCommonInputCfg(commonInputCfg *pCic)
 	memset(pCic, 0, sizeof(commonInputCfg));
 	pCic->ifInitVb = 1;
 	pCic->vbMode = VB_SOURCE_COMMON;
-	pCic->bSingleEsBuf_jpege = 0;
-	pCic->bSingleEsBuf_h264e = 0;
-	pCic->bSingleEsBuf_h265e = 0;
-	pCic->singleEsBufSize_jpege = 0;
-	pCic->singleEsBufSize_h264e = 0;
-	pCic->singleEsBufSize_h265e = 0;
 	pCic->h265RefreshType = 0;
 	pCic->jpegMarkerOrder = 0;
 	pCic->bThreadDisable = 0;
@@ -201,8 +194,6 @@ CVI_VOID SAMPLE_COMM_VENC_InitChnInputCfg(chnInputCfg *pIc)
 	pIc->bind_mode = VENC_BIND_DISABLE;
 	pIc->pixel_format = 0;
 	pIc->bitstreamBufSize = 0;
-	pIc->single_LumaBuf = 0;
-	pIc->single_core = 0;
 	pIc->forceIdr = -1;
 	pIc->chgNum = -1;
 	pIc->tempLayer = 0;
@@ -261,6 +252,9 @@ CVI_VOID SAMPLE_COMM_VENC_InitChnInputCfg(chnInputCfg *pIc)
 	pIc->u32MirrorDirection = 0;
 	pIc->u32CmdQueueDepth = 0;
 	pIc->u32MinSrcCount = 1;    // for jpeg src count is 1
+
+	pIc->s32DisableIDRCount = -1;
+	pIc->s32EnableIDRCount = -1;
 }
 
 // Map command line input pixel format to PIXEL_FORMAT_E.
@@ -398,17 +392,14 @@ CVI_S32 SAMPLE_COMM_VENC_SaveChannelStream(vencChnCtx *pvecc)
 			}
 		}
 
-		// printf("CVI_VENC_GetStream, VencChn = %d\n", VencChn);
-
+		printf("get chn:%d coount:%d\n", pvecc->VencChn, stStream.u32PackCount);
 		for (CVI_U32 i = 0; i < stStream.u32PackCount; i++) {
 			ppack = &stStream.pstPack[i];
-			printf("get chn:%d srcidx:%d\n", pvecc->VencChn, ppack->releasFrameIdx);
-			pthread_mutex_lock(&pvecc->frame_buffer_lock);
 			if (ppack->releasFrameIdx >= 0) {
 				pvecc->frameUnusedQueue[ppack->releasFrameIdx].iUseFlag = 0;
 			}
-			pthread_mutex_unlock(&pvecc->frame_buffer_lock);
 		}
+
 		if (!(pvecc->perf == 1)) {
 			s32Ret = SAMPLE_COMM_VENC_SaveStream(
 					stVencChnAttr.stVencAttr.enType,
@@ -419,7 +410,6 @@ CVI_S32 SAMPLE_COMM_VENC_SaveChannelStream(vencChnCtx *pvecc)
 				break;
 			}
 		}
-
 
 		s32Ret = CVI_VENC_QueryStatus(VencChn, &stStat);
 		if (s32Ret != CVI_SUCCESS) {
@@ -517,16 +507,9 @@ CVI_S32 SAMPLE_COMM_VENC_Stop(VENC_CHN VencChn)
 
 	if (gs_VencSendTask[VencChn] != 0) {
 		pthread_join(gs_VencSendTask[VencChn], CVI_NULL);
-		printf("SednVencFrameProc done\n");
+		printf("SednVencFrameProc done, chn:%d\n", VencChn);
 
 		gs_VencSendTask[VencChn] = 0;
-	}
-
-	if (gs_VencGetTask[VencChn] != 0) {
-		pthread_join(gs_VencGetTask[VencChn], CVI_NULL);
-		printf("GetVencStreamProc done\n");
-
-		gs_VencGetTask[VencChn] = 0;
 	}
 
 	s32Ret = CVI_VENC_StopRecvFrame(VencChn);
@@ -1375,7 +1358,7 @@ static CVI_S32 SAMPLE_COMM_VENC_SetChnAttr(
 			return CVI_FAILURE;
 		}
 		pstVencChnAttr->stVencAttr.stAttrH264e.bRcnRefShareBuf = bRcnRefShareBuf;
-		pstVencChnAttr->stVencAttr.stAttrH264e.bSingleLumaBuf = pIc->single_LumaBuf;
+		pstVencChnAttr->stVencAttr.stAttrH264e.bSingleLumaBuf = 0;
 	} break;
 	case PT_MJPEG: {
 		if (enRcMode == SAMPLE_RC_FIXQP) {
@@ -1743,19 +1726,19 @@ CVI_S32 SAMPLE_COMM_VENC_SetModParam(const commonInputCfg *pCic)
 		case MODTYPE_H264E:
 			stModParam.stH264eModParam.enH264eVBSource = eVbSource;
 			stModParam.stH264eModParam.u32UserDataMaxLen = 3072;
-			stModParam.stH264eModParam.bSingleEsBuf = (pCic->bSingleEsBuf_h264e ? true : false);
-			stModParam.stH264eModParam.u32SingleEsBufSize = pCic->singleEsBufSize_h264e;
+			stModParam.stH264eModParam.bSingleEsBuf = false;
+			stModParam.stH264eModParam.u32SingleEsBufSize = 0;
 			break;
 		case MODTYPE_H265E:
 			stModParam.stH265eModParam.enH265eVBSource = eVbSource;
 			stModParam.stH265eModParam.u32UserDataMaxLen = 3072;
-			stModParam.stH265eModParam.bSingleEsBuf = (pCic->bSingleEsBuf_h265e ? true : false);
-			stModParam.stH265eModParam.u32SingleEsBufSize = pCic->singleEsBufSize_h265e;
+			stModParam.stH265eModParam.bSingleEsBuf = false;
+			stModParam.stH265eModParam.u32SingleEsBufSize = 0;
 			stModParam.stH265eModParam.enRefreshType = pCic->h265RefreshType;
 			break;
 		case MODTYPE_JPEGE:
-			stModParam.stJpegeModParam.bSingleEsBuf = (pCic->bSingleEsBuf_jpege ? true : false);
-			stModParam.stJpegeModParam.u32SingleEsBufSize = pCic->singleEsBufSize_jpege;
+			stModParam.stJpegeModParam.bSingleEsBuf = false;
+			stModParam.stJpegeModParam.u32SingleEsBufSize = 0;
 			switch (pCic->jpegMarkerOrder) {
 			case 2:
 				stModParam.stJpegeModParam.enJpegeFormat = JPEGE_FORMAT_CUSTOM;
@@ -2413,9 +2396,10 @@ CVI_S32 SAMPLE_COMM_VENC_Start(
 			return CVI_FAILURE;
 		}
 		pIc->u32MinSrcCount = stEncInitialInfo.min_num_src_fb;
+
+		printf("get enc recon frame cnt:%d, src frame cnt:%d\n"
+			, stEncInitialInfo.min_num_rec_fb, stEncInitialInfo.min_num_src_fb);
 	}
 
-	printf("get enc recon frame cnt:%d, src frame cnt:%d\n"
-		, stEncInitialInfo.min_num_rec_fb, stEncInitialInfo.min_num_src_fb);
 	return CVI_SUCCESS;
 }

@@ -1,9 +1,9 @@
 #ifndef __CVI_SNS_CTRL_H__
 #define __CVI_SNS_CTRL_H__
 
-#include <linux/cif_uapi.h>
-#include <linux/cvi_errno.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+#include <cvi_errno.h>
+#include <cvi_type.h>
 #include "cvi_debug.h"
 #include "cvi_comm_3a.h"
 #include "cvi_comm_isp.h"

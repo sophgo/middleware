@@ -1,10 +1,10 @@
 #ifndef _VO_BIN_H
 #define _VO_BIN_H
 
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 #include "cvi_bin.h"
-#include <linux/cvi_common.h>
-#include <linux/cvi_comm_vo.h>
+#include <cvi_common.h>
+#include <cvi_comm_vo.h>
 
 CVI_S32 vo_bin_getbinsize(CVI_U32 *size);
 CVI_S32 vo_bin_getparamfrombin(CVI_U8 *addr, CVI_U32 size);

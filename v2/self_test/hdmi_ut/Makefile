@@ -7,7 +7,7 @@ include ../self_test.mk
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I../../sample/common -I../../sample/hdmi -I$(KERNEL_INC) -I$(SYS_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I../../sample/common -I../../sample/hdmi -I$(KERNEL_INC) -I$(SYS_INC)
 INCS += -I../../modules/vo/include
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)

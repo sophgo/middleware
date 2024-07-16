@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 
-#include "mipi_tx.h"
+#include "cvi_comm_mipi_tx.h"
 
 static void _cal_htt_extra(struct combo_dev_cfg_s *dev_cfg)
 {
@@ -83,8 +83,8 @@ int mipi_tx_cfg(int fd, struct combo_dev_cfg_s *dev_cfg)
 	struct combo_dev_cfg_s dev_cfg_t = *dev_cfg;
 
 	_cal_htt_extra(&dev_cfg_t);
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_SET_DEV_CFG, &dev_cfg_t)) {
-		perror("CVI_VIP_MIPI_TX_SET_DEV_CFG");
+	if (-1 == ioctl(fd, MIPI_TX_SET_DEV_CFG, &dev_cfg_t)) {
+		perror("MIPI_TX_SET_DEV_CFG");
 		return -1;
 	}
 	return 0;
@@ -95,8 +95,8 @@ int mipi_tx_send_cmd(int fd, struct cmd_info_s *cmd_info)
 	if (cmd_info->cmd_size == 0)
 		return -1;
 
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_SET_CMD, cmd_info)) {
-		perror("CVI_VIP_MIPI_TX_SET_CMD");
+	if (-1 == ioctl(fd, MIPI_TX_SET_CMD, cmd_info)) {
+		perror("MIPI_TX_SET_CMD");
 		return -1;
 	}
 	return 0;
@@ -108,8 +108,8 @@ int mipi_tx_recv_cmd(int fd, struct get_cmd_info_s *cmd_info)
 	if (cmd_info->get_data_size == 0)
 		return -1;
 
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_GET_CMD, cmd_info)) {
-		perror("CVI_VIP_MIPI_TX_GET_CMD");
+	if (-1 == ioctl(fd, MIPI_TX_GET_CMD, cmd_info)) {
+		perror("MIPI_TX_GET_CMD");
 		return -1;
 	}
 	return 0;
@@ -117,8 +117,8 @@ int mipi_tx_recv_cmd(int fd, struct get_cmd_info_s *cmd_info)
 
 int mipi_tx_enable(int fd)
 {
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_ENABLE, NULL)) {
-		perror("CVI_VIP_MIPI_TX_ENABLE");
+	if (-1 == ioctl(fd, MIPI_TX_ENABLE, NULL)) {
+		perror("MIPI_TX_ENABLE");
 		return -1;
 	}
 	return 0;
@@ -126,8 +126,26 @@ int mipi_tx_enable(int fd)
 
 int mipi_tx_disable(int fd)
 {
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_DISABLE, NULL)) {
-		perror("CVI_VIP_MIPI_TX_DISABLE");
+	if (-1 == ioctl(fd, MIPI_TX_DISABLE, NULL)) {
+		perror("MIPI_TX_DISABLE");
+		return -1;
+	}
+	return 0;
+}
+
+int mipi_tx_suspend(int fd)
+{
+	if (-1 == ioctl(fd, MIPI_TX_SUSPEND, NULL)) {
+		perror("MIPI_TX_SUSPEND");
+		return -1;
+	}
+	return 0;
+}
+
+int mipi_tx_resume(int fd)
+{
+	if (-1 == ioctl(fd, MIPI_TX_RESUME, NULL)) {
+		perror("MIPI_TX_RESUM");
 		return -1;
 	}
 	return 0;
@@ -135,8 +153,8 @@ int mipi_tx_disable(int fd)
 
 int mipi_tx_set_hs_settle(int fd, const struct hs_settle_s *hs_cfg)
 {
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_SET_HS_SETTLE, hs_cfg)) {
-		perror("CVI_VIP_MIPI_TX_SET_HS_SETTLE");
+	if (-1 == ioctl(fd, MIPI_TX_SET_HS_SETTLE, hs_cfg)) {
+		perror("MIPI_TX_SET_HS_SETTLE");
 		return -1;
 	}
 	return 0;
@@ -144,8 +162,8 @@ int mipi_tx_set_hs_settle(int fd, const struct hs_settle_s *hs_cfg)
 
 int mipi_tx_get_hs_settle(int fd, struct hs_settle_s *hs_cfg)
 {
-	if (-1 == ioctl(fd, CVI_VIP_MIPI_TX_GET_HS_SETTLE, hs_cfg)) {
-		perror("CVI_VIP_MIPI_TX_GET_HS_SETTLE");
+	if (-1 == ioctl(fd, MIPI_TX_GET_HS_SETTLE, hs_cfg)) {
+		perror("MIPI_TX_GET_HS_SETTLE");
 		return -1;
 	}
 	return 0;

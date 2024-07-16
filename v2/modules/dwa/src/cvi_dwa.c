@@ -10,7 +10,7 @@
 #include <sys/mman.h>
 #include <sys/time.h>
 
-#include "linux/dwa_uapi.h"
+#include "dwa_uapi.h"
 #include "cvi_buffer.h"
 #include "cvi_base.h"
 #include "cvi_sys.h"
@@ -272,7 +272,11 @@ CVI_S32 CVI_DWA_AddCorrectionTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask,
 			return CVI_ERR_DWA_NOBUF;
 		}
 
-		dwa_mesh_gen_fisheye(in_size, out_size, pstFishEyeAttr, paddr, vaddr, ROTATION_0);
+		if (dwa_mesh_gen_fisheye(in_size, out_size, pstFishEyeAttr, paddr, vaddr, ROTATION_0)) {
+			CVI_TRACE_DWA(CVI_DBG_ERR, "dwa_mesh_gen_fisheye failed\n");
+			goto MESH_GEN_FAIL;
+		}
+
 		CVI_SYS_IonFlushCache(paddr, vaddr, CVI_DWA_MESH_SIZE_FISHEYE);
 
 #if DWA_DUMP_MESH
@@ -311,6 +315,11 @@ CVI_S32 CVI_DWA_AddCorrectionTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask,
 	pstTask->au64privateData[0] = dwa_tskMesh[idx].paddr;
 	pstTask->au64privateData[1] = (CVI_U64)((uintptr_t)dwa_tskMesh[idx].vaddr);
 	return dwa_add_correction_task(fd, &attr);
+
+MESH_GEN_FAIL:
+	if (paddr && vaddr)
+		CVI_SYS_IonFree(paddr, vaddr);
+	return CVI_FAILURE;
 }
 
 CVI_S32 CVI_DWA_AddDewarpTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask,
@@ -353,7 +362,12 @@ CVI_S32 CVI_DWA_AddDewarpTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask,
 			CVI_TRACE_DWA(CVI_DBG_ERR, "Can't acquire memory for mesh.\n");
 			return CVI_ERR_DWA_NOBUF;
 		}
-		dwa_mesh_gen_warp(in_size, out_size, pstWarpAttr, paddr, vaddr);
+
+		if (dwa_mesh_gen_warp(in_size, out_size, pstWarpAttr, paddr, vaddr)) {
+			CVI_TRACE_DWA(CVI_DBG_ERR, "dwa_mesh_gen_warp failed\n");
+			goto MESH_GEN_FAIL;
+		}
+
 		CVI_SYS_IonFlushCache(paddr, vaddr, CVI_DWA_MESH_SIZE_FISHEYE);
 
 		idx = get_idle_tsk_mesh();
@@ -380,6 +394,11 @@ CVI_S32 CVI_DWA_AddDewarpTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask,
 	pstTask->au64privateData[0] = dwa_tskMesh[idx].paddr;
 	pstTask->au64privateData[1] = (CVI_U64)((uintptr_t)dwa_tskMesh[idx].vaddr);
 	return dwa_add_warp_task(fd, &attr);
+
+MESH_GEN_FAIL:
+	if (paddr && vaddr)
+		CVI_SYS_IonFree(paddr, vaddr);
+	return CVI_FAILURE;
 }
 
 CVI_S32 CVI_DWA_AddRotationTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask, ROTATION_E enRotation)
@@ -420,7 +439,12 @@ CVI_S32 CVI_DWA_AddRotationTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask, RO
 			CVI_TRACE_DWA(CVI_DBG_ERR, "Can't acquire memory for mesh.\n");
 			return CVI_ERR_GDC_NOBUF;
 		}
-		dwa_mesh_gen_rotation(in_size, out_size, enRotation, paddr, vaddr);
+
+		if (dwa_mesh_gen_rotation(in_size, out_size, enRotation, paddr, vaddr)) {
+			CVI_TRACE_DWA(CVI_DBG_ERR, "dwa_mesh_gen_rotation failed\n");
+			goto MESH_GEN_FAIL;
+		}
+
 		CVI_SYS_IonFlushCache(paddr, vaddr, CVI_DWA_MESH_SIZE_ROT);
 
 		idx = get_idle_tsk_mesh();
@@ -447,6 +471,11 @@ CVI_S32 CVI_DWA_AddRotationTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask, RO
 	pstTask->au64privateData[0] = dwa_tskMesh[idx].paddr;
 	pstTask->au64privateData[1] = (CVI_U64)((uintptr_t)dwa_tskMesh[idx].vaddr);
 	return dwa_add_rotation_task(fd, &attr);
+
+MESH_GEN_FAIL:
+	if (paddr && vaddr)
+		CVI_SYS_IonFree(paddr, vaddr);
+	return CVI_FAILURE;
 }
 
 CVI_S32 CVI_DWA_AddAffineTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask, const AFFINE_ATTR_S *pstAffineAttr)
@@ -514,7 +543,9 @@ CVI_S32 CVI_DWA_AddAffineTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask, cons
 		}
 
 		dwa_mesh_gen_affine(in_size, out_size, pstAffineAttr, paddr, vaddr);
+
 		CVI_SYS_IonFlushCache(paddr, vaddr, CVI_DWA_MESH_SIZE_AFFINE);
+
 		idx = get_idle_tsk_mesh();
 		if (idx >= DWA_MAX_TSK_MESH) {
 			CVI_TRACE_DWA(CVI_DBG_ERR, "tsk mesh count(%d) is out of range(%d)\n", idx + 1, DWA_MAX_TSK_MESH);
@@ -583,7 +614,11 @@ CVI_S32 CVI_DWA_AddLDCTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask
 			return CVI_ERR_DWA_NOMEM;
 		}
 
-		dwa_mesh_gen_ldc(in_size, out_size, pstLDCAttr, paddr, vaddr);
+		if (dwa_mesh_gen_ldc(in_size, out_size, pstLDCAttr, paddr, vaddr)) {
+			CVI_TRACE_DWA(CVI_DBG_ERR, "dwa_mesh_gen_ldc failed\n");
+			goto MESH_GEN_FAIL;
+		}
+
 		CVI_SYS_IonFlushCache(paddr, vaddr, mesh_size);
 
 		idx = get_idle_tsk_mesh();
@@ -610,6 +645,11 @@ CVI_S32 CVI_DWA_AddLDCTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask
 	pstTask->au64privateData[0] = dwa_tskMesh[idx].paddr;
 	pstTask->au64privateData[1] = (CVI_U64)((uintptr_t)dwa_tskMesh[idx].vaddr);
 	return dwa_add_ldc_task(fd, &attr);
+
+MESH_GEN_FAIL:
+	if (paddr && vaddr)
+		CVI_SYS_IonFree(paddr, vaddr);
+	return CVI_FAILURE;
 }
 
 CVI_S32 CVI_DWA_GetWorkJob(GDC_HANDLE* phHandle)

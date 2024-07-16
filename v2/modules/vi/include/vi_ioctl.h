@@ -1,10 +1,14 @@
 #ifndef MODULES_VPU_INCLUDE_VI_IOCTL_H_
 #define MODULES_VPU_INCLUDE_VI_IOCTL_H_
 
-#include <linux/vi_isp.h>
-#include <linux/vi_tun_cfg.h>
-#include <linux/vi_uapi.h>
-#include <linux/cvi_comm_vi.h>
+#include <vi_isp.h>
+#include <vi_tun_cfg.h>
+
+#ifdef V4L2_ISP_ENABLE
+#include <vi_v4l2_uapi.h>
+#else
+#include <vi_uapi.h>
+#endif
 
 int vi_enable_usr_pic(int fd, bool enable);
 int vi_set_usr_pic(int fd, struct cvi_isp_usr_pic_cfg *cfg);

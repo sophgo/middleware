@@ -1,9 +1,9 @@
 #ifndef _DPU_H_
 #define _DPU_H_
 #include "cvi_comm_dpu.h"
-#include <linux/cvi_common.h>
-#include <linux/cvi_errno.h>
-#include <linux/cvi_defines.h>
+#include <cvi_common.h>
+#include <cvi_errno.h>
+#include <cvi_defines.h>
 
 /**
  * @brief Create dpu group.

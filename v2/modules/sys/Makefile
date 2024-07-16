@@ -26,7 +26,7 @@ DEPS_ASM = $(SRCS_ASM:.S=.d)
 TARGET_A = $(MW_LIB)/libsys.a
 TARGET_SO = $(MW_LIB)/libsys.so
 
-INCS = -I$(MW_INC) -I$(KERNEL_INC) -I$(SYS_INC)
+INCS = -I$(MW_INC) -I$(SYS_INC) -I$(MOD_INC)
 
 EXTRA_CFLAGS = $(INCS) -fpack-struct=8
 EXTRA_CFLAGS += -DSDK_VER=\"$(SDK_VER)\"

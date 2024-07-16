@@ -207,6 +207,7 @@ static int _vi_set_tuning_dis(CVI_U8 pipe, CVI_U8 feCtrl, CVI_U8 beCtrl, CVI_U8 
 
 static CVI_S32 _vi_ut_proc_mmap(int fd)
 {
+#if 0
 	void *vi_ut_shared_mem = NULL;
 
 	vi_ut_shared_mem = mmap(NULL, VI_SHARE_MEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -219,7 +220,8 @@ static CVI_S32 _vi_ut_proc_mmap(int fd)
 		VI_UT_PRT("vi proc ummap fail!\n");
 		return CVI_FAILURE;
 	}
-
+#endif
+	fd = fd;
 	return CVI_SUCCESS;
 }
 

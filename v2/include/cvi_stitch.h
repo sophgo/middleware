@@ -9,10 +9,10 @@
 #ifndef __CVI_STITCH_H__
 #define __CVI_STITCH_H__
 
-#include <linux/cvi_common.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/cvi_comm_stitch.h>
-#include <linux/cvi_comm_vb.h>
+#include <cvi_common.h>
+#include <cvi_comm_video.h>
+#include <cvi_comm_stitch.h>
+#include <cvi_comm_vb.h>
 
 #ifdef __cplusplus
 #if __cplusplus

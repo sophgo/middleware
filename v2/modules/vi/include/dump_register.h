@@ -9,7 +9,7 @@
 #ifndef __DUMP_REGISTER_H__
 #define __DUMP_REGISTER_H__
 
-#include <linux/cvi_comm_vi.h>
+#include <cvi_comm_vi.h>
 
 #ifdef __cplusplus
 #if __cplusplus

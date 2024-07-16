@@ -25,5 +25,4 @@ void CVI_DPU_CheckSgbmStatus(void);
 
 void CVI_DPU_CheckFgsStatus(void);
 
-void CVI_DPU_Reset(void);
 #endif

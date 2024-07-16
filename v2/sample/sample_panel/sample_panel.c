@@ -10,9 +10,11 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <inttypes.h>
+#include <cvi_comm_vo.h>
 
 #include "sample_comm.h"
-#include "mipi_tx.h"
+#include "cvi_comm_mipi_tx.h"
+#include "cvi_mipi_tx.h"
 #include "sample_panel.h"
 
 static int fd;
@@ -55,6 +57,8 @@ typedef enum {
 	DSI_PANEL_OTA7290B,
 	DSI_PANEL_ST7701,
 	LVDS_PANEL_LCM185X56,
+	BT_PANEL_PT1000K_BT656_1280x720_25FPS_74M,
+	BT_PANEL_PT1000K_BT1120_1920x1080_25FPS_74M,
 	PANEL_MAX
 } PANEL_MODEL;
 
@@ -95,6 +99,8 @@ static optionExt long_option_ext[] = {
 		"set/get dsi status or settings." },
 	{{"control_pins",  required_argument, NULL, 'c'},   ARG_STRING,   0,   0,
 		"control pins to config, pwr_gpio/rst_gpio/bl_gpio."},
+	{{"show-pattern", optional_argument, NULL, 's'}, ARG_STRING, 0,   9,
+		"show colorbar or snow or rgb color pattern." },
 	{{"help",      no_argument, NULL, 'h'},       ARG_STRING, 0,   0,
 		"print usage."},
 	{{NULL, 0, NULL, 0}, ARG_INT, 0, 0, "no param: just init the panel."}
@@ -121,6 +127,8 @@ static char *s_panel_model_type_arr[] = {
 	"OTA7290B",
 	"ST7701",
 	"LCM185X56",
+	"BT_PANEL_PT1000K_BT656_1280x720_25FPS_74M",
+	"BT_PANEL_PT1000K_BT1120_1920x1080_25FPS_74M",
 };
 
 void printdsiHelp(void)
@@ -132,6 +140,21 @@ void printdsiHelp(void)
 	printf(" 3: switch to hs\n");
 	printf(" 4: get hs settle settings\n");
 	printf(" 5: set hs settle settings\n");
+}
+
+void printpatternHelp(void)
+{
+	printf("\n// ------------------------show-pattern------------------------\n");
+	printf(" 0: VO_PAT_OFF\n");
+	printf(" 1: VO_PAT_SNOW\n");
+	printf(" 2: VO_PAT_AUTO\n");
+	printf(" 3: VO_PAT_RED\n");
+	printf(" 4: VO_PAT_GREEN\n");
+	printf(" 5: VO_PAT_BLUE\n");
+	printf(" 6: VO_PAT_COLORBAR\n");
+	printf(" 7: VO_PAT_GRAY_GRAD_H\n");
+	printf(" 8: VO_PAT_GRAY_GRAD_V\n");
+	printf(" 9: VO_PAT_BLACK\n");
 }
 
 void printHelp(char **argv)
@@ -146,11 +169,18 @@ void printHelp(char **argv)
 
 	printf("\n.for mipi/lvds panel you can cfg lane seq or pnswap");
 	printf("\nEX.\n");
-	printf(" %s --device=0 --panel=HX8394_EVB --laneid=1,2,0,3,4 --pnswap=0,0,0,0,0 --control_pins=399,304,400\n",
-	       argv[0]);
+	printf(" %s --device=1 --panel=HX8394_EVB --laneid=1,2,0,3,4 --pnswap=0,0,0,0,0 --control_pins=399,304,400\n",
+		   argv[0]);
 	printf("\n.for mipi panel You can also manually set the dsi by -d");
 	printf("\nEX.\n");
 	printf(" %s -d\n\n", argv[0]);
+	printf("\n.After initializing panel, to show specific pattern by --show-pattern");
+	printf("\nEX.\n");
+	printf(" %s --panel=HX8394_EVB --show-pattern=6 (To show colorbar)\n", argv[0]);
+	printf(" %s --panel=HX8394_EVB --show-pattern=0 (To turn off colorbar)\n", argv[0]);
+	printf("\n.After initializing panel, to show any kind of pattern by -s");
+	printf("\nEX.\n");
+	printf(" %s --panel=HX8394_EVB -s\n\n", argv[0]);
 
 	for (idx = 0; idx < sizeof(long_option_ext) / sizeof(optionExt); idx++) {
 		if (long_option_ext[idx].opt.name == NULL) {
@@ -240,6 +270,41 @@ CVI_S32 SAMPLE_MIPI_TX_ENABLE(void)
 
 	printf("Init for MIPI-Driver-%s Device-%d\n", g_panel_desc.panel_mode, VoDev);
 
+	close(fd);
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_PANEL_ShowPattern(VO_DEV VoDev, CVI_S32 patern_cmd)
+{
+	CVI_S32 ret = 0;
+
+	if (patern_cmd >= 0 && patern_cmd < VO_PAT_MAX) {
+		ret = CVI_VO_ShowPattern(VoDev, patern_cmd);
+		if (ret != CVI_SUCCESS) {
+			printf("CVI_VO_ShowPattern failed with %#x!\n", ret);
+			return ret;
+		}
+	} else if (patern_cmd == VO_PAT_MAX) {
+		do {
+			printpatternHelp();
+			printf(" others: exit\n");
+			scanf("%d", &patern_cmd);
+			if (patern_cmd >= 0 && patern_cmd < VO_PAT_MAX) {
+				ret = CVI_VO_ShowPattern(VoDev, patern_cmd);
+				if (ret != CVI_SUCCESS) {
+					printf("CVI_VO_ShowPattern failed with %#x!\n", ret);
+					return CVI_FAILURE;
+				}
+			} else {
+				break;
+			}
+		} while (1);
+	} else {
+		printf("invalid pattern mode parameter\n");
+		return ret;
+	}
+
 	return CVI_SUCCESS;
 }
 
@@ -271,6 +336,22 @@ CVI_S32 SAMPLE_PANEL_ENABLE(void)
 				printf("failed with %#x!\n", ret);
 				return CVI_FAILURE;
 			}
+		} else if (g_panel_desc.panel_type == PANEL_MODE_BT){
+			ret = CVI_VO_SetPubAttr(VoDev, &g_panel_desc.stbtcfg.stVoPubAttr);
+			if (ret != CVI_SUCCESS) {
+				printf("failed with %#x!\n", ret);
+				return CVI_FAILURE;
+			}
+			ret = CVI_VO_SetBTParam(VoDev,  &g_panel_desc.stbtcfg.BtAttr);
+			if (ret != CVI_SUCCESS) {
+				printf("failed with %#x!\n", ret);
+				return CVI_FAILURE;
+			}
+			ret = CVI_VO_GetBTParam(VoDev,  &g_panel_desc.stbtcfg.BtAttr);
+			if (ret != CVI_SUCCESS) {
+				printf("failed with %#x!\n", ret);
+				return CVI_FAILURE;
+			}
 		}
 		printf("Init for Driver-%s Device-%d\n", g_panel_desc.panel_mode, VoDev);
 	}
@@ -281,6 +362,13 @@ CVI_S32 SAMPLE_PANEL_ENABLE(void)
 void SAMPLE_DSI_CONTROLE(void)
 {
 	CVI_U32 tmp;
+	VO_DEV VoDev = g_input_para.dev_no;
+	char *mipi_tx_device = VoDev == 0 ? MIPI_TX0_NAME : MIPI_TX1_NAME;
+
+	fd = open(mipi_tx_device, O_RDWR | O_NONBLOCK, 0);
+	if (fd == -1) {
+		printf("Cannot open '%s': %d, %s\n", mipi_tx_device, errno, strerror(errno));
+	}
 
 	do {
 		printdsiHelp();
@@ -356,6 +444,8 @@ void SAMPLE_DSI_CONTROLE(void)
 		} else
 			break;
 	} while (1);
+
+	close(fd);
 }
 
 void SAMPLE_SET_PANEL_DESC(void)
@@ -496,7 +586,7 @@ void SAMPLE_SET_PANEL_DESC(void)
 		break;
 	case LVDS_PANEL_LCM185X56:
 		g_panel_desc.panel_type = PANEL_MODE_LVDS;
-		g_panel_desc.stlvdscfg.stVoPubAttr.enIntfType = VO_INTF_LCD_24BIT;
+		g_panel_desc.stlvdscfg.stVoPubAttr.enIntfType = VO_INTF_LVDS;
 		g_panel_desc.stlvdscfg.stVoPubAttr.enIntfSync = VO_OUTPUT_USER;
 		VO_SYNC_INFO_S stLcm185x56_SyncInfo = {.bSynm = 1, .bIop = 1, .u16FrameRate = 60
 		, .u16Vact = 768, .u16Vbb = 20, .u16Vfb = 10
@@ -504,6 +594,28 @@ void SAMPLE_SET_PANEL_DESC(void)
 		, .u16Vpw = 2, .u16Hpw = 20, .bIdv = 0, .bIhs = 0, .bIvs = 0};
 		g_panel_desc.stlvdscfg.stVoPubAttr.stSyncInfo = stLcm185x56_SyncInfo;
 		g_panel_desc.stlvdscfg.LvdsAttr = lvds_lcm185x56_cfg;
+		break;
+	case BT_PANEL_PT1000K_BT656_1280x720_25FPS_74M:
+		g_panel_desc.panel_type = PANEL_MODE_BT;
+		g_panel_desc.stbtcfg.stVoPubAttr.enIntfType = VO_INTF_BT656;
+		g_panel_desc.stbtcfg.stVoPubAttr.enIntfSync = VO_OUTPUT_USER;
+		VO_SYNC_INFO_S stPt1000kbt656_SyncInfo = {.bSynm = 1, .bIop = 1, .u16FrameRate = 25
+		, .u16Vact = 720, .u16Vbb = 20, .u16Vfb = 5
+		, .u16Hact = 1280, .u16Hbb = 220, .u16Hfb = 440
+		, .u16Vpw = 5, .u16Hpw = 40, .bIdv = 0, .bIhs = 0, .bIvs = 0};
+		g_panel_desc.stbtcfg.stVoPubAttr.stSyncInfo = stPt1000kbt656_SyncInfo;
+		g_panel_desc.stbtcfg.BtAttr = stpt1000kbt656cfg;
+		break;
+	case BT_PANEL_PT1000K_BT1120_1920x1080_25FPS_74M:
+		g_panel_desc.panel_type = PANEL_MODE_BT;
+		g_panel_desc.stbtcfg.stVoPubAttr.enIntfType = VO_INTF_BT1120;
+		g_panel_desc.stbtcfg.stVoPubAttr.enIntfSync = VO_OUTPUT_USER;
+		VO_SYNC_INFO_S stPt1000kbt1120_SyncInfo = {.bSynm = 1, .bIop = 1, .u16FrameRate = 25
+		, .u16Vact = 1080, .u16Vbb = 20, .u16Vfb = 20
+		, .u16Hact = 1920, .u16Hbb = 356, .u16Hfb = 356
+		, .u16Vpw = 5, .u16Hpw = 8, .bIdv = 0, .bIhs = 0, .bIvs = 0};
+		g_panel_desc.stbtcfg.stVoPubAttr.stSyncInfo = stPt1000kbt1120_SyncInfo;
+		g_panel_desc.stbtcfg.BtAttr = stpt1000kbt1120cfg;
 		break;
 	default:
 		printf("default\n");
@@ -518,7 +630,7 @@ void SAMPLE_SET_PANEL_DESC(void)
 		if (g_panel_desc.panel_type == PANEL_MODE_LVDS) {
 			for (CVI_U32 i = 0; i < LANE_MAX_NUM; i++) {
 				g_panel_desc.stlvdscfg.LvdsAttr.lane_pn_swap[i] =
-				(enum VO_LVDS_LANE_ID)g_input_para.lane_pn_swap[i];
+				(VO_LVDS_LANE_ID)g_input_para.lane_pn_swap[i];
 			}
 		} else if (g_panel_desc.panel_type == PANEL_MODE_DSI) {
 			for (CVI_U32 i = 0; i < LANE_MAX_NUM; i++) {
@@ -530,7 +642,7 @@ void SAMPLE_SET_PANEL_DESC(void)
 		if (g_panel_desc.panel_type == PANEL_MODE_LVDS) {
 			for (CVI_U32 i = 0; i < LANE_MAX_NUM; i++) {
 				g_panel_desc.stlvdscfg.LvdsAttr.lane_id[i] =
-				(enum VO_LVDS_LANE_ID)g_input_para.lane_id[i];
+				(VO_LVDS_LANE_ID)g_input_para.lane_id[i];
 			}
 		} else if (g_panel_desc.panel_type == PANEL_MODE_DSI) {
 			for (CVI_U32 i = 0; i < LANE_MAX_NUM; i++) {
@@ -673,6 +785,36 @@ CVI_S32 SAMPLE_PANEL_CONTROL_PINS_CONFIG(char *pControlPins)
 	return CVI_SUCCESS;
 }
 
+void SAMPLE_PANEL_I2C_SEND(void)
+{
+	CVI_S32 ret;
+
+	if (g_input_para.panel_model == BT_PANEL_PT1000K_BT656_1280x720_25FPS_74M) {
+		ret = panel_i2c_init(g_input_para.dev_no);
+		if (ret != CVI_SUCCESS) {
+			printf("panel_i2c_init fail");
+		}
+		for (CVI_U32 i = 0; i < ARRAY_SIZE(bt656_720p25_pt1000k_init_cmds); i++) {
+			ret = panel_write_register(g_input_para.dev_no, bt656_720p25_pt1000k_init_cmds[i].addr,
+				  bt656_720p25_pt1000k_init_cmds[i].data);
+			if (ret != CVI_SUCCESS)
+				printf("i2c_write fail addr[0x%x]\n", bt656_720p25_pt1000k_init_cmds[i].addr);
+		}
+	} else if(g_input_para.panel_model == BT_PANEL_PT1000K_BT1120_1920x1080_25FPS_74M) {
+		ret = panel_i2c_init(g_input_para.dev_no);
+		if (ret != CVI_SUCCESS) {
+			printf("panel_i2c_init fail");
+		}
+		for (CVI_U32 i = 0; i < ARRAY_SIZE(bt1120_1080p25_pt1000k_init_cmds); i++) {
+			ret = panel_write_register(g_input_para.dev_no, bt1120_1080p25_pt1000k_init_cmds[i].addr,
+				  bt1120_1080p25_pt1000k_init_cmds[i].data);
+			if (ret != CVI_SUCCESS)
+				printf("i2c_write fail addr[0x%x]\n", bt1120_1080p25_pt1000k_init_cmds[i].addr);
+		}
+	}
+}
+
+
 int main(int argc, char *argv[])
 {
 	if (argc == 1) {
@@ -681,7 +823,8 @@ int main(int argc, char *argv[])
 	}
 
 	struct option long_options[MAX_OPTIONS + 1];
-	CVI_S32 ch, idx, ret;
+	CVI_S32 ch, idx, ret, patern_cmd = VO_PAT_MAX;
+	bool is_pattern = false;
 
 	memset((void *)long_options, 0, sizeof(long_options));
 
@@ -736,11 +879,19 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'd':
-			if (argc > 2) {
+			if (argc > 3) {
 				printf("usage:%s -d. -d can't use in the same time with other command\n", argv[0]);
 				return CVI_FAILURE;
 			}
 			SAMPLE_DSI_CONTROLE();
+			break;
+		case 's':
+			is_pattern =true;
+			if (optarg != NULL){
+				sscanf(optarg, "%02d", &patern_cmd);
+				if (patern_cmd == VO_PAT_MAX)
+					patern_cmd = -1;
+			}
 			break;
 		case 'h':
 			printHelp(argv);
@@ -759,16 +910,15 @@ int main(int argc, char *argv[])
 	SAMPLE_SET_PANEL_DESC();
 	SAMPLE_PANEL_ENABLE();
 
-	ret = CVI_VO_ShowPattern(g_input_para.dev_no, VO_PAT_COLORBAR);
-	if (ret != CVI_SUCCESS) {
-		printf("CVI_VO_ShowPattern failed with %#x!\n", ret);
-		return CVI_FAILURE;
-	}
-	sleep(2);
-	ret = CVI_VO_ShowPattern(g_input_para.dev_no, VO_PAT_OFF);
-	if (ret != CVI_SUCCESS) {
-		printf("CVI_VO_ShowPattern failed with %#x!\n", ret);
-		return CVI_FAILURE;
+	if (g_panel_desc.panel_type == PANEL_MODE_BT)
+		SAMPLE_PANEL_I2C_SEND();
+
+	if (is_pattern) {
+		ret = SAMPLE_PANEL_ShowPattern(g_input_para.dev_no, patern_cmd);
+		if (ret == CVI_SUCCESS)
+			SAMPLE_PRT("sample_panel exit success!\n");
+		else
+			SAMPLE_PRT("sample_panel exit abnormally!\n");
 	}
 
 	return CVI_SUCCESS;

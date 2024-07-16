@@ -17,7 +17,7 @@ To compile the HDMI Sample Application, you can use the provided Makefile and SD
 ## Usage
 To run the HDMI Sample Application, use the following command:
 
-./sample_hdmi <mCode> <pixel_clk> <force_output> <pixel_repeat> <hdcp14_en> <csc_en> <audio_en> <csc_fmt_in> <csc_fmt_out> <avmute_en> <audio_mute_en> <set_infoframe> <audio_file>
+./sample_hdmi <mCode> <pixel_clk> <force_output> <pixel_repeat> <hdcp14_en> <csc_en> <audio_en> <csc_fmt_in> <csc_fmt_out> <avmute_en> <audio_mute_en> <set_infoframe> <exit_flag> <audio_file>
 
 
 ## Parameters
@@ -35,6 +35,7 @@ To run the HDMI Sample Application, use the following command:
 | avmute_en        | Enable AVMUTE.                                    |
 | audio_mute_en    | Mute audio output.                                |
 | set_infoframe    | Set HDMI infoframe.                               |
+| exit_flag        | Control the end of this process                   |
 | audio_file       | Path to the audio file to be played.              |
 
 | mCode | Resolution     | Refresh Rate |
@@ -56,9 +57,12 @@ To run the HDMI Sample Application, use the following command:
 
 Note: If you are testing pixel repeat, you should set set_infoframe to 1.
       PCM audio format only supports iec60958.
+      loopback test should set exit_flag = 0.
+      In addition, just set exit_flag = 1.
 
 ## Example
-./sample_hdmi 16 148500 0 0 0 0 0 0 0 0 0 0 ./audio.file
+./sample_hdmi --mcode 16 --pixel_clk 148500 --force_output 0 --pixel_repeat 0 --hdcp14_en 0 --csc_en 0 --audio_en 0 --fmt_in 0 --fmt_out 0 --avmute 0 --audio_mute 0 --set_infoframe 0 --exit_flag 1 ./audio.file
+
 Execute the above line of commands to output 1920x1080-60Hz images.
 If you have other needs, you can refer to the parameter list above to set it yourself.
 

@@ -4247,19 +4247,25 @@ static CVI_S32 _handle_op(CVI_S32 op, SAMPLE_INI_CFG_S *pstIniCfg, SAMPLE_VI_CON
 			return s32Ret;
 		}
 
+		// Fixme: A2 suspend isn't ready
+		/*
 		s32Ret = CVI_MISC_SysSuspend();
 		if (s32Ret != CVI_SUCCESS) {
 			SAMPLE_PRT("Sys suspend failed. s32Ret: 0x%x !\n", s32Ret);
 			return s32Ret;
 		}
+		*/
 		break;
 	}
 	case 204: {
+		// Fixme: A2 resume isn't ready
+		/*
 		s32Ret = CVI_MISC_SysResume();
 		if (s32Ret != CVI_SUCCESS) {
 			SAMPLE_PRT("Sys resume failed. s32Ret: 0x%x !\n", s32Ret);
 			return s32Ret;
 		}
+		*/
 
 		s32Ret = CVI_VI_Resume();
 		if (s32Ret != CVI_SUCCESS) {

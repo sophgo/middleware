@@ -11,8 +11,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "os08b10_cmos_ex.h"
@@ -687,10 +687,10 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x3542, 0x40);
     os08b10_write_register(ViPipe, 0x3581, 0x00);
     os08b10_write_register(ViPipe, 0x3582, 0x40);
-    os08b10_write_register(ViPipe, 0x3603, 0x34);
+    os08b10_write_register(ViPipe, 0x3603, 0x30);
     os08b10_write_register(ViPipe, 0x3612, 0x96);
     os08b10_write_register(ViPipe, 0x3613, 0xe0);
-    os08b10_write_register(ViPipe, 0x3623, 0x80);
+    os08b10_write_register(ViPipe, 0x3623, 0x00);
     os08b10_write_register(ViPipe, 0x3624, 0xff);
     os08b10_write_register(ViPipe, 0x3625, 0xff);
     os08b10_write_register(ViPipe, 0x362a, 0x12);
@@ -712,20 +712,20 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x3648, 0x00);
     os08b10_write_register(ViPipe, 0x3649, 0x0a);
     os08b10_write_register(ViPipe, 0x364a, 0x0d);
-    os08b10_write_register(ViPipe, 0x364b, 0x62);
+    os08b10_write_register(ViPipe, 0x364b, 0x02);
     os08b10_write_register(ViPipe, 0x364c, 0x12);
     os08b10_write_register(ViPipe, 0x364d, 0x12);
     os08b10_write_register(ViPipe, 0x364e, 0x12);
     os08b10_write_register(ViPipe, 0x364f, 0x12);
     os08b10_write_register(ViPipe, 0x3650, 0xf7);
     os08b10_write_register(ViPipe, 0x3651, 0x77);
-    os08b10_write_register(ViPipe, 0x365a, 0x7f);
-    os08b10_write_register(ViPipe, 0x365b, 0x67);
-    os08b10_write_register(ViPipe, 0x365c, 0x2d);
-    os08b10_write_register(ViPipe, 0x365d, 0x17);
+    os08b10_write_register(ViPipe, 0x365a, 0xbb);
+    os08b10_write_register(ViPipe, 0x365b, 0x9d);
+    os08b10_write_register(ViPipe, 0x365c, 0x8e);
+    os08b10_write_register(ViPipe, 0x365d, 0x86);
     os08b10_write_register(ViPipe, 0x3661, 0x07);
     os08b10_write_register(ViPipe, 0x3662, 0x0a);
-    os08b10_write_register(ViPipe, 0x3667, 0xd4);
+    os08b10_write_register(ViPipe, 0x3667, 0x54);
     os08b10_write_register(ViPipe, 0x366f, 0x00);
     os08b10_write_register(ViPipe, 0x3671, 0x89);
     os08b10_write_register(ViPipe, 0x3673, 0x2a);
@@ -751,11 +751,11 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x371c, 0x00);
     os08b10_write_register(ViPipe, 0x371d, 0x08);
     os08b10_write_register(ViPipe, 0x373b, 0x50);
-    os08b10_write_register(ViPipe, 0x3755, 0x00);
+    os08b10_write_register(ViPipe, 0x3755, 0x01);
     os08b10_write_register(ViPipe, 0x3756, 0xa9);
     os08b10_write_register(ViPipe, 0x3757, 0xa9);
     os08b10_write_register(ViPipe, 0x376b, 0x02);
-    os08b10_write_register(ViPipe, 0x376c, 0x03);
+    os08b10_write_register(ViPipe, 0x376c, 0x02);
     os08b10_write_register(ViPipe, 0x376d, 0x04);
     os08b10_write_register(ViPipe, 0x376e, 0x04);
     os08b10_write_register(ViPipe, 0x376f, 0x22);
@@ -769,7 +769,7 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x3798, 0x00);
     os08b10_write_register(ViPipe, 0x3799, 0x00);
     os08b10_write_register(ViPipe, 0x37bb, 0x88);
-    os08b10_write_register(ViPipe, 0x37be, 0x3a);
+    os08b10_write_register(ViPipe, 0x37be, 0x01);
     os08b10_write_register(ViPipe, 0x37bf, 0x01);
     os08b10_write_register(ViPipe, 0x37c0, 0x00);
     os08b10_write_register(ViPipe, 0x37c7, 0x51);
@@ -798,36 +798,36 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x3809, 0x00);
     os08b10_write_register(ViPipe, 0x380a, 0x08);
     os08b10_write_register(ViPipe, 0x380b, 0x70);
-    os08b10_write_register(ViPipe, 0x380c, 0x06);
-    os08b10_write_register(ViPipe, 0x380d, 0x5a);
+    os08b10_write_register(ViPipe, 0x380c, 0x03);
+    os08b10_write_register(ViPipe, 0x380d, 0x2d);
     os08b10_write_register(ViPipe, 0x380e, 0x04);
-    os08b10_write_register(ViPipe, 0x380f, 0x53);
+    os08b10_write_register(ViPipe, 0x380f, 0x52);
     os08b10_write_register(ViPipe, 0x3811, 0x10);
     os08b10_write_register(ViPipe, 0x3813, 0x08);
     os08b10_write_register(ViPipe, 0x3814, 0x01);
     os08b10_write_register(ViPipe, 0x3815, 0x01);
     os08b10_write_register(ViPipe, 0x3816, 0x01);
     os08b10_write_register(ViPipe, 0x3817, 0x01);
-    os08b10_write_register(ViPipe, 0x381c, 0x00);
-    os08b10_write_register(ViPipe, 0x3820, 0x02);
+    os08b10_write_register(ViPipe, 0x381c, 0x08);
+    os08b10_write_register(ViPipe, 0x3820, 0x03);
     os08b10_write_register(ViPipe, 0x3821, 0x00);
     os08b10_write_register(ViPipe, 0x3822, 0x04);
     os08b10_write_register(ViPipe, 0x3823, 0x08);
     os08b10_write_register(ViPipe, 0x382b, 0x00);
     os08b10_write_register(ViPipe, 0x382c, 0x00);
-    os08b10_write_register(ViPipe, 0x3833, 0x40);
+    os08b10_write_register(ViPipe, 0x3833, 0x45);
     os08b10_write_register(ViPipe, 0x383e, 0x00);
-    os08b10_write_register(ViPipe, 0x384c, 0x02);
-    os08b10_write_register(ViPipe, 0x384d, 0xd0);
-    os08b10_write_register(ViPipe, 0x3858, 0x3c);
-    os08b10_write_register(ViPipe, 0x3850, 0x00);
-    os08b10_write_register(ViPipe, 0x3851, 0x00);
-    os08b10_write_register(ViPipe, 0x3852, 0x00);
-    os08b10_write_register(ViPipe, 0x3853, 0x00);
-    os08b10_write_register(ViPipe, 0x3865, 0x01);
-    os08b10_write_register(ViPipe, 0x3866, 0xa0);
-    os08b10_write_register(ViPipe, 0x3867, 0x00);
-    os08b10_write_register(ViPipe, 0x3868, 0x20);
+    os08b10_write_register(ViPipe, 0x384c, 0x03);
+    os08b10_write_register(ViPipe, 0x384d, 0x2d);
+    os08b10_write_register(ViPipe, 0x3858, 0x7c);
+    os08b10_write_register(ViPipe, 0x3850, 0xff);
+    os08b10_write_register(ViPipe, 0x3851, 0xff);
+    os08b10_write_register(ViPipe, 0x3852, 0xff);
+    os08b10_write_register(ViPipe, 0x3853, 0xff);
+    os08b10_write_register(ViPipe, 0x3865, 0x02);
+    os08b10_write_register(ViPipe, 0x3866, 0x00);
+    os08b10_write_register(ViPipe, 0x3867, 0x02);
+    os08b10_write_register(ViPipe, 0x3868, 0x00);
     os08b10_write_register(ViPipe, 0x386a, 0x05);
     os08b10_write_register(ViPipe, 0x386b, 0x00);
     os08b10_write_register(ViPipe, 0x386c, 0x05);
@@ -869,7 +869,7 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x3cb6, 0x41);
     os08b10_write_register(ViPipe, 0x3cb9, 0x00);
     os08b10_write_register(ViPipe, 0x3cc0, 0x90);
-    os08b10_write_register(ViPipe, 0x3cc2, 0x48);
+    os08b10_write_register(ViPipe, 0x3cc2, 0x90);
     os08b10_write_register(ViPipe, 0x3cc5, 0x00);
     os08b10_write_register(ViPipe, 0x3cc6, 0x98);
     os08b10_write_register(ViPipe, 0x3cc7, 0x00);
@@ -877,13 +877,13 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x3cc9, 0x00);
     os08b10_write_register(ViPipe, 0x3cca, 0x98);
     os08b10_write_register(ViPipe, 0x3ccc, 0x01);
-    os08b10_write_register(ViPipe, 0x3cd9, 0x98);
-    os08b10_write_register(ViPipe, 0x3cda, 0x98);
-    os08b10_write_register(ViPipe, 0x3cdb, 0x98);
-    os08b10_write_register(ViPipe, 0x3cdc, 0x51);
+    os08b10_write_register(ViPipe, 0x3cd9, 0x7c);
+    os08b10_write_register(ViPipe, 0x3cda, 0x7c);
+    os08b10_write_register(ViPipe, 0x3cdb, 0x7c);
+    os08b10_write_register(ViPipe, 0x3cdc, 0x7c);
     os08b10_write_register(ViPipe, 0x3d8c, 0x70);
     os08b10_write_register(ViPipe, 0x3d8d, 0x10);
-    os08b10_write_register(ViPipe, 0x4001, 0x2b);
+    os08b10_write_register(ViPipe, 0x4001, 0xeb);
     os08b10_write_register(ViPipe, 0x4004, 0x00);
     os08b10_write_register(ViPipe, 0x4005, 0x40);
     os08b10_write_register(ViPipe, 0x4008, 0x02);
@@ -900,12 +900,12 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x402f, 0x40);
     os08b10_write_register(ViPipe, 0x4030, 0x00);
     os08b10_write_register(ViPipe, 0x4031, 0x40);
-    os08b10_write_register(ViPipe, 0x4032, 0x1b);
+    os08b10_write_register(ViPipe, 0x4032, 0x1f);
     os08b10_write_register(ViPipe, 0x4050, 0x01);
     os08b10_write_register(ViPipe, 0x4051, 0x06);
     os08b10_write_register(ViPipe, 0x405d, 0x00);
-    os08b10_write_register(ViPipe, 0x405e, 0x20);
-    os08b10_write_register(ViPipe, 0x4288, 0xcf);
+    os08b10_write_register(ViPipe, 0x405e, 0x00);
+    os08b10_write_register(ViPipe, 0x4288, 0xce);
     os08b10_write_register(ViPipe, 0x4289, 0x00);
     os08b10_write_register(ViPipe, 0x428a, 0x40);
     os08b10_write_register(ViPipe, 0x430b, 0x0f);
@@ -918,7 +918,7 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x4504, 0x00);
     os08b10_write_register(ViPipe, 0x4505, 0x00);
     os08b10_write_register(ViPipe, 0x4506, 0x32);
-    os08b10_write_register(ViPipe, 0x4507, 0x02);
+    os08b10_write_register(ViPipe, 0x4507, 0x03);
     os08b10_write_register(ViPipe, 0x4508, 0x1a);
     os08b10_write_register(ViPipe, 0x450a, 0x12);
     os08b10_write_register(ViPipe, 0x450b, 0x28);
@@ -932,9 +932,9 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x464d, 0x00);
     os08b10_write_register(ViPipe, 0x4800, 0x04);
     os08b10_write_register(ViPipe, 0x480e, 0x04);
-    os08b10_write_register(ViPipe, 0x4813, 0xe4);
+    os08b10_write_register(ViPipe, 0x4813, 0x84);
     os08b10_write_register(ViPipe, 0x4837, 0x0a);
-    os08b10_write_register(ViPipe, 0x484b, 0x27);
+    os08b10_write_register(ViPipe, 0x484b, 0x67);
     os08b10_write_register(ViPipe, 0x4850, 0x47);
     os08b10_write_register(ViPipe, 0x4851, 0xaa);
     os08b10_write_register(ViPipe, 0x4852, 0xff);
@@ -956,7 +956,7 @@ static void os08b10_wdr_2160p30_2to1_init(VI_PIPE ViPipe)
     os08b10_write_register(ViPipe, 0x5100, 0x00);
     os08b10_write_register(ViPipe, 0x5200, 0x70);
     os08b10_write_register(ViPipe, 0x5201, 0x70);
-    os08b10_write_register(ViPipe, 0x5681, 0x00);
+    os08b10_write_register(ViPipe, 0x5681, 0x02);
     os08b10_write_register(ViPipe, 0x5780, 0x53);
     os08b10_write_register(ViPipe, 0x5781, 0x03);
     os08b10_write_register(ViPipe, 0x5782, 0x18);

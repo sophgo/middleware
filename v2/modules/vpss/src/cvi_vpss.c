@@ -180,22 +180,34 @@ static CVI_S32 _vpss_update_ldc_mesh(VPSS_GRP VpssGrp, VPSS_CHN VpssChn,
 {
 	CVI_U64 paddr = 0;
 	CVI_VOID *vaddr;
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	char mesh_name[128];
+	struct cvi_gdc_mesh *pmesh = &mesh[VpssGrp][VpssChn];
 
 	snprintf(mesh_name, 128, "vpss_%d_%d", VpssGrp, VpssChn);
 	if (pstLDCAttr->stAttr.bEnHWLDC)
-		s32Ret = CVI_GDC_GenLDCMesh(u32Width, u32Height, &pstLDCAttr->stAttr, mesh_name, &paddr, &vaddr);
+		ret = CVI_GDC_GenLDCMesh(u32Width, u32Height, &pstLDCAttr->stAttr, mesh_name, &paddr, &vaddr);
 	else
-		s32Ret = CVI_DWA_GenLDCMesh(u32Width, u32Height, &pstLDCAttr->stAttr, mesh_name, &paddr, &vaddr);
-	if (s32Ret != CVI_SUCCESS) {
+		ret = CVI_DWA_GenLDCMesh(u32Width, u32Height, &pstLDCAttr->stAttr, mesh_name, &paddr, &vaddr);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) gen mesh fail\n",
 				VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	CVI_TRACE_VPSS(CVI_DBG_DEBUG, "Grp(%d) Chn(%d) mesh base(%#"PRIx64") vaddr(%p)\n"
 		      , VpssGrp, VpssChn, paddr, vaddr);
+
+	if (pmesh->paddr && pmesh->vaddr) {
+		CVI_SYS_IonFree(pmesh->paddr, pmesh->vaddr);
+		pmesh->paddr = 0;
+		pmesh->vaddr = CVI_NULL;
+	}
+
+	pthread_mutex_lock(&pmesh->lock);
+	pmesh->paddr = paddr;
+	pmesh->vaddr = vaddr;
+	pthread_mutex_unlock(&pmesh->lock);
 
 #if defined(__CV181X__) || defined(__CV180X__) || defined(__CV186X__)
 	CVI_S32 fd = get_vpss_fd();
@@ -217,16 +229,22 @@ static CVI_S32 _vpss_update_fisheye_mesh(VPSS_GRP VpssGrp, VPSS_CHN VpssChn,
 	CVI_U64 paddr = 0;
 	CVI_VOID *vaddr;
 	struct cvi_gdc_mesh *pmesh = &mesh[VpssGrp][VpssChn];
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	char mesh_name[128];
 
 	snprintf(mesh_name, 128, "vpss_%d_%d", VpssGrp, VpssChn);
 	if (pstFishEyeAttr->bEnable) {
-		s32Ret = CVI_DWA_GenFishEyeMesh(u32Width, u32Height, pstFishEyeAttr, mesh_name, &paddr, &vaddr);
-		if (s32Ret != CVI_SUCCESS) {
+		ret = CVI_DWA_GenFishEyeMesh(u32Width, u32Height, pstFishEyeAttr, mesh_name, &paddr, &vaddr);
+		if (ret != CVI_SUCCESS) {
 			CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) gen mesh fail\n",
 					VpssGrp, VpssChn);
-			return s32Ret;
+			return ret;
+		}
+
+		if (pmesh->paddr && pmesh->vaddr) {
+			CVI_SYS_IonFree(pmesh->paddr, pmesh->vaddr);
+			pmesh->paddr = 0;
+			pmesh->vaddr = CVI_NULL;
 		}
 
 		pthread_mutex_lock(&pmesh->lock);
@@ -273,22 +291,22 @@ CVI_S32 CVI_VPSS_Resume(void)
 CVI_S32 CVI_VPSS_CreateGrp(VPSS_GRP VpssGrp, const VPSS_GRP_ATTR_S *pstGrpAttr)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_crt_grp_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstGrpAttr);
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	cfg.VpssGrp = VpssGrp;
-	memcpy(&cfg.stGrpAttr, pstGrpAttr, sizeof(cfg.stGrpAttr));
+	cfg.vpssgrp = VpssGrp;
+	memcpy(&cfg.grp_attr, pstGrpAttr, sizeof(cfg.grp_attr));
 
-	s32Ret = vpss_create_grp(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_create_grp(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) create group fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 	// for chn rotation, ldc mesh gen
 	for (CVI_U8 i = 0; i < VPSS_MAX_CHN_NUM; ++i)
@@ -300,16 +318,16 @@ CVI_S32 CVI_VPSS_CreateGrp(VPSS_GRP VpssGrp, const VPSS_GRP_ATTR_S *pstGrpAttr)
 CVI_S32 CVI_VPSS_DestroyGrp(VPSS_GRP VpssGrp)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	s32Ret = vpss_destroy_grp(fd, VpssGrp);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_destroy_grp(fd, VpssGrp);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) destroy group fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 	for (CVI_U8 i = 0; i < VPSS_MAX_CHN_NUM; ++i)
 		pthread_mutex_destroy(&mesh[VpssGrp][i].lock);
@@ -330,19 +348,19 @@ VPSS_GRP CVI_VPSS_GetAvailableGrp(void)
 CVI_S32 CVI_VPSS_StartGrp(VPSS_GRP VpssGrp)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_str_grp_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	cfg.VpssGrp = VpssGrp;
-	s32Ret = vpss_start_grp(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_start_grp(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) start group fail\n",
 				VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -351,16 +369,16 @@ CVI_S32 CVI_VPSS_StartGrp(VPSS_GRP VpssGrp)
 CVI_S32 CVI_VPSS_StopGrp(VPSS_GRP VpssGrp)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	s32Ret = vpss_stop_grp(fd, VpssGrp);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_stop_grp(fd, VpssGrp);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) stop group fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -369,16 +387,16 @@ CVI_S32 CVI_VPSS_StopGrp(VPSS_GRP VpssGrp)
 CVI_S32 CVI_VPSS_ResetGrp(VPSS_GRP VpssGrp)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	s32Ret = vpss_reset_grp(fd, VpssGrp);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_reset_grp(fd, VpssGrp);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) reset group fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 	return CVI_SUCCESS;
 }
@@ -386,22 +404,22 @@ CVI_S32 CVI_VPSS_ResetGrp(VPSS_GRP VpssGrp)
 CVI_S32 CVI_VPSS_GetGrpAttr(VPSS_GRP VpssGrp, VPSS_GRP_ATTR_S *pstGrpAttr)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_grp_attr cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstGrpAttr);
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 
-	s32Ret = vpss_get_grp_attr(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_grp_attr(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) get grp attr fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 
 	memcpy(pstGrpAttr, &cfg.stGrpAttr, sizeof(*pstGrpAttr));
@@ -412,24 +430,24 @@ CVI_S32 CVI_VPSS_GetGrpAttr(VPSS_GRP VpssGrp, VPSS_GRP_ATTR_S *pstGrpAttr)
 CVI_S32 CVI_VPSS_SetGrpAttr(VPSS_GRP VpssGrp, const VPSS_GRP_ATTR_S *pstGrpAttr)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_grp_attr cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstGrpAttr);
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	memcpy(&cfg.stGrpAttr, pstGrpAttr, sizeof(cfg.stGrpAttr));
 
-	s32Ret = vpss_set_grp_attr(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_grp_attr(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) set grp attr fail\n",
 				VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -438,20 +456,20 @@ CVI_S32 CVI_VPSS_SetGrpAttr(VPSS_GRP VpssGrp, const VPSS_GRP_ATTR_S *pstGrpAttr)
 CVI_S32 CVI_VPSS_GetGrpProcAmpCtrl(VPSS_GRP VpssGrp, PROC_AMP_E type, PROC_AMP_CTRL_S *ctrl)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_proc_amp_ctrl_cfg cfg = {0};
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, ctrl);
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	cfg.type = type;
-	s32Ret = vpss_get_proc_amp_ctrl(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_proc_amp_ctrl(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) get proc amp ctrl fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 	*ctrl = cfg.ctrl;
 
@@ -539,24 +557,24 @@ static void _vpss_proamp_2_csc(struct vpss_grp_csc_cfg *csc_cfg)
 
 CVI_S32 CVI_VPSS_GetGrpProcAmp(VPSS_GRP VpssGrp, PROC_AMP_E type, CVI_S32 *value)
 {
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	CVI_S32 fd = get_vpss_fd();
 	struct vpss_proc_amp_cfg cfg = {0};
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, value);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 	if (type >= PROC_AMP_MAX) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) ProcAmp type(%d) invalid.\n", VpssGrp, type);
 		return CVI_ERR_VPSS_ILLEGAL_PARAM;
 	}
 
 	cfg.VpssGrp = VpssGrp;
-	s32Ret = vpss_get_proc_amp(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_proc_amp(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) get proc amp fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 	*value = cfg.proc_amp[type];
 	return CVI_SUCCESS;
@@ -564,15 +582,15 @@ CVI_S32 CVI_VPSS_GetGrpProcAmp(VPSS_GRP VpssGrp, PROC_AMP_E type, CVI_S32 *value
 
 CVI_S32 CVI_VPSS_SetGrpProcAmp(VPSS_GRP VpssGrp, PROC_AMP_E type, const CVI_S32 value)
 {
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	PROC_AMP_CTRL_S ctrl;
 	struct vpss_grp_csc_cfg csc_cfg;
 	struct vpss_proc_amp_cfg amp_cfg;
 	CVI_S32 fd = get_vpss_fd();
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	if (type >= PROC_AMP_MAX) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) ProcAmp type(%d) invalid.\n", VpssGrp, type);
@@ -587,10 +605,10 @@ CVI_S32 CVI_VPSS_SetGrpProcAmp(VPSS_GRP VpssGrp, PROC_AMP_E type, const CVI_S32 
 	}
 
 	amp_cfg.VpssGrp = VpssGrp;
-	s32Ret = vpss_get_proc_amp(fd, &amp_cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_proc_amp(fd, &amp_cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) get proc amp fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 	amp_cfg.proc_amp[type] = value;
 
@@ -599,10 +617,10 @@ CVI_S32 CVI_VPSS_SetGrpProcAmp(VPSS_GRP VpssGrp, PROC_AMP_E type, const CVI_S32 
 	memcpy(csc_cfg.proc_amp, amp_cfg.proc_amp, sizeof(csc_cfg.proc_amp));
 	_vpss_proamp_2_csc(&csc_cfg);
 
-	s32Ret = vpss_set_grp_csc(fd, &csc_cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_grp_csc(fd, &csc_cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) set group csc fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -636,25 +654,25 @@ static CVI_VOID _vpss_check_normalize(VPSS_CHN_ATTR_S *pstChnAttr)
 CVI_S32 CVI_VPSS_SetChnAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_CHN_ATTR_S *pstChnAttr)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_attr attr = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstChnAttr);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memcpy(&attr.stChnAttr,  pstChnAttr, sizeof(attr.stChnAttr));
 	// Handle float poing in user space
 	_vpss_check_normalize(&attr.stChnAttr);
 
-	s32Ret = vpss_set_chn_attr(fd, &attr);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_chn_attr(fd, &attr);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) set chn attr fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -663,21 +681,21 @@ CVI_S32 CVI_VPSS_SetChnAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_CHN_A
 CVI_S32 CVI_VPSS_GetChnAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_CHN_ATTR_S *pstChnAttr)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_attr attr = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstChnAttr);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	s32Ret = vpss_get_chn_attr(fd, &attr);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_attr(fd, &attr);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn attr fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	*pstChnAttr = attr.stChnAttr;
@@ -688,20 +706,20 @@ CVI_S32 CVI_VPSS_GetChnAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_CHN_ATTR_S 
 CVI_S32 CVI_VPSS_EnableChn(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_en_chn_cfg cfg = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	s32Ret = vpss_enable_chn(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_enable_chn(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) enable fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -710,22 +728,22 @@ CVI_S32 CVI_VPSS_EnableChn(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 CVI_S32 CVI_VPSS_DisableChn(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_en_chn_cfg cfg = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 	struct vpss_chn_ldc_cfg ldcCfg = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 	CVI_CHAR mesh_name[128];
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	s32Ret = vpss_disable_chn(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_disable_chn(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) disable fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	snprintf(mesh_name, 128, "vpss_%d_%d", VpssGrp, VpssChn);
@@ -735,12 +753,8 @@ CVI_S32 CVI_VPSS_DisableChn(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 	else
 		CVI_DWA_FreeCurTaskMesh(mesh_name);
 
-	if (mesh[VpssGrp][VpssChn].paddr && mesh[VpssGrp][VpssChn].vaddr
-		&& mesh[VpssGrp][VpssChn].paddr != DEFAULT_MESH_PADDR) {
-		CVI_SYS_IonFree(mesh[VpssGrp][VpssChn].paddr, mesh[VpssGrp][VpssChn].vaddr);
-		mesh[VpssGrp][VpssChn].paddr = CVI_NULL;
-		mesh[VpssGrp][VpssChn].vaddr = CVI_NULL;
-	}
+	mesh[VpssGrp][VpssChn].paddr = CVI_NULL;
+	mesh[VpssGrp][VpssChn].vaddr = CVI_NULL;
 
 	return CVI_SUCCESS;
 }
@@ -748,26 +762,26 @@ CVI_S32 CVI_VPSS_DisableChn(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 CVI_S32 CVI_VPSS_SetChnCrop(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_CROP_INFO_S *pstCropInfo)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_crop_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstCropInfo);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 	cfg.stCropInfo = *pstCropInfo;
 
-	s32Ret = vpss_set_chn_crop(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_chn_crop(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) set chn crop fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -776,25 +790,25 @@ CVI_S32 CVI_VPSS_SetChnCrop(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_CROP_
 CVI_S32 CVI_VPSS_GetChnCrop(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_CROP_INFO_S *pstCropInfo)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_crop_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstCropInfo);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_get_chn_crop(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_crop(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn crop fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	*pstCropInfo = cfg.stCropInfo;
@@ -805,24 +819,24 @@ CVI_S32 CVI_VPSS_GetChnCrop(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_CROP_INFO_S
 CVI_S32 CVI_VPSS_ShowChn(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_en_chn_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_show_chn(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_show_chn(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) show chn fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -831,24 +845,24 @@ CVI_S32 CVI_VPSS_ShowChn(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 CVI_S32 CVI_VPSS_HideChn(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_en_chn_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_hide_chn(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_hide_chn(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) hide chn fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -857,21 +871,21 @@ CVI_S32 CVI_VPSS_HideChn(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 CVI_S32 CVI_VPSS_GetGrpCrop(VPSS_GRP VpssGrp, VPSS_CROP_INFO_S *pstCropInfo)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_grp_crop_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstCropInfo);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 
-	s32Ret = vpss_get_grp_crop(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_grp_crop(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) get crop fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 
 	*pstCropInfo = cfg.stCropInfo;
@@ -882,22 +896,22 @@ CVI_S32 CVI_VPSS_GetGrpCrop(VPSS_GRP VpssGrp, VPSS_CROP_INFO_S *pstCropInfo)
 CVI_S32 CVI_VPSS_SetGrpCrop(VPSS_GRP VpssGrp, const VPSS_CROP_INFO_S *pstCropInfo)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_grp_crop_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstCropInfo);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.stCropInfo = *pstCropInfo;
 
-	s32Ret = vpss_set_grp_crop(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_grp_crop(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) set crop fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -906,22 +920,22 @@ CVI_S32 CVI_VPSS_SetGrpCrop(VPSS_GRP VpssGrp, const VPSS_CROP_INFO_S *pstCropInf
 CVI_S32 CVI_VPSS_SendFrame(VPSS_GRP VpssGrp, const VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_S32 s32MilliSec)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_snd_frm_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstVideoFrame);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	cfg.VpssGrp = VpssGrp;
 	memcpy(&cfg.stVideoFrame, pstVideoFrame, sizeof(cfg.stVideoFrame));
 	cfg.s32MilliSec = s32MilliSec;
 
-	s32Ret = vpss_send_frame(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_send_frame(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) send frame fail\n", VpssGrp);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -931,16 +945,16 @@ CVI_S32 CVI_VPSS_SendChnFrame(VPSS_GRP VpssGrp, VPSS_CHN VpssChn
 	, const VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_S32 s32MilliSec)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_frm_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstVideoFrame);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
@@ -948,10 +962,10 @@ CVI_S32 CVI_VPSS_SendChnFrame(VPSS_GRP VpssGrp, VPSS_CHN VpssChn
 	memcpy(&cfg.stVideoFrame, pstVideoFrame, sizeof(cfg.stVideoFrame));
 	cfg.s32MilliSec = s32MilliSec;
 
-	s32Ret = vpss_send_chn_frame(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_send_chn_frame(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) send chn frame fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -961,26 +975,26 @@ CVI_S32 CVI_VPSS_GetChnFrame(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VIDEO_FRAME_INF
 			     CVI_S32 s32MilliSec)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_frm_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstFrameInfo);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 	cfg.s32MilliSec = s32MilliSec;
 
-	s32Ret = vpss_get_chn_frame(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_frame(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn frame fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 	memcpy(pstFrameInfo, &cfg.stVideoFrame, sizeof(*pstFrameInfo));
 
@@ -990,7 +1004,7 @@ CVI_S32 CVI_VPSS_GetChnFrame(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VIDEO_FRAME_INF
 CVI_S32 CVI_VPSS_ReleaseChnFrame(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VIDEO_FRAME_INFO_S *pstVideoFrame)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_frm_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstVideoFrame);
@@ -999,10 +1013,10 @@ CVI_S32 CVI_VPSS_ReleaseChnFrame(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VIDEO
 	cfg.VpssChn = VpssChn;
 	memcpy(&cfg.stVideoFrame, pstVideoFrame, sizeof(cfg.stVideoFrame));
 
-	s32Ret = vpss_release_chn_frame(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_release_chn_frame(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) release chn frame fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -1011,14 +1025,14 @@ CVI_S32 CVI_VPSS_ReleaseChnFrame(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VIDEO
 CVI_S32 CVI_VPSS_GetChnFd(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	return fd;
 }
@@ -1032,14 +1046,14 @@ CVI_S32 CVI_VPSS_CloseFd(void)
 CVI_S32 CVI_VPSS_SetModParam(const VPSS_MOD_PARAM_S *pstModParam)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstModParam);
 
-	s32Ret = vpss_set_mod_param(fd, pstModParam);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_mod_param(fd, pstModParam);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Set module param fail\n");
-		return s32Ret;
+		return ret;
 	}
 	return CVI_SUCCESS;
 }
@@ -1047,43 +1061,43 @@ CVI_S32 CVI_VPSS_SetModParam(const VPSS_MOD_PARAM_S *pstModParam)
 CVI_S32 CVI_VPSS_GetModParam(VPSS_MOD_PARAM_S *pstModParam)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstModParam);
 
-	s32Ret = vpss_get_mod_param(fd, pstModParam);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_mod_param(fd, pstModParam);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Get module param fail\n");
-		return s32Ret;
+		return ret;
 	}
 	return CVI_SUCCESS;
 }
 
 CVI_S32 CVI_VPSS_SetChnRotation(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, ROTATION_E enRotation)
 {
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	CVI_S32 fd = get_vpss_fd();
 	struct vpss_chn_attr attr = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 	struct vpss_chn_ldc_cfg ldc_cfg = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	s32Ret = vpss_get_chn_attr(fd, &attr);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_attr(fd, &attr);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn attr fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 	CHECK_VPSS_GDC_FMT(VpssGrp, VpssChn, attr.stChnAttr.enPixelFormat);
 
-	s32Ret = vpss_get_chn_ldc(fd, &ldc_cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_ldc(fd, &ldc_cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn LDC attr fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	if (enRotation == ROTATION_180) {
@@ -1101,31 +1115,31 @@ CVI_S32 CVI_VPSS_SetChnRotation(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, ROTATION_E e
 	} else
 		return _vpss_update_rotation_mesh(VpssGrp, VpssChn, enRotation,
 			attr.stChnAttr.u32Width, attr.stChnAttr.u32Height);
-	return s32Ret;
+	return ret;
 }
 
 CVI_S32 CVI_VPSS_GetChnRotation(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, ROTATION_E *penRotation)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_rot_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, penRotation);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_get_chn_rotation(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_rotation(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn rotation fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	*penRotation = cfg.enRotation;
@@ -1136,25 +1150,25 @@ CVI_S32 CVI_VPSS_GetChnRotation(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, ROTATION_E *
 CVI_S32 CVI_VPSS_SetChnAlign(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, CVI_U32 u32Align)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_align_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 	cfg.u32Align = u32Align;
 
-	s32Ret = vpss_set_chn_align(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_chn_align(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) set chn align fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -1163,25 +1177,25 @@ CVI_S32 CVI_VPSS_SetChnAlign(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, CVI_U32 u32Alig
 CVI_S32 CVI_VPSS_GetChnAlign(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, CVI_U32 *pu32Align)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_align_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pu32Align);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_get_chn_align(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_align(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn align fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	*pu32Align = cfg.u32Align;
@@ -1192,25 +1206,25 @@ CVI_S32 CVI_VPSS_GetChnAlign(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, CVI_U32 *pu32Al
 CVI_S32 CVI_VPSS_SetChnScaleCoefLevel(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_SCALE_COEF_E enCoef)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_coef_level_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 	cfg.enCoef = enCoef;
 
-	s32Ret = vpss_set_coef_level(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_coef_level(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) set chn ScaleCoefLevel fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -1219,25 +1233,25 @@ CVI_S32 CVI_VPSS_SetChnScaleCoefLevel(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_S
 CVI_S32 CVI_VPSS_GetChnScaleCoefLevel(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_SCALE_COEF_E *penCoef)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_coef_level_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, penCoef);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_get_coef_level(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_coef_level(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn ScaleCoefLevel fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	*penCoef = cfg.enCoef;
@@ -1248,25 +1262,25 @@ CVI_S32 CVI_VPSS_GetChnScaleCoefLevel(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_S
 CVI_S32 CVI_VPSS_SetChnDrawRect(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_DRAW_RECT_S *pstDrawRect)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_draw_rect_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 	cfg.stDrawRect = *pstDrawRect;
 
-	s32Ret = vpss_set_draw_rect(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_draw_rect(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) set draw rect fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -1275,24 +1289,24 @@ CVI_S32 CVI_VPSS_SetChnDrawRect(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_D
 CVI_S32 CVI_VPSS_GetChnDrawRect(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_DRAW_RECT_S *pstDrawRect)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_draw_rect_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_get_draw_rect(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_draw_rect(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get draw rect fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 	*pstDrawRect = cfg.stDrawRect;
 
@@ -1302,25 +1316,25 @@ CVI_S32 CVI_VPSS_GetChnDrawRect(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_DRAW_RE
 CVI_S32 CVI_VPSS_SetChnConvert(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_CONVERT_S *pstConvert)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_convert_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 	cfg.stConvert = *pstConvert;
 
-	s32Ret = vpss_set_convert(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_convert(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) set convert fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -1329,24 +1343,24 @@ CVI_S32 CVI_VPSS_SetChnConvert(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_CO
 CVI_S32 CVI_VPSS_GetChnConvert(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_CONVERT_S *pstConvert)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_convert_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_set_convert(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_convert(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get convert fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 	*pstConvert = cfg.stConvert;
 
@@ -1363,25 +1377,25 @@ CVI_S32 CVI_VPSS_GetChnConvert(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_CONVERT_
 CVI_S32 CVI_VPSS_SetChnYRatio(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, CVI_FLOAT YRatio)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_yratio_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 	cfg.YRatio = (CVI_U32)(YRatio * 100);
 
-	s32Ret = vpss_set_chn_yratio(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_set_chn_yratio(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) set chn Y Ratio fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -1390,25 +1404,25 @@ CVI_S32 CVI_VPSS_SetChnYRatio(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, CVI_FLOAT YRat
 CVI_S32 CVI_VPSS_GetChnYRatio(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, CVI_FLOAT *pYRatio)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_yratio_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pYRatio);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_get_chn_yratio(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_yratio(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn Y Ratio fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 	*pYRatio = (1.0f * cfg.YRatio) / 100.0;
 
@@ -1417,23 +1431,23 @@ CVI_S32 CVI_VPSS_GetChnYRatio(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, CVI_FLOAT *pYR
 
 CVI_S32 CVI_VPSS_SetChnLDCAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_LDC_ATTR_S *pstLDCAttr)
 {
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	CVI_S32 fd = get_vpss_fd();
 	struct vpss_chn_rot_cfg rot_cfg = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 	struct vpss_chn_attr attr = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstLDCAttr);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	s32Ret = vpss_get_chn_attr(fd, &attr);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_attr(fd, &attr);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn attr fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	if (pstLDCAttr->stAttr.bEnHWLDC)
@@ -1441,10 +1455,10 @@ CVI_S32 CVI_VPSS_SetChnLDCAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_LD
 	else
 		CHECK_VPSS_DWA_FMT(VpssGrp, VpssChn, attr.stChnAttr.enPixelFormat);
 
-	s32Ret = vpss_get_chn_rotation(fd, &rot_cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_rotation(fd, &rot_cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn rotation fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 	if (rot_cfg.enRotation > 0) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) set chn ldc fail, please add rotation to ldc.\n", VpssGrp, VpssChn);
@@ -1467,25 +1481,25 @@ CVI_S32 CVI_VPSS_SetChnLDCAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_LD
 CVI_S32 CVI_VPSS_GetChnLDCAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_LDC_ATTR_S *pstLDCAttr)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_ldc_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstLDCAttr);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_get_chn_ldc(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_ldc(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn LDC attr fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	memcpy(pstLDCAttr, &cfg.stLDCAttr, sizeof(*pstLDCAttr));
@@ -1495,33 +1509,33 @@ CVI_S32 CVI_VPSS_GetChnLDCAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VPSS_LDC_ATTR
 
 CVI_S32 CVI_VPSS_SetChnFisheye(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const FISHEYE_ATTR_S *pstFishEyeAttr)
 {
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	CVI_S32 fd = get_vpss_fd();
 	struct vpss_chn_rot_cfg rot_cfg = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 	struct vpss_chn_attr attr = {.VpssGrp = VpssGrp, .VpssChn = VpssChn};
 	struct vpss_grp_attr cfg = {.VpssGrp = VpssGrp};
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstFishEyeAttr);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	s32Ret = vpss_get_chn_attr(fd, &attr);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_attr(fd, &attr);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn attr fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	if (pstFishEyeAttr->bEnable)
 		CHECK_VPSS_DWA_FMT(VpssGrp, VpssChn, attr.stChnAttr.enPixelFormat);
 
-	s32Ret = vpss_get_chn_rotation(fd, &rot_cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_rotation(fd, &rot_cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn rotation fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	if (rot_cfg.enRotation != 0) {
@@ -1529,10 +1543,10 @@ CVI_S32 CVI_VPSS_SetChnFisheye(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const FISHEYE
 		return CVI_ERR_DWA_ILLEGAL_PARAM;
 	}
 
-	s32Ret = vpss_get_grp_attr(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_grp_attr(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get grp attr fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return _vpss_update_fisheye_mesh(VpssGrp, VpssChn, pstFishEyeAttr, rot_cfg.enRotation,
@@ -1542,25 +1556,25 @@ CVI_S32 CVI_VPSS_SetChnFisheye(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const FISHEYE
 CVI_S32 CVI_VPSS_GetChnFisheye(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, FISHEYE_ATTR_S *pstFishEyeAttr)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_chn_fisheye_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstFishEyeAttr);
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
 	cfg.VpssChn = VpssChn;
 
-	s32Ret = vpss_get_chn_fisheye(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_get_chn_fisheye(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get chn FishEye attr fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	memcpy(pstFishEyeAttr, &cfg.stFishEyeAttr, sizeof(*pstFishEyeAttr));
@@ -1576,29 +1590,29 @@ CVI_S32 CVI_VPSS_GetChnFisheye(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, FISHEYE_ATTR_
  */
 CVI_S32 CVI_VPSS_SetGrpParamfromBin(VPSS_GRP VpssGrp, CVI_U8 scene)
 {
-	CVI_S32 s32Ret;
-	VPSS_BIN_DATA *pBinData;
+	CVI_S32 ret;
+	VPSS_BIN_DATA *bin_data;
 	struct vpss_grp_csc_cfg csc_cfg = {0};
 	CVI_S32 fd = get_vpss_fd();
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	if (scene > VPSS_MAX_GRP_NUM) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "scene(%d) is over max(%d)\n", scene, VPSS_MAX_GRP_NUM);
 		return CVI_ERR_VPSS_ILLEGAL_PARAM;
 	}
 	if (get_loadbin_state()) {
-		pBinData = get_vpssbindata_addr();
+		bin_data = get_vpssbindata_addr();
 		csc_cfg.VpssGrp = VpssGrp;
-		memcpy(csc_cfg.proc_amp, pBinData[scene].proc_amp, sizeof(csc_cfg.proc_amp));
+		memcpy(csc_cfg.proc_amp, bin_data[scene].proc_amp, sizeof(csc_cfg.proc_amp));
 		_vpss_proamp_2_csc(&csc_cfg);
 
-		s32Ret = vpss_set_grp_csc(fd, &csc_cfg);
-		if (s32Ret != CVI_SUCCESS) {
+		ret = vpss_set_grp_csc(fd, &csc_cfg);
+		if (ret != CVI_SUCCESS) {
 			CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) set group csc fail\n", VpssGrp);
-			return s32Ret;
+			return ret;
 		}
 		CVI_TRACE_VPSS(CVI_DBG_INFO, "PqBin is exist, vpss grp param use pqbin value !!\n");
 	} else {
@@ -1611,15 +1625,15 @@ CVI_S32 CVI_VPSS_SetGrpParamfromBin(VPSS_GRP VpssGrp, CVI_U8 scene)
 CVI_S32 CVI_VPSS_AttachVbPool(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VB_POOL hVbPool)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_vb_pool_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
@@ -1631,15 +1645,15 @@ CVI_S32 CVI_VPSS_AttachVbPool(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, VB_POOL hVbPoo
 CVI_S32 CVI_VPSS_DetachVbPool(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_vb_pool_cfg cfg;
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.VpssGrp = VpssGrp;
@@ -1651,12 +1665,13 @@ CVI_S32 CVI_VPSS_GetRegionLuma(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VIDEO_R
 								CVI_U64 *pu64LumaData, CVI_S32 s32MilliSec)
 {
 	CVI_S32 ret = 0;
-	VIDEO_FRAME_INFO_S stVideoFrame;
-	CVI_U8 *pstVirAddr;
-	SIZE_S stSize;
-	CVI_U32 u32X, u32Y, u32XStep, u32YStep, u32Num;
-	CVI_U32 u32MainStride;
-	CVI_S32 s32StartX, s32StartY;
+	VIDEO_FRAME_INFO_S video_frame;
+	CVI_U8 *vir_addr;
+	SIZE_S size;
+	CVI_U32 x, y, x_step, y_step, num;
+	CVI_U32 main_stride;
+	CVI_S32 start_x, start_y;
+	size_t luma_size = 0;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pstRegionInfo);
 	MOD_CHECK_NULL_PTR(CVI_ID_VPSS, pu64LumaData);
@@ -1668,76 +1683,76 @@ CVI_S32 CVI_VPSS_GetRegionLuma(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VIDEO_R
 	if (ret != CVI_SUCCESS)
 		return ret;
 
-	s32StartX = pstRegionInfo->pstRegion->s32X;
-	s32StartY = pstRegionInfo->pstRegion->s32Y;
-	stSize.u32Width = pstRegionInfo->pstRegion->u32Width;
-	stSize.u32Height = pstRegionInfo->pstRegion->u32Height;
-	if ((s32StartX < 0) || (s32StartY < 0)) {
+	start_x = pstRegionInfo->pstRegion->s32X;
+	start_y = pstRegionInfo->pstRegion->s32Y;
+	size.u32Width = pstRegionInfo->pstRegion->u32Width;
+	size.u32Height = pstRegionInfo->pstRegion->u32Height;
+	if ((start_x < 0) || (start_y < 0)) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "region info(%d %d %d %d) invalid.\n"
-					, s32StartX, s32StartY, stSize.u32Width, stSize.u32Height);
+					, start_x, start_y, size.u32Width, size.u32Height);
 		return CVI_ERR_VPSS_ILLEGAL_PARAM;
 	}
 
-	ret = CVI_VPSS_GetChnFrame(VpssGrp, VpssChn, &stVideoFrame, s32MilliSec);
+	ret = CVI_VPSS_GetChnFrame(VpssGrp, VpssChn, &video_frame, s32MilliSec);
 	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get buf fail\n", VpssGrp, VpssChn);
 		return CVI_ERR_VPSS_BUF_EMPTY;
 	}
 
-	if ((s32StartX + stSize.u32Width > stVideoFrame.stVFrame.u32Width) ||
-		(s32StartY + stSize.u32Height > stVideoFrame.stVFrame.u32Height) ||
-		((CVI_U32)s32StartX >= stVideoFrame.stVFrame.u32Width) ||
-		((CVI_U32)s32StartY >= stVideoFrame.stVFrame.u32Height) ||
-		(stSize.u32Width > stVideoFrame.stVFrame.u32Width) ||
-		(stSize.u32Height > stVideoFrame.stVFrame.u32Height)) {
+	if ((start_x + size.u32Width > video_frame.stVFrame.u32Width) ||
+		(start_y + size.u32Height > video_frame.stVFrame.u32Height) ||
+		((CVI_U32)start_x >= video_frame.stVFrame.u32Width) ||
+		((CVI_U32)start_y >= video_frame.stVFrame.u32Height) ||
+		(size.u32Width > video_frame.stVFrame.u32Width) ||
+		(size.u32Height > video_frame.stVFrame.u32Height)) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "size(%d %d %d %d) out of range.\n"
-					, s32StartX, s32StartY, stSize.u32Width, stSize.u32Height);
+					, start_x, start_y, size.u32Width, size.u32Height);
 		ret = CVI_ERR_VPSS_ILLEGAL_PARAM;
 		goto release_blk;
 	}
 
-	if (!IS_FMT_YUV(stVideoFrame.stVFrame.enPixelFormat)) {
+	if (!IS_FMT_YUV(video_frame.stVFrame.enPixelFormat)) {
 		ret = CVI_ERR_VPSS_NOT_SUPPORT;
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "only support yuv-fmt(%d).\n"
-					, stVideoFrame.stVFrame.enPixelFormat);
+					, video_frame.stVFrame.enPixelFormat);
 		goto release_blk;
 	}
 
-	size_t Luma_size = stVideoFrame.stVFrame.u32Length[0];
+	luma_size = video_frame.stVFrame.u32Length[0];
 
-	pstVirAddr = CVI_SYS_Mmap(stVideoFrame.stVFrame.u64PhyAddr[0], Luma_size);
-	if (pstVirAddr == NULL) {
-		CVI_TRACE_VPSS(CVI_DBG_ERR, "mmap for stVideoFrame failed.\n");
+	vir_addr = CVI_SYS_Mmap(video_frame.stVFrame.u64PhyAddr[0], luma_size);
+	if (vir_addr == NULL) {
+		CVI_TRACE_VPSS(CVI_DBG_ERR, "mmap for video_frame failed.\n");
 		ret = CVI_FAILURE;
 		goto release_blk;
 	}
 
-	u32MainStride = stVideoFrame.stVFrame.u32Stride[0];
+	main_stride = video_frame.stVFrame.u32Stride[0];
 
-	u32Num = 0;
+	num = 0;
 	*pu64LumaData = 0;
-	u32XStep = stSize.u32Width > 9 ? stSize.u32Width / 9 : 1;
-	u32YStep = stSize.u32Height > 9 ? stSize.u32Height / 9 : 1;
+	x_step = size.u32Width > 9 ? size.u32Width / 9 : 1;
+	y_step = size.u32Height > 9 ? size.u32Height / 9 : 1;
 
-	for (u32Y = s32StartY; u32Y < s32StartY + stSize.u32Height; u32Y += u32YStep) {
-		for (u32X = s32StartX; u32X < (s32StartX + stSize.u32Width); u32X += u32XStep) {
-			*pu64LumaData += *(pstVirAddr + u32X + u32Y * u32MainStride);
-			u32Num++;
+	for (y = start_y; y < start_y + size.u32Height; y += y_step) {
+		for (x = start_x; x < (start_x + size.u32Width); x += x_step) {
+			*pu64LumaData += *(vir_addr + x + y * main_stride);
+			num++;
 		}
 	}
 
-	for (u32X = s32StartX + u32XStep / 2; u32X < (s32StartX + stSize.u32Width); u32X += u32XStep) {
-		for (u32Y = s32StartY + u32YStep / 2; u32Y < (s32StartY + stSize.u32Height); u32Y += u32YStep) {
-			*pu64LumaData += *(pstVirAddr + u32X + u32Y * u32MainStride);
-			u32Num++;
+	for (x = start_x + x_step / 2; x < (start_x + size.u32Width); x += x_step) {
+		for (y = start_y + y_step / 2; y < (start_y + size.u32Height); y += y_step) {
+			*pu64LumaData += *(vir_addr + x + y * main_stride);
+			num++;
 		}
 	}
 
-	*pu64LumaData = *pu64LumaData / u32Num;
+	*pu64LumaData = *pu64LumaData / num;
 
-	CVI_SYS_Munmap(pstVirAddr, Luma_size);
+	CVI_SYS_Munmap(vir_addr, luma_size);
 release_blk:
-	if (CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrame) != CVI_SUCCESS)
+	if (CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &video_frame) != CVI_SUCCESS)
 		return CVI_FAILURE;
 	return ret;
 }
@@ -1745,20 +1760,20 @@ release_blk:
 CVI_S32 CVI_VPSS_TriggerSnapFrame(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, CVI_U32 u32FrameCnt)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct vpss_snap_cfg cfg = {.VpssGrp = VpssGrp, .VpssChn = VpssChn, .frame_cnt = u32FrameCnt};
 
-	s32Ret = CHECK_VPSS_GRP_VALID(VpssGrp);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
-	s32Ret = CHECK_VPSS_CHN_VALID(VpssChn);
-	if (s32Ret != CVI_SUCCESS)
-		return s32Ret;
+	ret = CHECK_VPSS_GRP_VALID(VpssGrp);
+	if (ret != CVI_SUCCESS)
+		return ret;
+	ret = CHECK_VPSS_CHN_VALID(VpssChn);
+	if (ret != CVI_SUCCESS)
+		return ret;
 
-	s32Ret = vpss_trigger_snap_frame(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_trigger_snap_frame(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) Trigger Snap Frame fail\n", VpssGrp, VpssChn);
-		return s32Ret;
+		return ret;
 	}
 
 	return CVI_SUCCESS;
@@ -1768,17 +1783,17 @@ CVI_S32 CVI_VPSS_Stitch(CVI_U32 u32ChnNum, VPSS_STITCH_CHN_ATTR_S *pstInput,
 			VPSS_STITCH_OUTPUT_ATTR_S *pstOutput, VIDEO_FRAME_INFO_S *pstVideoFrame)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
+	CVI_S32 ret;
 	struct _vpss_stitch_cfg cfg;
 
 	cfg.u32ChnNum = u32ChnNum;
 	cfg.pstInput = pstInput;
 	cfg.stOutput = *pstOutput;
 
-	s32Ret = vpss_stitch(fd, &cfg);
-	if (s32Ret != CVI_SUCCESS) {
+	ret = vpss_stitch(fd, &cfg);
+	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Vpss Stitch fail\n");
-		return s32Ret;
+		return ret;
 	}
 	memcpy(pstVideoFrame, &cfg.stVideoFrame, sizeof(*pstVideoFrame));
 

@@ -9,9 +9,9 @@
 #include "cvi_comm_video.h"
 #include <linux/cvi_vip_snsr.h>
 #else
-#include <linux/cvi_type.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/vi_snsr.h>
+#include <cvi_type.h>
+#include <cvi_comm_video.h>
+
 #endif
 #include "cvi_debug.h"
 #include "cvi_comm_sns.h"
@@ -21,6 +21,9 @@
 #include "n6_cmos_ex.h"
 #include "n6_cmos_param.h"
 
+#define N6_I2C_ADDR 0x31
+#define N6_I2C_ADDR_IS_VALID(addr)      ((addr) == N6_I2C_ADDR)
+
 /****************************************************************************
  * global variables                                                         *
  ****************************************************************************/
@@ -29,11 +32,19 @@ ISP_SNS_COMMBUS_U g_aunN6_BusInfo[VI_MAX_PIPE_NUM] = {
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cDev = -1}
 };
 
+ISP_SNS_COMMADDR_U g_aunN6_AddrInfo[VI_MAX_PIPE_NUM] = {
+	[0] = { .s8I2cAddr = 0},
+	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
+};
+
 ISP_SNS_STATE_S *g_pastN6[VI_MAX_PIPE_NUM] = {CVI_NULL};
+SNS_COMBO_DEV_ATTR_S* g_pastN6ComboDevArray[VI_MAX_PIPE_NUM] = {CVI_NULL};
 
 #define N6_SENSOR_GET_CTX(dev, pstCtx)   (pstCtx = g_pastN6[dev])
 #define N6_SENSOR_SET_CTX(dev, pstCtx)   (g_pastN6[dev] = pstCtx)
 #define N6_SENSOR_RESET_CTX(dev)         (g_pastN6[dev] = CVI_NULL)
+#define N6_SENSOR_GET_COMBO(dev, pstCtx)   (pstCtx = g_pastN6ComboDevArray[dev])
+#define N6_SENSOR_SET_COMBO(dev, pstCtx)   (g_pastN6ComboDevArray[dev] = pstCtx)
 #define N6_RES_IS_1080P(w, h)      ((w) <= 1920 && (h) <= 1080)
 #define N6_ID 0xE0
 
@@ -120,25 +131,38 @@ static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 {
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+	SNS_COMBO_DEV_ATTR_S *pstRxAttrSrc = CVI_NULL;
 
 	N6_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	N6_SENSOR_GET_COMBO(ViPipe, pstRxAttrSrc);
+
 	CMOS_CHECK_POINTER(pstSnsState);
 	CMOS_CHECK_POINTER(pstRxAttr);
+	CMOS_CHECK_POINTER(pstRxAttrSrc);
 
-	memcpy(pstRxAttr, &n6_rx_attr, sizeof(*pstRxAttr));
+	memcpy(pstRxAttr, pstRxAttrSrc, sizeof(*pstRxAttr));
 	CVI_TRACE_SNS(CVI_DBG_ERR, "get n6_rx0_attr\n");
 
 	pstRxAttr->img_size.width = g_astN6_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Width;
 	pstRxAttr->img_size.height = g_astN6_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Height;
 
+	pstRxAttrSrc = CVI_NULL;
 	return CVI_SUCCESS;
 
 }
 
-static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
+static CVI_S32 sensor_patch_rx_attr(VI_PIPE ViPipe, RX_INIT_ATTR_S *pstRxInitAttr)
 {
-	SNS_COMBO_DEV_ATTR_S *pstRxAttr = &n6_rx_attr;
 	int i;
+	SNS_COMBO_DEV_ATTR_S* pstRxAttr = CVI_NULL;
+
+	if (!g_pastN6ComboDevArray[ViPipe]) {
+		pstRxAttr = malloc(sizeof(SNS_COMBO_DEV_ATTR_S));
+	} else {
+		N6_SENSOR_GET_COMBO(ViPipe, pstRxAttr);
+	}
+	memcpy(pstRxAttr, &n6_rx_attr, sizeof(SNS_COMBO_DEV_ATTR_S));
+	N6_SENSOR_SET_COMBO(ViPipe, pstRxAttr);
 
 	CMOS_CHECK_POINTER(pstRxInitAttr);
 
@@ -165,8 +189,17 @@ static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
 			attr->pn_swap[i] = pstRxInitAttr->as8PNSwap[i];
 		}
 	}
-
+	pstRxAttr = CVI_NULL;
 	return CVI_SUCCESS;
+}
+
+void n6_exit(VI_PIPE ViPipe)
+{
+	if (g_pastN6ComboDevArray[ViPipe]) {
+		free(g_pastN6ComboDevArray[ViPipe]);
+		g_pastN6ComboDevArray[ViPipe] = CVI_NULL;
+	}
+	n6_i2c_exit(ViPipe);
 }
 
 static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExpFunc)
@@ -187,6 +220,16 @@ static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExp
 /****************************************************************************
  * callback structure                                                       *
  ****************************************************************************/
+
+static CVI_VOID sensor_patch_i2c_addr(VI_PIPE ViPipe, CVI_S32 s32I2cAddr)
+{
+	if (N6_I2C_ADDR_IS_VALID(s32I2cAddr))
+		g_aunN6_AddrInfo[ViPipe].s8I2cAddr = s32I2cAddr;
+	else {
+		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C addr input error ,please check [0x%x]\n", s32I2cAddr);
+		g_aunN6_AddrInfo[ViPipe].s8I2cAddr = N6_I2C_ADDR;
+	}
+}
 
 static CVI_S32 n6_set_bus_info(VI_PIPE ViPipe, ISP_SNS_COMMBUS_U unSNSBusInfo)
 {
@@ -281,7 +324,7 @@ ISP_SNS_OBJ_S stSnsN6_Obj = {
 	.pfnSetBusInfo          = n6_set_bus_info,
 	.pfnSetInit             = CVI_NULL,
 	.pfnPatchRxAttr         = sensor_patch_rx_attr,
-	.pfnPatchI2cAddr        = CVI_NULL,
+	.pfnPatchI2cAddr        = sensor_patch_i2c_addr,
 	.pfnGetRxAttr           = sensor_rx_attr,
 	.pfnExpSensorCb         = cmos_init_sensor_exp_function,
 	.pfnExpAeCb             = CVI_NULL,

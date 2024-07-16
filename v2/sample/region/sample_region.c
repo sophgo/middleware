@@ -538,7 +538,7 @@ CVI_S32 SAMPLE_REGION_VO_OSD(CVI_VOID)
 	HandleNum = 1;
 	enType = OVERLAY_RGN;
 	stChn.enModId = CVI_ID_VO;
-	stChn.s32DevId = VO_OVERLAY_G1;
+	stChn.s32DevId = VO_LAYER_G1;
 	stChn.s32ChnId = 0;
 	Path_BMP = test_bmp;
 	s32Ret = SAMPLE_REGION_VI_VPSS_VO(HandleNum, enType, &stChn);
@@ -555,7 +555,7 @@ CVI_S32 SAMPLE_REGION_VO_COVER(CVI_VOID)
 	HandleNum = 1;
 	enType = COVER_RGN;
 	stChn.enModId = CVI_ID_VO;
-	stChn.s32DevId = VO_OVERLAY_G1;
+	stChn.s32DevId = VO_LAYER_G1;
 	stChn.s32ChnId = 0;
 	s32Ret = SAMPLE_REGION_VI_VPSS_VO(HandleNum, enType, &stChn);
 	return s32Ret;

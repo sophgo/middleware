@@ -10,9 +10,9 @@
 #include "cvi_comm_video.h"
 #include <linux/cvi_vip_snsr.h>
 #else
-#include <linux/cvi_type.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/vi_snsr.h>
+#include <cvi_type.h>
+#include <cvi_comm_video.h>
+
 #endif
 #include "cvi_debug.h"
 #include "cvi_comm_sns.h"
@@ -58,7 +58,7 @@ ISP_SNS_COMMADDR_U g_aunOs08b10_AddrInfo[VI_MAX_PIPE_NUM] = {
 };
 
 CVI_U16 g_au16Os08b10_GainMode[VI_MAX_PIPE_NUM] = {0};
-CVI_U16 g_au16Os08b10_L2SMode[VI_MAX_PIPE_NUM] = {0};
+CVI_U16 g_au16Os08b10_UseHwSync[VI_MAX_PIPE_NUM] = {0};
 
 OS08B10_STATE_S g_astOs08b10_State[VI_MAX_PIPE_NUM] = {{0} };
 ISP_SNS_MIRRORFLIP_TYPE_E g_aeOs08b10_MirrorFip[VI_MAX_PIPE_NUM] = {0};
@@ -81,7 +81,7 @@ static CVI_FLOAT OTP_rate;
 static CVI_BOOL HCG_EN;
 /*****os08b10 Lines Range*****/
 #define OS08B10_FULL_LINES_MAX  (0xFFFF)
-#define OS08B10_FULL_LINES_MAX_2TO1_WDR  (0x0453)
+#define OS08B10_FULL_LINES_MAX_2TO1_WDR  (0xFFFF)
 
 /*****os08b10 Register Address*****/
 #define OS08B10_HOLD_3208		0x3208
@@ -437,13 +437,13 @@ static struct gain_tbl_info_s AgainInfo[15] = {
 	},
 };
 
-static CVI_U32 Again_table[65] = {
+static CVI_U32 Again_table[64] = {
 	1024, 1088, 1152, 1216, 1280, 1344, 1408, 1472, 1536, 1600, 1664, 1728, 1792,
 	1856, 1920, 1984, 2048, 2176, 2304, 2432, 2560, 2688, 2816, 2944, 3072, 3200,
 	3328, 3456, 3584, 3712, 3840, 3968, 4096, 4352, 4608, 4864, 5120, 5376, 5632,
 	5888, 6144, 6400, 6656, 6912, 7168, 7424, 7680, 7936, 8192, 8704, 9216, 9728,
 	10240, 10752, 11264, 11776, 12288, 12800, 13312, 13824, 14336, 14848, 15360,
-	15872, 16384
+	15872
 };
 
 static struct gain_tbl_info_s DgainInfo[15] = {
@@ -587,7 +587,7 @@ static CVI_S32 cmos_again_calc_table(VI_PIPE ViPipe, CVI_U32 *pu32AgainLin, CVI_
 	if (OTP_rate < 1.0)
 		OTP_rate = (((os08b10_read_register(ViPipe, 0x77fe) * 256) + os08b10_read_register(ViPipe, 0x77ff))
 			   * 1.0) / 256;
-	if (*pu32AgainLin > 16400) {
+	if (*pu32AgainLin > 15900) {
 		rate = OTP_rate;
 		HCG_EN = CVI_TRUE;
 	} else {
@@ -595,21 +595,21 @@ static CVI_S32 cmos_again_calc_table(VI_PIPE ViPipe, CVI_U32 *pu32AgainLin, CVI_
 		HCG_EN = CVI_FALSE;
 	}
 
-	if (*pu32AgainLin >= (unsigned int)(Again_table[64] * rate)) {
-		*pu32AgainLin = (unsigned int)(Again_table[64] * rate);
-		*pu32AgainDb = 64;
+	if (*pu32AgainLin >= (unsigned int)(Again_table[63] * rate)) {
+		*pu32AgainLin = (unsigned int)(Again_table[63] * rate);
+		*pu32AgainDb = 63;
 		return CVI_SUCCESS;
 	}
 
-	for (i = 1; i < 65; i++) {
+	for (i = 1; i < 64; i++) {
 		if (*pu32AgainLin < (unsigned int)(Again_table[i] * rate)) {
 			*pu32AgainLin = (unsigned int)(Again_table[i - 1] * rate);
 			*pu32AgainDb = i - 1;
 			break;
 		}
 	}
-	if (*pu32AgainLin < 16384 && fabs(rate - OTP_rate) <= EPS)
-		*pu32AgainLin = 16384;
+	if (*pu32AgainLin < 15872 && fabs(rate - OTP_rate) <= EPS)
+		*pu32AgainLin = 15872;
 
 	return CVI_SUCCESS;
 }
@@ -657,7 +657,6 @@ static CVI_S32 cmos_gains_update(VI_PIPE ViPipe, CVI_U32 *pu32Again, CVI_U32 *pu
 
 	if (pstSnsState->enWDRMode == WDR_MODE_NONE) {
 		/* linear mode */
-
 		if (HCG_EN) {
 			pstSnsRegsInfo->astI2cData[LINEAR_HCG].u32Data = 0x00;
 		} else {
@@ -690,6 +689,11 @@ static CVI_S32 cmos_gains_update(VI_PIPE ViPipe, CVI_U32 *pu32Again, CVI_U32 *pu
 		pstSnsRegsInfo->astI2cData[LINEAR_DGAIN_2].u32Data = 0x00;
 	} else {
 		/* DOL mode */
+		if (HCG_EN) {
+			pstSnsRegsInfo->astI2cData[WDR2_HCG].u32Data = 0x00;
+		} else {
+			pstSnsRegsInfo->astI2cData[WDR2_HCG].u32Data = 0x30;
+		}
 		if (g_au16Os08b10_GainMode[ViPipe] == SNS_GAIN_MODE_WDR_2F) {
 			//sef gain
 			/* find SEF Again register setting. */
@@ -1066,6 +1070,9 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 			pstI2c_data[WDR2_LAUNCH_1].u32RegAddr = OS08B10_HOLD_3208;
 			pstI2c_data[WDR2_LAUNCH_1].u32Data = 0xA0;
 			pstI2c_data[WDR2_LAUNCH_1].u8DelayFrmNum = 0;
+			pstI2c_data[WDR2_HCG].u32RegAddr = OS08B10_HCG_ADDR;
+			pstI2c_data[WDR2_HCG].bvblankUpdate = CVI_TRUE;
+			pstI2c_data[WDR2_HCG].u8DelayFrmNum = 3;
 			break;
 		default:
 			pstI2c_data[LINEAR_HOLD_START].u32RegAddr = OS08B10_HOLD_3208;
@@ -1449,7 +1456,7 @@ static CVI_S32 sensor_set_init(VI_PIPE ViPipe, ISP_INIT_ATTR_S *pstInitAttr)
 	g_au16SampleRgain[ViPipe] = pstInitAttr->u16SampleRgain;
 	g_au16SampleBgain[ViPipe] = pstInitAttr->u16SampleBgain;
 	g_au16Os08b10_GainMode[ViPipe] = pstInitAttr->enGainMode;
-	g_au16Os08b10_L2SMode[ViPipe] = pstInitAttr->enL2SMode;
+	g_au16Os08b10_UseHwSync[ViPipe] = pstInitAttr->u16UseHwSync;
 
 	return CVI_SUCCESS;
 }

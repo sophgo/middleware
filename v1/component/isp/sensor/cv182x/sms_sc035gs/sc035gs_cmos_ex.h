@@ -12,9 +12,9 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 
@@ -57,6 +57,7 @@ typedef struct _SC035GS_MODE_S {
 
 extern ISP_SNS_STATE_S *g_pastSC035GS[VI_MAX_PIPE_NUM];
 extern ISP_SNS_COMMBUS_U g_aunSC035GS_BusInfo[];
+extern ISP_SNS_COMMADDR_U g_aunSC035GS_AddrInfo[];
 extern CVI_U16 g_au16SC035GS_GainMode[];
 extern CVI_U16 g_au16SC035GS_L2SMode[];
 extern const CVI_U8 sc035gs_i2c_addr;
@@ -64,6 +65,7 @@ extern const CVI_U32 sc035gs_addr_byte;
 extern const CVI_U32 sc035gs_data_byte;
 extern void sc035gs_init(VI_PIPE ViPipe);
 extern void sc035gs_exit(VI_PIPE ViPipe);
+extern int  sc035gs_i2c_exit(VI_PIPE ViPipe);
 extern void sc035gs_standby(VI_PIPE ViPipe);
 extern void sc035gs_restart(VI_PIPE ViPipe);
 extern int  sc035gs_write_register(VI_PIPE ViPipe, int addr, int data);

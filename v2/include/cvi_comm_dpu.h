@@ -1,8 +1,8 @@
 #ifndef _CVI_COMM_DPU_H_
 #define _CVI_COMM_DPU_H_
-#include <linux/cvi_common.h>
-#include <linux/cvi_defines.h>
-#include <linux/cvi_comm_video.h>
+#include <cvi_common.h>
+#include <cvi_defines.h>
+#include <cvi_comm_video.h>
 #undef ARRAY_SIZE
 #define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
 
@@ -71,25 +71,25 @@ typedef enum _DPU_MODE_E{
 
 typedef struct _DPU_GRP_ATTR_S {
 
-	SIZE_S stLeftImageSize;
+	SIZE_S stLeftImageSize;           //minSIze(64*64) maxSize(1920*1080)
 	SIZE_S stRightImageSize;
 	DPU_MODE_E enDpuMode;
 	DPU_MASK_MODE_E enMaskMode;
 	DPU_DISP_RANGE_E enDispRange;
-	CVI_U16 u16DispStartPos;
-	CVI_U32 u32Rshift1;
-	CVI_U32 u32Rshift2;
-	CVI_U32 u32CaP1;
-	CVI_U32 u32CaP2;
-	CVI_U32 u32UniqRatio;
-	CVI_U32 u32DispShift;
-	CVI_U32 u32CensusShift;
-	CVI_U32 u32FxBaseline;
+	CVI_U16 u16DispStartPos;          // [0,WIDTH)
+	CVI_U32 u32Rshift1;               // [0,7]
+	CVI_U32 u32Rshift2;				  // [0,7]
+	CVI_U32 u32CaP1;                  // [0,65535]
+	CVI_U32 u32CaP2;				  // [0,65535]
+	CVI_U32 u32UniqRatio;             // [0,100]
+	CVI_U32 u32DispShift;			  // [0,15]
+	CVI_U32 u32CensusShift;           // [0,255]
+	CVI_U32 u32FxBaseline;            // [0,1048575]
 	DPU_DCC_DIR_E enDccDir;
-	CVI_U32 u32FgsMaxCount;
-	CVI_U32 u32FgsMaxT;
+	CVI_U32 u32FgsMaxCount;			  // [0,31]
+	CVI_U32 u32FgsMaxT;               // [0,127]
 	DPU_DEPTH_UNIT_E enDpuDepthUnit;
-	CVI_BOOL bIsBtcostOut;
+	CVI_BOOL bIsBtcostOut;            // [0,1]
 	CVI_BOOL bNeedSrcFrame;
 	FRAME_RATE_CTRL_S stFrameRate;
 

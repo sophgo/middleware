@@ -36,8 +36,8 @@ int Pixel_Clk = 0;
 typedef struct _HDMI_UT_FILE {
 	CVI_U32 SimpleSize;
 	CVI_U32 SimpleFreq;
-	CVI_U8  Channel_Alloc;
-	int  channel;
+	CVI_U8 Channel_Alloc;
+	int channel;
 	char filename[30];
 } HDMI_AUDIO_FILE;
 
@@ -95,7 +95,7 @@ CVI_S32 AUDIO_MAP(CVI_HDMI_ATTR* attr, CVI_CHAR * filename, CVI_U64* pu64PhyAddr
 	attr->audio_stop_paddr = *pu64PhyAddr + u32Len;
 	SAMPLE_PRT("Start_addr:0x%lx, Stop_addr:0x%lx\n",attr->audio_start_paddr, attr->audio_stop_paddr);
 	SAMPLE_PRT("vaddr:%p\n", *ppVirAddr);
-    free(p);
+	free(p);
 	return 0;
 }
 
@@ -368,8 +368,8 @@ static CVI_S32 _hdmi_ut_handle_op(CVI_S32 op)
 		CVI_HDMI_ATTR setAttr;
 		CVI_CHAR * filename;
 		CVI_U64 u64PhyAddr = 0;
-	    CVI_VOID *pVirAddr;
-	    CVI_CHAR strName[] = "hdmi_audio_2ch";
+		CVI_VOID *pVirAddr;
+		CVI_CHAR strName[] = "hdmi_audio_2ch";
 		memset(&setAttr, 0, sizeof(setAttr));
 
 		setAttr.hdmi_en = true;
@@ -413,8 +413,8 @@ static CVI_S32 _hdmi_ut_handle_op(CVI_S32 op)
 		CVI_HDMI_INFOFRAME infoframe;
 		CVI_CHAR * filename = NULL;
 		CVI_U64 u64PhyAddr = 0;
-	    CVI_VOID *pVirAddr;
-	    CVI_CHAR strName[] = "hdmi_audio_8ch";
+		CVI_VOID *pVirAddr;
+		CVI_CHAR strName[] = "hdmi_audio_8ch";
 
 		memset(&setAttr, 0, sizeof(setAttr));
 		memset(&infoframe, 0, sizeof(infoframe));
@@ -664,8 +664,8 @@ static CVI_S32 _hdmi_ut_handle_op(CVI_S32 op)
 		CVI_HDMI_INFOFRAME GetInfoFrame;
 		CVI_CHAR * filename = NULL;
 		CVI_U64 u64PhyAddr = 0;
-	    CVI_VOID *pVirAddr;
-	    CVI_CHAR strName[] = "hdmi_audio_8ch";
+		CVI_VOID *pVirAddr;
+		CVI_CHAR strName[] = "hdmi_audio_8ch";
 
 		memset(&setAttr, 0, sizeof(setAttr));
 		memset(&infoframe, 0, sizeof(infoframe));

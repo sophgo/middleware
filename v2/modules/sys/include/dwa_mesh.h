@@ -110,7 +110,7 @@ struct dwa_operation_status {
 int dwa_get_mesh_size(int *p_mesh_hor, int *p_mesh_ver);
 int dwa_set_mesh_size(int mesh_hor, int mesh_ver);
 void dwa_mesh_gen_get_size(SIZE_S in_size, SIZE_S out_size, CVI_U32 *mesh_id_size, CVI_U32 *mesh_tbl_size);
-void dwa_mesh_gen_rotation(SIZE_S in_size, SIZE_S out_size, ROTATION_E rot, uint64_t mesh_phy_addr, void *mesh_vir_addr);
+CVI_S32 dwa_mesh_gen_rotation(SIZE_S in_size, SIZE_S out_size, ROTATION_E rot, uint64_t mesh_phy_addr, void *mesh_vir_addr);
 void dwa_mesh_gen_affine(SIZE_S in_size, SIZE_S out_size, const AFFINE_ATTR_S *pstAffineAttr, uint64_t mesh_phy_addr,
 		     void *mesh_vir_addr);
 CVI_S32 dwa_mesh_gen_fisheye(SIZE_S in_size, SIZE_S out_size, const FISHEYE_ATTR_S *pstFishEyeAttr, uint64_t mesh_phy_addr,

@@ -30,9 +30,9 @@ $(TARGET_SO): $(OBJS)
 	@echo -e $(GREEN)[LINK]$(END)[$(notdir $(LD))] $(notdir $@)
 
 install:
-	@cp ini.h $(MW_INC)
+	@cp -f ini.h $(MW_INC)/3rd/
 
 clean:
-	@rm -f $(OBJS) $(DEPS) $(TARGET_A) $(TARGET_SO) $(MW_INC)/ini.h
+	@rm -f $(OBJS) $(DEPS) $(TARGET_A) $(TARGET_SO) $(MW_INC)/3rd/ini.h
 
 -include $(DEPS)

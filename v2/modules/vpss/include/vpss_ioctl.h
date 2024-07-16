@@ -3,7 +3,7 @@
 
 #include <sys/ioctl.h>
 
-#include <linux/vpss_uapi.h>
+#include <vpss_uapi.h>
 
 /* Configured from user  */
 CVI_S32 vpss_create_grp(CVI_S32 fd, struct vpss_crt_grp_cfg *cfg);

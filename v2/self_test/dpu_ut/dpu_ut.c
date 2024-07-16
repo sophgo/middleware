@@ -493,7 +493,6 @@ static CVI_S32 basic()
 	memset(&stVbConf, 0, sizeof(VB_CONFIG_S));
 	memset(&grp_attr_zero,0,sizeof(DPU_GRP_ATTR_S));
 	memset(&chn_attr_zero,0,sizeof(DPU_CHN_ATTR_S));
-	//CVI_DPU_Reset();
 	u32BlkSizeIn_left = COMMON_GetPicBufferSize(grp_attr.stLeftImageSize.u32Width, grp_attr.stLeftImageSize.u32Height,
 		PIXEL_FORMAT_YUV_400, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, ALIGN_16);
 	if(	grp_attr.enDpuMode == DPU_MODE_DEFAULT ||
@@ -909,7 +908,6 @@ static CVI_S32 basic_loop()
 	 ************************************************/
 	memset(&stVbConf, 0, sizeof(VB_CONFIG_S));
 	memset(&grp_attr_zero,0,sizeof(DPU_GRP_ATTR_S));
-	//CVI_DPU_Reset();
 	u32BlkSizeIn_left = COMMON_GetPicBufferSize(grp_attr.stLeftImageSize.u32Width, grp_attr.stLeftImageSize.u32Height,
 		PIXEL_FORMAT_YUV_400, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, ALIGN_16);
 

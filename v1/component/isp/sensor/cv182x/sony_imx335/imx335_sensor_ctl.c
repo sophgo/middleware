@@ -11,8 +11,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "imx335_cmos_ex.h"
@@ -50,7 +50,7 @@ int imx335_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, imx335_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_aunImx335_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -270,10 +270,6 @@ void imx335_init(VI_PIPE ViPipe)
 	g_pastImx335[ViPipe]->bInit = CVI_TRUE;
 }
 
-void imx335_exit(VI_PIPE ViPipe)
-{
-	imx335_i2c_exit(ViPipe);
-}
 static void imx335_linear_4M30_init(VI_PIPE ViPipe)
 {
 	delay_ms(4);

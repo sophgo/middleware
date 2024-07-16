@@ -2,8 +2,8 @@
 #define __SAMPLE_COMM_DPU_H__
 #include "cvi_dpu.h"
 #include "cvi_dwa.h"
-#include <linux/cvi_comm_dpu.h>
-#include <linux/cvi_comm_video.h>
+#include <cvi_comm_dpu.h>
+#include <cvi_comm_video.h>
 #include <pthread.h>
 
 typedef struct _DWA_BASIC_PARAM {

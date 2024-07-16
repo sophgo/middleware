@@ -10,6 +10,12 @@
 #endif
 #endif /* End of #ifdef __cplusplus */
 
+enum grid_info_mode {
+	GRID_MODE_REGION_BASE = 0,
+	GRID_MODE_MESH_BASE,
+	GRID_MODE_MAX,
+};
+
 typedef struct _MESH_DATA_ALL_S {
 	char grid_name[64];
 	bool balloc;
@@ -29,6 +35,7 @@ typedef struct _MESH_DATA_ALL_S {
 	bool _bhomo;
 	float _homography[10];
 	int corners[10];
+	enum grid_info_mode grid_mode;
 	float *_pmapx, *_pmapy;
 } MESH_DATA_ALL_S;
 

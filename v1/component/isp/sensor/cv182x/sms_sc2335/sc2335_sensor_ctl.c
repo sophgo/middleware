@@ -11,8 +11,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "cvi_sns_ctrl.h"
@@ -48,7 +48,7 @@ int sc2335_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, sc2335_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_aunSC2335_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -210,7 +210,6 @@ void sc2335_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFlip
 	sc2335_write_register(ViPipe, 0x3221, val);
 }
 
-
 int sc2335_probe(VI_PIPE ViPipe)
 {
 	int nVal;
@@ -240,8 +239,6 @@ int sc2335_probe(VI_PIPE ViPipe)
 
 	return CVI_SUCCESS;
 }
-
-
 
 /* 1080P30 and 1080P25 */
 static void sc2335_linear_1080p30_init(VI_PIPE ViPipe)
@@ -363,7 +360,3 @@ void sc2335_init(VI_PIPE ViPipe)
 	g_pastSC2335[ViPipe]->bInit = CVI_TRUE;
 }
 
-void sc2335_exit(VI_PIPE ViPipe)
-{
-	sc2335_i2c_exit(ViPipe);
-}

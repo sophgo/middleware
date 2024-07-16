@@ -2,10 +2,9 @@
 #define MODULES_HDMI_IOCTL_H_
 
 #include <sys/ioctl.h>
-#include <linux/hdmi_uapi.h>
+#include <hdmi_uapi.h>
 
 /* Configured from user  */
-
 CVI_S32 _cvi_hdmi_init(CVI_S32 fd);
 CVI_S32 _cvi_hdmi_deinit(CVI_S32 fd);
 CVI_S32 _cvi_hdmi_open(CVI_S32 fd);

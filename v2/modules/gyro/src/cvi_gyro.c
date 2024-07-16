@@ -10,7 +10,7 @@
 #include <sys/ioctl.h>
 
 #include "cvi_gyro.h"
-#include "linux/cvi_gyro_ioctl.h"
+#include "linux/gyro_uapi.h"
 
 #define DEV_NODE "/dev/cvi-gyro"
 

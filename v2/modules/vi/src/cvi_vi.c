@@ -18,7 +18,6 @@
 #include "vi_ioctl.h"
 #include "cvi_sns_ctrl.h"
 #include "dump_register.h"
-#include <linux/cvi_vi_ctx.h>
 
 
 #define CHECK_VI_PIPEID_VALID(x)						\
@@ -286,6 +285,7 @@ static CVI_S32 _vi_update_ldc_mesh(VI_PIPE ViPipe, VI_CHN ViChn,
 	struct vi_chn_ldc_cfg cfg;
 	char mesh_name[128];
 	CVI_S32 s32Ret = CVI_SUCCESS;
+	struct cvi_gdc_mesh *pmesh = &g_vi_mesh[ViChn];
 
 	cfg.ViPipe = ViPipe;
 	cfg.ViChn = ViChn;
@@ -301,6 +301,15 @@ static CVI_S32 _vi_update_ldc_mesh(VI_PIPE ViPipe, VI_CHN ViChn,
 
 	CVI_TRACE_VI(CVI_DBG_DEBUG, "ViPipe(%d) ViChn(%d) mesh base(%#"PRIx64") vaddr(%p)\n"
 		, ViPipe, ViChn, paddr, vaddr);
+
+	if (pmesh->paddr && pmesh->vaddr) {
+		CVI_SYS_IonFree(pmesh->paddr, pmesh->vaddr);
+		pmesh->paddr = 0;
+		pmesh->vaddr = CVI_NULL;
+	}
+
+	pmesh->paddr = paddr;
+	pmesh->vaddr = vaddr;
 
 	cfg.meshHandle = paddr;
 	if (vi_sdk_set_chn_ldc(fd, &cfg) != CVI_SUCCESS) {
@@ -1508,12 +1517,15 @@ CVI_S32 CVI_VI_DisableChn(VI_PIPE ViPipe, VI_CHN ViChn)
 			pthread_join(gViDbgTH.vi_dbg_thread, NULL);
 		}
 
-		snprintf(mesh_name, 128, "vi_%d_%d", ViPipe, ViChn);
+		snprintf(mesh_name, 128, "vi_%d", ViChn);
 		vi_sdk_get_chn_ldc(fd, ViPipe, ViChn, &ldc_cfg);
 		if (ldc_cfg.stLDCAttr.stAttr.bEnHWLDC)
 			CVI_GDC_FreeCurTaskMesh(mesh_name);
 		else
 			CVI_DWA_FreeCurTaskMesh(mesh_name);
+
+		g_vi_mesh[ViChn].paddr = CVI_NULL;
+		g_vi_mesh[ViChn].vaddr = CVI_NULL;
 	} else if (ViChn >= VI_EXT_CHN_START) {
 		CVI_TRACE_VI(CVI_DBG_ERR, " not support ext chn(%d)\n", ViChn);
 	}

@@ -9,7 +9,7 @@
 #ifndef __CVI_MIPI_H__
 #define __CVI_MIPI_H__
 
-#include <linux/cvi_common.h>
+#include <cvi_common.h>
 
 #ifdef __cplusplus
 #if __cplusplus

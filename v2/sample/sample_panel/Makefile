@@ -8,7 +8,7 @@ include ../sample.mk
 PANEL_INC =../../component/panel/$(shell echo $(CHIP_ARCH) | tr A-Z a-z)
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c) $(filter-out $(COMMON_DIR)/sample_common_vo.c, $(wildcard $(COMMON_DIR)/*.c))
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(PANEL_INC) -I$(KERNEL_INC) $(COMM_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(PANEL_INC) -I$(KERNEL_INC) $(COMM_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 

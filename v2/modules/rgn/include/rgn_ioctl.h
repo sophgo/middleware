@@ -1,8 +1,8 @@
 #ifndef MODULES_VPU_INCLUDE_RGN_IOCTL_H_
 #define MODULES_VPU_INCLUDE_RGN_IOCTL_H_
 
-#include <linux/rgn_uapi.h>
-#include <linux/cvi_comm_region.h>
+#include "rgn_uapi.h"
+#include <cvi_comm_region.h>
 
 int rgn_create(int fd, int Handle, const RGN_ATTR_S *pstRegion);
 int rgn_destroy(int fd, int Handle);

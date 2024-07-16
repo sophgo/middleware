@@ -12,15 +12,15 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "pr2100_cmos_ex.h"
 
 static const PR2100_MODE_S g_astPr2100_mode[PR2100_MODE_NUM] = {
-	[PR2100_MODE_1080P] = {
+	[PR2100_MODE_1080P25] = {
 		.name = "1080p25",
 		.astImg[0] = {
 			.stSnsSize = {
@@ -39,7 +39,7 @@ static const PR2100_MODE_S g_astPr2100_mode[PR2100_MODE_NUM] = {
 			},
 		},
 	},
-	[PR2100_MODE_1080P_2CH] = {
+	[PR2100_MODE_1080P25_2CH] = {
 		.name = "1080p25_2ch",
 		.astImg[0] = {
 			.stSnsSize = {
@@ -58,8 +58,27 @@ static const PR2100_MODE_S g_astPr2100_mode[PR2100_MODE_NUM] = {
 			},
 		},
 	},
-	[PR2100_MODE_1080P_4CH] = {
+	[PR2100_MODE_1080P25_4CH] = {
 		.name = "1080p25_4ch",
+		.astImg[0] = {
+			.stSnsSize = {
+				.u32Width = 1920,
+				.u32Height = 1080,
+			},
+			.stWndRect = {
+				.s32X = 0,
+				.s32Y = 0,
+				.u32Width = 1920,
+				.u32Height = 1080,
+			},
+			.stMaxSize = {
+				.u32Width = 1920,
+				.u32Height = 1080,
+			},
+		},
+	},
+	[PR2100_MODE_1080P30_4CH] = {
+		.name = "1080p30_4ch",
 		.astImg[0] = {
 			.stSnsSize = {
 				.u32Width = 1920,

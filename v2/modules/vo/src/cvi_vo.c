@@ -11,70 +11,54 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include <linux/cvi_comm_vo.h>
-#include <linux/vo_uapi.h>
-
-#include "cvi_sys.h"
-#include "cvi_buffer.h"
-#include "cvi_base.h"
-#include "cvi_vo.h"
-#include "cvi_gdc.h"
-#include "cvi_vb.h"
-#include "gdc_mesh.h"
+#include <cvi_defines.h>
+#include <cvi_base.h>
+#include <cvi_math.h>
+#include <cvi_comm_vo.h>
+#include <cvi_errno.h>
+#include "vo_uapi.h"
 #include "vo_ioctl.h"
 
-#define CHECK_VO_DEV_VALID(VoDev) do {									\
-		if ((VoDev >= VO_MAX_DEV_NUM) || (VoDev < 0)) {						\
-			CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) invalid.\n", VoDev);			\
-			return CVI_ERR_VO_INVALID_DEVID;						\
-		}											\
+#define CHECK_VO_DEV_VALID(VoDev)\
+	do {\
+		if ((VoDev >= VO_MAX_DEV_NUM) || (VoDev < 0)) {\
+			CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) invalid.\n", VoDev);\
+			return CVI_ERR_VO_INVALID_DEVID;\
+		} \
 	} while (0)
 
-#define CHECK_VO_LAYER_VALID(VoLayer) do {								\
-		if ((VoLayer >= VO_MAX_LAYER_NUM) || (VoLayer < 0)) {					\
-			CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);			\
-			return CVI_ERR_VO_INVALID_LAYERID;						\
-		}											\
+#define CHECK_VIDEO_LAYER_VALID(VoLayer)\
+	do {\
+		if ((VoLayer >= VO_MAX_VIDEO_LAYER_NUM) || (VoLayer < 0)) {\
+			CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);\
+			return CVI_ERR_VO_INVALID_LAYERID;\
+		} \
 	} while (0)
 
-#define CHECK_VO_CHN_VALID(VoLayer, VoChn) do {							\
-		if ((VoLayer >= VO_MAX_LAYER_NUM) || (VoLayer < 0)) {					\
-			CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);			\
-			return CVI_ERR_VO_INVALID_LAYERID;						\
-		}											\
-		if ((VoChn >= VO_MAX_CHN_NUM) || (VoChn < 0)) {						\
-			CVI_TRACE_VO(CVI_DBG_ERR, "VoChn(%d) invalid.\n", VoChn);			\
-			return CVI_ERR_VO_INVALID_CHNID;						\
-		}											\
+#define CHECK_VO_CHN_VALID(VoLayer, VoChn)\
+	do {\
+		if ((VoLayer >= VO_MAX_VIDEO_LAYER_NUM) || (VoLayer < 0)) {\
+			CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);\
+			return CVI_ERR_VO_INVALID_LAYERID;\
+		} \
+		if ((VoChn >= VO_MAX_CHN_NUM) || (VoChn < 0)) {\
+			CVI_TRACE_VO(CVI_DBG_ERR, "VoChn(%d) invalid.\n", VoChn);\
+			return CVI_ERR_VO_INVALID_CHNID;\
+		} \
 	} while (0)
 
-#define CHECK_VO_WBC_VALID(VoWbc) do {									\
-		if ((VoWbc >= VO_MAX_DEV_NUM) || (VoWbc < 0)) {						\
-			CVI_TRACE_VO(CVI_DBG_ERR, "VoWbc(%d) invalid.\n", VoWbc);			\
-			return CVI_ERR_VO_INVALID_DEVID;						\
-		}											\
+#define CHECK_VO_WBC_VALID(VoWbc)\
+	do {\
+		if ((VoWbc >= VO_MAX_DEV_NUM) || (VoWbc < 0)) {\
+			CVI_TRACE_VO(CVI_DBG_ERR, "VoWbc(%d) invalid.\n", VoWbc);\
+			return CVI_ERR_VO_INVALID_DEVID;\
+		} \
 	} while (0)
 
 
 struct vo_pm_s {
 	VO_PM_OPS_S stOps;
 	CVI_VOID	*pvData;
-};
-
-enum i80_op_type {
-	I80_OP_GO = 0,
-	I80_OP_TIMER,
-	I80_OP_DONE,
-	I80_OP_MAX,
-};
-
-enum i80_ctrl_type {
-	I80_CTRL_CMD = 0,
-	I80_CTRL_DATA,
-	I80_CTRL_EOL = I80_CTRL_DATA,
-	I80_CTRL_EOF,
-	I80_CTRL_END = I80_CTRL_EOF,
-	I80_CTRL_MAX
 };
 
 static pthread_once_t once0 = PTHREAD_ONCE_INIT;
@@ -84,7 +68,6 @@ static CVI_S32 vo_fd = -1;
 static pthread_mutex_t vo_fd_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static struct vo_pm_s apstVoPm[VO_MAX_DEV_NUM] = { 0 };
-static CVI_U8 i80_ctrl[I80_CTRL_MAX] = { 0x31, 0x75, 0xff };
 
 static CVI_S32 vo_dev_close(CVI_VOID)
 {
@@ -181,64 +164,6 @@ CVI_U32 get_vo_bin_guardmagic_code(void)
 {
 	return VO_BIN_GUARDMAGIC;
 }
-
-#if 0 // skip in FPGA test
-static CVI_U32 _getFileSize(FILE *fp, CVI_U64 *size)
-{
-	CVI_S32 ret = CVI_SUCCESS;
-
-	MOD_CHECK_NULL_PTR(CVI_ID_VO, fp);
-	MOD_CHECK_NULL_PTR(CVI_ID_VO, size);
-
-	fseek(fp, 0L, SEEK_END);
-	*size = ftell(fp);
-	rewind(fp);
-
-	return ret;
-}
-
-static CVI_S32 CVI_VO_SetVOParamFromBin(void)
-{
-	CVI_S32 ret = CVI_SUCCESS;
-	FILE *fp = NULL;
-	CVI_U8 *buf;
-	CVI_CHAR binName[BIN_FILE_LENGTH];
-	CVI_U64 file_size;
-
-	ret = CVI_BIN_GetBinName(binName);
-	if (ret != CVI_SUCCESS) {
-		CVI_TRACE_VO(CVI_DBG_ERR, "GetBinName failure\n");
-	}
-
-	fp = fopen(binName, "rb");
-	if (fp == NULL) {
-		CVI_TRACE_VO(CVI_DBG_ERR, "Cant find bin(%s)\n", binName);
-		return CVI_FAILURE;
-	}
-	CVI_TRACE_VO(CVI_DBG_DEBUG, "Bin exist (%s)\n", binName);
-
-	_getFileSize(fp, &file_size);
-
-	buf = (CVI_U8 *)malloc(file_size);
-	if (buf == NULL) {
-		CVI_TRACE_VO(CVI_DBG_ERR, "Allocae memory failed!\n");
-		fclose(fp);
-		return CVI_FAILURE;
-	}
-
-	//fread info buffer and calling CVI_BIN
-	fread(buf, file_size, 1, fp);
-	ret = CVI_BIN_LoadParamFromBin(CVI_BIN_ID_VO, buf);
-	free(buf);
-
-	{
-		//set gamma with HW from bin or default value
-		CVI_S32 fd = get_vo_fd();
-		vo_set_gamma_ctrl(fd, &vo_bin_info.gamma_info);
-	}
-	return CVI_SUCCESS;
-}
-#endif
 
 void vo_layer_init0(void)
 {
@@ -501,37 +426,37 @@ CVI_S32 CVI_VO_GetLVDSParam(VO_DEV VoDev, VO_LVDS_ATTR_S *pstLVDSParam)
 	return CVI_SUCCESS;
 }
 
-CVI_S32 CVI_VO_SetI80Param(VO_DEV VoDev, const VO_I80_CFG_S *pstI80Param)
+CVI_S32 CVI_VO_SetBTParam(VO_DEV VoDev, const VO_BT_ATTR_S *pstBTParam)
 {
-	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstI80Param);
+	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstBTParam);
 	CHECK_VO_DEV_VALID(VoDev);
 
 	CVI_S32 fd = -1, s32Ret;
-	struct vo_I80_param_cfg cfg;
+	struct vo_bt_param_cfg cfg;
 
 	if (_check_vo_exist(&fd)) {
 		return CVI_ERR_VO_NOT_SUPPORT;
 	}
 
 	cfg.VoDev = VoDev;
-	memcpy(&cfg.stI80Param, pstI80Param, sizeof(VO_I80_CFG_S));
+	memcpy(&cfg.stBTParam, pstBTParam, sizeof(VO_BT_ATTR_S));
 
-	s32Ret = vo_sdk_set_I80param(fd, &cfg);
+	s32Ret = vo_sdk_set_btparam(fd, &cfg);
 	if (s32Ret != CVI_SUCCESS) {
-		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) Set I80 param fail\n", VoDev);
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) Get BT param fail\n", VoDev);
 		return s32Ret;
 	}
 
 	return CVI_SUCCESS;
 }
 
-CVI_S32 CVI_VO_GetI80Param(VO_DEV VoDev, VO_I80_CFG_S *pstI80Param)
+CVI_S32 CVI_VO_GetBTParam(VO_DEV VoDev, VO_BT_ATTR_S *pstBTParam)
 {
-	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstI80Param);
+	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstBTParam);
 	CHECK_VO_DEV_VALID(VoDev);
 
 	CVI_S32 fd = -1, s32Ret;
-	struct vo_I80_param_cfg cfg;
+	struct vo_bt_param_cfg cfg;
 
 	if (_check_vo_exist(&fd)) {
 		return CVI_ERR_VO_NOT_SUPPORT;
@@ -539,61 +464,17 @@ CVI_S32 CVI_VO_GetI80Param(VO_DEV VoDev, VO_I80_CFG_S *pstI80Param)
 
 	cfg.VoDev = VoDev;
 
-	s32Ret = vo_sdk_get_I80param(fd, &cfg);
+	s32Ret = vo_sdk_get_btparam(fd, &cfg);
 	if (s32Ret != CVI_SUCCESS) {
-		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) Get HDMI param fail\n", VoDev);
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) Get BT param fail\n", VoDev);
 		return s32Ret;
 	}
 
-	memcpy(pstI80Param, &cfg.stI80Param, sizeof(VO_I80_CFG_S));
+	memcpy(pstBTParam, &cfg.stBTParam, sizeof(VO_BT_ATTR_S));
 
 	return CVI_SUCCESS;
 }
 
-CVI_S32 CVI_VO_I80Init(VO_DEV VoDev, const VO_I80_INSTR_S *pi80Instr, CVI_U8 size)
-{
-	MOD_CHECK_NULL_PTR(CVI_ID_VO, pi80Instr);
-	CHECK_VO_DEV_VALID(VoDev);
-
-	CVI_S32 fd = -1, s32Ret;
-	CVI_U32 sw_cmd;
-	VO_INTF_TYPE_E inft;
-
-
-	if (_check_vo_exist(&fd)) {
-		return CVI_ERR_VO_NOT_SUPPORT;
-	}
-
-	s32Ret = vo_get_intf_type(fd, &inft, VoDev);
-	if (s32Ret != CVI_SUCCESS) {
-		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) I80 init fail\n", VoDev);
-		return s32Ret;
-	}
-	if (inft != VO_INTF_I80) {
-		CVI_TRACE_VO(CVI_DBG_ERR, "VO DEV(%d) interface(%d) is not I80.\n",
-			     VoDev, inft);
-		return CVI_ERR_VO_ILLEGAL_PARAM;
-	}
-
-	vo_set_i80_sw_mode(fd, CVI_TRUE);
-	for (int i = 0; i < size; i++) {
-		if (pi80Instr[i].data_type > 1) {
-			CVI_TRACE_VO(CVI_DBG_ERR, "VO I80 instr type(%d) invalid.\n", pi80Instr[i].data_type);
-			return CVI_ERR_VO_ILLEGAL_PARAM;
-		}
-
-		sw_cmd = (i80_ctrl[pi80Instr[i].data_type] << 8) | pi80Instr[i].data;
-		vo_send_i80_cmd(fd, sw_cmd);
-
-		if (pi80Instr[i].delay)
-			usleep(pi80Instr[i].delay);
-	}
-	// pull high i80-lane
-	vo_send_i80_cmd(fd, 0xffff);
-	vo_send_i80_cmd(fd, 0x2ffff);
-	vo_set_i80_sw_mode(fd, CVI_FALSE);
-	return CVI_SUCCESS;
-}
 
 CVI_S32 CVI_VO_Enable(VO_DEV VoDev)
 {
@@ -644,7 +525,7 @@ CVI_S32 CVI_VO_Disable(VO_DEV VoDev)
 CVI_S32 CVI_VO_SetVideoLayerCSC(VO_LAYER VoLayer, const VO_CSC_S *pstVideoCSC)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstVideoCSC);
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_layer_csc_cfg csc_cfg;
 	struct vo_layer_proc_amp_cfg proc_cfg;
@@ -677,7 +558,7 @@ CVI_S32 CVI_VO_SetVideoLayerCSC(VO_LAYER VoLayer, const VO_CSC_S *pstVideoCSC)
 CVI_S32 CVI_VO_GetVideoLayerCSC(VO_LAYER VoLayer, VO_CSC_S *pstVideoCSC)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstVideoCSC);
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_layer_csc_cfg cfg;
 
@@ -698,7 +579,7 @@ CVI_S32 CVI_VO_GetVideoLayerCSC(VO_LAYER VoLayer, VO_CSC_S *pstVideoCSC)
 
 CVI_S32 CVI_VO_EnableVideoLayer(VO_LAYER VoLayer)
 {
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_video_layer_cfg cfg;
 
@@ -724,7 +605,7 @@ CVI_S32 CVI_VO_EnableVideoLayer(VO_LAYER VoLayer)
 
 CVI_S32 CVI_VO_DisableVideoLayer(VO_LAYER VoLayer)
 {
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_video_layer_cfg cfg;
 
@@ -745,7 +626,7 @@ CVI_S32 CVI_VO_DisableVideoLayer(VO_LAYER VoLayer)
 CVI_S32 CVI_VO_SetVideoLayerAttr(VO_LAYER VoLayer, const VO_VIDEO_LAYER_ATTR_S *pstLayerAttr)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstLayerAttr);
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_video_layer_attr_cfg cfg;
 
@@ -767,7 +648,7 @@ CVI_S32 CVI_VO_SetVideoLayerAttr(VO_LAYER VoLayer, const VO_VIDEO_LAYER_ATTR_S *
 CVI_S32 CVI_VO_GetVideoLayerAttr(VO_LAYER VoLayer, VO_VIDEO_LAYER_ATTR_S *pstLayerAttr)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstLayerAttr);
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_video_layer_attr_cfg cfg;
 
@@ -789,7 +670,7 @@ CVI_S32 CVI_VO_GetVideoLayerAttr(VO_LAYER VoLayer, VO_VIDEO_LAYER_ATTR_S *pstLay
 CVI_S32 CVI_VO_GetLayerProcAmpCtrl(VO_LAYER VoLayer, PROC_AMP_E type, PROC_AMP_CTRL_S *ctrl)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, ctrl);
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 
 	if (type >= PROC_AMP_MAX) {
 		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) ProcAmp type(%d) invalid.\n", VoLayer, type);
@@ -804,7 +685,7 @@ CVI_S32 CVI_VO_GetLayerProcAmpCtrl(VO_LAYER VoLayer, PROC_AMP_E type, PROC_AMP_C
 CVI_S32 CVI_VO_GetLayerProcAmp(VO_LAYER VoLayer, PROC_AMP_E type, CVI_S32 *value)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, value);
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_layer_proc_amp_cfg cfg;
 
@@ -831,7 +712,7 @@ CVI_S32 CVI_VO_GetLayerProcAmp(VO_LAYER VoLayer, PROC_AMP_E type, CVI_S32 *value
 
 CVI_S32 CVI_VO_SetLayerProcAmp(VO_LAYER VoLayer, PROC_AMP_E type, CVI_S32 value)
 {
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_layer_proc_amp_cfg cfg;
 	struct vo_layer_csc_cfg layer_csc_cfg;
@@ -872,7 +753,7 @@ CVI_S32 CVI_VO_SetLayerProcAmp(VO_LAYER VoLayer, PROC_AMP_E type, CVI_S32 value)
 		return s32Ret;
 	}
 
-	struct cvi_csc_cfg csc_cfg;
+	struct disp_csc_matrix csc_cfg;
 	CVI_S32 b = (cfg.proc_amp[PROC_AMP_BRIGHTNESS] >> 1) - 64;
 	float c = (float)cfg.proc_amp[PROC_AMP_CONTRAST] / 128;
 	float s = (float)cfg.proc_amp[PROC_AMP_SATURATION] / 128;
@@ -1023,7 +904,7 @@ CVI_S32 CVI_VO_SetLayerProcAmp(VO_LAYER VoLayer, PROC_AMP_E type, CVI_S32 value)
 
 CVI_S32 CVI_VO_SetPlayToleration(VO_LAYER VoLayer, CVI_U32 u32Toleration)
 {
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_layer_toleration_cfg cfg;
 
@@ -1046,7 +927,7 @@ CVI_S32 CVI_VO_SetPlayToleration(VO_LAYER VoLayer, CVI_U32 u32Toleration)
 CVI_S32 CVI_VO_GetPlayToleration(VO_LAYER VoLayer, CVI_U32 *pu32Toleration)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, pu32Toleration);
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_layer_toleration_cfg cfg;
 
@@ -1072,12 +953,12 @@ CVI_S32 CVI_VO_SetLayerPriority(VO_LAYER VoLayer, CVI_U32 u32Priority)
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_layer_priority_cfg cfg;
 
-	if ((VoLayer >= (VO_MAX_LAYER_NUM + VO_MAX_OVERLAY_NUM)) || (VoLayer < 0)) {
+	if ((VoLayer >= VO_MAX_LAYER_NUM) || (VoLayer < 0)) {
 		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);
 		return CVI_ERR_VO_INVALID_LAYERID;
 	}
 
-	if (VoLayer < VO_MAX_LAYER_NUM) {
+	if (VoLayer < VO_MAX_VIDEO_LAYER_NUM) {
 		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Video layer unsurpport set priority.\n", VoLayer);
 		return CVI_ERR_VO_INVALID_LAYERID;
 	}
@@ -1104,12 +985,12 @@ CVI_S32 CVI_VO_GetLayerPriority(VO_LAYER VoLayer, CVI_U32 *pu32Priority)
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_layer_priority_cfg cfg;
 
-	if ((VoLayer >= (VO_MAX_LAYER_NUM + VO_MAX_OVERLAY_NUM)) || (VoLayer < 0)) {
+	if ((VoLayer >= VO_MAX_LAYER_NUM) || (VoLayer < 0)) {
 		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);
 		return CVI_ERR_VO_INVALID_LAYERID;
 	}
 
-	if (VoLayer < VO_MAX_LAYER_NUM) {
+	if (VoLayer < VO_MAX_VIDEO_LAYER_NUM) {
 		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Video layer unsurpport get priority.\n", VoLayer);
 		return CVI_ERR_VO_INVALID_LAYERID;
 	}
@@ -1137,7 +1018,7 @@ CVI_S32 CVI_VO_BindLayer(VO_LAYER VoLayer, VO_DEV VoDev)
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_video_layer_bind_cfg cfg;
 
-	if ((VoLayer >= (VO_MAX_LAYER_NUM + VO_MAX_OVERLAY_NUM)) || (VoLayer < 0)) {
+	if ((VoLayer >= VO_MAX_LAYER_NUM) || (VoLayer < 0)) {
 		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);
 		return CVI_ERR_VO_INVALID_LAYERID;
 	}
@@ -1164,7 +1045,7 @@ CVI_S32 CVI_VO_UnBindLayer(VO_LAYER VoLayer, VO_DEV VoDev)
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_video_layer_bind_cfg cfg;
 
-	if ((VoLayer >= (VO_MAX_LAYER_NUM + VO_MAX_OVERLAY_NUM)) || (VoLayer < 0)) {
+	if ((VoLayer >= VO_MAX_LAYER_NUM) || (VoLayer < 0)) {
 		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) invalid.\n", VoLayer);
 		return CVI_ERR_VO_INVALID_LAYERID;
 	}
@@ -1574,7 +1455,7 @@ CVI_S32 CVI_VO_QueryChnStatus(VO_LAYER VoLayer, VO_CHN VoChn, VO_QUERY_STATUS_S 
 CVI_S32 CVI_VO_GetScreenFrame(VO_LAYER VoLayer, VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_S32 s32MilliSec)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstVideoFrame);
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_screen_frame cfg;
 
@@ -1599,7 +1480,7 @@ CVI_S32 CVI_VO_GetScreenFrame(VO_LAYER VoLayer, VIDEO_FRAME_INFO_S *pstVideoFram
 CVI_S32 CVI_VO_ReleaseScreenFrame(VO_LAYER VoLayer, const VIDEO_FRAME_INFO_S *pstVideoFrame)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstVideoFrame);
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_screen_frame cfg;
 
@@ -1669,7 +1550,7 @@ CVI_S32 CVI_VO_GetChnRecvThreshold(VO_LAYER VoLayer, VO_CHN VoChn, CVI_U32 *pu32
 
 CVI_S32 CVI_VO_SetDisplayBufLen(VO_LAYER VoLayer, CVI_U32 u32BufLen)
 {
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_display_buflen_cfg cfg;
 
@@ -1691,7 +1572,7 @@ CVI_S32 CVI_VO_SetDisplayBufLen(VO_LAYER VoLayer, CVI_U32 u32BufLen)
 CVI_S32 CVI_VO_GetDisplayBufLen(VO_LAYER VoLayer, CVI_U32 *pu32BufLen)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_VO, pu32BufLen);
-	CHECK_VO_LAYER_VALID(VoLayer);
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_display_buflen_cfg cfg;
 
@@ -1830,7 +1711,7 @@ CVI_S32 CVI_VO_SendFrame(VO_LAYER VoLayer, VO_CHN VoChn, VIDEO_FRAME_INFO_S *pst
 	return CVI_SUCCESS;
 }
 
-CVI_S32 CVI_VO_ShowPattern(VO_DEV VoDev, enum VO_PATTERN_MODE PatternId)
+CVI_S32 CVI_VO_ShowPattern(VO_DEV VoDev, VO_PATTERN_MODE PatternId)
 {
 	CHECK_VO_DEV_VALID(VoDev);
 	CVI_S32 fd = -1, s32Ret;
@@ -1839,7 +1720,7 @@ CVI_S32 CVI_VO_ShowPattern(VO_DEV VoDev, enum VO_PATTERN_MODE PatternId)
 		return CVI_ERR_VO_NOT_SUPPORT;
 	}
 
-	s32Ret = vo_set_pattern(fd, (enum cvi_vip_pattern)PatternId, VoDev);
+	s32Ret = vo_set_pattern(fd, PatternId, VoDev);
 	if (s32Ret != CVI_SUCCESS) {
 		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) set Pattern failed.\n", VoDev);
 		return s32Ret;
@@ -2051,9 +1932,13 @@ CVI_S32 CVI_VO_UnRegPmCallBack(VO_DEV VoDev)
 
 CVI_BOOL CVI_VO_IsEnabled(VO_DEV VoDev)
 {
-	// CHECK_VO_DEV_VALID(VoDev);
 	CVI_S32 fd = -1, s32Ret;
 	struct vo_dev_cfg cfg;
+
+	if ((VoDev >= VO_MAX_DEV_NUM) || (VoDev < 0)) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) invalid.\n", VoDev);
+		return 0;
+	}
 
 	if (_check_vo_exist(&fd)) {
 		return CVI_FALSE;
@@ -2066,10 +1951,6 @@ CVI_BOOL CVI_VO_IsEnabled(VO_DEV VoDev)
 		return CVI_FALSE;
 	}
 
-#if 0 // skip in FPGA test
-	//set vo parameter if bin has parameters
-	CVI_VO_SetVOParamFromBin();
-#endif
 	return (CVI_BOOL)cfg.isEnable;
 }
 

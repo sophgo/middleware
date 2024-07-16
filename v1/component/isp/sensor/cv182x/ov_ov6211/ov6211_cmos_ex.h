@@ -12,9 +12,9 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 
@@ -62,6 +62,7 @@ typedef struct _OV6211_MODE_S {
 
 extern ISP_SNS_STATE_S *g_pastOv6211[VI_MAX_PIPE_NUM];
 extern ISP_SNS_COMMBUS_U g_aunOv6211_BusInfo[];
+extern ISP_SNS_COMMADDR_U g_aunOv6211_AddrInfo[];
 extern CVI_U16 g_au16Ov6211_GainMode[];
 extern CVI_U16 g_au16Ov6211_L2SMode[VI_MAX_PIPE_NUM];
 extern CVI_U8 ov6211_i2c_addr;
@@ -69,6 +70,7 @@ extern const CVI_U32 ov6211_addr_byte;
 extern const CVI_U32 ov6211_data_byte;
 extern void ov6211_init(VI_PIPE ViPipe);
 extern void ov6211_exit(VI_PIPE ViPipe);
+extern int  ov6211_i2c_exit(VI_PIPE ViPipe);
 extern void ov6211_standby(VI_PIPE ViPipe);
 extern void ov6211_restart(VI_PIPE ViPipe);
 extern int  ov6211_write_register(VI_PIPE ViPipe, int addr, int data);

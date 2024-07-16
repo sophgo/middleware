@@ -1,8 +1,7 @@
 #ifndef _MIPI_TX_PARAM_JD9366AB_H_
 #define _MIPI_TX_PARAM_JD9366AB_H_
 
-#include <linux/cvi_mipi_tx.h>
-#include <linux/cvi_comm_mipi_tx.h>
+#include <cvi_comm_mipi_tx.h>
 
 struct combo_dev_cfg_s dev_cfg_jd9366ab_800x1280 = {
 	.devno = 0,
@@ -26,7 +25,7 @@ struct combo_dev_cfg_s dev_cfg_jd9366ab_800x1280 = {
 	.pixel_clk = 70000,
 };
 
-const struct hs_settle_s hs_timing_cfg_jd9366ab_800x1280 = { .prepare = 6, .zero = 16, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_jd9366ab_800x1280 = { .prepare = 6, .zero = 16, .trail = 1 };
 
 static CVI_U8 data_jd9366ab_0[] = { 0xe0, 0x00 };
 static CVI_U8 data_jd9366ab_1[] = { 0xe1, 0x93 };
@@ -207,7 +206,7 @@ static CVI_U8 data_jd9366ab_175[] = { 0xe7, 0x06 };
 static CVI_U8 data_jd9366ab_176[] = { 0x11 };
 static CVI_U8 data_jd9366ab_177[] = { 0x29 };
 static CVI_U8 data_jd9366ab_178[] = { 0x35, 0x00 };
-const struct dsc_instr dsi_init_cmds_jd9366ab_800x1280[] = {
+struct dsc_instr dsi_init_cmds_jd9366ab_800x1280[] = {
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_jd9366ab_0 },
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_jd9366ab_1 },
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_jd9366ab_2 },

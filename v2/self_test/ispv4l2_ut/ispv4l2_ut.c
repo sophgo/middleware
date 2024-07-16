@@ -10,8 +10,8 @@
 #include <sys/ioctl.h>
 #include <pthread.h>
 #include <linux/videodev2.h>
-#include <linux/vi_uapi.h>
-#include <linux/cvi_buffer.h>
+#include <vi_v4l2_uapi.h>
+#include <cvi_buffer.h>
 
 #include "devmem.h"
 #include "cvi_isp_v4l2.h"
@@ -346,6 +346,21 @@ static int request_buffer(int fd, int dev)
 	return ret;
 }
 
+static void free_buffer(int fd, int dev)
+{
+	int i;
+	struct v4l2_requestbuffers reqbuf;
+
+	for(i = 0; i < REQ_BUFFER_NUM; i++)
+		munmap(framebuf[dev][i].start, framebuf[dev][i].length);
+
+	reqbuf.count = 0;
+	reqbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	reqbuf.memory = V4L2_MEMORY_MMAP;
+	if(ioctl(fd, VIDIOC_REQBUFS, &reqbuf) < 0)
+		printf("free buffer fail!\n");
+}
+
 static void set_patgen(int is_patgen)
 {
 	char cmdstr[128];
@@ -456,6 +471,8 @@ static void *streamimg_thread(void *arg)
 	if(ioctl(fd, VIDIOC_STREAMOFF, &type) < 0) {
 		printf("stream off fd(%d) fail !\n", fd);
 	}
+
+	free_buffer(fd, dev);
 
 	return arg;
 }

@@ -19,9 +19,9 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <linux/cvi_comm_sys.h>
-#include <linux/cvi_type.h>
-#include <linux/cvi_common.h>
+#include <cvi_comm_sys.h>
+#include <cvi_type.h>
+#include <cvi_common.h>
 #include "cvi_debug.h"
 
 /**

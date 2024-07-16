@@ -1,8 +1,7 @@
 #ifndef _MIPI_TX_PARAM_ILI9881D_H_
 #define _MIPI_TX_PARAM_ILI9881D_H_
 
-#include <linux/cvi_mipi_tx.h>
-#include <linux/cvi_comm_mipi_tx.h>
+#include <cvi_comm_mipi_tx.h>
 
 struct combo_dev_cfg_s dev_cfg_ili9881d_720x1280 = {
 	.devno = 0,
@@ -26,7 +25,7 @@ struct combo_dev_cfg_s dev_cfg_ili9881d_720x1280 = {
 	.pixel_clk = 70118,
 };
 
-const struct hs_settle_s hs_timing_cfg_ili9881d_720x1280 = { .prepare = 6, .zero = 32, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_ili9881d_720x1280 = { .prepare = 6, .zero = 32, .trail = 1 };
 
 static CVI_U8 data_ili9881d_0[] = { 0xff, 0x98, 0x81, 0x01 };
 static CVI_U8 data_ili9881d_1[] = { 0x91, 0x00 };
@@ -224,7 +223,7 @@ static CVI_U8 data_ili9881d_183[] = { 0x35, 0x00 };
 static CVI_U8 data_ili9881d_184[] = { 0x11, 0x00 };
 static CVI_U8 data_ili9881d_185[] = { 0x29, 0x00 };
 
-const struct dsc_instr dsi_init_cmds_ili9881d_720x1280[] = {
+struct dsc_instr dsi_init_cmds_ili9881d_720x1280[] = {
 	{.delay = 0, .data_type = 0x29, .size = 4, .data = data_ili9881d_0 },
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_ili9881d_1 },
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_ili9881d_2 },

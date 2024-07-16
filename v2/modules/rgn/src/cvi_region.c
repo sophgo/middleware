@@ -13,7 +13,7 @@
 #include <sys/ioctl.h>
 
 #include "cvi_base.h"
-#include <linux/cvi_math.h>
+#include <cvi_math.h>
 #include "cvi_sys.h"
 #include "cvi_vpss.h"
 #include "cvi_vo.h"

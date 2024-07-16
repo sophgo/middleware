@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <syslog.h>
 #include <string.h>
-#include <linux/cvi_common.h>
+#include <cvi_common.h>
 
 #ifdef __cplusplus
 #if __cplusplus

@@ -99,6 +99,10 @@ typedef struct {
 } ST_VQE_PLAY_TEST_STRUCT;
 
 typedef struct {
+	int card;
+	int device;
+	int card_aec;
+	int device_aec;
 	int sample_rate;
 	int channel;
 	int preiod_size;
@@ -448,23 +452,25 @@ int printf_parse_usage(void)
 
 	printf("[---------Sample Audio USE-------]\n");
 	printf("use: sample_audio 1 --list\n");
+	printf("-D [card] -d [device]\n");
+	printf("(-A [card_aec] -a [device_aec])\n");
 	printf("-r [sample_rate] -R [Chnsample_rate]\n");
 	printf("-c [channel] -p [preiod_size][*aac enc must 1024]\n");
 	printf("-C [codec 0:g726 1:g711A 2:g711Mu 3: adpcm 4.AAC]\n");
 	printf("-V [bVqeOn] -F [In/Out filename] -T [record time]\n");
-	printf("Aenc eg:./sample_audio 0 --list -r 8000 -R 8000 -c 2 -p 320 -C 1 -V 0 -F Cvi_8k_2chn.g711a -T 10\n");
-	printf("       :./sample_audio 0 --list -r 8000 -R 8000 -c 2 -p 1024 -C 4 -V 0 -F Cvi_8k_2chn.aac -T 10\n");
-	printf("Adec eg:./sample_audio 2 --list -r 8000 -R 8000 -c 2 -p 320 -C 1 -V 0 -F Cvi_8k_2chn.g711a -T 10\n");
-	printf("Ai eg:./sample_audio 4 --list -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 0 -F Cvi_8k_2chn.raw -T 10\n");
-	printf("Ao eg:./sample_audio 5 --list -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 0 -F Cvi_8k_2chn.raw -T 10\n");
+	printf("Aenc eg:./sample_audio 0 --list -D 0 -d 0 -r 8000 -R 8000 -c 2 -p 320 -C 1 -V 0 -F Cvi_8k_2chn.g711a -T 10\n");
+	printf("       :./sample_audio 0 --list -D 0 -d 0 -r 8000 -R 8000 -c 2 -p 1024 -C 4 -V 0 -F Cvi_8k_2chn.aac -T 10\n");
+	printf("Adec eg:./sample_audio 2 --list -D 1 -d 0 -r 8000 -R 8000 -c 2 -p 320 -C 1 -V 0 -F Cvi_8k_2chn.g711a -T 10\n");
+	printf("Ai eg:./sample_audio 4 --list -D 0 -d 0 -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 0 -F Cvi_8k_2chn.raw -T 10\n");
+	printf("Ao eg:./sample_audio 5 --list -D 1 -d 0 -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 0 -F Cvi_8k_2chn.raw -T 10\n");
 	printf("SetVol eg:./sample_audio 6\n");
 	printf("GetVol eg:./sample_audio 8\n");
-	printf("AECtest eg:./sample_audio 10 --list -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 1 -F play.wav -T 10\n");
+	printf("AECtest eg:./sample_audio 10 --list -D 0 -d 0 -A 0 -a 0 -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 1 -F play.wav -T 10\n");
 	printf("[----------------------------------]\n");
 	return 0;
 }
 
-int get_audio_parse(int argc, char **argv, stAudPara *pstAudioparam)
+int get_audio_parse(int argc, char **argv, stAudPara *pstAudioparam, bool bAecOn)
 {
 	int i, ret;
 
@@ -474,8 +480,26 @@ int get_audio_parse(int argc, char **argv, stAudPara *pstAudioparam)
 	}
 	argv[argc - 2] = "\n";
 	argv[argc - 1] = "\n";
-	while ((ret = getopt(argc, argv, "r:c:p:C:V:F:R:T:")) != -1) {
+
+	const char *options = bAecOn ? "D:d:A:a:r:c:p:C:V:F:R:T:" : "D:d:r:c:p:C:V:F:R:T:";
+	while ((ret = getopt(argc, argv, options)) != -1) {
 		switch (ret) {
+		case 'D':
+			pstAudioparam->card = atoi(optarg);
+			break;
+		case 'd':
+			pstAudioparam->device = atoi(optarg);
+			break;
+		case 'A':
+			if (bAecOn) {
+			pstAudioparam->card_aec = atoi(optarg);
+			}
+			break;
+		case 'a':
+			if (bAecOn) {
+			pstAudioparam->device_aec = atoi(optarg);
+			}
+			break;
 		case 'r':
 			pstAudioparam->sample_rate = atoi(optarg);
 			break;
@@ -701,7 +725,7 @@ static FILE *audio_open_wavfile(const char *filename, int *channels,
 
 CVI_S32 SAMPLE_AUDIO_AI_BIND_AENC(void *argv)
 {
-	int AiDev = 0;/*only support 0 dev */
+	// int AiDev = 0;/*only support 0 dev */
 	int AiChn = 0;
 	int AeChn = 0;
 	int s32Ret = 0;
@@ -718,6 +742,8 @@ CVI_S32 SAMPLE_AUDIO_AI_BIND_AENC(void *argv)
 		printf("[fatal error] ptr is NULL,fuc:%s,line:%d\n", __func__, __LINE__);
 		return -1;
 	}
+	int AiDev = pstAudioparam->device;
+	int AiCard = pstAudioparam->card;
 	int sample_rate = pstAudioparam->sample_rate;
 	unsigned int Chnsample_rate = pstAudioparam->Chnsample_rate;
 	int channel = pstAudioparam->channel;
@@ -788,6 +814,13 @@ CVI_S32 SAMPLE_AUDIO_AI_BIND_AENC(void *argv)
 		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
 		goto ERROR3;
 	}
+
+	s32Ret = CVI_AI_SetCard(AiDev, AiCard);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
+		goto ERROR3;
+	}
+
 	s32Ret = CVI_AI_Enable(AiDev);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
@@ -908,7 +941,7 @@ ERROR3:
 
 CVI_S32 SAMPLE_AUDIO_AI_UNBIND_AENC(void *argv)
 {
-	int AiDev = 0;/*only support 0 dev */
+	// int AiDev = 0;/*only support 0 dev */
 	int AiChn = 0;
 	int AeChn = 0;
 	int s32Ret = 0;
@@ -925,6 +958,8 @@ CVI_S32 SAMPLE_AUDIO_AI_UNBIND_AENC(void *argv)
 		return -1;
 	}
 
+	int AiDev = pstAudioparam->device;
+	int AiCard = pstAudioparam->card;
 	int sample_rate = pstAudioparam->sample_rate;
 	unsigned int Chnsample_rate = pstAudioparam->Chnsample_rate;
 	int channel = pstAudioparam->channel;
@@ -995,6 +1030,13 @@ CVI_S32 SAMPLE_AUDIO_AI_UNBIND_AENC(void *argv)
 		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
 		goto ERROR3;
 	}
+
+	s32Ret = CVI_AI_SetCard(AiDev, AiCard);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
+		goto ERROR3;
+	}
+
 	s32Ret = CVI_AI_Enable(AiDev);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
@@ -1113,9 +1155,9 @@ CVI_S32 SAMPLE_AUDIO_ADEC_BIND_AO(void *argv)
 {
 	CVI_S32 s32Ret = 0;
 	CVI_S32 AdChn = 0;
-	CVI_S32 AdDev = 0;
+	// CVI_S32 AdDev = 0;
 	CVI_S32 AoChn = 0;
-	CVI_S32 AoDev = 0;
+	// CVI_S32 AoDev = 0;
 	int AudMaxChn = 3;
 	int length_bytes = 640;//2ch 16bit 160 samples
 	PAYLOAD_TYPE_E enType;
@@ -1130,6 +1172,9 @@ CVI_S32 SAMPLE_AUDIO_ADEC_BIND_AO(void *argv)
 	register_inthandler();
 	CVI_AUDIO_INIT();
 	int channel = pstAudioparam->channel;
+	CVI_S32 AdDev = pstAudioparam->device;
+	CVI_S32 AoDev = pstAudioparam->device;
+	CVI_S32 AoCard = pstAudioparam->card;
 
 //STEP 1:set and enable ao
 	AudoutAttr.u32ChnCnt = AudMaxChn;
@@ -1151,6 +1196,13 @@ CVI_S32 SAMPLE_AUDIO_ADEC_BIND_AO(void *argv)
 		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
 		goto ERROR3;
 	}
+
+	s32Ret = CVI_AO_SetCard(AoDev, AoCard);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("[cvi_error],[%s],[line:%d],\n", __func__, __LINE__);
+		goto ERROR3;
+	}
+
 	s32Ret = CVI_AO_Enable(AoDev);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
@@ -1270,7 +1322,7 @@ CVI_S32 SAMPLE_AUDIO_ADEC_UNBIND_AO(void *argv)
 	CVI_S32 s32Ret = 0;
 	CVI_S32 AdChn = 0;
 	CVI_S32 AoChn = 0;
-	CVI_S32 AoDev = 0;
+	// CVI_S32 AoDev = 0;
 	int length_bytes = 640;//2ch 16bit 160 samples
 	PAYLOAD_TYPE_E enType;
 	AIO_ATTR_S AudoutAttr;
@@ -1284,6 +1336,8 @@ CVI_S32 SAMPLE_AUDIO_ADEC_UNBIND_AO(void *argv)
 	register_inthandler();
 	CVI_AUDIO_INIT();
 	int channel = pstAudioparam->channel;
+	CVI_S32 AoDev = pstAudioparam->device;
+	CVI_S32 AoCard = pstAudioparam->card;
 
 //STEP 1:set and enable ao
 	AudoutAttr.u32ChnCnt = channel;
@@ -1303,6 +1357,11 @@ CVI_S32 SAMPLE_AUDIO_ADEC_UNBIND_AO(void *argv)
 	s32Ret = CVI_AO_SetPubAttr(AoDev, &AudoutAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
+		goto ERROR3;
+	}
+	s32Ret = CVI_AO_SetCard(AoDev, AoCard);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("[cvi_error],[%s],[line:%d],\n", __func__, __LINE__);
 		goto ERROR3;
 	}
 	s32Ret = CVI_AO_Enable(AoDev);
@@ -1429,7 +1488,7 @@ ERROR3:
 
 CVI_S32 SAMPLE_AUDIO_RECORD_PCM_FORMAT_FILE(void *argv)
 {
-	int AiDev = 0;/*only support 0 dev */
+	// int AiDev = 0;/*only support 0 dev */
 	int AiChn = 0;
 	int s32Ret = 0;
 	bool ReSam_flag = false;
@@ -1445,6 +1504,8 @@ CVI_S32 SAMPLE_AUDIO_RECORD_PCM_FORMAT_FILE(void *argv)
 		return -1;
 	}
 
+	int AiDev = pstAudioparam->device;
+	int AiCard = pstAudioparam->card;
 	int sample_rate = pstAudioparam->sample_rate;
 	unsigned int Chnsample_rate = pstAudioparam->Chnsample_rate;
 	int channel = pstAudioparam->channel;
@@ -1508,6 +1569,13 @@ CVI_S32 SAMPLE_AUDIO_RECORD_PCM_FORMAT_FILE(void *argv)
 		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
 		goto ERROR3;
 	}
+
+	s32Ret = CVI_AI_SetCard(AiDev, AiCard);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
+		goto ERROR3;
+	}
+
 	s32Ret = CVI_AI_Enable(AiDev);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
@@ -1602,11 +1670,13 @@ CVI_S32 SAMPLE_AUDIO_PLAY_PCM_FORMAT_FILE(void *argv)
 {
 	CVI_S32 s32Ret = 0;
 	CVI_S32 AoChn = 0;
-	CVI_S32 AoDev = 0;
+	// CVI_S32 AoDev = 0;
 	AIO_ATTR_S AudoutAttr;
 	FILE *fpAo = NULL;
 	int AudMaxChn = 3;
 	stAudPara *pstAudioparam = (stAudPara *)argv;
+	CVI_S32 AoDev = pstAudioparam->device;
+	CVI_S32 AoCard = pstAudioparam->card;
 
 	if (!pstAudioparam) {
 		printf("pstAudioparam is null\n");
@@ -1648,6 +1718,13 @@ CVI_S32 SAMPLE_AUDIO_PLAY_PCM_FORMAT_FILE(void *argv)
 		printf("[cvi_error],[%s],[line:%d],\n", __func__, __LINE__);
 		goto ERROR3;
 	}
+
+	s32Ret = CVI_AO_SetCard(AoDev, AoCard);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("[cvi_error],[%s],[line:%d],\n", __func__, __LINE__);
+		goto ERROR3;
+	}
+
 	s32Ret = CVI_AO_Enable(AoDev);
 	if (s32Ret != CVI_SUCCESS) {
 		printf("[cvi_error],[%s],[line:%d],\n", __func__, __LINE__);
@@ -2368,9 +2445,9 @@ CVI_S32 SAMPLE_AUDIO_AEC_LOOP_TEST(void *argv)
 	pthread_t st_RecThread;
 	pthread_t st_PlayThread;
 	FILE *fp_play = NULL;
-	int AoDev = 0;
+	// int AoDev = 0;
 	int AoChn = 0;
-	int AiDev = 0;
+	// int AiDev = 0;
 	int AiChn = 0;
 	int AudMaxChn = 3;
 	stAudPara *pstAudioparam = (stAudPara *)argv;
@@ -2379,6 +2456,10 @@ CVI_S32 SAMPLE_AUDIO_AEC_LOOP_TEST(void *argv)
 		printf("pstAudioparam is null\n");
 		return -1;
 	}
+	int AiDev = pstAudioparam->device;
+	int AiCard = pstAudioparam->card;
+	int AoDev = pstAudioparam->device_aec;
+	int AoCard = pstAudioparam->card_aec;
 
 	CVI_AUDIO_INIT();
 	int channel = pstAudioparam->channel;
@@ -2437,6 +2518,13 @@ CVI_S32 SAMPLE_AUDIO_AEC_LOOP_TEST(void *argv)
 		}
 
 	}
+
+	s32Ret = CVI_AI_SetCard(AiDev, AiCard);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("[error],[%s],[line:%d],\n", __func__, __LINE__);
+		return s32Ret;
+	}
+
 	s32Ret = CVI_AI_Enable(AiDev);
 	if (s32Ret == CVI_FAILURE)
 		printf("[error] uplink audio setup failure\n");
@@ -2489,6 +2577,7 @@ CVI_S32 SAMPLE_AUDIO_AEC_LOOP_TEST(void *argv)
 
 
 	s32Ret |= CVI_AO_SetPubAttr(AoDev, &AudoutAttr);
+	s32Ret |= CVI_AO_SetCard(AoDev, AoCard);
 	s32Ret |= CVI_AO_Enable(AoDev);
 	s32Ret |= CVI_AO_EnableChn(AoDev, AoChn);
 	if (s32Ret == CVI_FAILURE)
@@ -2533,6 +2622,7 @@ CVI_S32 main(int argc, char *argv[])
 	CVI_U32 u32Index = 0;
 	ST_AudioUnitTestCfg  stAudTestCfg;
 	stAudPara stAudioparam;
+	bool bAecOn = 0;
 
 	if (argc  <  2) {
 		printf_sample_usage();
@@ -2547,14 +2637,24 @@ CVI_S32 main(int argc, char *argv[])
 		return CVI_FAILURE;
 	}
 
-	if (u32Index < 6 || u32Index == 10) {
-		if (argc != 19) {
+	if (u32Index < 6) {
+		if (argc != 23) {
 			printf_parse_usage();
 			return CVI_FAILURE;
 		}
 		memset(&stAudioparam, 0, sizeof(stAudPara));
-		get_audio_parse(argc, argv, &stAudioparam);
-	} else {
+		get_audio_parse(argc, argv, &stAudioparam, bAecOn);
+	}
+	else if (u32Index == 10) {
+		bAecOn = 1;
+		if (argc != 27) {
+			printf_parse_usage();
+			return CVI_FAILURE;
+		}
+		memset(&stAudioparam, 0, sizeof(stAudPara));
+		get_audio_parse(argc, argv, &stAudioparam, bAecOn);
+	}
+	else {
 		stAudTestCfg.bOptCfg = CVI_FALSE;
 		stAudTestCfg.unit_test = 0;
 		strcpy(stAudTestCfg.filename, "NULL");

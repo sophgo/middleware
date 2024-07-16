@@ -13,8 +13,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include <linux/spi/spidev.h>
 #include "cvi_sns_ctrl.h"
@@ -53,7 +53,7 @@ int n6_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, n6_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_aunN6_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -836,7 +836,3 @@ void n6_init(VI_PIPE ViPipe)
 	delay_ms(300);
 }
 
-void n6_exit(VI_PIPE ViPipe)
-{
-	n6_i2c_exit(ViPipe);
-}

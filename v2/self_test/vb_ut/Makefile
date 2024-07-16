@@ -6,7 +6,7 @@ endif
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(KERNEL_INC) -I$(SYS_INC) -I$(ISP_INC)
+INCS = -I$(MW_INC) -I$(KERNEL_INC) -I$(SYS_INC) -I$(ISP_INC) -I$(VI_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 

@@ -11,25 +11,25 @@
 #include <pthread.h>
 
 #include "cvi_sys.h"
-#include <linux/cvi_common.h>
-#include <linux/cvi_comm_vb.h>
+#include <cvi_common.h>
+#include <cvi_comm_vb.h>
 #include "cvi_buffer.h"
 #include "cvi_comm_isp.h"
 #include "cvi_comm_3a.h"
 #include "cvi_comm_sns.h"
-#include <linux/cvi_comm_vi.h>
-#include <linux/cvi_comm_vpss.h>
-#include <linux/cvi_comm_vo.h>
-#include <linux/cvi_comm_venc.h>
-#include <linux/cvi_comm_vdec.h>
-#include <linux/cvi_comm_region.h>
-#include <linux/cif_uapi.h>
+#include <cvi_comm_vi.h>
+#include <cvi_comm_vpss.h>
+#include <cvi_comm_vo.h>
+#include <cvi_comm_venc.h>
+#include <cvi_comm_vdec.h>
+#include <cvi_comm_region.h>
+#include <cvi_comm_cif.h>
 #include "cvi_comm_adec.h"
 #include "cvi_comm_aenc.h"
 #include "cvi_comm_ao.h"
 #include "cvi_comm_aio.h"
 #include "cvi_audio.h"
-#include <linux/cvi_defines.h>
+#include <cvi_defines.h>
 #include "cvi_mipi.h"
 
 #include "cvi_vb.h"
@@ -298,6 +298,7 @@ typedef enum _SAMPLE_SNS_TYPE_E {
 	PIXELPLUS_PR2100_2M_25FPS_8BIT,
 	PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT,
 	PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT,
+	PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT,
 	SMS_SC035GS_MIPI_480P_120FPS_12BIT,
 	SMS_SC035GS_1L_MIPI_480P_120FPS_10BIT,
 	SMS_SC035HGS_MIPI_480P_120FPS_12BIT,
@@ -606,6 +607,7 @@ typedef struct _VDEC_THREAD_PARAM_S {
 	CVI_BOOL bFileEnd;
 	CVI_BOOL bDumpYUV;
 	MD5_CTX tMD5Ctx;
+	FILE *pDumpFile;
 } VDEC_THREAD_PARAM_S;
 
 typedef struct _SAMPLE_VDEC_BUF {
@@ -642,10 +644,8 @@ typedef struct _SAMPLE_VDEC_ATTR {
 
 typedef struct _vdecChnCtx_ {
 	VDEC_THREAD_PARAM_S stVdecThreadParamSend;
-	VDEC_THREAD_PARAM_S stVdecThreadParamGet;
 	SAMPLE_VDEC_ATTR stSampleVdecAttr;
 	pthread_t vdecThreadSend;
-	pthread_t vdecThreadGet;
 	VDEC_CHN VdecChn;
 	CVI_S32 bCreateChn;
 } vdecChnCtx;
@@ -670,12 +670,6 @@ typedef struct _commonInputCfg_ {
 	CVI_U32 u32VpssHeight;	// frame height of VPSS output
 	CVI_CHAR yuvFolder[MAX_STRING_LEN];
 	CVI_S32 vbMode;
-	CVI_S32 bSingleEsBuf_jpege;
-	CVI_S32 bSingleEsBuf_h264e;
-	CVI_S32 bSingleEsBuf_h265e;
-	CVI_S32 singleEsBufSize_jpege;
-	CVI_S32 singleEsBufSize_h264e;
-	CVI_S32 singleEsBufSize_h265e;
 	CVI_S32 h265RefreshType;
 	CVI_S32 jpegMarkerOrder;
 	CVI_BOOL bThreadDisable;
@@ -805,8 +799,8 @@ typedef struct _chnInputCfg_ {
 	CVI_BOOL bSetPredUnit;
 	CVI_U32 u32IntraPredFlag;
 	CVI_U32 u32SmoothingEnableFlag;
-	CVI_U32 u32DisableIDRCount;
-	CVI_U32 u32EnableIDRCount;
+	CVI_S32 s32DisableIDRCount;
+	CVI_S32 s32EnableIDRCount;
 	CVI_U32 u32SearchVer;
 	CVI_U32 u32SearchHor;
 } chnInputCfg;
@@ -869,7 +863,6 @@ typedef struct _vencChnCtx_ {
 	CVI_BOOL bCircleSend;
 	CVI_U32 u32BlkSize;
 	frame_buffer_param frameUnusedQueue[MAX_SRC_FRAM_CNT];
-	pthread_mutex_t frame_buffer_lock;
 	CVI_S32 perf;
 } vencChnCtx;
 
@@ -1045,9 +1038,6 @@ CVI_VOID SAMPLE_COMM_VDEC_CmdCtrl(VDEC_THREAD_PARAM_S *pstVdecSend, pthread_t *p
 CVI_VOID SAMPLE_COMM_VDEC_StopSendStream(VDEC_THREAD_PARAM_S *pstVdecSend, pthread_t *pVdecThread);
 CVI_S32 SAMPLE_COMM_VDEC_Stop(CVI_S32 s32ChnNum);
 CVI_VOID SAMPLE_COMM_VDEC_ExitVBPool(void);
-CVI_VOID SAMPLE_COMM_VDEC_StartGetPic(VDEC_THREAD_PARAM_S *pstVdecGet,
-		pthread_t *pVdecThread);
-CVI_VOID SAMPLE_COMM_VDEC_StopGetPic(VDEC_THREAD_PARAM_S *pstVdecGet, pthread_t *pVdecThread);
 
 CVI_S32 SAMPLE_COMM_VO_GetWH(VO_INTF_SYNC_E enIntfSync, CVI_U32 *pu32W, CVI_U32 *pu32H, CVI_U32 *pu32Frm);
 CVI_S32 SAMPLE_COMM_VO_StartDev(VO_DEV VoDev, VO_PUB_ATTR_S *pstPubAttr);

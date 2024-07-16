@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <linux/cvi_vc_drv_ioctl.h>
+#include "vc_uapi.h"
 
 
 char *str_cat(char *dest, size_t max_len, const char *src)

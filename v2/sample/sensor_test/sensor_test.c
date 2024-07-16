@@ -49,11 +49,14 @@ static int sys_vi_init(void)
 	SAMPLE_INI_CFG_S stIniCfg;
 	SAMPLE_VI_CONFIG_S stViConfig;
 	LOG_LEVEL_CONF_S log_conf;
+	VI_DEV_ATTR_S stVidevAttr;
+	CVI_U32 Vb_cnt;
 
 	memset(&stVersion, 0, sizeof(MMF_VERSION_S));
 	memset(&stIniCfg, 0, sizeof(SAMPLE_INI_CFG_S));
 	memset(&stViConfig, 0, sizeof(SAMPLE_VI_CONFIG_S));
 	memset(&log_conf, 0, sizeof(LOG_LEVEL_CONF_S));
+	memset(&stVidevAttr, 0, sizeof(VI_DEV_ATTR_S));
 
 	CVI_SYS_GetVersion(&stVersion);
 	SAMPLE_PRT("MMF Version:%s\n", stVersion.version);
@@ -97,6 +100,7 @@ static int sys_vi_init(void)
 	stVbConf.u32MaxPoolCnt = 0;
 
 	for (CVI_S32 i = 0; i < stViConfig.s32WorkingViNum; i++) {
+		Vb_cnt = 0;
 		bool createNewPool = true;
 
 		s32Ret = SAMPLE_COMM_VI_GetSizeBySensor(stIniCfg.enSnsType[i], &enPicSize);
@@ -111,6 +115,25 @@ static int sys_vi_init(void)
 			return s32Ret;
 		}
 
+		s32Ret = SAMPLE_COMM_VI_GetDevAttrBySns(stIniCfg.enSnsType[i], &stVidevAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "SAMPLE_COMM_VI_GetDevAttrBySns failed with %#x\n", s32Ret);
+			return s32Ret;
+		}
+		if (stVidevAttr.enInputDataType == VI_DATA_TYPE_YUV) {
+			if (stVidevAttr.enWorkMode == VI_WORK_MODE_2Multiplex) {
+				Vb_cnt = 6;
+			} else if (stVidevAttr.enWorkMode == VI_WORK_MODE_3Multiplex) {
+				Vb_cnt = 9;
+			} else if (stVidevAttr.enWorkMode == VI_WORK_MODE_4Multiplex) {
+				Vb_cnt = 12;
+			} else {
+				Vb_cnt = 3;
+			}
+		} else {
+			Vb_cnt = 3;
+		}
+
 		u32BlkSize = COMMON_GetPicBufferSize(stSize.u32Width, stSize.u32Height,
 					stViConfig.astViInfo[i].stChnInfo.enPixFormat,
 					DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
@@ -121,16 +144,25 @@ static int sys_vi_init(void)
 
 		for (CVI_U32 j = 0; j < stVbConf.u32MaxPoolCnt; j++) {
 			if (stVbConf.astCommPool[j].u32BlkSize == u32BlkSize) {
-				stVbConf.astCommPool[j].u32BlkCnt += 2;
+				stVbConf.astCommPool[j].u32BlkCnt += Vb_cnt;
 				createNewPool = false;
 				break;
 			}
 		}
 		if (createNewPool) {
 			stVbConf.astCommPool[stVbConf.u32MaxPoolCnt].u32BlkSize = u32BlkSize;
-			stVbConf.astCommPool[stVbConf.u32MaxPoolCnt].u32BlkCnt = 4;
+			stVbConf.astCommPool[stVbConf.u32MaxPoolCnt].u32BlkCnt = Vb_cnt;
 			stVbConf.astCommPool[stVbConf.u32MaxPoolCnt].enRemapMode = VB_REMAP_MODE_CACHED;
+			SAMPLE_PRT("set VBpool [%d] %d:%d, BlkCnt= %d, Size = %d\n",
+						stVbConf.u32MaxPoolCnt, stSize.u32Width, stSize.u32Height,
+						stVbConf.astCommPool[stVbConf.u32MaxPoolCnt].u32BlkCnt,
+						stVbConf.astCommPool[stVbConf.u32MaxPoolCnt].u32BlkSize);
 			stVbConf.u32MaxPoolCnt++;
+		} else {
+			SAMPLE_PRT("set VBpool [%d] %d:%d, BlkCnt= %d, Size = %d\n",
+						stVbConf.u32MaxPoolCnt, stSize.u32Width, stSize.u32Height,
+						stVbConf.astCommPool[stVbConf.u32MaxPoolCnt].u32BlkCnt,
+						stVbConf.astCommPool[stVbConf.u32MaxPoolCnt].u32BlkSize);
 		}
 	}
 

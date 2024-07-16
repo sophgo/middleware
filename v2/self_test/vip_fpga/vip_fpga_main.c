@@ -13,7 +13,7 @@
 #include "vip_fpga.h"
 #include "sample_comm.h"
 #include "cvi_sys.h"
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 
 void SAMPLE_VIO_HandleSig(CVI_S32 signo)
 {

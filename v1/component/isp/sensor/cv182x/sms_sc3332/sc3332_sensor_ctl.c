@@ -11,8 +11,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "sc3332_cmos_ex.h"
@@ -47,7 +47,7 @@ int sc3332_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, sc3332_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_aunSC3332_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -247,11 +247,6 @@ void sc3332_init(VI_PIPE ViPipe)
 	sc3332_linear_1296P30_init(ViPipe);
 
 	g_pastSC3332[ViPipe]->bInit = CVI_TRUE;
-}
-
-void sc3332_exit(VI_PIPE ViPipe)
-{
-	sc3332_i2c_exit(ViPipe);
 }
 
 /* 1296P30 and 1296P25 */

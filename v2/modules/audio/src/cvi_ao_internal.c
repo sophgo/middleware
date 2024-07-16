@@ -63,7 +63,12 @@ int get_not_used_track_index(CVI_ST_THREAD_INFO *pThreadInfo)
 
 CVI_S32 CVI_AO_Init(void)
 {
+	CVI_S32 i = 0;
 	memset(gstAoInstance, 0, sizeof(ST_AO_INSTANCE)*CVI_MAX_AO_DEVICE_ID_NUM);
+	for (i = 0 ; i < CVI_MAX_AO_DEVICE_ID_NUM ; i++) {
+		memset(&gstAoInstance[i], 0, sizeof(ST_AO_INSTANCE));
+		gstAoInstance[i].stThreadInfo.card = -1;
+	}
 	return CVI_SUCCESS;
 }
 
@@ -133,6 +138,21 @@ CVI_S32 CVI_AO_ClrPubAttr(AUDIO_DEV AoDevId)
 }
 
 
+CVI_S32 CVI_AO_SetCard(AUDIO_DEV AoDevId, CVI_S32 AoCardId)
+{
+	if (CHECK_AO_DEVID_VALID(AoDevId)) {
+		log_error("AoDevId:%d\n", AoDevId);
+		return CVI_ERR_AO_INVALID_DEVID;
+	}
+	if (CHECK_AO_CARD_VALID(AoCardId)) {
+		log_error("AoCardId:%d\n", AoCardId);
+		return CVI_ERR_AO_INVALID_CARDID;
+	}
+	gstAoInstance[AoDevId].stThreadInfo.card = AoCardId;
+
+	return 0;
+}
+
 CVI_S32 CVI_AO_Enable(AUDIO_DEV AoDevId)
 {
 #ifdef RPC_MULTI_PROCESS_AUDIO
@@ -172,10 +192,10 @@ CVI_S32 CVI_AO_Enable(AUDIO_DEV AoDevId)
 		pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		pthread_attr_setschedparam(&attr, &param);
 		pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+		pstAoInstance->s32DevId = AoDevId;
 		pthread_create(&pstAoInstance->AoutThreadId, &attr,
 			       (CVI_VOID * (*)(CVI_VOID *))AudioPrimaryOutputThread, (void *)pstAoInstance);
 		pstAoInstance->bThreadExist = CVI_TRUE;
-		pstAoInstance->s32DevId = AoDevId;
 		pstAoInstance->bEnableAO = CVI_TRUE;
 		log_debug("AoDev:%d.--->success\n", AoDevId);
 	}

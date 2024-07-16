@@ -55,12 +55,6 @@ void CVI_DPU_CheckFgsStatus(void)
 	dpu_get_fgs_status(fd);
 }
 
-void CVI_DPU_Reset(void)
-{
-	CVI_S32 fd = get_dpu_fd();
-	dpu_reset(fd);
-}
-
 CVI_CHAR * GetFmtName(PIXEL_FORMAT_E enPixFmt)
 {
 	switch (enPixFmt)

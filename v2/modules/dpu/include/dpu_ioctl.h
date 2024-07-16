@@ -4,7 +4,7 @@
 #include <sys/ioctl.h>
 
 #include "dpu_uapi.h"
-#include <linux/cvi_comm_dpu.h>
+#include <cvi_comm_dpu.h>
 /* Configured from user  */
 CVI_S32 dpu_create_grp(CVI_S32 fd, struct dpu_grp_attr *grp_attr);
 CVI_S32 dpu_destroy_grp(CVI_S32 fd, struct dpu_grp_cfg *grp_cfg);
@@ -24,7 +24,6 @@ void dpu_check_reg_read(CVI_S32 fd);
 void dpu_check_reg_write(CVI_S32 fd);
 void dpu_get_sgbm_status(CVI_S32 fd);
 void dpu_get_fgs_status(CVI_S32 fd);
-void dpu_reset(CVI_S32 fd);
 
 
 #endif /* MODULES_DPU_IOCTL_H_*/

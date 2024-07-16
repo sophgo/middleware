@@ -121,6 +121,7 @@ CVI_S32 mesh_gen_ldc(SIZE_S in_size, SIZE_S out_size, const LDC_ATTR_S *pstLDCAt
 		     uint64_t mesh_phy_addr, void *mesh_vir_addr, ROTATION_E rot);
 
 void gdc_free_all_tsk_mesh(void);
+int gdc_set_tsk_mesh_by_name(const char *tskName, CVI_U64 paddr, CVI_VOID *vaddr);
 
 CVI_S32 CVI_GDC_GenLDCMesh(CVI_U32 u32Width, CVI_U32 u32Height, const LDC_ATTR_S *pstLDCAttr,
 		const char *name, CVI_U64 *pu64PhyAddr, CVI_VOID **ppVirAddr);

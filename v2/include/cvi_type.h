@@ -41,7 +41,7 @@ typedef float                   CVI_FLOAT;
 typedef double                  CVI_DOUBLE;
 
 typedef void                    CVI_VOID;
-typedef bool                    CVI_BOOL;
+typedef unsigned char           CVI_BOOL;
 
 typedef uint64_t                CVI_U64;
 typedef int64_t                 CVI_S64;
@@ -55,6 +55,7 @@ typedef size_t                  CVI_SIZE_T;
 
 #define CVI_NULL                0L
 #define CVI_SUCCESS             0
+#define CVI_SUCCESS_ALL_CHN     1
 #define CVI_FAILURE             (-1)
 #define CVI_FAILURE_ILLEGAL_PARAM (-2)
 #define CVI_TRUE                1

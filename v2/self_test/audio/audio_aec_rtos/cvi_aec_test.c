@@ -16,7 +16,7 @@
 #include <string.h>
 #include <time.h>
 #ifdef __CV181X__
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 #else
 #include "cvi_type.h"
 #endif

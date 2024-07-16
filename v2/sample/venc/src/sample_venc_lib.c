@@ -15,9 +15,9 @@
 #include <limits.h>
 #include <signal.h>
 
-#include <linux/vi_uapi.h>
-#include <linux/vi_isp.h>
-#include <linux/vi_tun_cfg.h>
+#include <vi_uapi.h>
+#include <vi_isp.h>
+#include <vi_tun_cfg.h>
 #include <sys/ioctl.h>
 
 #define MAX_VENC_OPTIONS	256
@@ -168,10 +168,6 @@ static optionExt venc_long_option_ext[] = {
 		"height of input frame (used for crop)"},
 	{{"bufSize", optional_argument, NULL, 0}, ARG_UINT,    0,   1000000000,
 		"bitstream Buffer size"},
-	{{"single_LumaBuf", optional_argument, NULL, 0}, ARG_INT,	  0,   1,
-		"0: disable, 1: use single luma buffer for H264"},
-	{{"single_core", optional_argument, NULL, 0}, ARG_INT,	  0,   1,
-		"0: disable, 1: use single core(h264 or h265 only)"},
 	{{"forceIdr", optional_argument, NULL, 0}, ARG_INT,	  0,   1000000000,
 		"0: disable, > 0: set force idr at number of frame"},
 	{{"chgNum", optional_argument, NULL, 0},	  ARG_INT,	  0, 1000000,
@@ -181,7 +177,7 @@ static optionExt venc_long_option_ext[] = {
 	{{"chgFramerate", optional_argument, NULL, 0},	ARG_INT,	  0, 240,
 		"change dstframerate"},
 	{{"tempLayer", optional_argument, NULL, 0}, ARG_INT,	  0,   3,
-		"tempLayer"},
+		"tempLayer, svc-t layer number"},
 	{{"roiCfgFile", optional_argument, NULL, 0}, ARG_STRING, 0, 0,
 		"ROI configuration file"},
 	{{"jpegQTableCfgFile", optional_argument, NULL, 0}, ARG_STRING, 0, 0,
@@ -199,18 +195,6 @@ static optionExt venc_long_option_ext[] = {
 		"frame_lost bsp threshold(h264 or h265 only)"},
 	{{"MCUPerECS", required_argument, NULL, 0},   ARG_INT,	  0,   1000000,
 		"jpeg encode MCUPerECS"},
-	{{"single_EsBuf", optional_argument, NULL, 0}, ARG_INT,	  0,   1,
-		"0: disable, 1: use single stream buffer (jpege)"},
-	{{"single_EsBuf_264", optional_argument, NULL, 0}, ARG_INT, 0, 1,
-		"0: disable, 1: use single stream buffer (h264e)"},
-	{{"single_EsBuf_265", optional_argument, NULL, 0}, ARG_INT, 0, 1,
-		"0: disable, 1: use single stream buffer (h265e)"},
-	{{"single_EsBufSize", optional_argument, NULL, 0}, ARG_INT, 0, 1000000000,
-		"single stream buffer size (jpege)"},
-	{{"single_EsBufSize_264", optional_argument, NULL, 0}, ARG_INT, 0, 1000000000,
-		"single stream buffer size (h264e)"},
-	{{"single_EsBufSize_265", optional_argument, NULL, 0}, ARG_INT, 0, 1000000000,
-		"single stream buffer size (h265e)"},
 	{{"numChn",    optional_argument, NULL, 0},   ARG_INT,    1,   VENC_MAX_CHN_NUM,
 		"number of channels to encode"},
 	{{"chn",       optional_argument, NULL, 0},   ARG_UINT,    0,   VENC_MAX_CHN_NUM - 1,
@@ -375,13 +359,11 @@ static optionExt venc_long_option_ext[] = {
 	{{NULL, 0, NULL, 0}, ARG_INT, 0, 0, ""}
 };
 
-static CVI_S32 _SAMPLE_VENC_SBM_testViVpssVenc(sampleVenc *psv);
-static CVI_S32 _SAMPLE_VENC_SBM_testVpssVenc(sampleVenc *psv);
-static CVI_S32 _SAMPLE_VENC_FRM_testVpssVenc(sampleVenc *psv);
 static CVI_S32 _SAMPLE_VENC_SBM_initVpss(SIZE_S *pstSizeIn, SIZE_S *pstSizeOut,
 		VB_CAL_CONFIG_S *pstVbCalConfig,
 		PIXEL_FORMAT_E enPixelFormat, VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_BOOL bWrapEn,
 		CVI_U32 VpssChnNum);
+static CVI_S32 _SAMPLE_VENC_FRM_testVpssVenc(sampleVenc *psv);
 static CVI_S32 _SAMPLE_VENC_PLAT_VPSS_INIT(VPSS_GRP VpssGrp,
 		SIZE_S stSizeIn, SIZE_S stSizeOut, CVI_BOOL bWrapEn, CVI_U32 VpssChnNum);
 static CVI_S32 _SAMPLE_VENC_SBM_initVenc(sampleVenc *psv);
@@ -401,14 +383,11 @@ static CVI_U32 _SAMPLE_VENC_INIT_CHANNEL(sampleVenc *psv, CVI_U32 chnNum);
 static CVI_S32 initSysAndVb(sampleVenc *psv);
 static CVI_S32 _SAMPLE_VENC_LoadCfgFile(vencChnCtx *pvecc);
 static CVI_S32 SAMPLE_VENC_StartGetStream(vencChnCtx *pvecc, CVI_S32 s32ChnIdx);
-static CVI_S32 SAMPLE_VENC_SBM_StartGetStream(vencChnCtx *pvecc, CVI_S32 s32ChnIdx);
 static CVI_S32 _getNonBindModeSrcFrame(vencChnCtx *pvecc,
 		VIDEO_FRAME_INFO_S *pstVideoFrame);
 static CVI_VOID _venc_unbind_source(chnInputCfg *pIc, VENC_CHN VencChn);
 static CVI_S32 _releaseNonBindModeSrcFrame(vencChnCtx *pvecc);
 static CVI_VOID *SAMPLE_VENC_SendVencFrameProc(CVI_VOID *pArgs);
-static CVI_VOID *SAMPLE_VENC_GetVencStreamProc(CVI_VOID *pArgs);
-static CVI_VOID *SAMPLE_VENC_SBM_GetVencStreamProc(CVI_VOID *pArgs);
 static CVI_S32 _SAMPLE_VENC_SendFrame(vencChnCtx *pvecc, CVI_U32 i);
 static CVI_S32 _SAMPLE_VENC_GetStream(vencChnCtx *pvecc);
 static CVI_S32 cviReadSrcFrame(VIDEO_FRAME_S *pstVFrame, FILE *fp, CVI_BOOL circle_send);
@@ -706,18 +685,6 @@ CVI_S32 venc_main(int argc, char **argv)
 			printf("_SAMPLE_VENC_FRM_testVpssVenc\n");
 			return s32Ret;
 		}
-	} else if (pcic->testMode == VPSS_VENC_SBM_MODE || pcic->testMode == VPSS_VENC_SBM_MODE_TWO_INPUT) {
-		s32Ret = _SAMPLE_VENC_SBM_testVpssVenc(psv);
-		if (s32Ret < 0) {
-			printf("_SAMPLE_VENC_SBM_testVpssVenc\n");
-			return s32Ret;
-		}
-	} else if (pcic->testMode == VI_VPSS_VENC_SBM_MODE) {
-		s32Ret = _SAMPLE_VENC_SBM_testViVpssVenc(psv);
-		if (s32Ret < 0) {
-			printf("_SAMPLE_VENC_SBM_testViVpssVenc\n");
-			return s32Ret;
-		}
 	} else {
 		if (pcic->testMode == BIND_VI_VPSS_VENC) {
 			s32Ret = _SAMPLE_VENC_initViVpss(psv);
@@ -930,10 +897,6 @@ CVI_S32 parseEncArgv(sampleVenc *psv, chnInputCfg *pIc, CVI_S32 argc, char **arg
 				pIc->inHeight = arg.ival;
 			} else if (!strcmp(long_options[idx].name, "bufSize")) {
 				pIc->bitstreamBufSize = arg.uval;
-			} else if (!strcmp(long_options[idx].name, "single_core")) {
-				pIc->single_core = arg.ival;
-			} else if (!strcmp(long_options[idx].name, "single_LumaBuf")) {
-				pIc->single_LumaBuf = arg.ival;
 			} else if (!strcmp(long_options[idx].name, "forceIdr")) {
 				pIc->forceIdr = arg.ival;
 			} else if (!strcmp(long_options[idx].name, "chgNum")) {
@@ -960,18 +923,6 @@ CVI_S32 parseEncArgv(sampleVenc *psv, chnInputCfg *pIc, CVI_S32 argc, char **arg
 				pIc->frameLostBspThr = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "MCUPerECS")) {
 				pIc->MCUPerECS = arg.ival;
-			} else if (!strcmp(long_options[idx].name, "single_EsBuf")) {
-				psv->commonIc.bSingleEsBuf_jpege = arg.ival;
-			} else if (!strcmp(long_options[idx].name, "single_EsBuf_264")) {
-				psv->commonIc.bSingleEsBuf_h264e = arg.ival;
-			} else if (!strcmp(long_options[idx].name, "single_EsBuf_265")) {
-				psv->commonIc.bSingleEsBuf_h265e = arg.ival;
-			} else if (!strcmp(long_options[idx].name, "single_EsBufSize")) {
-				psv->commonIc.singleEsBufSize_jpege = arg.ival;
-			} else if (!strcmp(long_options[idx].name, "single_EsBufSize_264")) {
-				psv->commonIc.singleEsBufSize_h264e = arg.ival;
-			} else if (!strcmp(long_options[idx].name, "single_EsBufSize_265")) {
-				psv->commonIc.singleEsBufSize_h265e = arg.ival;
 			} else if (!strcmp(long_options[idx].name, "numChn")) {
 				psv->commonIc.numChn = arg.ival;
 			} else if (!strcmp(long_options[idx].name, "chn")) {
@@ -1097,9 +1048,9 @@ CVI_S32 parseEncArgv(sampleVenc *psv, chnInputCfg *pIc, CVI_S32 argc, char **arg
 			} else if (!strcmp(long_options[idx].name, "smoothingEnableFlag")) {
 				pIc->u32SmoothingEnableFlag = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "disableIDRCnt")) {
-				pIc->u32DisableIDRCount = arg.uval;
+				pIc->s32DisableIDRCount = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "enableIDRCnt")) {
-				pIc->u32EnableIDRCount = arg.uval;
+				pIc->s32EnableIDRCount = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "SearchVer")) {
 				pIc->u32SearchVer = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "SearchHor")) {
@@ -1420,7 +1371,8 @@ CVI_S32 vi_ut_plat_vi_init(void)
 			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2020_2M_30FPS_8BIT) ||
 			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2100_2M_25FPS_8BIT) ||
 			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT) ||
-			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT)) {
+			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT) ||
+			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT)) {
 			stPipeAttr.bYuvBypassPath = CVI_TRUE;
 		} else {
 			stPipeAttr.bYuvBypassPath = CVI_FALSE;
@@ -1470,261 +1422,6 @@ CVI_S32 vi_ut_plat_vi_init(void)
 		goto error;
 	}
 error:
-	return s32Ret;
-}
-
-static CVI_S32 _SAMPLE_VENC_SBM_testViVpssVenc(sampleVenc *psv)
-{
-	commonInputCfg *pcic = &psv->commonIc;
-	chnInputCfg *pIc = &psv->chnCtx[0].chnIc;
-	chnInputCfg *pIcSec = &psv->chnCtx[1].chnIc;
-	CVI_S32 s32Ret = CVI_SUCCESS;
-	VPSS_GRP VpssGrp = 0;
-	VPSS_CHN VpssChn = 0;
-	FILE *fpVpssSrc = NULL;
-	CVI_S32 idx;
-	vencChnCtx *pvecc;
-	VENC_CHN VencChn;
-	CVI_BOOL abChnEnable[VPSS_MAX_PHY_CHN_NUM] = {0};
-
-	if (pcic->u32ViWidth < 320 || pcic->u32ViHeight < 256 ||
-		pcic->u32VpssWidth < 320 || pcic->u32VpssHeight < 256) {
-
-		printf("u32ViWidth = %d, u32ViHeight = %d\n",
-				pcic->u32ViWidth, pcic->u32ViHeight);
-		printf("u32VpssWidth = %d, u32VpssHeight = %d\n",
-				pcic->u32VpssWidth, pcic->u32VpssHeight);
-		return CVI_FAILURE;
-	}
-
-	vi_ut_ctx.is_enable_sensor	= pIc->bSensorEn; // 1 = sensor-in, 0 = pattern gen
-	vi_ut_ctx.is_be_online		= 1;
-	vi_ut_ctx.is_post_online	= 0;
-	vi_ut_ctx.is_patgen_enable	= !pIc->bSensorEn;
-	vi_ut_ctx.is_hdr_enable	= 0;
-	vi_ut_ctx.is_vpss_online	= 1;
-
-	// init system
-	s32Ret = vi_ut_plat_sys_init();
-	if (s32Ret != CVI_SUCCESS) {
-		printf("vi_ut_plat_sys_init failed. s32Ret: 0x%x !\n", s32Ret);
-		return s32Ret;
-	}
-
-	if (vi_ut_ctx.is_vpss_online) {
-		s32Ret = _sys_config_online_mode();
-		if (s32Ret != CVI_SUCCESS) {
-			printf("_sys_config_online_mode failed. s32Ret: 0x%x !\n", s32Ret);
-			return s32Ret;
-		}
-	}
-
-	// init vi
-	s32Ret = vi_ut_plat_vi_init();
-	if (s32Ret != CVI_SUCCESS) {
-		printf("vi_ut_plat_vi_init failed. s32Ret: 0x%x !\n", s32Ret);
-		return s32Ret;
-	}
-
-	pcic->ifInitVb = 0;
-	pcic->bThreadDisable = CVI_TRUE;
-	pIc->vpssGrp = VpssGrp;
-	pIc->vpssChn = VpssChn;
-	pIc->width = pcic->u32VpssWidth;
-	pIc->height = pcic->u32VpssHeight;
-
-	pIcSec->width = pcic->u32VpssWidth;
-	pIcSec->height = pcic->u32VpssHeight;
-	strcpy(pIc->vpssSrcPath, "VI_IN");
-	strcpy(pIcSec->vpssSrcPath, pIc->vpssSrcPath);
-
-	VencChn = 0;
-	pvecc = &psv->chnCtx[VencChn];
-
-	// init & start venc
-	s32Ret = _SAMPLE_VENC_SBM_initVenc(psv);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("_SAMPLE_VENC_SBM_initVenc, 0x%X\n", s32Ret);
-		return s32Ret;
-	}
-
-	// init vpss
-	if (vi_ut_ctx.is_vpss_online) {
-		s32Ret = _vpss_config_online_mode(psv, CVI_TRUE);
-		if (s32Ret != CVI_SUCCESS) {
-			printf("_vpss_config_online_mode failed. s32Ret: 0x%x !\n", s32Ret);
-			return s32Ret;
-		}
-	}
-
-	if (pcic->numChn == 2) {
-		SAMPLE_VENC_SBM_StartGetStream(&psv->chnCtx[1], 1);
-	}
-
-	for (idx = 0; idx < pIc->num_frames; idx++) {
-		if ((pcic->numChn == 2) && (idx%2 == 0)) {
-			if (CVI_VPSS_TriggerSnapFrame(0, 0, 1) != CVI_SUCCESS) {
-			}
-		}
-RETRY_GET_STREAM:
-		s32Ret = _SAMPLE_VENC_GetStream(pvecc);
-		if (s32Ret != CVI_SUCCESS) {
-			if (s32Ret == CVI_ERR_VENC_EMPTY_STREAM_FRAME)
-				goto RETRY_GET_STREAM;
-
-			printf("_SAMPLE_VENC_GetStream, %d\n", s32Ret);
-			break;
-		}
-	}
-
-	if (pcic->numChn == 2) {
-		pthread_join(gs_VencTask[1], CVI_NULL);
-		gs_VencTask[1] = 0;
-	}
-
-	SAMPLE_COMM_VI_DestroyIsp(&stViConfig);
-	SAMPLE_COMM_VI_DestroyVi(&stViConfig);
-	abChnEnable[0] = CVI_TRUE;
-	SAMPLE_COMM_VPSS_Stop(VpssGrp, abChnEnable);
-
-	s32Ret = _SAMPLE_VENC_SBM_deInitVenc(psv);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("_SAMPLE_VENC_SBM_deInitVenc, 0x%X\n", s32Ret);
-		return s32Ret;
-	}
-
-	if (fpVpssSrc) {
-		fclose(fpVpssSrc);
-		fpVpssSrc = NULL;
-	}
-
-	return s32Ret;
-}
-
-static CVI_S32 _SAMPLE_VENC_SBM_testVpssVenc(sampleVenc *psv)
-{
-	commonInputCfg *pcic = &psv->commonIc;
-	chnInputCfg *pIc = &psv->chnCtx[0].chnIc;
-	chnInputCfg *pIcSec = &psv->chnCtx[1].chnIc;
-	CVI_S32 s32Ret = CVI_SUCCESS;
-	SIZE_S stSizeIn, stSizeOut;
-	VPSS_GRP VpssGrp = 0;
-	VPSS_CHN VpssChn;
-	VIDEO_FRAME_INFO_S stVideoFrame, *pstVideoFrame = &stVideoFrame;
-	VB_CAL_CONFIG_S stVbCalConfig, *pstVbCalConfig = &stVbCalConfig;
-
-	FILE *fpVpssSrc = NULL;
-
-	CVI_S32 idx;
-	vencChnCtx *pvecc;
-	VENC_CHN VencChn;
-	CVI_U32 vpssChnNum = 1;
-
-	if (pcic->u32ViWidth < 320 || pcic->u32ViHeight < 256 ||
-		pcic->u32VpssWidth < 320 || pcic->u32VpssHeight < 256) {
-
-		printf("u32ViWidth = %d, u32ViHeight = %d\n",
-				pcic->u32ViWidth, pcic->u32ViHeight);
-		printf("u32VpssWidth = %d, u32VpssHeight = %d\n",
-				pcic->u32VpssWidth, pcic->u32VpssHeight);
-		return CVI_FAILURE;
-	}
-
-	//vencDbg.currMask = 0xfffff;
-
-	stSizeIn.u32Width = pcic->u32ViWidth;
-	stSizeIn.u32Height = pcic->u32ViHeight;
-	stSizeOut.u32Width = pcic->u32VpssWidth;
-	stSizeOut.u32Height = pcic->u32VpssHeight;
-
-	s32Ret = SAMPLE_PLAT_SYS_INIT(stSizeIn);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("SAMPLE_PLAT_SYS_INIT, s32Ret: 0x%x !\n", s32Ret);
-		return s32Ret;
-	}
-
-	fpVpssSrc = fopen(pIc->vpssSrcPath, "rb");
-	if (fpVpssSrc == NULL) {
-		printf("Input file %s open failed !\n", pIc->vpssSrcPath);
-		return CVI_FAILURE;
-	}
-
-	VpssGrp = 0;
-	VpssChn = 0;
-
-	printf("\n");
-
-	if (psv->commonIc.testMode == VPSS_VENC_SBM_MODE_TWO_INPUT)
-		vpssChnNum = 2;
-
-	s32Ret = _SAMPLE_VENC_SBM_initVpss(&stSizeIn, &stSizeOut, pstVbCalConfig,
-			SAMPLE_PIXEL_FORMAT, pstVideoFrame, CVI_TRUE, vpssChnNum);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("_SAMPLE_VENC_SBM_initVpss, 0x%X\n", s32Ret);
-		return s32Ret;
-	}
-
-	pcic->ifInitVb = 0;
-	pcic->bThreadDisable = CVI_TRUE;
-	pIc->vpssGrp = VpssGrp;
-	pIc->vpssChn = VpssChn;
-	pIc->width = pcic->u32VpssWidth;
-	pIc->height = pcic->u32VpssHeight;
-
-	pIcSec->width = pcic->u32VpssWidth;
-	pIcSec->height = pcic->u32VpssHeight;
-	strcpy(pIcSec->vpssSrcPath, pIc->vpssSrcPath);
-
-	VencChn = 0;
-	pvecc = &psv->chnCtx[VencChn];
-
-	s32Ret = _SAMPLE_VENC_SBM_initVenc(psv);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("_SAMPLE_VENC_SBM_initVenc, 0x%X\n", s32Ret);
-		return s32Ret;
-	}
-
-	for (idx = 0; idx < pIc->num_frames; idx++) {
-		s32Ret = _SAMPLE_VENC_readToVpss(VpssGrp, pstVbCalConfig, pstVideoFrame, fpVpssSrc);
-		if (s32Ret != CVI_SUCCESS) {
-			printf("_SAMPLE_VENC_readToVpss , %d\n", s32Ret);
-			return s32Ret;
-		}
-
-		s32Ret = _SAMPLE_VENC_GetStream(pvecc);
-		if (s32Ret != CVI_SUCCESS) {
-			printf("_SAMPLE_VENC_GetStream, %d\n", s32Ret);
-			break;
-		}
-
-		if (pcic->numChn == 2) {
-			pvecc = &psv->chnCtx[1];
-			s32Ret = _SAMPLE_VENC_GetStream(pvecc);
-			if (s32Ret != CVI_SUCCESS) {
-				printf("_SAMPLE_VENC_GetStream, %d\n", s32Ret);
-				break;
-			}
-			pvecc = &psv->chnCtx[0];
-		}
-	}
-
-	s32Ret = _SAMPLE_VENC_deInitVpss(pstVbCalConfig, pstVideoFrame);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("_SAMPLE_VENC_deInitVpss, 0x%X\n", s32Ret);
-		return s32Ret;
-	}
-
-	s32Ret = _SAMPLE_VENC_SBM_deInitVenc(psv);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("_SAMPLE_VENC_SBM_deInitVenc, 0x%X\n", s32Ret);
-		return s32Ret;
-	}
-
-	if (fpVpssSrc) {
-		fclose(fpVpssSrc);
-		fpVpssSrc = NULL;
-	}
-
 	return s32Ret;
 }
 
@@ -1799,6 +1496,7 @@ static CVI_S32 _SAMPLE_VENC_FRM_testVpssVenc(sampleVenc *psv)
 	pIc->vpssChn = VpssChn;
 	pIc->width = pcic->u32VpssWidth;
 	pIc->height = pcic->u32VpssHeight;
+	pIc->bind_mode = VENC_BIND_VPSS;
 	VencChn = 0;
 	pvecc = &psv->chnCtx[VencChn];
 
@@ -2078,11 +1776,17 @@ static CVI_S32 _SAMPLE_VENC_readToVpss(VPSS_GRP VpssGrp, VB_CAL_CONFIG_S *pstVbC
 		pstVFrame->pu8VirAddr[i]
 			= CVI_SYS_MmapCache(pstVFrame->u64PhyAddr[i], pstVFrame->u32Length[i]);
 
+RETRY_GET_FRAME:
 		u32len = fread(pstVFrame->pu8VirAddr[i], pstVFrame->u32Length[i], 1, fp);
 		if (u32len <= 0) {
-			SAMPLE_PRT("fread plane%d error\n", i);
+			SAMPLE_PRT("fread plane%d error, u32len:%d\n", i, u32len);
+			if (u32len == 0) {
+				fseek(fp, 0, SEEK_SET);
+				goto RETRY_GET_FRAME;
+			}
 			return CVI_FAILURE;
 		}
+
 		CVI_SYS_IonInvalidateCache(pstVFrame->u64PhyAddr[i],
 				pstVFrame->pu8VirAddr[i],
 				pstVFrame->u32Length[i]);
@@ -2383,8 +2087,6 @@ CVI_S32 SAMPLE_VENC_STOP(sampleVenc *psv)
 				}
 			}
 
-			pthread_mutex_destroy(&pvecc->frame_buffer_lock);
-
 			if (pvecc->pu8QpMap) {
 				free(pvecc->pu8QpMap);
 				pvecc->pu8QpMap = NULL;
@@ -2466,12 +2168,6 @@ static CVI_S32 checkInputCfg(chnInputCfg *pIc)
 		}
 		printf("gop = %d\n", pIc->gop);
 
-		if (!strcmp(pIc->codec, "265")) {
-			if (pIc->single_LumaBuf > 0) {
-				printf("single_LumaBuf only supports H.264\n");
-				pIc->single_LumaBuf = 0;
-			}
-		}
 		pIc->iqp = (pIc->iqp >= 0) ? pIc->iqp : DEF_IQP;
 		pIc->pqp = (pIc->pqp >= 0) ? pIc->pqp : DEF_PQP;
 
@@ -2550,8 +2246,8 @@ static CVI_S32 checkInputCfg(chnInputCfg *pIc)
 		return -1;
 	}
 
-	if (pIc->u32EnableIDRCount < pIc->u32DisableIDRCount) {
-		printf("EnableIDRCount:%d < DisableIDRCount:%d\n", pIc->u32EnableIDRCount,  pIc->u32DisableIDRCount);
+	if (pIc->s32EnableIDRCount < pIc->s32DisableIDRCount) {
+		printf("EnableIDRCount:%d < DisableIDRCount:%d\n", pIc->s32EnableIDRCount,  pIc->s32DisableIDRCount);
 		return -1;
 	}
 
@@ -2572,7 +2268,6 @@ static CVI_U32 _SAMPLE_VENC_INIT_CHANNEL(sampleVenc *psv, CVI_U32 chnNum)
 	pvecc->enGopMode = pIc->gopMode;
 	pvecc->s32FbCnt = 1;
 	pvecc->bCircleSend = CVI_TRUE;
-	pthread_mutex_init(&pvecc->frame_buffer_lock, NULL);
 
 	if (!strcmp(pIc->codec, "265"))
 		pvecc->enPayLoad = PT_H265;
@@ -2649,19 +2344,7 @@ static CVI_U32 _SAMPLE_VENC_INIT_CHANNEL(sampleVenc *psv, CVI_U32 chnNum)
 		printf("_SAMPLE_VENC_LoadCfgFile %#x!\n", s32Ret);
 		return CVI_FAILURE;
 	}
-#if 0
-	if (pcic->ifInitVb) {
-		pvecc->pstFrameInfo = allocate_frame(inFrmSize, pvecc->enPixelFormat);
-		printf("pstFrameInfo = 0x%p\n", pvecc->pstFrameInfo);
 
-		if (!pvecc->pstFrameInfo) {
-			printf("allocate_frame\n");
-			return CVI_FAILURE;
-		}
-
-		pvecc->pstVFrame = &pvecc->pstFrameInfo->stVFrame;
-	}
-#endif
 	if (pIc->bind_mode == VENC_BIND_DISABLE && strlen(pIc->input_path) != 0) {
 		pvecc->fpSrc = fopen(pIc->input_path, "rb");
 
@@ -2884,7 +2567,6 @@ static CVI_S32 SAMPLE_VENC_StartGetStream(vencChnCtx *pvecc, CVI_S32 s32ChnIdx)
 	printf("SAMPLE_VENC_StartGetStream\n");
 
 	gs_VencSendTask[s32ChnIdx] = 0;
-	gs_VencGetTask[s32ChnIdx] = 0;
 
 	param.sched_priority = 80;
 	pthread_attr_init(&attr);
@@ -2900,37 +2582,6 @@ static CVI_S32 SAMPLE_VENC_StartGetStream(vencChnCtx *pvecc, CVI_S32 s32ChnIdx)
 		&attr,
 		SAMPLE_VENC_SendVencFrameProc,
 		(CVI_VOID *)pvecc);
-
-	if (pvecc->enPayLoad != PT_JPEG && pvecc->enPayLoad != PT_MJPEG) {
-		pthread_create(
-			&gs_VencGetTask[s32ChnIdx],
-			&attr,
-			SAMPLE_VENC_GetVencStreamProc,
-			(CVI_VOID *)pvecc);
-	}
-
-	return CVI_SUCCESS;
-}
-
-static CVI_S32 SAMPLE_VENC_SBM_StartGetStream(vencChnCtx *pvecc, CVI_S32 s32ChnIdx)
-{
-	struct sched_param param;
-	pthread_attr_t attr;
-
-	printf("SAMPLE_VENC_StartGetStream\n");
-
-	gs_VencTask[s32ChnIdx] = 0;
-
-	param.sched_priority = 80;
-	pthread_attr_init(&attr);
-	pthread_attr_setschedpolicy(&attr, SCHED_RR);
-	pthread_attr_setschedparam(&attr, &param);
-	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-	pthread_create(
-			&gs_VencTask[s32ChnIdx],
-			&attr,
-			SAMPLE_VENC_SBM_GetVencStreamProc,
-			(CVI_VOID *)pvecc);
 
 	return CVI_SUCCESS;
 }
@@ -3008,6 +2659,21 @@ static CVI_S32 _releaseNonBindModeSrcFrame(vencChnCtx *pvecc)
 	return s32Ret;
 }
 
+static CVI_BOOL _check_if_free_yuv(vencChnCtx *pvecc)
+{
+	CVI_BOOL has_free_yuv = CVI_FALSE;
+	CVI_S32 index = 0;
+
+	for (index = 0; index < (int)(pvecc->chnIc.u32MinSrcCount); index++) {
+		if (pvecc->frameUnusedQueue[index].iUseFlag == 0) {
+			has_free_yuv = 1;
+			break;
+		}
+	}
+
+	return has_free_yuv;
+}
+
 static CVI_VOID *SAMPLE_VENC_SendVencFrameProc(CVI_VOID *pArgs)
 {
 	vencChnCtx *pvecc = (vencChnCtx *)pArgs;
@@ -3016,9 +2682,10 @@ static CVI_VOID *SAMPLE_VENC_SendVencFrameProc(CVI_VOID *pArgs)
 	VIDEO_FRAME_INFO_S stVideoFrame, *pstFrameInfo = &stVideoFrame;
 	CVI_CHAR TaskName[64];
 	CVI_S32 s32Ret = 0;
-	CVI_U32 i;
+	CVI_S32 s32SendRet = 0, s32GetRet = 0;
+	CVI_U32 i = 0;
 	SIZE_S inFrmSize;
-	CVI_S32 jpeg_perf_test = (pvecc->enPayLoad == PT_JPEG && pvecc->perf == 1);
+	CVI_S32 jpeg_perf_test = ((pvecc->enPayLoad == PT_JPEG || pvecc->enPayLoad == PT_MJPEG) && pvecc->perf == 1);
 	sprintf(TaskName, "chn%dVencSendFrame", VencChn);
 	prctl(PR_SET_NAME, TaskName, 0, 0, 0);
 
@@ -3037,21 +2704,21 @@ static CVI_VOID *SAMPLE_VENC_SendVencFrameProc(CVI_VOID *pArgs)
 		}
 	}
 
-	i = 0;
+	if (pIc->inWidth || pIc->inHeight) {
+		inFrmSize.u32Width = pIc->inWidth;
+		inFrmSize.u32Height = pIc->inHeight;
+	} else {
+		inFrmSize = pvecc->stSize;
+	}
+
 	while (pvecc->chnStat == CHN_STAT_START) {
 		if ((pvecc->enPayLoad == PT_JPEG || pvecc->enPayLoad == PT_MJPEG) && (i >= pvecc->num_frames)) {
 			break;
 		}
+
 		if (pIc->bind_mode == VENC_BIND_DISABLE) {
-			if (pIc->inWidth || pIc->inHeight) {
-				inFrmSize.u32Width = pIc->inWidth;
-				inFrmSize.u32Height = pIc->inHeight;
-			} else {
-				inFrmSize = pvecc->stSize;
-			}
 			if (!jpeg_perf_test || i == 0)
 				pvecc->pstFrameInfo = allocate_frame(inFrmSize, pvecc->enPixelFormat, pvecc);
-
 
 			if (!pvecc->pstFrameInfo) {
 				continue;
@@ -3065,55 +2732,91 @@ static CVI_VOID *SAMPLE_VENC_SendVencFrameProc(CVI_VOID *pArgs)
 			}
 		}
 
-		if (i >= pvecc->num_frames) {
+		// test enable/disable IDR feature
+		if (pvecc->enPayLoad == PT_H264 || pvecc->enPayLoad == PT_H265) {
+			if (pIc->s32DisableIDRCount == (CVI_S32)i) {
+				CVI_VENC_EnableIDR(VencChn, CVI_FALSE);
+			}
+
+			if (pIc->s32EnableIDRCount == (CVI_S32)i) {
+				CVI_VENC_EnableIDR(VencChn, CVI_TRUE);
+			}
+		}
+
+		i++;
+		if (i > pvecc->num_frames) {
 			pvecc->pstFrameInfo->stVFrame.bSrcEnd = 1;
 			pvecc->pstFrameInfo->stVFrame.s32FrameIdx = -1;
 		}
 
 RETRY_SEND_FRAME:
-		s32Ret = _SAMPLE_VENC_SendFrame(pvecc, i);
-		if (s32Ret == CVI_ERR_VENC_FRC_NO_ENC) {
-			continue;
-		} else if (s32Ret == CVI_ERR_VENC_BUSY) {
+		s32SendRet = _SAMPLE_VENC_SendFrame(pvecc, i);
+
+RETRY_GET_STREAM:
+		s32GetRet = _SAMPLE_VENC_GetStream(pvecc);
+
+		if (s32GetRet == CVI_ERR_VENC_GET_STREAM_END) {
+			printf("_SAMPLE_VENC_GetStream end!\n");
+			break;
+		}
+
+		if (s32SendRet == CVI_ERR_VENC_FRC_NO_ENC) {
+			// do nothing
+		} else if (s32SendRet == CVI_ERR_VENC_BUSY) {
 			if (pvecc->chnStat == CHN_STAT_STOP)
 				break;
 			usleep(1000);
 			goto RETRY_SEND_FRAME;
-		} else if (s32Ret != CVI_SUCCESS) {
-			printf("_SAMPLE_VENC_SendFrame, %d\n", s32Ret);
+		} else if (s32SendRet != CVI_SUCCESS) {
+			printf("_SAMPLE_VENC_SendFrame, %d\n", s32SendRet);
 			break;
 		}
 
-
 		if (pIc->bind_mode == VENC_BIND_DISABLE) {
-			if (!jpeg_perf_test) {
+			if (!jpeg_perf_test && pvecc->pstFrameInfo) {
 				free_frame(pvecc->pstFrameInfo);
-			}
-		}
-
-		i++;
-
-		if (pvecc->enPayLoad == PT_H264 || pvecc->enPayLoad == PT_H265) {
-			if (pIc->u32DisableIDRCount == i) {
-				CVI_VENC_EnableIDR(VencChn, CVI_FALSE);
-			}
-
-			if (pIc->u32EnableIDRCount == i) {
-				CVI_VENC_EnableIDR(VencChn, CVI_TRUE);
+				pvecc->pstFrameInfo = NULL;
 			}
 		}
 
 		if (pvecc->enPayLoad == PT_JPEG || pvecc->enPayLoad == PT_MJPEG) {
-			do {
-				s32Ret = _SAMPLE_VENC_GetStream(pvecc);
-			} while (s32Ret == CVI_ERR_VENC_BUSY);
+			if (s32GetRet != CVI_SUCCESS) {
+				printf("_SAMPLE_VENC_GetStream jpeg, %d\n", s32GetRet);
+				break;
+			}
+		} else {
+			if (s32GetRet == CVI_ERR_VENC_BUSY) {
+				usleep(5000);
+				if (_check_if_free_yuv(pvecc) > 0) {
+					continue;
+				} else {
+					goto RETRY_GET_STREAM;
+				}
+			}
 
-			if (s32Ret != CVI_SUCCESS) {
-				printf("_SAMPLE_VENC_GetStream, %d\n", s32Ret);
+			if (s32GetRet != CVI_SUCCESS) {
+				printf("_SAMPLE_VENC_GetStream, %d\n", s32GetRet);
 				break;
 			}
 
+			if (_check_if_free_yuv(pvecc) == 0) {
+				usleep(5000);
+				goto RETRY_GET_STREAM;
+			}
+
+			usleep(1000);
 		}
+
+		// // flush remain encoded frame
+		// if ((pvecc->enPayLoad == PT_H264 || pvecc->enPayLoad == PT_H265) && (i == pvecc->num_frames)) {
+		// 	printf("get remain encoded frame chn:%d\n", pvecc->VencChn);
+		// 	do {
+		// 		s32GetRet = _SAMPLE_VENC_GetStream(pvecc);
+		// 		printf("get remain encoded frame chn:%d, ret:%d\n", pvecc->VencChn, s32GetRet);
+		// 	} while (s32GetRet != CVI_ERR_VENC_GET_STREAM_END);
+
+		// 	break;
+		// }
 	}
 	printf("venc send task%d end\n", pvecc->VencChn);
 
@@ -3126,95 +2829,6 @@ RETRY_SEND_FRAME:
 
 	return (CVI_VOID *) CVI_SUCCESS;
 }
-
-static CVI_VOID *SAMPLE_VENC_GetVencStreamProc(CVI_VOID *pArgs)
-{
-	vencChnCtx *pvecc = (vencChnCtx *)pArgs;
-	VENC_CHN VencChn = pvecc->VencChn;
-	chnInputCfg *pIc = &pvecc->chnIc;
-	CVI_CHAR TaskName[64];
-	CVI_S32 s32Ret;
-
-	sprintf(TaskName, "chn%dVencGetStream", VencChn);
-	prctl(PR_SET_NAME, TaskName, 0, 0, 0);
-
-	printf("venc get task%d start\n", VencChn);
-
-	usleep(1000);
-
-	// pvecc->chnStat = CHN_STAT_START;
-	// pvecc->nextChnStat = CHN_STAT_START;
-	pvecc->s32VencFd = -1;
-
-	if (pIc->bsMode == BS_MODE_SELECT) {
-		pvecc->s32VencFd = CVI_VENC_GetFd(VencChn);
-		if (pvecc->s32VencFd < 0) {
-			SAMPLE_PRT("CVI_VENC_GetFd failed with%#x!\n", pvecc->s32VencFd);
-		}
-	}
-
-	while (pvecc->chnStat == CHN_STAT_START ) {
-		s32Ret = _SAMPLE_VENC_GetStream(pvecc);
-		if (s32Ret == CVI_ERR_VENC_BUSY) {
-			usleep(1000);
-			continue;
-		}
-
-		if (s32Ret == CVI_ERR_VENC_GET_STREAM_END) {
-			printf("_SAMPLE_VENC_GetStream end!\n");
-			break;
-		}
-		if (s32Ret != CVI_SUCCESS) {
-			printf("_SAMPLE_VENC_GetStream, %d\n", s32Ret);
-			break;
-		}
-		usleep(1000);
-	}
-
-	printf("venc get task%d end\n", pvecc->VencChn);
-
-	pvecc->chnStat = CHN_STAT_STOP;
-	if (pvecc->s32VencFd >= 0) {
-		CVI_VENC_CloseFd(VencChn);
-	}
-
-	_venc_unbind_source(pIc, VencChn);
-
-	return (CVI_VOID *) CVI_SUCCESS;
-}
-
-static CVI_VOID *SAMPLE_VENC_SBM_GetVencStreamProc(CVI_VOID *pArgs)
-{
-	vencChnCtx *pvecc = (vencChnCtx *)pArgs;
-	VENC_CHN VencChn = pvecc->VencChn;
-	chnInputCfg *pIc = &pvecc->chnIc;
-	CVI_CHAR TaskName[64];
-	CVI_S32 s32Ret;
-	CVI_S32 idx;
-
-	sprintf(TaskName, "chn%dVencSbmGetStream", VencChn);
-	prctl(PR_SET_NAME, TaskName, 0, 0, 0);
-
-	printf("venc task%d start, num_frames = %d\n", VencChn, pIc->num_frames);
-
-	for (idx = 0; idx < pIc->num_frames; idx++) {
-RETRY_GET_STREAM:
-		usleep(1000);
-		s32Ret = _SAMPLE_VENC_GetStream(pvecc);
-		if (s32Ret != CVI_SUCCESS) {
-			if (s32Ret == CVI_ERR_VENC_EMPTY_STREAM_FRAME)
-				goto RETRY_GET_STREAM;
-
-			printf("_SAMPLE_VENC_GetStream, %d\n", s32Ret);
-			break;
-		}
-	}
-
-	printf("venc task%d end\n", VencChn);
-
-	return (CVI_VOID *) CVI_SUCCESS;
-}
-
 
 static CVI_S32 _SAMPLE_VENC_SendFrame(vencChnCtx *pvecc, CVI_U32 i)
 {
@@ -3445,7 +3059,7 @@ static CVI_VOID exitSysAndVb(CVI_VOID)
 
 static VIDEO_FRAME_INFO_S *allocate_frame(SIZE_S stSize, PIXEL_FORMAT_E enPixelFormat, vencChnCtx *pvecc)
 {
-	VIDEO_FRAME_INFO_S *pstVideoFrame;
+	VIDEO_FRAME_INFO_S *pstVideoFrame = NULL;
 	VIDEO_FRAME_S *pstVFrame;
 	// VB_BLK blk;
 	VB_CAL_CONFIG_S stVbCfg;
@@ -3454,7 +3068,21 @@ static VIDEO_FRAME_INFO_S *allocate_frame(SIZE_S stSize, PIXEL_FORMAT_E enPixelF
 	CVI_U32 u32PoolId = 0;
 	CVI_U64 u64PhyAddr = 0;
 
-	pstVideoFrame = (VIDEO_FRAME_INFO_S *)calloc(sizeof(*pstVideoFrame), 1);
+	for (i = 0; i < (int)(pvecc->chnIc.u32MinSrcCount); i++) {
+		if (pvecc->frameUnusedQueue[i].iUseFlag == 0) {
+			pvecc->frameUnusedQueue[i].iUseFlag = 1;
+			bFindUnusedBuffer = 1;
+			u32PoolId = pvecc->frameUnusedQueue[i].u32PoolId;
+			u64PhyAddr = pvecc->frameUnusedQueue[i].u64PhyAddr;
+			break;
+		}
+	}
+
+	if (bFindUnusedBuffer == 0) {
+		return NULL;
+	}
+
+	pstVideoFrame = (VIDEO_FRAME_INFO_S *)calloc(sizeof(VIDEO_FRAME_INFO_S), 1);
 	if (pstVideoFrame == NULL) {
 		printf("Failed to allocate VIDEO_FRAME_INFO_S\n");
 		return NULL;
@@ -3484,29 +3112,6 @@ static VIDEO_FRAME_INFO_S *allocate_frame(SIZE_S stSize, PIXEL_FORMAT_E enPixelF
 		printf("u32Width is not algined to %d\n", VENC_ALIGN_W);
 	}
 
-	// blk = CVI_VB_GetBlock(VB_INVALID_POOLID, stVbCfg.u32VBSize);
-	// if (blk == VB_INVALID_HANDLE) {
-	//     printf("Can't acquire vb block\n");
-	//     free(pstVideoFrame);
-	//     return NULL;
-	// }
-
-	pthread_mutex_lock(&pvecc->frame_buffer_lock);
-	for (i = 0; i < (int)(pvecc->chnIc.u32MinSrcCount); i++) {
-		if (pvecc->frameUnusedQueue[i].iUseFlag == 0) {
-			pvecc->frameUnusedQueue[i].iUseFlag = 1;
-			bFindUnusedBuffer = 1;
-			u32PoolId = pvecc->frameUnusedQueue[i].u32PoolId;
-			u64PhyAddr = pvecc->frameUnusedQueue[i].u64PhyAddr;
-			break;
-		}
-	}
-	pthread_mutex_unlock(&pvecc->frame_buffer_lock);
-
-	if (bFindUnusedBuffer == 0) {
-		return NULL;
-	}
-
 	pstVFrame->s32FrameIdx = i;
 	printf("send chn:%d srcidx:%d\n", pvecc->VencChn, pstVFrame->s32FrameIdx);
 	pstVideoFrame->u32PoolId = u32PoolId;//CVI_VB_Handle2PoolId(blk);
@@ -3532,18 +3137,12 @@ static VIDEO_FRAME_INFO_S *allocate_frame(SIZE_S stSize, PIXEL_FORMAT_E enPixelF
 		memset(pstVFrame->pu8VirAddr[2], 0, pstVFrame->u32Length[2]);
 	}
 
-	// printf("phy addr(%#llx, %#llx, %#llx), Size %x\n", (long long)pstVFrame->u64PhyAddr[0]
-	// 	, (long long)pstVFrame->u64PhyAddr[1], (long long)pstVFrame->u64PhyAddr[2], stVbCfg.u32VBSize);
-	// printf("vir addr(%p, %p, %p), Size %x\n", pstVFrame->pu8VirAddr[0]
-	// 	, pstVFrame->pu8VirAddr[1], pstVFrame->pu8VirAddr[2], stVbCfg.u32MainSize);
-
 	return pstVideoFrame;
 }
 
 static CVI_S32 free_frame(VIDEO_FRAME_INFO_S *pstVideoFrame)
 {
 	VIDEO_FRAME_S *pstVFrame = &pstVideoFrame->stVFrame;
-	// VB_BLK blk;
 
 	if (pstVFrame->pu8VirAddr[0])
 		CVI_SYS_Munmap((CVI_VOID *)pstVFrame->pu8VirAddr[0], pstVFrame->u32Length[0]);
@@ -3551,11 +3150,6 @@ static CVI_S32 free_frame(VIDEO_FRAME_INFO_S *pstVideoFrame)
 		CVI_SYS_Munmap((CVI_VOID *)pstVFrame->pu8VirAddr[1], pstVFrame->u32Length[1]);
 	if (pstVFrame->pu8VirAddr[2])
 		CVI_SYS_Munmap((CVI_VOID *)pstVFrame->pu8VirAddr[2], pstVFrame->u32Length[2]);
-
-	// blk = CVI_VB_PhysAddr2Handle(pstVFrame->u64PhyAddr[0]);
-	// if (blk != VB_INVALID_HANDLE) {
-	// 	CVI_VB_ReleaseBlock(blk);
-	// }
 
 	free(pstVideoFrame);
 

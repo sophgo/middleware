@@ -9,9 +9,8 @@
 #include <pthread.h>
 #include <stdatomic.h>
 
-#include <linux/cvi_common.h>
-#include <linux/cvi_comm_sys.h>
-#include <linux/vo_disp.h>
+#include <cvi_common.h>
+#include <cvi_comm_sys.h>
 #include "cvi_vi.h"
 #include "cvi_vpss.h"
 #include "cvi_debug.h"
@@ -204,6 +203,58 @@ struct vdev {
 #endif
 // -------- If you want to change these interfaces, please contact the isp team. --------
 
+enum cvi_rgn_format {
+	CVI_RGN_FMT_ARGB8888,
+	CVI_RGN_FMT_ARGB4444,
+	CVI_RGN_FMT_ARGB1555,
+	CVI_RGN_FMT_256LUT,
+	CVI_RGN_FMT_16LUT,
+	CVI_RGN_FMT_FONT,
+	CVI_RGN_FMT_MAX
+};
+
+struct cvi_rect {
+	CVI_S32 left;
+	CVI_S32 top;
+	CVI_U32 width;
+	CVI_U32 height;
+};
+
+struct cvi_rgn_param {
+	enum cvi_rgn_format fmt;
+	struct cvi_rect rect;
+	CVI_U32 stride;
+	CVI_U64 phy_addr;
+};
+
+struct cvi_rgn_lut_cfg {
+	CVI_U16 lut_length;
+	CVI_U16 lut_addr[256];
+	CVI_U8 lut_layer;
+	// CVI_U8 rgnex_en;
+	CVI_U8 is_updated;
+};
+
+struct cvi_rgn_odec {
+	CVI_U8 enable;
+	CVI_U8 attached_ow;
+	CVI_U8 canvas_updated;
+	CVI_U32 bso_sz;
+	CVI_U64 canvas_mutex_lock;
+	CVI_U64 rgn_canvas_waitq;
+	CVI_U64 rgn_canvas_doneq;
+};
+
+struct rgn_cfg {
+	struct cvi_rgn_param param[8];
+	struct cvi_rgn_lut_cfg rgn_lut_cfg;
+	struct cvi_rgn_odec odec;
+	CVI_U8 num_of_rgn;
+	CVI_U8 hscale_x2;
+	CVI_U8 vscale_x2;
+	CVI_U8 colorkey_en;
+	CVI_U32 colorkey;
+};
 typedef struct {
 	CVI_S32 proc_amp[PROC_AMP_MAX];
 } VPSS_BIN_DATA;

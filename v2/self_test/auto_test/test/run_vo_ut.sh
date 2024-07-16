@@ -27,9 +27,12 @@ sample_check $UT_BIN_NAME
 touch $INPUT_FILE
 
 VO_DEVICE=${VO_DEVICE:=1}
+PANEL_DEVICE=${PANEL_DEVICE:=--device=1}
+VO_PANEL=${VO_PANEL:=--panel=HX8394_EVB}
+VO_CONTROL_PINS=${VO_CONTROL_PINS:=--control_pins=399,304,400}
 VO_INTF=${VO_INTF:=0}
 
-./sample_dsi $VO_DEVICE
+./sample_panel $PANEL_DEVICE $VO_PANEL $VO_CONTROL_PINS
 
 for t in $(seq 1 $TEST_TIMES)
 do

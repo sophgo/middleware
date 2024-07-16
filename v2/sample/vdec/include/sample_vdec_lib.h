@@ -36,6 +36,7 @@ typedef struct _vdecChnInputCfg_ {
 	CVI_S32 s32sendstream_timeout;
 	CVI_S32 s32getframe_timeout;
 	CVI_S32 s32PixelFormat;
+	CVI_U32 u32CircleSend;
 } vdecChnInputCfg;
 
 typedef struct _vdecInputCfg_ {

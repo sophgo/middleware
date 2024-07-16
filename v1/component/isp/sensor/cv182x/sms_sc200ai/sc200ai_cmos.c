@@ -9,9 +9,9 @@
 #include "cvi_comm_video.h"
 #include <linux/cvi_vip_snsr.h>
 #else
-#include <linux/cvi_type.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/vi_snsr.h>
+#include <cvi_type.h>
+#include <cvi_comm_video.h>
+
 #endif
 #include "cvi_debug.h"
 #include "cvi_comm_sns.h"
@@ -30,19 +30,28 @@
 #define SC200AI_ID 35
 #define SENSOR_SC200AI_WIDTH 1920
 #define SENSOR_SC200AI_HEIGHT 1080
+#define SC200AI_I2C_ADDR 0x30
+#define SC200AI_I2C_ADDR_IS_VALID(addr)	((addr) == SC200AI_I2C_ADDR)
 /****************************************************************************
  * global variables                                                            *
  ****************************************************************************/
 
 ISP_SNS_STATE_S *g_pastSC200AI[VI_MAX_PIPE_NUM] = {CVI_NULL};
+SNS_COMBO_DEV_ATTR_S* g_pastSC200AIComboDevArray[VI_MAX_PIPE_NUM] = {CVI_NULL};
 
 #define SC200AI_SENSOR_GET_CTX(dev, pstCtx)   (pstCtx = g_pastSC200AI[dev])
 #define SC200AI_SENSOR_SET_CTX(dev, pstCtx)   (g_pastSC200AI[dev] = pstCtx)
 #define SC200AI_SENSOR_RESET_CTX(dev)         (g_pastSC200AI[dev] = CVI_NULL)
+#define SC200AI_SENSOR_GET_COMBO(dev, pstCtx)   (pstCtx = g_pastSC200AIComboDevArray[dev])
+#define SC200AI_SENSOR_SET_COMBO(dev, pstCtx)   (g_pastSC200AIComboDevArray[dev] = pstCtx)
 
 ISP_SNS_COMMBUS_U g_aunSC200AI_BusInfo[VI_MAX_PIPE_NUM] = {
 	[0] = { .s8I2cDev = 0},
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cDev = -1}
+};
+ISP_SNS_COMMADDR_U g_aunSC200AI_AddrInfo[VI_MAX_PIPE_NUM] = {
+	[0] = { .s8I2cAddr = 0},
+	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
 };
 
 CVI_U16 g_au16SC200AI_GainMode[VI_MAX_PIPE_NUM] = {0};
@@ -949,7 +958,7 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 
 		for (i = 0; i < pstCfg0->snsCfg.u32RegNum; i++) {
 			pstI2c_data[i].bUpdate = CVI_TRUE;
-			pstI2c_data[i].u8DevAddr = sc200ai_i2c_addr;
+			pstI2c_data[i].u8DevAddr = g_aunSC200AI_AddrInfo[ViPipe].s8I2cAddr;
 			pstI2c_data[i].u32AddrByteNum = sc200ai_addr_byte;
 			pstI2c_data[i].u32DataByteNum = sc200ai_data_byte;
 		}
@@ -1104,28 +1113,39 @@ static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 {
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+	SNS_COMBO_DEV_ATTR_S *pstRxAttrSrc = CVI_NULL;
 
 	SC200AI_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	SC200AI_SENSOR_GET_COMBO(ViPipe,pstRxAttrSrc);
+
 	CMOS_CHECK_POINTER(pstSnsState);
 	CMOS_CHECK_POINTER(pstRxAttr);
+	CMOS_CHECK_POINTER(pstRxAttrSrc);
 
-	memcpy(pstRxAttr, &sc200ai_rx_attr, sizeof(*pstRxAttr));
+	memcpy(pstRxAttr, &pstRxAttrSrc, sizeof(*pstRxAttr));
 
 	pstRxAttr->img_size.width = g_astSC200AI_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Width;
 	pstRxAttr->img_size.height = g_astSC200AI_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Height;
 	if (pstSnsState->enWDRMode == WDR_MODE_NONE) {
 		pstRxAttr->mipi_attr.wdr_mode = CVI_MIPI_WDR_MODE_NONE;
 	}
-
+	pstRxAttrSrc = CVI_NULL;
 	return CVI_SUCCESS;
 
 }
 
-static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
+static CVI_S32 sensor_patch_rx_attr(VI_PIPE ViPipe, RX_INIT_ATTR_S *pstRxInitAttr)
 {
-	SNS_COMBO_DEV_ATTR_S *pstRxAttr = &sc200ai_rx_attr;
 	int i;
+	SNS_COMBO_DEV_ATTR_S* pstRxAttr = malloc(sizeof(SNS_COMBO_DEV_ATTR_S));
 
+	if(!g_pastSC200AIComboDevArray[ViPipe]) {
+		pstRxAttr = malloc(sizeof(SNS_COMBO_DEV_ATTR_S));
+	} else {
+		SC200AI_SENSOR_GET_COMBO(ViPipe, pstRxAttr);
+	}
+	memcpy(pstRxAttr, &sc200ai_rx_attr, sizeof(SNS_COMBO_DEV_ATTR_S));
+	SC200AI_SENSOR_SET_COMBO(ViPipe, pstRxAttr);
 	CMOS_CHECK_POINTER(pstRxInitAttr);
 
 	if (pstRxInitAttr->stMclkAttr.bMclkEn)
@@ -1135,6 +1155,7 @@ static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
 		return CVI_SUCCESS;
 
 	pstRxAttr->devno = pstRxInitAttr->MipiDev;
+	pstRxAttr->cif_mode = pstRxInitAttr->MipiMode;
 
 	if (pstRxAttr->input_mode == INPUT_MODE_MIPI) {
 		struct mipi_dev_attr_s *attr = &pstRxAttr->mipi_attr;
@@ -1151,10 +1172,18 @@ static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
 			attr->pn_swap[i] = pstRxInitAttr->as8PNSwap[i];
 		}
 	}
-
+	pstRxAttr = CVI_NULL;
 	return CVI_SUCCESS;
 }
+void sc200ai_exit(VI_PIPE ViPipe)
+{
+	if(g_pastSC200AIComboDevArray[ViPipe]) {
+		free(g_pastSC200AIComboDevArray[ViPipe]);
+		g_pastSC200AIComboDevArray[ViPipe] = CVI_NULL;
+	}
+	sc200ai_i2c_exit(ViPipe);
 
+}
 static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExpFunc)
 {
 	CMOS_CHECK_POINTER(pstSensorExpFunc);
@@ -1177,6 +1206,15 @@ static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExp
 /****************************************************************************
  * callback structure                                                       *
  ****************************************************************************/
+static CVI_VOID sensor_patch_i2c_addr(VI_PIPE ViPipe, CVI_S32 s32I2cAddr)
+{
+	if (SC200AI_I2C_ADDR_IS_VALID(s32I2cAddr))
+		g_aunSC200AI_AddrInfo[ViPipe].s8I2cAddr = s32I2cAddr;
+	else {
+		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C addr input error ,please check [0x%x]\n", s32I2cAddr);
+		g_aunSC200AI_AddrInfo[ViPipe].s8I2cAddr = SC200AI_I2C_ADDR;
+	}
+}
 
 static CVI_S32 sc200ai_set_bus_info(VI_PIPE ViPipe, ISP_SNS_COMMBUS_U unSNSBusInfo)
 {
@@ -1318,7 +1356,7 @@ ISP_SNS_OBJ_S stSnsSC200AI_Obj = {
 	.pfnSetBusInfo          = sc200ai_set_bus_info,
 	.pfnSetInit             = sensor_set_init,
 	.pfnPatchRxAttr		= sensor_patch_rx_attr,
-	.pfnPatchI2cAddr	= CVI_NULL,
+	.pfnPatchI2cAddr	= sensor_patch_i2c_addr,
 	.pfnGetRxAttr		= sensor_rx_attr,
 	.pfnExpSensorCb		= cmos_init_sensor_exp_function,
 	.pfnExpAeCb		= cmos_init_ae_exp_function,

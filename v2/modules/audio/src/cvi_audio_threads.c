@@ -49,25 +49,6 @@ void cvitek_dump_audiodata(char *filename, char *buf, unsigned int len)
 	fclose(fp);
 }
 
-
-static int getSndCardId(char *str)
-{
-	int card = -1;
-	char buffer[640];
-	FILE *fp = fopen("/proc/asound/cards", "r");
-
-	while (fp && fgets(buffer, 640, fp)) {
-		if (strstr(buffer, str)) {
-			card = atoi(buffer);
-			break;
-		}
-		memset(buffer, 0, 640);
-	}
-	if (fp)
-		fclose(fp);
-	return card;
-}
-
 static void audio_mono_2_stereo(short *sInput, short *sOutput, int len)
 {
 	for (int i = 0; i < len; i++) {
@@ -250,12 +231,12 @@ CVI_VOID *AudioPrimaryOutputThread(CVI_VOID *arg)
 		return NULL;
 	}
 
-	pstThreadInfo->card = getSndCardId(SPEAKER_CARD_STRING);
-	if (pstThreadInfo->card < 0) {
-		log_warn("card warn\n");
+	if (pstAoInstance->stThreadInfo.card < 0) {
 		pstThreadInfo->card = 1;
+	} else {
+		pstThreadInfo->card = pstAoInstance->stThreadInfo.card;
 	}
-	pstThreadInfo->pcmHandle = pcm_open(pstThreadInfo->card, 1, PCM_OUT, pstPcmCfg);
+	pstThreadInfo->pcmHandle = pcm_open(pstThreadInfo->card, pstAoInstance->s32DevId, PCM_OUT, pstPcmCfg);
 	if (!pstThreadInfo->pcmHandle) {
 		log_error("open output pcm device failed(%s).\n", pcm_get_error(pstThreadInfo->pcmHandle));
 		return NULL;
@@ -481,13 +462,13 @@ CVI_VOID *AudioPrimaryInputThread(CVI_VOID *arg)
 		return NULL;
 	}
 
-	pstThreadInfo->card = getSndCardId(MIC_CARD_STRING);
-	if (pstThreadInfo->card < 0) {
-		log_warn("card warn\n");
+	if (pstAiInstance->stThreadInfo.card < 0) {
 		pstThreadInfo->card = 0;
+	} else {
+		pstThreadInfo->card = pstAiInstance->stThreadInfo.card;
 	}
 
-	pstThreadInfo->pcmHandle = pcm_open(pstThreadInfo->card, 0, PCM_IN, pstPcmCfg);
+	pstThreadInfo->pcmHandle = pcm_open(pstThreadInfo->card, pstAiInstance->s32DevId, PCM_IN, pstPcmCfg);
 	if (!pstThreadInfo->pcmHandle) {
 		log_error("open input pcm device failed(%s).\n", pcm_get_error(pstThreadInfo->pcmHandle));
 		return NULL;

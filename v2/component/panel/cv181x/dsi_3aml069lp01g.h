@@ -1,8 +1,7 @@
 #ifndef _MIPI_TX_PARAM__3AML069LP01G_H_
 #define _MIPI_TX_PARAM__3AML069LP01G_H_
 
-#include <linux/cvi_mipi_tx.h>
-#include <linux/cvi_comm_mipi_tx.h>
+#include <cvi_comm_mipi_tx.h>
 
 #define _3AML069LP01G_RX_VACT        1024
 #define _3AML069LP01G_RX_VSA         3
@@ -43,7 +42,7 @@ struct combo_dev_cfg_s dev_cfg_3AML069LP01G_600x1024 = {
 	.pixel_clk = PIXEL_CLK(_3AML069LP01G_RX),
 };
 
-const struct hs_settle_s hs_timing_cfg_3AML069LP01G_600x1024 = { .prepare = 6, .zero = 32, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_3AML069LP01G_600x1024 = { .prepare = 6, .zero = 32, .trail = 1 };
 
 static CVI_U8 data_3aml069lp01g_0[] = { 0xee, 0x50 };
 static CVI_U8 data_3aml069lp01g_1[] = { 0xea, 0x85, 0x55 };
@@ -120,7 +119,7 @@ static CVI_U8 data_3aml069lp01g_69[] = { 0x21, 0x10 };
 static CVI_U8 data_3aml069lp01g_70[] = { 0x11 };
 static CVI_U8 data_3aml069lp01g_71[] = { 0x29 };
 #endif
-const struct dsc_instr dsi_init_cmds_3AML069LP01G_600x1024[] = {
+struct dsc_instr dsi_init_cmds_3AML069LP01G_600x1024[] = {
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_3aml069lp01g_0 },
 	{.delay = 0, .data_type = 0x29, .size = 3, .data = data_3aml069lp01g_1 },
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_3aml069lp01g_2 },

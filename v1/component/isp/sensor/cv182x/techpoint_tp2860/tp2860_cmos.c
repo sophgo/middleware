@@ -9,9 +9,9 @@
 #include "cvi_comm_video.h"
 #include <linux/cvi_vip_snsr.h>
 #else
-#include <linux/cvi_type.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/vi_snsr.h>
+#include <cvi_type.h>
+#include <cvi_comm_video.h>
+
 #endif
 #include "cvi_debug.h"
 #include "cvi_comm_sns.h"
@@ -20,7 +20,8 @@
 
 #include "tp2860_cmos_ex.h"
 #include "tp2860_cmos_param.h"
-
+#define TP2860_I2C_ADDR 0x45
+#define TP2860_I2C_ADDR_IS_VALID(addr)	((addr) == TP2860_I2C_ADDR)
 /****************************************************************************
  * global variables                                                         *
  ****************************************************************************/
@@ -29,11 +30,19 @@ ISP_SNS_COMMBUS_U g_auntp2860_BusInfo[VI_MAX_PIPE_NUM] = {
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cDev = -1}
 };
 
+ISP_SNS_COMMADDR_U g_auntp2860_AddrInfo[VI_MAX_PIPE_NUM] = {
+	[0] = { .s8I2cAddr = 0},
+	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
+};
+
 ISP_SNS_STATE_S *g_pasttp2860[VI_MAX_PIPE_NUM] = {CVI_NULL};
+SNS_COMBO_DEV_ATTR_S* g_pasttp2860ComboDevArray[VI_MAX_PIPE_NUM] = {CVI_NULL};
 
 #define TP2860_SENSOR_GET_CTX(dev, pstCtx)   (pstCtx = g_pasttp2860[dev])
 #define tp2860_SENSOR_SET_CTX(dev, pstCtx)   (g_pasttp2860[dev] = pstCtx)
 #define TP2860_SENSOR_RESET_CTX(dev)         (g_pasttp2860[dev] = CVI_NULL)
+#define TP2860_SENSOR_GET_COMBO(dev, pstCtx)   (pstCtx = g_pasttp2860ComboDevArray[dev])
+#define TP2860_SENSOR_SET_COMBO(dev, pstCtx)   (g_pasttp2860ComboDevArray[dev] = pstCtx)
 
 #define TP2860_RES_IS_1080P(w, h)     ((w) <= 1920 && (h) <= 1080)
 #define tp2860_ID 0x2860
@@ -121,25 +130,38 @@ static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 {
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+	SNS_COMBO_DEV_ATTR_S *pstRxAttrSrc = CVI_NULL;
 
 	TP2860_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	TP2860_SENSOR_GET_COMBO(ViPipe, pstRxAttrSrc);
+
 	CMOS_CHECK_POINTER(pstSnsState);
 	CMOS_CHECK_POINTER(pstRxAttr);
+	CMOS_CHECK_POINTER(pstRxAttrSrc);
 
 	if (ViPipe == 0) {
-		memcpy(pstRxAttr, &tp2860_rx_attr, sizeof(*pstRxAttr));
+		memcpy(pstRxAttr, pstRxAttrSrc, sizeof(*pstRxAttr));
 		CVI_TRACE_SNS(CVI_DBG_INFO, "get tp2860_rx_attr\n");
 	}
 
 	pstRxAttr->img_size.width = g_asttp2860_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Width;
 	pstRxAttr->img_size.height = g_asttp2860_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Height;
 
+	pstRxAttrSrc = CVI_NULL;
 	return CVI_SUCCESS;
 }
 
-static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
+static CVI_S32 sensor_patch_rx_attr(VI_PIPE ViPipe, RX_INIT_ATTR_S *pstRxInitAttr)
 {
-	SNS_COMBO_DEV_ATTR_S *pstRxAttr = &tp2860_rx_attr;
+	SNS_COMBO_DEV_ATTR_S* pstRxAttr = CVI_NULL;
+
+	if (!g_pasttp2860ComboDevArray[ViPipe]) {
+		pstRxAttr = malloc(sizeof(SNS_COMBO_DEV_ATTR_S));
+	} else {
+		TP2860_SENSOR_GET_COMBO(ViPipe, pstRxAttr);
+	}
+	memcpy(pstRxAttr, &tp2860_rx_attr, sizeof(SNS_COMBO_DEV_ATTR_S));
+	TP2860_SENSOR_SET_COMBO(ViPipe, pstRxAttr);
 
 	CMOS_CHECK_POINTER(pstRxInitAttr);
 
@@ -150,8 +172,17 @@ static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
 		return CVI_SUCCESS;
 
 	pstRxAttr->devno = pstRxInitAttr->MipiDev;
-
+	pstRxAttr = CVI_NULL;
 	return CVI_SUCCESS;
+}
+
+void tp2860_exit(VI_PIPE ViPipe)
+{
+	if (g_pasttp2860ComboDevArray[ViPipe]) {
+		free(g_pasttp2860ComboDevArray[ViPipe]);
+		g_pasttp2860ComboDevArray[ViPipe] = CVI_NULL;
+	}
+	tp2860_i2c_exit(ViPipe);
 }
 
 static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExpFunc)
@@ -172,6 +203,16 @@ static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExp
 /****************************************************************************
  * callback structure                                                       *
  ****************************************************************************/
+
+static CVI_VOID sensor_patch_i2c_addr(VI_PIPE ViPipe, CVI_S32 s32I2cAddr)
+{
+	if (TP2860_I2C_ADDR_IS_VALID(s32I2cAddr))
+		g_auntp2860_AddrInfo[ViPipe].s8I2cAddr = s32I2cAddr;
+	else {
+		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C addr input error ,please check [0x%x]\n", s32I2cAddr);
+		g_auntp2860_AddrInfo[ViPipe].s8I2cAddr = TP2860_I2C_ADDR;
+	}
+}
 
 static CVI_S32 tp2860_set_bus_info(VI_PIPE ViPipe, ISP_SNS_COMMBUS_U unSNSBusInfo)
 {
@@ -254,7 +295,7 @@ static CVI_S32 sensor_unregister_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, A
 	return CVI_SUCCESS;
 }
 
-ISP_SNS_OBJ_S stSnstp2860_Obj = {
+ISP_SNS_OBJ_S stSnsTP2860_Obj = {
 	.pfnRegisterCallback    = sensor_register_callback,
 	.pfnUnRegisterCallback  = sensor_unregister_callback,
 	.pfnStandby             = CVI_NULL,
@@ -265,7 +306,7 @@ ISP_SNS_OBJ_S stSnstp2860_Obj = {
 	.pfnSetBusInfo          = tp2860_set_bus_info,
 	.pfnSetInit             = CVI_NULL,
 	.pfnPatchRxAttr         = sensor_patch_rx_attr,
-	.pfnPatchI2cAddr        = CVI_NULL,
+	.pfnPatchI2cAddr        = sensor_patch_i2c_addr,
 	.pfnGetRxAttr           = sensor_rx_attr,
 	.pfnExpSensorCb         = cmos_init_sensor_exp_function,
 	.pfnExpAeCb             = CVI_NULL,

@@ -12,8 +12,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include <pthread.h>
 #include <signal.h>
@@ -24,7 +24,7 @@ const CVI_U8 tp2860_i2c_addr = 0x45;        /* I2C slave address of tp2860, SA0=
 const CVI_U32 tp2860_addr_byte = 1;
 const CVI_U32 tp2860_data_byte = 1;
 static int g_fd[VI_MAX_PIPE_NUM] = {[0 ... (VI_MAX_PIPE_NUM - 1)] = -1};
-static pthread_t g_tp2860_thid;
+//static pthread_t g_tp2860_thid;
 
 
 #define SYSFS_GPIO_DIR "/sys/class/gpio"
@@ -169,7 +169,7 @@ int tp2860_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, tp2860_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_auntp2860_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -219,8 +219,7 @@ int tp2860_read_register(VI_PIPE ViPipe, int addr)
 		return 0;
 	}
 
-	// pack read back data
-	data = 0;
+	// pack read back data	data = 0;
 	if (tp2860_data_byte == 2) {
 		data = buf[0] << 8;
 		data += buf[1];
@@ -380,11 +379,4 @@ void tp2860_init(VI_PIPE ViPipe)
 
 }
 
-void tp2860_exit(VI_PIPE ViPipe)
-{
-	if (g_tp2860_thid)
-		pthread_kill(g_tp2860_thid, SIGQUIT);
-
-	tp2860_i2c_exit(ViPipe);
-}
 

@@ -12,9 +12,9 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 
@@ -56,6 +56,7 @@ enum os08b10_wdr2_regs_e {
 	WDR2_HOLD_END,
 	WDR2_LAUNCH_0,
 	WDR2_LAUNCH_1,
+	WDR2_HCG,
 	WDR2_REGS_NUM
 };
 

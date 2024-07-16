@@ -94,6 +94,8 @@ static optionExt long_option_ext[] = {
 		"bind mode"},
 	{{"pixel_format", optional_argument, NULL, 0},	ARG_INT,	  0,   2,
 		"output pixel format. 0: do not specify, 1: NV12, 2: NV21"},
+	{{"circle_send", optional_argument, NULL, 0},	ARG_INT,	  0,   1,
+		"loop read input bitstream send to decode. 0: noy loop, 1: loop"},
 	{{"help",      no_argument, NULL, 'h'},       ARG_STRING, 0,   0,
 		"help"},
 	{{NULL, 0, NULL, 0}, ARG_INT, 0, 0, ""}
@@ -162,7 +164,7 @@ CVI_S32 SAMPLE_VDEC_START(sampleVdec *psvdec)
 	vdecInputCfg *pic = &psvdec->inputCfg;
 	vdecChnCtx *pvdchnCtx;
 	vdecChnInputCfg *pvdcic = NULL;
-	VDEC_THREAD_PARAM_S *pvdtps, *pvdtpg;
+	VDEC_THREAD_PARAM_S *pvdtps;
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	CVI_U32 i;
 
@@ -177,7 +179,6 @@ CVI_S32 SAMPLE_VDEC_START(sampleVdec *psvdec)
 		pvdchnCtx = &psvdec->chnCtx[i];
 		pvdcic = &pic->chnInCfg[i];
 		pvdtps = &pvdchnCtx->stVdecThreadParamSend;
-		pvdtpg = &pvdchnCtx->stVdecThreadParamGet;
 
 		s32Ret = SAMPLE_COMM_VDEC_Start(pvdchnCtx);
 		if (s32Ret != CVI_SUCCESS) {
@@ -230,22 +231,11 @@ CVI_S32 SAMPLE_VDEC_START(sampleVdec *psvdec)
 			}
 		}
 
-		if (pvdtps->bDumpYUV == 2) {
-			pvdtps->s32IntervalTime = 100;
-		}
+		// if (pvdtps->bDumpYUV == 2) {
+		// 	pvdtps->s32IntervalTime = 1000;
+		// }
+
 		SAMPLE_COMM_VDEC_StartSendStream(pvdtps, &pvdchnCtx->vdecThreadSend);
-
-		memset(pvdtpg, 0, sizeof(*pvdtps));
-		memcpy(pvdtpg, pvdtps, sizeof(*pvdtps));
-
-		if (pic->u32BindMode == VDEC_BIND_DISABLE) {
-			if (pvdcic->bDumpYUV == 0) {
-				MD5_Init(&pvdtpg->tMD5Ctx);
-			}
-			if (pvdtpg->enType != PT_JPEG && pvdtpg->enType != PT_MJPEG) {
-				SAMPLE_COMM_VDEC_StartGetPic(pvdtpg, &pvdchnCtx->vdecThreadGet);
-			}
-		}
 	}
 
 	return s32Ret;
@@ -296,6 +286,7 @@ static CVI_S32 vdecInitAttr(
 	psvdattr->enPixelFormat = enPixelFormat;
 	if (enType == PT_JPEG || enType == PT_MJPEG) {
 		psvdattr->stSampleVdecPicture.u32Alpha = 255;
+		psvdattr->enMode = VIDEO_MODE_STREAM;
 	}
 
 	if (enType == PT_JPEG || enType == PT_MJPEG) {
@@ -396,7 +387,6 @@ static CVI_S32 vdecInitVBPool(sampleVdec *psvdec)
 			s32Ret = SAMPLE_COMM_SYS_Init(&stVbConf);
 		}
 
-
 		if (s32Ret != CVI_SUCCESS) {
 			printf("SAMPLE_COMM_SYS_Init, %d\n", s32Ret);
 			return CVI_FAILURE;
@@ -473,11 +463,11 @@ static void initVdecThreadParam(vdecChnCtx *pvdchnCtx, VDEC_THREAD_PARAM_S *pvtp
 	pvtp->enType = psvdattr->enType;
 	pvtp->s32StreamMode = psvdattr->enMode;
 	pvtp->s32ChnId = pvdchnCtx->VdecChn;
-	pvtp->s32IntervalTime = 10000;
+	pvtp->s32IntervalTime = 1000;   // unit: ms
 	pvtp->u64PtsInit = 0;
 	pvtp->u64PtsIncrease = 0;
 	pvtp->eThreadCtrl = THREAD_CTRL_START;
-	pvtp->bCircleSend = CVI_FALSE;
+	pvtp->bCircleSend = pvdcic->u32CircleSend;
 	pvtp->s32MilliSec_in = pvdcic->s32sendstream_timeout; // block mode
 	pvtp->s32MilliSec_out = pvdcic->s32getframe_timeout;
 	pvtp->s32MinBufSize = (psvdattr->u32Width * psvdattr->u32Height * 3) >> 3;
@@ -537,7 +527,7 @@ CVI_VOID SAMPLE_VDEC_STOP(sampleVdec *psvdec)
 	vdecInputCfg *pic = &psvdec->inputCfg;
 	vdecChnCtx *pvdchnCtx;
 	vdecChnInputCfg *pvdcic;
-	VDEC_THREAD_PARAM_S *pvdtps, *pvdtpg;
+	VDEC_THREAD_PARAM_S *pvdtps;
 	CVI_U32 i;
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	SAMPLE_VO_CONFIG_S stVoConfig;
@@ -547,10 +537,14 @@ CVI_VOID SAMPLE_VDEC_STOP(sampleVdec *psvdec)
 		pvdchnCtx = &psvdec->chnCtx[i];
 		pvdcic = &pic->chnInCfg[i];
 		pvdtps = &pvdchnCtx->stVdecThreadParamSend;
-		pvdtpg = &pvdchnCtx->stVdecThreadParamGet;
 
 		SAMPLE_COMM_VDEC_CmdCtrl(pvdtps, &pvdchnCtx->vdecThreadSend);
 		SAMPLE_COMM_VDEC_StopSendStream(pvdtps, &pvdchnCtx->vdecThreadSend);
+
+		if (pvdtps->pDumpFile) {
+			fclose(pvdtps->pDumpFile);
+			pvdtps->pDumpFile = NULL;
+		}
 
 		if (pic->u32BindMode != VDEC_BIND_DISABLE) {
 			// Bind mode - Unbind VPSS & VO
@@ -561,12 +555,11 @@ CVI_VOID SAMPLE_VDEC_STOP(sampleVdec *psvdec)
 
 			SAMPLE_COMM_VDEC_UnBind_VPSS(i, i);
 		} else {
-			if (pvdtpg->enType != PT_JPEG && pvdtpg->enType != PT_MJPEG) {
-				SAMPLE_COMM_VDEC_StopGetPic(pvdtpg, &pvdchnCtx->vdecThreadGet);
+			if (pvdtps->enType != PT_JPEG && pvdtps->enType != PT_MJPEG) {
 				CVI_VDEC_StopRecvStream(i);
 
 				if (pvdcic->bDumpYUV == 0) {
-					outputMD5Sum(pvdtpg);
+					outputMD5Sum(pvdtps);
 				}
 			}
 			CVI_VDEC_ResetChn(i);
@@ -703,6 +696,8 @@ CVI_S32 parseDecArgv(vdecInputCfg *pic, CVI_S32 argc, char **argv)
 				pic->u32BindMode = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "pixel_format")) {
 				pvdcic->s32PixelFormat = arg.ival;
+			} else if (!strcmp(long_options[idx].name, "circle_send")) {
+				pvdcic->u32CircleSend = arg.ival;
 			} else {
 				printf("not exist name = %s\n", long_options[idx].name);
 				printVdecHelp(argv);

@@ -9,7 +9,7 @@
 #ifndef __CVI_REGION_H__
 #define __CVI_REGION_H__
 
-#include <linux/cvi_comm_region.h>
+#include <cvi_comm_region.h>
 
 #ifdef __cplusplus
 #if __cplusplus

@@ -1,8 +1,7 @@
 #ifndef _MIPI_TX_PARAM_HX8399_1080P_H_
 #define _MIPI_TX_PARAM_HX8399_1080P_H_
 
-#include <linux/cvi_mipi_tx.h>
-#include <linux/cvi_comm_mipi_tx.h>
+#include <cvi_comm_mipi_tx.h>
 
 #define HX8399_HACT		1080
 #define HX8399_HSA		115
@@ -36,7 +35,7 @@ struct combo_dev_cfg_s dev_cfg_hx8399_1080x1920 = {
 	.pixel_clk = 166281,
 };
 
-const struct hs_settle_s hs_timing_cfg_hx8399_1080x1920 = { .prepare = 6, .zero = 32, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_hx8399_1080x1920 = { .prepare = 6, .zero = 32, .trail = 1 };
 
 static CVI_U8 data_hx8399_0[] = {
 	0xB9, 0xFF, 0x83, 0x99,
@@ -163,7 +162,7 @@ static CVI_U8 data_hx8399_19[] = {
 	0x29
 };
 
-const struct dsc_instr dsi_init_cmds_hx8399_1080x1920[] = {
+struct dsc_instr dsi_init_cmds_hx8399_1080x1920[] = {
 	{.delay = 0, .data_type = 0x29, .size = 4, .data = data_hx8399_0 },
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_hx8399_1 },
 	{.delay = 0, .data_type = 0x29, .size = 16, .data = data_hx8399_2 },

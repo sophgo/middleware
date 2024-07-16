@@ -1,7 +1,7 @@
 #ifndef __CVI_AUDIO_DL_ADP_H__
 #define __CVI_AUDIO_DL_ADP_H__
 #if defined(__CV181X__) || defined(__CV180X__)
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 #else
 #include "cvi_type.h"
 #endif
