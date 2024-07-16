@@ -9,8 +9,8 @@
 #ifndef __CVI_VB_H__
 #define __CVI_VB_H__
 
-#include <linux/cvi_comm_vb.h>
-#include <linux/cvi_comm_video.h>
+#include <cvi_comm_vb.h>
+#include <cvi_comm_video.h>
 
 #ifdef __cplusplus
 #if __cplusplus

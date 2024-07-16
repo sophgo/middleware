@@ -53,9 +53,7 @@ endif
 	@make -C 3rdparty/
 
 sample: module component
-	@mv modules mod_tmp
 	@make -C sample/
-	@mv mod_tmp modules
 
 self_test: sample
 	@make -C self_test/
@@ -73,7 +71,7 @@ install:
 	@mkdir -p $(DESTDIR)/usr/lib/3rd
 ifneq ($(FLASH_SIZE_SHRINK),y)
 	# copy sample_xxx
-	@cp -f sample/mipi_tx/sample_dsi $(DESTDIR)/usr/bin
+	@cp -f sample/sample_panel/sample_panel $(DESTDIR)/usr/bin
 	@cp -f sample/cipher/sample_cipher $(DESTDIR)/usr/bin
 	@cp -f sample/cvg/sample_cvg $(DESTDIR)/usr/bin
 	@cp -f sample/venc/sample_venc $(DESTDIR)/usr/bin

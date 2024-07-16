@@ -12,9 +12,9 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 
@@ -46,8 +46,11 @@ typedef struct _LT6911_MODE_S {
 extern CVI_U8 lt6911_i2c_addr;
 extern const CVI_U32 lt6911_addr_byte;
 extern const CVI_U32 lt6911_data_byte;
+extern ISP_SNS_COMMBUS_U g_aunLt6911_BusInfo[];
+extern ISP_SNS_COMMADDR_U g_aunLt6911_AddrInfo[];
 extern void lt6911_init(VI_PIPE ViPipe);
 extern void lt6911_exit(VI_PIPE ViPipe);
+extern int  lt6911_i2c_exit(VI_PIPE ViPipe);
 extern void lt6911_standby(VI_PIPE ViPipe);
 extern void lt6911_restart(VI_PIPE ViPipe);
 extern int  lt6911_write(VI_PIPE ViPipe, int addr, int data);

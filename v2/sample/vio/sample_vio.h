@@ -14,9 +14,10 @@ extern "C" {
 #endif
 #endif /* End of #ifdef __cplusplus */
 
-#include <linux/cvi_common.h>
+#include <cvi_common.h>
 
 CVI_S32 SAMPLE_VIO_TWO_DEV_VO(void);
+CVI_S32 SAMPLE_VIO_TWO_SNS_TWO_VO(void);
 CVI_S32 SAMPLE_VIO_VoRotation(void);
 CVI_S32 SAMPLE_VIO_ViVpssAspectRatio(void);
 CVI_S32 SAMPLE_VIO_ViRotation(void);

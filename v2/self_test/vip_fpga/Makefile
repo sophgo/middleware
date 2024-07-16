@@ -8,7 +8,7 @@ include $(MW_PATH)/modules/isp/isp.mk
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I../../sample/common -I$(KERNEL_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I../../sample/common -I$(KERNEL_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 

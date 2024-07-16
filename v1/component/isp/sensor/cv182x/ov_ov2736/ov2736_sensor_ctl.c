@@ -12,8 +12,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "ov2736_cmos_ex.h"

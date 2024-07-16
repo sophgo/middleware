@@ -6,7 +6,7 @@ endif
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) -I./include
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(KERNEL_INC) -I$(VI_INC) -I./include
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 TARGET_A = $(MW_LIB)/libsns_sc4336p.a

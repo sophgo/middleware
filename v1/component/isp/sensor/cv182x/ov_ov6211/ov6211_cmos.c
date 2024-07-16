@@ -9,9 +9,9 @@
 #include "cvi_comm_video.h"
 #include <linux/cvi_vip_snsr.h>
 #else
-#include <linux/cvi_type.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/vi_snsr.h>
+#include <cvi_type.h>
+#include <cvi_comm_video.h>
+
 #endif
 #include "cvi_debug.h"
 #include "cvi_comm_sns.h"
@@ -37,14 +37,22 @@
  ****************************************************************************/
 
 ISP_SNS_STATE_S *g_pastOv6211[VI_MAX_PIPE_NUM] = {CVI_NULL};
+SNS_COMBO_DEV_ATTR_S* g_pastOv6211ComboDevArray[VI_MAX_PIPE_NUM] = {CVI_NULL};
 
 #define OV6211_SENSOR_GET_CTX(dev, pstCtx)   (pstCtx = g_pastOv6211[dev])
 #define OV6211_SENSOR_SET_CTX(dev, pstCtx)   (g_pastOv6211[dev] = pstCtx)
 #define OV6211_SENSOR_RESET_CTX(dev)         (g_pastOv6211[dev] = CVI_NULL)
+#define OV6211_SENSOR_GET_COMBO(dev, pstCtx)   (pstCtx = g_pastOv6211ComboDevArray[dev])
+#define OV6211_SENSOR_SET_COMBO(dev, pstCtx)   (g_pastOv6211ComboDevArray[dev] = pstCtx)
 
 ISP_SNS_COMMBUS_U g_aunOv6211_BusInfo[VI_MAX_PIPE_NUM] = {
 	[0] = { .s8I2cDev = 0},
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cDev = -1}
+};
+
+ISP_SNS_COMMADDR_U g_aunOv6211_AddrInfo[VI_MAX_PIPE_NUM] = {
+	[0] = { .s8I2cAddr = 0},
+	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
 };
 
 CVI_U16 g_au16Ov6211_GainMode[VI_MAX_PIPE_NUM] = {0};
@@ -606,7 +614,7 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 
 		for (i = 0; i < pstCfg0->snsCfg.u32RegNum; i++) {
 			pstI2c_data[i].bUpdate = CVI_TRUE;
-			pstI2c_data[i].u8DevAddr = ov6211_i2c_addr;
+			pstI2c_data[i].u8DevAddr = g_aunOv6211_AddrInfo[ViPipe].s8I2cAddr;
 			pstI2c_data[i].u32AddrByteNum = ov6211_addr_byte;
 			pstI2c_data[i].u32DataByteNum = ov6211_data_byte;
 		}
@@ -733,26 +741,39 @@ static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 {
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+	SNS_COMBO_DEV_ATTR_S *pstRxAttrSrc = CVI_NULL;
 
 	OV6211_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	OV6211_SENSOR_GET_COMBO(ViPipe, pstRxAttrSrc);
+
 	CMOS_CHECK_POINTER(pstSnsState);
 	CMOS_CHECK_POINTER(pstRxAttr);
+	CMOS_CHECK_POINTER(pstRxAttrSrc);
 
-	memcpy(pstRxAttr, &ov6211_rx_attr, sizeof(*pstRxAttr));
+	memcpy(pstRxAttr, &pstRxAttrSrc, sizeof(*pstRxAttr));
 
 	pstRxAttr->img_size.width = g_astOv6211_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Width;
 	pstRxAttr->img_size.height = g_astOv6211_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Height;
 	if (pstSnsState->enWDRMode == WDR_MODE_NONE)
 		pstRxAttr->mipi_attr.wdr_mode = CVI_MIPI_WDR_MODE_NONE;
 
+	pstRxAttrSrc = CVI_NULL;
 	return CVI_SUCCESS;
 
 }
 
-static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
+static CVI_S32 sensor_patch_rx_attr(VI_PIPE ViPipe, RX_INIT_ATTR_S *pstRxInitAttr)
 {
-	SNS_COMBO_DEV_ATTR_S *pstRxAttr = &ov6211_rx_attr;
 	int i;
+	SNS_COMBO_DEV_ATTR_S* pstRxAttr = malloc(sizeof(SNS_COMBO_DEV_ATTR_S));
+
+	if(!g_pastOv6211ComboDevArray[ViPipe]) {
+		pstRxAttr = malloc(sizeof(SNS_COMBO_DEV_ATTR_S));
+	} else {
+		OV6211_SENSOR_GET_COMBO(ViPipe, pstRxAttr);
+	}
+	memcpy(pstRxAttr, &ov6211_rx_attr, sizeof(SNS_COMBO_DEV_ATTR_S));
+	OV6211_SENSOR_SET_COMBO(ViPipe, pstRxAttr);
 
 	CMOS_CHECK_POINTER(pstRxInitAttr);
 
@@ -763,6 +784,7 @@ static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
 		return CVI_SUCCESS;
 
 	pstRxAttr->devno = pstRxInitAttr->MipiDev;
+	pstRxAttr->cif_mode = pstRxInitAttr->MipiMode;
 
 	if (pstRxAttr->input_mode == INPUT_MODE_MIPI) {
 		struct mipi_dev_attr_s *attr = &pstRxAttr->mipi_attr;
@@ -779,8 +801,17 @@ static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
 			attr->pn_swap[i] = pstRxInitAttr->as8PNSwap[i];
 		}
 	}
-
+	pstRxAttr = CVI_NULL;
 	return CVI_SUCCESS;
+}
+
+void ov6211_exit(VI_PIPE ViPipe)
+{
+	if(g_pastOv6211ComboDevArray[ViPipe]) {
+		free(g_pastOv6211ComboDevArray[ViPipe]);
+		g_pastOv6211ComboDevArray[ViPipe] = CVI_NULL;
+	}
+	ov6211_i2c_exit(ViPipe);
 }
 
 static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExpFunc)
@@ -805,10 +836,14 @@ static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExp
 /****************************************************************************
  * callback structure                                                       *
  ****************************************************************************/
-static CVI_VOID sensor_patch_i2c_addr(CVI_S32 s32I2cAddr)
+static CVI_VOID sensor_patch_i2c_addr(VI_PIPE ViPipe, CVI_S32 s32I2cAddr)
 {
 	if (OV6211_I2C_ADDR_IS_VALID(s32I2cAddr))
-		ov6211_i2c_addr = s32I2cAddr;
+		g_aunOv6211_AddrInfo[ViPipe].s8I2cAddr = s32I2cAddr;
+	else {
+		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C addr input error ,please check [0x%x]\n", s32I2cAddr);
+		g_aunOv6211_AddrInfo[ViPipe].s8I2cAddr = OV6211_I2C_ADDR_1;
+	}
 }
 
 static CVI_S32 ov6211_set_bus_info(VI_PIPE ViPipe, ISP_SNS_COMMBUS_U unSNSBusInfo)

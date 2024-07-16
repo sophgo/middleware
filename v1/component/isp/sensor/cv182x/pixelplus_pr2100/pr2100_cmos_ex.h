@@ -12,17 +12,18 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 
 typedef enum _PR2100_MODE_E {
 	PR2100_MODE_NONE,
-	PR2100_MODE_1080P,
-	PR2100_MODE_1080P_2CH,
-	PR2100_MODE_1080P_4CH,
+	PR2100_MODE_1080P25,
+	PR2100_MODE_1080P25_2CH,
+	PR2100_MODE_1080P25_4CH,
+	PR2100_MODE_1080P30_4CH,
 	PR2100_MODE_NUM
 } PR2100_MODE_E;
 

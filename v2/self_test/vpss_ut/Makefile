@@ -8,7 +8,7 @@ include ../self_test.mk
 SDIR = $(PWD)
 #SRCS = $(wildcard $(SDIR)/*.c)
 SRCS := $(SDIR)/vpss_ut.c $(SDIR)/vpss_ut_comm.c $(SDIR)/md5sum.c
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) -I$(SYS_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(KERNEL_INC) -I$(SYS_INC)
 
 SRCS_CLNT := $(SDIR)/vpss_ut_client.c $(SDIR)/vpss_ut_comm.c $(SDIR)/md5sum.c
 OBJS_CLNT = $(SRCS_CLNT:.c=.o)

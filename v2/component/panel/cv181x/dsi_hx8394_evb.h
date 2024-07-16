@@ -1,8 +1,7 @@
 #ifndef _MIPI_TX_PARAM_HX8394_H_
 #define _MIPI_TX_PARAM_HX8394_H_
 
-#include <linux/cvi_mipi_tx.h>
-#include <linux/cvi_comm_mipi_tx.h>
+#include <cvi_comm_mipi_tx.h>
 
 #define FPGA_POTING
 struct combo_dev_cfg_s dev_cfg_hx8394_720x1280 = {
@@ -35,7 +34,7 @@ struct combo_dev_cfg_s dev_cfg_hx8394_720x1280 = {
 	.pixel_clk = 74250,
 };
 
-const struct hs_settle_s hs_timing_cfg_hx8394_720x1280 = { .prepare = 6, .zero = 32, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_hx8394_720x1280 = { .prepare = 6, .zero = 32, .trail = 1 };
 
 static CVI_U8 data_hx8394_0[] = { 0xb9, 0xff, 0x83, 0x94 };
 static CVI_U8 data_hx8394_1[] = {
@@ -99,7 +98,7 @@ static CVI_U8 data_hx8394_19[] = { 0x36, 0x02 };// h-flip
 static CVI_U8 data_hx8394_20[] = { 0x11 };
 static CVI_U8 data_hx8394_21[] = { 0x29 };
 
-const struct dsc_instr dsi_init_cmds_hx8394_720x1280[] = {
+struct dsc_instr dsi_init_cmds_hx8394_720x1280[] = {
 	{.delay = 0, .data_type = 0x29, .size = 4, .data = data_hx8394_0 },
 	{.delay = 0, .data_type = 0x29, .size = 15, .data = data_hx8394_1 },
 	{.delay = 0, .data_type = 0x29, .size = 7, .data = data_hx8394_2 },

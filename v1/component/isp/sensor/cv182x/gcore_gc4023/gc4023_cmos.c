@@ -19,9 +19,9 @@
 #include "cvi_comm_video.h"
 #include "cvi_type.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/cvi_type.h>
+
+#include <cvi_comm_video.h>
+#include <cvi_type.h>
 #endif
 
 #define DIV_0_TO_1(a)   ((0 == (a)) ? 1 : (a))

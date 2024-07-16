@@ -12,14 +12,14 @@
 #include <unistd.h>
 #include "cvi_mipi.h"
 #include "cvi_sns_ctrl.h"
-#include <linux/cvi_defines.h>
-#include <linux/cvi_common.h>
+#include <cvi_defines.h>
+#include <cvi_common.h>
 #include "cvi_awb_comm.h"
 #include "cvi_af_comm.h"
 #include "cvi_comm_isp.h"
 #include "sample_comm.h"
 #include "cvi_isp.h"
-#include "ini.h"
+#include "3rd/ini.h"
 
 #define SNSCFGPATH_SIZE 500
 static CVI_CHAR g_snsCfgPath[SNSCFGPATH_SIZE];
@@ -296,6 +296,7 @@ CVI_S32 SAMPLE_COMM_VI_GetDevAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, VI_DEV_ATTR_
 	case PIXELPLUS_PR2100_2M_25FPS_8BIT:
 	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
 	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
+	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
 	case VIVO_MCS369_2M_30FPS_12BIT:
 	case VIVO_MCS369Q_4M_30FPS_12BIT:
 	case VIVO_MM308M2_2M_25FPS_8BIT:
@@ -442,6 +443,7 @@ CVI_S32 SAMPLE_COMM_VI_GetDevAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, VI_DEV_ATTR_
 	case OV_OV2736_MIPI_2M_30FPS_12BIT_WDR2TO1:
 	case OV_OV2736_MIPI_2M_30FPS_12BIT:
 		pstViDevAttr->enBayerFormat = BAYER_FORMAT_BGRGI;
+		break;
 	default:
 		pstViDevAttr->enBayerFormat = BAYER_FORMAT_BG;
 		break;
@@ -455,6 +457,9 @@ CVI_S32 SAMPLE_COMM_VI_GetDevAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, VI_DEV_ATTR_
 		pstViDevAttr->enWorkMode = VI_WORK_MODE_2Multiplex;
 		break;
 	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
+		pstViDevAttr->enWorkMode = VI_WORK_MODE_4Multiplex;
+		break;
+	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
 		pstViDevAttr->enWorkMode = VI_WORK_MODE_4Multiplex;
 		break;
 	default:
@@ -993,6 +998,7 @@ CVI_S32 SAMPLE_COMM_VI_GetYuvBypassSts(SAMPLE_SNS_TYPE_E enSnsType)
 	case PIXELPLUS_PR2100_2M_25FPS_8BIT:
 	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
 	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
+	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
 	case LONTIUM_MIPI_LT6911_1M_60FPS_8BIT:
 	case LONTIUM_MIPI_LT6911_2M_60FPS_8BIT:
 	case LONTIUM_MIPI_LT6911_8M_60FPS_8BIT:
@@ -1218,9 +1224,13 @@ CVI_S32 SAMPLE_COMM_VI_GetSizeBySensor(SAMPLE_SNS_TYPE_E enMode, PIC_SIZE_E *pen
 	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
 		*penSize = PIC_7688x1124;
 		break;
+	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
+		*penSize = PIC_7688x1124;
+		break;
 #else
 	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
 	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
+	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
 	case TECHPOINT_TP2860_MIPI_2M_25FPS_8BIT:
 		*penSize = PIC_1080P;
 		break;
@@ -1680,6 +1690,7 @@ static const char *snsr_type_name[SAMPLE_SNS_TYPE_BUTT] = {
 	"PIXELPLUS_PR2100_2M_25FPS_8BIT",
 	"PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT",
 	"PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT",
+	"PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT",
 	"SMS_SC035GS_MIPI_480P_120FPS_12BIT",
 	"SMS_SC035GS_1L_MIPI_480P_120FPS_10BIT",
 	"SMS_SC035HGS_MIPI_480P_120FPS_12BIT",

@@ -11,8 +11,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "lt6911_cmos_ex.h"
@@ -42,7 +42,7 @@ int lt6911_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, lt6911_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_aunLt6911_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -207,9 +207,6 @@ int  lt6911_probe(VI_PIPE ViPipe)
 void lt6911_init(VI_PIPE ViPipe)
 {
 	lt6911_i2c_init(ViPipe);
+	usleep(1500 * 1000);
 }
 
-void lt6911_exit(VI_PIPE ViPipe)
-{
-	lt6911_i2c_exit(ViPipe);
-}

@@ -27,7 +27,7 @@ else ifeq ($(CHIP_ARCH), $(filter $(CHIP_ARCH), CV180X CV181X CV186X))
 	SRCS := $(filter-out $(SDIR)/vpss_test_1822.c, $(SRCS))
 	INCS = -I$(ISP_PATH)/isp_algo/inc -I$(ISP_PATH)/isp/src
 endif
-INCS += -I$(MW_INC) -I$(ISP_INC) -I$(COMM_INC) -I$(ISP_PATH)/include -I$(ISP_PATH)/isp/inc -I$(ISP_PATH)/isp_test -I$(KERNEL_INC) -I$(ISP_PATH) -I$(ISP_PATH)/../algo -I../../sample/venc/include
+INCS += -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(COMM_INC) -I$(ISP_PATH)/include -I$(ISP_PATH)/isp/inc -I$(ISP_PATH)/isp_test -I$(KERNEL_INC) -I$(ISP_PATH) -I$(ISP_PATH)/../algo -I../../sample/venc/include
 INCS += -I$(ISP_PATH)/../common/clog
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)

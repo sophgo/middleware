@@ -91,8 +91,10 @@ CVI_S32 CVI_AI_Init(void)
 
 	log_debug("cviaudio version[%s]\n", _VERSION_TAG_);
 	//init the variable
-	for (i = 0 ; i < CVI_MAX_AI_DEVICE_ID_NUM ; i++)
+	for (i = 0 ; i < CVI_MAX_AI_DEVICE_ID_NUM ; i++) {
 		memset(&gstAiInstance[i], 0, sizeof(ST_AI_INSTANCE));
+		gstAiInstance[i].stThreadInfo.card = -1;
+	}
 
 #ifdef CVIAUDIO_MW_STR_MODE
 	memset(&gstAudStr, 0, sizeof(ST_CVIAUDIO_MW_STR_MODE));
@@ -206,6 +208,21 @@ CVI_S32 CVI_AI_GetPubAttr(AUDIO_DEV AiDevId, AIO_ATTR_S *pstAttr)
 	return CVI_SUCCESS;
 }
 
+CVI_S32 CVI_AI_SetCard(AUDIO_DEV AiDevId, CVI_S32 AiCardId)
+{
+	if (CHECK_AI_DEVID_VALID(AiDevId)) {
+		log_error("AiDevId:%d\n", AiDevId);
+		return CVI_ERR_AI_INVALID_DEVID;
+	}
+	if (CHECK_AI_CARD_VALID(AiCardId)) {
+		log_error("AiCardId:%d\n", AiCardId);
+		return CVI_ERR_AI_INVALID_CARDID;
+	}
+	gstAiInstance[AiDevId].stThreadInfo.card = AiCardId;
+
+	return 0;
+}
+
 CVI_S32 CVI_AI_Enable(AUDIO_DEV AiDevId)
 {
 #ifdef RPC_MULTI_PROCESS_AUDIO
@@ -239,6 +256,7 @@ CVI_S32 CVI_AI_Enable(AUDIO_DEV AiDevId)
 		pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		pthread_attr_setschedparam(&attr, &param);
 		pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+		_ain_instatnce->s32DevId = AiDevId;
 		pthread_create(&_ain_instatnce->AinThreadId,
 			       &attr,
 			       (CVI_VOID * (*)(CVI_VOID *))AudioPrimaryInputThread,
@@ -246,7 +264,6 @@ CVI_S32 CVI_AI_Enable(AUDIO_DEV AiDevId)
 
 		_ain_instatnce->bThreadExist = CVI_TRUE;
 		_ain_instatnce->bEnableAI = CVI_TRUE;
-		_ain_instatnce->s32DevId = AiDevId;
 		log_debug("AiDev:%d.--->success\n", AiDevId);
 	}
 	return CVI_SUCCESS;

@@ -9,7 +9,7 @@ include ../sample.mk
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(SYS_INC) -I$(KERNEL_INC) $(COMM_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(SYS_INC) -I$(KERNEL_INC) $(COMM_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 

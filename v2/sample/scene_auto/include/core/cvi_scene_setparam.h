@@ -1,12 +1,7 @@
 #ifndef __CVI_SCENE_SETPARAM_H__
 #define __CVI_SCENE_SETPARAM_H__
 
-#if defined(ARCH_CV183X) || defined(ARCH_CV182X)
 #include "cvi_common.h"
-#elif defined(__CV181X__) || defined(__CV180X__) || defined(__CV186X__)
-#include <linux/cvi_common.h>
-#endif // SOCs
-
 #include "cvi_comm_isp.h"
 
 #ifdef __cplusplus

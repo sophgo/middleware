@@ -94,8 +94,4 @@ void dpu_get_fgs_status(CVI_S32 fd)
 {
 	ioctl(fd, CVI_DPU_GET_FGS_STATUS,NULL);
 }
-void dpu_reset(CVI_S32 fd)
-{
-	ioctl(fd, CVI_DPU_RESET,NULL);
-}
 

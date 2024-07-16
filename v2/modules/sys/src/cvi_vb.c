@@ -63,7 +63,7 @@ VB_BLK CVI_VB_GetBlockwithID(VB_POOL Pool, CVI_U32 u32BlkSize, MOD_ID_E modId)
 VB_BLK CVI_VB_GetBlock(VB_POOL Pool, CVI_U32 u32BlkSize)
 {
 	CVI_S32 s32Ret, fd;
-	struct cvi_vb_blk_cfg cfg;
+	struct vb_blk_cfg cfg;
 
 	fd = get_base_fd();
 	if (fd == -1) {
@@ -108,7 +108,7 @@ CVI_S32 CVI_VB_ReleaseBlock(VB_BLK Block)
 VB_BLK CVI_VB_PhysAddr2Handle(CVI_U64 u64PhyAddr)
 {
 	CVI_S32 s32Ret, fd;
-	struct cvi_vb_blk_info blk_info;
+	struct vb_blk_info blk_info;
 
 	fd = get_base_fd();
 	if (fd == -1) {
@@ -129,7 +129,7 @@ VB_BLK CVI_VB_PhysAddr2Handle(CVI_U64 u64PhyAddr)
 CVI_U64 CVI_VB_Handle2PhysAddr(VB_BLK Block)
 {
 	CVI_S32 s32Ret, fd;
-	struct cvi_vb_blk_info blk_info;
+	struct vb_blk_info blk_info;
 
 	fd = get_base_fd();
 	if (fd == -1) {
@@ -150,7 +150,7 @@ CVI_U64 CVI_VB_Handle2PhysAddr(VB_BLK Block)
 VB_POOL CVI_VB_Handle2PoolId(VB_BLK Block)
 {
 	CVI_S32 s32Ret, fd;
-	struct cvi_vb_blk_info blk_info;
+	struct vb_blk_info blk_info;
 
 	fd = get_base_fd();
 	if (fd == -1) {
@@ -171,7 +171,7 @@ VB_POOL CVI_VB_Handle2PoolId(VB_BLK Block)
 CVI_S32 CVI_VB_InquireUserCnt(VB_BLK Block, CVI_U32 *pCnt)
 {
 	CVI_S32 s32Ret, fd;
-	struct cvi_vb_blk_info blk_info;
+	struct vb_blk_info blk_info;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VB, pCnt);
 	fd = get_base_fd();
@@ -244,7 +244,7 @@ CVI_S32 CVI_VB_Exit(void)
 VB_POOL CVI_VB_CreatePool(VB_POOL_CONFIG_S *pstVbPoolCfg)
 {
 	CVI_S32 s32Ret, fd;
-	struct cvi_vb_pool_cfg cfg;
+	struct vb_pool_cfg cfg;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VB, pstVbPoolCfg);
 	fd = get_base_fd();
@@ -257,7 +257,7 @@ VB_POOL CVI_VB_CreatePool(VB_POOL_CONFIG_S *pstVbPoolCfg)
 	cfg.blk_size = pstVbPoolCfg->u32BlkSize;
 	cfg.blk_cnt = pstVbPoolCfg->u32BlkCnt;
 	cfg.remap_mode = pstVbPoolCfg->enRemapMode;
-	strncpy(cfg.pool_name, pstVbPoolCfg->acName, VB_POOL_NAME_LEN - 1);
+	strncpy((char *)cfg.pool_name, pstVbPoolCfg->acName, VB_POOL_NAME_LEN - 1);
 
 	s32Ret = vb_ioctl_create_pool(fd, &cfg);
 	if (s32Ret != CVI_SUCCESS) {
@@ -291,7 +291,7 @@ CVI_S32 CVI_VB_DestroyPool(VB_POOL Pool)
 CVI_S32 CVI_VB_SetConfig(const VB_CONFIG_S *pstVbConfig)
 {
 	CVI_S32 s32Ret, fd;
-	struct cvi_vb_cfg cfg;
+	struct vb_cfg cfg;
 	CVI_U32 i;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VB, pstVbConfig);
@@ -314,7 +314,7 @@ CVI_S32 CVI_VB_SetConfig(const VB_CONFIG_S *pstVbConfig)
 		cfg.comm_pool[i].blk_size = pstVbConfig->astCommPool[i].u32BlkSize;
 		cfg.comm_pool[i].blk_cnt = pstVbConfig->astCommPool[i].u32BlkCnt;
 		cfg.comm_pool[i].remap_mode = pstVbConfig->astCommPool[i].enRemapMode;
-		strncpy(cfg.comm_pool[i].pool_name,
+		strncpy((char *)cfg.comm_pool[i].pool_name,
 			pstVbConfig->astCommPool[i].acName, VB_POOL_NAME_LEN - 1);
 	}
 	s32Ret = vb_ioctl_set_config(fd, &cfg);
@@ -328,7 +328,7 @@ CVI_S32 CVI_VB_SetConfig(const VB_CONFIG_S *pstVbConfig)
 CVI_S32 CVI_VB_GetConfig(VB_CONFIG_S *pstVbConfig)
 {
 	CVI_S32 s32Ret, fd;
-	struct cvi_vb_cfg cfg;
+	struct vb_cfg cfg;
 	CVI_U32 i;
 
 	MOD_CHECK_NULL_PTR(CVI_ID_VB, pstVbConfig);
@@ -350,7 +350,7 @@ CVI_S32 CVI_VB_GetConfig(VB_CONFIG_S *pstVbConfig)
 		pstVbConfig->astCommPool[i].u32BlkSize = cfg.comm_pool[i].blk_size;
 		pstVbConfig->astCommPool[i].u32BlkCnt = cfg.comm_pool[i].blk_cnt;
 		pstVbConfig->astCommPool[i].enRemapMode = cfg.comm_pool[i].remap_mode;
-		strncpy(pstVbConfig->astCommPool[i].acName, cfg.comm_pool[i].pool_name,
+		strncpy(pstVbConfig->astCommPool[i].acName, (char *)cfg.comm_pool[i].pool_name,
 			MAX_VB_POOL_NAME_LEN - 1);
 	}
 	return CVI_SUCCESS;
@@ -364,7 +364,7 @@ CVI_S32 CVI_VB_GetConfig(VB_CONFIG_S *pstVbConfig)
 CVI_S32 CVI_VB_MmapPool(VB_POOL Pool)
 {
 	CVI_S32 s32Ret, fd;
-	struct cvi_vb_pool_cfg cfg;
+	struct vb_pool_cfg cfg;
 	VB_POOL_S *pstVbPool = NULL;
 	void *vaddr;
 

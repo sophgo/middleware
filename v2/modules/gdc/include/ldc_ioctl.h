@@ -3,7 +3,7 @@
 
 #include <sys/ioctl.h>
 
-#include <linux/ldc_uapi.h>
+#include <ldc_uapi.h>
 
 /* Configured from user  */
 CVI_S32 gdc_init(CVI_S32 fd);

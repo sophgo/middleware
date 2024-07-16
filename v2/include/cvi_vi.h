@@ -10,9 +10,9 @@
 #define __CVI_VI_H__
 
 #include <stdio.h>
-#include <linux/cvi_comm_vi.h>
-#include <linux/cvi_comm_gdc.h>
-#include <linux/cvi_comm_vb.h>
+#include <cvi_comm_vi.h>
+#include <cvi_comm_gdc.h>
+#include <cvi_comm_vb.h>
 
 #ifdef __cplusplus
 #if __cplusplus

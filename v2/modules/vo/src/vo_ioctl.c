@@ -10,84 +10,43 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 
-#include <linux/cvi_common.h>
-#include <linux/cvi_comm_vo.h>
-#include <linux/vo_uapi.h>
+#include <cvi_comm_vo.h>
+#include "vo_uapi.h"
 #include "vo_ioctl.h"
 
-int vo_set_pattern(int fd, enum cvi_vip_pattern pattern, unsigned int vodev)
+int vo_set_pattern(int fd, VO_PATTERN_MODE pattern, unsigned int vodev)
 {
 	VO_S_CTRL_RESERVE_VALUE(fd, pattern, vodev, VO_IOCTL_PATTERN);
 }
 
-int vo_set_mode(int fd, int mode, unsigned int vodev)
+int vo_set_frame_bgcolor(int fd, void *rgb, unsigned int vodev)
 {
-	VO_S_CTRL_RESERVE_VALUE(fd, mode, vodev, VO_IOCTL_ONLINE);
+	VO_S_CTRL_RESERVE_PTR(fd, rgb, vodev, VO_IOCTL_FRAME_BGCOLOR);
 }
 
-int vo_set_frame_bgcolor(int fd, void *rgb, unsigned int volayer)
+int vo_set_window_bgcolor(int fd, void *rgb, unsigned int vodev)
 {
-	VO_S_CTRL_RESERVE_PTR(fd, rgb, volayer, VO_IOCTL_FRAME_BGCOLOR);
+	VO_S_CTRL_RESERVE_PTR(fd, rgb, vodev, VO_IOCTL_WINDOW_BGCOLOR);
 }
 
-int vo_set_window_bgcolor(int fd, void *rgb, unsigned int volayer)
+int vo_enable_window_bgcolor(int fd, int enable, unsigned int vodev)
 {
-	VO_S_CTRL_RESERVE_PTR(fd, rgb, volayer, VO_IOCTL_WINDOW_BGCOLOR);
+	VO_S_CTRL_RESERVE_VALUE(fd, enable, vodev, VO_IOCTL_ENABLE_WIN_BGCOLOR);
 }
 
-int vo_set_intf(int fd, struct cvi_disp_intf_cfg *cfg, unsigned int vodev)
-{
-	VO_S_CTRL_RESERVE_PTR(fd, cfg, vodev, VO_IOCTL_INTF);
-}
-
-int vo_enable_window_bgcolor(int fd, int enable, unsigned int volayer)
-{
-	VO_S_CTRL_RESERVE_VALUE(fd, enable, volayer, VO_IOCTL_ENABLE_WIN_BGCOLOR);
-}
-
-int vo_set_align(int fd, int align, unsigned int volayer)
-{
-	VO_S_CTRL_RESERVE_VALUE(fd, align, volayer, VO_IOCTL_SET_ALIGN);
-}
-
-int vo_set_rgn(int fd, struct cvi_rgn_cfg *cfg, unsigned int vodev)
-{
-	VO_S_CTRL_RESERVE_PTR(fd, cfg, vodev, VO_IOCTL_SET_RGN);
-}
-
-int vo_set_csc(int fd, struct cvi_csc_cfg *cfg, unsigned int volayer)
+int vo_set_csc(int fd, struct disp_csc_matrix *cfg, unsigned int volayer)
 {
 	VO_S_CTRL_RESERVE_PTR(fd, cfg, volayer, VO_IOCTL_SET_CUSTOM_CSC);
 }
 
-int vo_set_clk(int fd, CVI_U32 clk_freq, unsigned int vodev)
+int vo_get_videolayer_size(int fd, SIZE_S *vsize, unsigned int vodev)
 {
-	VO_S_CTRL_RESERVE_VALUE(fd, clk_freq, vodev, VO_IOCTL_SET_CLK);
-}
-
-int vo_set_i80_sw_mode(int fd, CVI_U32 enable)
-{
-	VO_S_CTRL_VALUE(fd, enable, VO_IOCTL_I80_SW_MODE);
-}
-
-int vo_send_i80_cmd(int fd, CVI_U32 cmd)
-{
-	VO_S_CTRL_VALUE(fd, cmd, VO_IOCTL_I80_CMD);
-}
-
-int vo_get_videolayer_size(int fd, SIZE_S *vsize, unsigned int volayer)
-{
-	VO_G_CTRL_RESERVE_PTR(fd, vsize, volayer, VO_IOCTL_GET_VLAYER_SIZE);
+	VO_G_CTRL_RESERVE_PTR(fd, vsize, vodev, VO_IOCTL_GET_VLAYER_SIZE);
 }
 
 int vo_get_intf_type(int fd, CVI_U32 *intf, unsigned int vodev)
 {
 	VO_G_CTRL_RESERVE_PTR(fd, intf, vodev, VO_IOCTL_GET_INTF_TYPE);
-}
-
-int vo_get_panel_status(int fd, struct vo_panel_status_cfg *cfg)
-{
-	VO_G_CTRL_RESERVE_PTR(fd, cfg, cfg->VoLayer, VO_IOCTL_GET_PANEL_STATUS);
 }
 
 int vo_set_gamma_ctrl(int fd, VO_GAMMA_INFO_S *gamma_attr, unsigned int vodev)
@@ -100,14 +59,14 @@ int vo_get_gamma_ctrl(int fd, VO_GAMMA_INFO_S *gamma_attr, unsigned int vodev)
 	VO_G_CTRL_RESERVE_PTR(fd, gamma_attr, vodev, VO_IOCTL_GAMMA_LUT_READ);
 }
 
-int vo_set_tgt_compose(int fd, struct vo_rect *area, unsigned int volayer)
+int vo_set_tgt_compose(int fd, struct vo_rect *area, unsigned int vodev)
 {
-	VO_S_CTRL_RESERVE_PTR(fd, area, volayer, VO_IOCTL_SEL_TGT_COMPOSE);
+	VO_S_CTRL_RESERVE_PTR(fd, area, vodev, VO_IOCTL_SEL_TGT_COMPOSE);
 }
 
-int vo_set_tgt_crop(int fd, struct vo_rect *area, unsigned int volayer)
+int vo_set_tgt_crop(int fd, struct vo_rect *area, unsigned int vodev)
 {
-	VO_S_CTRL_RESERVE_PTR(fd, area, volayer, VO_IOCTL_SEL_TGT_CROP);
+	VO_S_CTRL_RESERVE_PTR(fd, area, vodev, VO_IOCTL_SEL_TGT_CROP);
 }
 
 int vo_set_dv_timings(int fd, struct vo_dv_timings *timings, unsigned int vodev)
@@ -130,11 +89,6 @@ int vo_set_start_streaming(int fd, unsigned int vodev)
 	VO_S_CTRL_RESERVE_VALUE(fd, 0, vodev, VO_IOCTL_START_STREAMING);
 }
 
-int vo_enq_buf(int fd, struct vo_buffer *buf)
-{
-	VO_S_CTRL_PTR(fd, buf, VO_IOCTL_ENQ_BUF);
-}
-
 //vo sdk API list
 int vo_sdk_clearchnbuf(int fd, struct vo_clear_chn_buf_cfg *cfg)
 {
@@ -149,7 +103,6 @@ int vo_sdk_send_frame(int fd, struct vo_snd_frm_cfg *cfg)
 int vo_sdk_get_panelstatue(int fd, struct vo_panel_status_cfg *cfg)
 {
 	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_GET_PANELSTATUE);
-
 }
 
 int vo_sdk_get_pubattr(int fd, struct vo_pub_attr_cfg *cfg)
@@ -172,14 +125,14 @@ int vo_sdk_get_lvdsparam(int fd, struct vo_lvds_param_cfg *cfg)
 	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_GET_LVDSPARAM);
 }
 
-int vo_sdk_set_I80param(int fd, struct vo_I80_param_cfg *cfg)
+int vo_sdk_set_btparam(int fd, struct vo_bt_param_cfg *cfg)
 {
-	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_SET_I80PARAM);
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_SET_BTPARAM);
 }
 
-int vo_sdk_get_I80param(int fd, struct vo_I80_param_cfg *cfg)
+int vo_sdk_get_btparam(int fd, struct vo_bt_param_cfg *cfg)
 {
-	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_GET_I80PARAM);
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_GET_BTPARAM);
 }
 
 int vo_sdk_set_hdmiparam(int fd, struct vo_hdmi_param_cfg *cfg)

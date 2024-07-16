@@ -9,9 +9,9 @@
 #include "cvi_comm_video.h"
 #include <linux/cvi_vip_snsr.h>
 #else
-#include <linux/cvi_type.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/vi_snsr.h>
+#include <cvi_type.h>
+#include <cvi_comm_video.h>
+
 #endif
 #include "cvi_debug.h"
 #include "cvi_comm_sns.h"
@@ -88,18 +88,18 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 
 	u8SensorImageMode = pstSnsState->u8ImgMode;
 
-	if (pstSensorImageMode->f32Fps <= 30) {
+	if (pstSensorImageMode->f32Fps <= 25) {
 		if (PR2100_RES_IS_2M(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height)) {
 			switch (g_au16Pr2100_BdgMuxMode[ViPipe]) {
 			case SNS_BDG_MUX_NONE:
-				u8SensorImageMode = PR2100_MODE_1080P;
+				u8SensorImageMode = PR2100_MODE_1080P25;
 				break;
 			case SNS_BDG_MUX_2:
-				u8SensorImageMode = PR2100_MODE_1080P_2CH;
+				u8SensorImageMode = PR2100_MODE_1080P25_2CH;
 				break;
 			case SNS_BDG_MUX_3:
 			case SNS_BDG_MUX_4:
-				u8SensorImageMode = PR2100_MODE_1080P_4CH;
+				u8SensorImageMode = PR2100_MODE_1080P25_4CH;
 				break;
 			}
 		} else {
@@ -109,6 +109,17 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 				pstSensorImageMode->f32Fps,
 				pstSnsState->enWDRMode);
 			return CVI_FAILURE;
+		}
+	} else if (pstSensorImageMode->f32Fps <= 30) {
+		if (PR2100_RES_IS_2M(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height)) {
+			switch (g_au16Pr2100_BdgMuxMode[ViPipe]) {
+			case SNS_BDG_MUX_NONE:
+			case SNS_BDG_MUX_2:
+			case SNS_BDG_MUX_3:
+			case SNS_BDG_MUX_4:
+				u8SensorImageMode = PR2100_MODE_1080P30_4CH;
+				break;
+			}
 		}
 	}
 
@@ -130,7 +141,7 @@ static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 	CMOS_CHECK_POINTER_VOID(pstSnsState);
 
 	pstSnsState->bInit = CVI_FALSE;
-	pstSnsState->u8ImgMode = PR2100_MODE_1080P;
+	pstSnsState->u8ImgMode = PR2100_MODE_1080P25;
 	pstSnsState->enWDRMode = WDR_MODE_NONE;
 }
 
@@ -151,7 +162,7 @@ static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 	pstRxAttr->img_size.width = g_astPr2100_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Width;
 	pstRxAttr->img_size.height = g_astPr2100_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Height;
 
-	if (pstSnsState->u8ImgMode == PR2100_MODE_1080P) {
+	if (pstSnsState->u8ImgMode == PR2100_MODE_1080P25) {
 		pstRxAttr->mac_clk = RX_MAC_CLK_400M;
 		pstRxAttr->mipi_attr.wdr_mode = CVI_MIPI_WDR_MODE_NONE;
 		pstRxAttr->mipi_attr.demux.demux_en = 0;
@@ -213,7 +224,10 @@ void pr2100_exit(VI_PIPE ViPipe)
 	}
 	pr2100_i2c_exit(ViPipe);
 
-	if (g_pastPr2100[ViPipe]->u8ImgMode == PR2100_MODE_1080P_4CH)
+	if (g_pastPr2100[ViPipe]->u8ImgMode == PR2100_MODE_1080P25_4CH)
+		pr2100_i2c_exit(slave_pipe);
+
+	if (g_pastPr2100[ViPipe]->u8ImgMode == PR2100_MODE_1080P30_4CH)
 		pr2100_i2c_exit(slave_pipe);
 }
 

@@ -3,7 +3,7 @@
 #include <iostream>
 #include "opencv2/opencv.hpp"
 
-#include <linux/cvi_comm_gdc.h>
+#include <cvi_comm_gdc.h>
 
 using namespace std;
 using namespace cv;

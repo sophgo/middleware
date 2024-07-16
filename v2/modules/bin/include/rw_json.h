@@ -1,9 +1,9 @@
 #ifndef _RW_JSON_H
 #define _RW_JSON_H
 
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 #include "cvi_bin.h"
-#include <linux/cvi_common.h>
+#include <cvi_common.h>
 
 
 typedef CVI_S32 (*pfn_cvi_bin_getbinsize)(enum CVI_BIN_SECTION_ID id, CVI_U32 *size);

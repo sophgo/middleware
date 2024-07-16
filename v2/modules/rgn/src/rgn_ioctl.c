@@ -12,10 +12,10 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 
-#include <linux/cvi_comm_video.h>
+#include <cvi_comm_video.h>
 #include "rgn_ioctl.h"
 
-#include <linux/rgn_uapi.h>
+#include "rgn_uapi.h"
 
 static inline CVI_S32 S_CTRL_PTR(int _fd, void *_cfg, int _ioctl, CVI_U32 _handle)
 {

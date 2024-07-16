@@ -18,11 +18,8 @@
 extern "C" {
 #endif
 #endif
-#if defined(__CV181X__) || defined(__CV180X__) || defined(__CV186X__)
-#include <linux/cvi_type.h>
-#else
+
 #include "cvi_type.h"
-#endif
 /********************************Macro Definition********************************/
 /** \addtogroup      AACENC */
 /** @{ */  /** <!-- [AACENC] */

@@ -11,8 +11,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "f37p_cmos_ex.h"
@@ -43,7 +43,7 @@ int f37p_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, f37p_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_aunF37P_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -221,11 +221,6 @@ void f37p_init(VI_PIPE ViPipe)
 	f37p_linear_1080p30_init(ViPipe);
 
 	g_pastF37P[ViPipe]->bInit = CVI_TRUE;
-}
-
-void f37p_exit(VI_PIPE ViPipe)
-{
-	f37p_i2c_exit(ViPipe);
 }
 
 /* 1080P30 and 1080P25 */

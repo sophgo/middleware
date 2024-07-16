@@ -12,9 +12,9 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "os08b10_cmos_ex.h"
@@ -50,7 +50,7 @@ static const OS08B10_MODE_S g_astos08b10_mode[OS08B10_MODE_NUM] = {
 		},
 		.stAgain[0] = {
 			.u32Min = 1024,
-			.u32Max = 67900,
+			.u32Max = 65800,
 			.u32Def = 1024,
 			.u32Step = 1,
 		},
@@ -105,25 +105,25 @@ static const OS08B10_MODE_S g_astos08b10_mode[OS08B10_MODE_NUM] = {
 		.u32VEnd = 0x5ff,
 		.stExp[0] = {
 			.u16Min = 2,
-			.u16Max = 64,
-			.u16Def = 64,
+			.u16Max = 84,
+			.u16Def = 84,
 			.u16Step = 1,
 		},
 		.stExp[1] = {
 			.u16Min = 2,
-			.u16Max = 0x0453 - 4 - 64,
+			.u16Max = 0x0453 - 4 - 84,
 			.u16Def = 320,
 			.u16Step = 1,
 		},
 		.stAgain[0] = {
 			.u32Min = 1024,
-			.u32Max = 67900,
+			.u32Max = 65800,
 			.u32Def = 1024,
 			.u32Step = 1,
 		},
 		.stAgain[1] = {
 			.u32Min = 1024,
-			.u32Max = 67900,
+			.u32Max = 65800,
 			.u32Def = 1024,
 			.u32Step = 1,
 		},

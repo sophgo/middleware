@@ -12,11 +12,11 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 
-#include <linux/cvi_comm_video.h>
-#include <linux/cvi_comm_vo.h>
+#include <cvi_comm_video.h>
+#include <cvi_comm_vo.h>
 #include "vi_ioctl.h"
 
-#include <linux/vi_uapi.h>
+#include <vi_uapi.h>
 
 #define S_CTRL_VALUE(_fd, _cfg, _ioctl)\
 	do {\

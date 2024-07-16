@@ -9,7 +9,7 @@ include $(MW_PATH)/modules/isp/isp.mk
 PANEL_INC = ../../component/panel/$(shell echo $(CHIP_ARCH) | tr A-Z a-z)
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I../../sample/common -I../../sample/mipi_tx -I$(KERNEL_INC) -I$(PANEL_INC) -I$(SYS_INC)
+INCS = -I$(MW_INC) -I$(ISP_INC) -I../../sample/common -I../../sample/sample_panel -I$(KERNEL_INC) -I$(PANEL_INC) -I$(SYS_INC)
 INCS += -I../../modules/vo/include
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
@@ -65,7 +65,7 @@ $(SDIR)/%.o: $(SDIR)/%.c
 $(TARGET) : $(COMM_OBJ) $(OBJS) $(ISP_OBJ) $(MW_LIB)/libsys.a
 	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(MW_LIB)/libsys.a -Wl,--end-group $(ELFFLAGS) $(ldflags-y)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
-	@cp ../../sample/mipi_tx/sample_dsi ../auto_test/
+	@cp ../../sample/sample_panel/sample_panel ../auto_test/
 	@cp $(TARGET) ../auto_test/
 
 .PHONY : clean

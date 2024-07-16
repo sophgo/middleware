@@ -8,7 +8,7 @@ include ../../modules/isp/isp.mk
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(MW_INC) -I$(ISP_INC) -I../../sample/common -I$(KERNEL_INC) -I../../3rdparty/opencv/include
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I../../sample/common -I$(KERNEL_INC) -I../../3rdparty/opencv/include
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 CXX_SRCS = $(wildcard $(SDIR)/*.cpp)

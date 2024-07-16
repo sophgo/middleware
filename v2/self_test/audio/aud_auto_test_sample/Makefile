@@ -17,7 +17,7 @@ COMMON_DIR := $(MW_PATH)/sample/common
 COMM_INC := $(COMMON_DIR)
 SDIR = $(PWD)
 #SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -I$(PWD)/aac/ -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) -I ./include -I$(COMM_INC)
+INCS = -I$(PWD)/aac/ -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(KERNEL_INC) -I ./include -I$(COMM_INC)
 #OBJS = $(SRCS:.c=.o)
 #DEPS = $(SRCS:.c=.d)
 DEFS += -DSUPPORT_EXTERNAL_AAC

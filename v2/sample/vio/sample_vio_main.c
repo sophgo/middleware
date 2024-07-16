@@ -13,7 +13,7 @@
 #include "sample_comm.h"
 #include "sample_vio.h"
 #include "cvi_sys.h"
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 
 void SAMPLE_VIO_HandleSig(CVI_S32 signo)
 {
@@ -38,6 +38,7 @@ void SAMPLE_VIO_Usage(char *sPrgNm)
 	printf("\t 4)VPSS(Offline, file read/write).\n");
 	printf("\t 5)VI (Two devs) - VPSS - VO.\n");
 	printf("\t 6)VPSS(Offline, file read/write, combine 2 frame into 1).\n");
+	printf("\t 7)VI (Two devs) - VPSS - VO (Two devs).\n");
 }
 
 int main(int argc, char *argv[])
@@ -105,6 +106,11 @@ int main(int argc, char *argv[])
 		s32Ret = SAMPLE_VIO_VpssCombine2File(stSize);
 		break;
 	}
+
+	case 7:
+		s32Ret = SAMPLE_VIO_TWO_SNS_TWO_VO();
+		break;
+
 	default:
 		SAMPLE_PRT("the index %d is invaild!\n", s32Index);
 		SAMPLE_VIO_Usage(argv[0]);

@@ -8,9 +8,9 @@
 #ifndef _U_DPU_UAPI_H_
 #define _U_DPU_UAPI_H_
 
-#include <linux/cvi_comm_dpu.h>
-#include <linux/cvi_comm_sys.h>
-#include <linux/cvi_defines.h>
+#include <cvi_comm_dpu.h>
+#include <cvi_comm_sys.h>
+#include <cvi_defines.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,6 +73,7 @@ struct dpu_snap_cfg {
 /* Public */
 #define CVI_DPU_CREATE_GROUP _IOW('U', 0x00, struct dpu_grp_attr)
 #define CVI_DPU_DESTROY_GROUP _IOW('U', 0x01, struct dpu_grp_cfg)
+#define CVI_DPU_GET_AVAIL_GROUP _IOWR('U', 0x11, DPU_GRP)
 #define CVI_DPU_START_GROUP _IOW('U', 0x02, struct dpu_grp_cfg)
 #define CVI_DPU_STOP_GROUP _IOW('u', 0x03, struct dpu_grp_cfg)
 #define CVI_DPU_SET_GRP_ATTR _IOW('U', 0x05, struct dpu_grp_attr)
@@ -90,10 +91,10 @@ struct dpu_snap_cfg {
 
 #define CVI_DPU_CHECK_REG_READ _IO('U', 0x0e)
 #define CVI_DPU_CHECK_REG_WRITE _IO('U', 0x0f)
+#define CVI_DPU_SEND_CHN_FRAME _IOW('U', 0x10, struct dpu_get_frame_cfg)
 
 #define CVI_DPU_GET_SGBM_STATUS _IO('U', 0xa0)
 #define CVI_DPU_GET_FGS_STATUS _IO('U', 0xa1)
-#define CVI_DPU_RESET _IO('U', 0xa2)
 
 
 #ifdef __cplusplus

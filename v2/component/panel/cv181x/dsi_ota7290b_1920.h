@@ -1,8 +1,7 @@
 #ifndef _MIPI_TX_PARAM_OTA7290B_1920_H_
 #define _MIPI_TX_PARAM_OTA7290B_1920_H_
 
-#include <linux/cvi_mipi_tx.h>
-#include <linux/cvi_comm_mipi_tx.h>
+#include <cvi_comm_mipi_tx.h>
 
 // Not support BTA
 struct combo_dev_cfg_s dev_cfg_ota7290b_440x1920 = {
@@ -27,7 +26,7 @@ struct combo_dev_cfg_s dev_cfg_ota7290b_440x1920 = {
 	.pixel_clk = 85224,
 };
 
-const struct hs_settle_s hs_timing_cfg_ota7290b_440x1920 = { .prepare = 6, .zero = 32, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_ota7290b_440x1920 = { .prepare = 6, .zero = 32, .trail = 1 };
 
 static CVI_U8 data_ota7290b_1920_0[] = { 0x11, 0x00 };
 static CVI_U8 data_ota7290b_1920_1[] = { 0xb0, 0x5a };
@@ -290,7 +289,7 @@ static CVI_U8 data_ota7290b_1920_253[] = { 0xb1, 0x00 };
 static CVI_U8 data_ota7290b_1920_254[] = { 0x89, 0x03 };
 static CVI_U8 data_ota7290b_1920_255[] = { 0x29, 0x00 };
 
-const struct dsc_instr dsi_init_cmds_ota7290b_440x1920[] = {
+struct dsc_instr dsi_init_cmds_ota7290b_440x1920[] = {
 	{.delay = 250, .data_type = 0x15, .size = 2, .data = data_ota7290b_1920_0 },
 	{.delay = 50, .data_type = 0x15, .size = 2, .data = data_ota7290b_1920_1 },
 	{.delay = 0, .data_type = 0x15, .size = 2, .data = data_ota7290b_1920_2 },

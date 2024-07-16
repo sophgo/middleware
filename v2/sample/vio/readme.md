@@ -11,4 +11,4 @@
 | VPSS(Offline, file read/write)                           | ./sample_vio 4                                                                                     | Using VPSS, process the input image and save it to the output image                       | output             |
 | VI (Two devs)-VPSS-VO                                    | ./sample_vio 5   sensor and panel required  need to place the sensor_cfg.ini in the path /mnt/data | Implement pathways VI-VPSS-VO and there are two vi devices                                | NULL               |
 | VPSS(Offline, file read/write, combine 2 frame into 1)   | ./sample_vio 6                                                                                     | VPSS horizontal stitching image                                                           | output             |
-
+| VI (Two devs)-VPSS-VO (Two devs)                         | ./sample_vio 7   sensor and panel required  need to place the sensor_cfg.ini in the path /mnt/data | Implement pathways VI-VPSS-VO and there are two vi devices and two vo devices             | NULL               |

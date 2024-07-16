@@ -9,9 +9,9 @@
 #include "cvi_comm_video.h"
 #include <linux/cvi_vip_snsr.h>
 #else
-#include <linux/cvi_type.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/vi_snsr.h>
+#include <cvi_type.h>
+#include <cvi_comm_video.h>
+
 #endif
 #include "cvi_debug.h"
 #include "cvi_comm_sns.h"

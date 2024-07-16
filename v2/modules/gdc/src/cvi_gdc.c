@@ -8,9 +8,8 @@
 #include <inttypes.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <linux/cvi_vi_ctx.h>
-#include <linux/vi_uapi.h>
-#include <linux/vpss_uapi.h>
+#include <vi_uapi.h>
+#include <vpss_uapi.h>
 
 #include "cvi_buffer.h"
 #include "cvi_base.h"
@@ -604,6 +603,7 @@ CVI_S32 CVI_GDC_LoadMesh(MESH_DUMP_ATTR_S *pMeshDumpAttr, const LDC_ATTR_S *pstL
 	CVI_S32 s32Ret;
 	struct vpss_chn_attr attr;
 	VI_CHN_ATTR_S stChnAttr;
+	CVI_CHAR mesh_name[128];
 
 	switch (mod) {
 	case CVI_ID_VI:
@@ -620,6 +620,7 @@ CVI_S32 CVI_GDC_LoadMesh(MESH_DUMP_ATTR_S *pMeshDumpAttr, const LDC_ATTR_S *pstL
 		u32Height = stChnAttr.stSize.u32Height;
 		in_size.u32Width = ALIGN(u32Width, DEFAULT_ALIGN);
 		in_size.u32Height = ALIGN(u32Height, DEFAULT_ALIGN);
+		snprintf(mesh_name, 128, "vi_%d", viChn);
 		break;
 	case CVI_ID_VPSS:
 		fd = get_vpss_fd();
@@ -636,6 +637,7 @@ CVI_S32 CVI_GDC_LoadMesh(MESH_DUMP_ATTR_S *pMeshDumpAttr, const LDC_ATTR_S *pstL
 		u32Height = attr.stChnAttr.u32Height;
 		in_size.u32Width = ALIGN(u32Width, DEFAULT_ALIGN);
 		in_size.u32Height = ALIGN(u32Height, DEFAULT_ALIGN);
+		snprintf(mesh_name, 128, "vpss_%d_%d", vpssGrp, vpssChn);
 		break;
 	default:
 		CVI_TRACE_GDC(CVI_DBG_ERR, "not supported\n");
@@ -664,10 +666,10 @@ CVI_S32 CVI_GDC_LoadMesh(MESH_DUMP_ATTR_S *pMeshDumpAttr, const LDC_ATTR_S *pstL
 	rewind(fp);
 
 	// acquire memory space for mesh.
-	if (CVI_SYS_IonAlloc_Cached(&phyMesh, &virMesh, "gdc_mesh", mesh_size) != CVI_SUCCESS) {
+	if (CVI_SYS_IonAlloc_Cached(&phyMesh, &virMesh, mesh_name, mesh_size) != CVI_SUCCESS) {
 		CVI_TRACE_GDC(CVI_DBG_ERR, "Can't acquire memory for gdc mesh.\n");
 		fclose(fp);
-		return CVI_ERR_VPSS_NOMEM;
+		return CVI_ERR_GDC_NOMEM;
 	}
 
 	CVI_TRACE_GDC(CVI_DBG_DEBUG, "load mesh size:%d, mesh phy addr:%#"PRIx64", vir addr:%p.\n",
@@ -677,6 +679,12 @@ CVI_S32 CVI_GDC_LoadMesh(MESH_DUMP_ATTR_S *pMeshDumpAttr, const LDC_ATTR_S *pstL
 
 	fread(virMesh, mesh_size, 1, fp);
 	CVI_SYS_IonFlushCache(phyMesh, virMesh, mesh_size);
+
+	if (gdc_set_tsk_mesh_by_name(mesh_name, phyMesh, virMesh)) {
+		CVI_TRACE_GDC(CVI_DBG_ERR, "gdc_set_tsk_mesh_by_name fail.\n");
+		fclose(fp);
+		return CVI_ERR_GDC_NOMEM;
+	}
 
 	switch (mod) {
 	case CVI_ID_VI:

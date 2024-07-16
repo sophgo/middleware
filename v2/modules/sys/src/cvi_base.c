@@ -19,12 +19,12 @@
 #include <sys/mman.h>
 #include <sys/wait.h>
 
-#include <linux/base_uapi.h>
 #include <sys/prctl.h>
 
 #include "cvi_base.h"
 #include "cvi_buffer.h"
-#include <linux/cvi_errno.h>
+#include "cvi_errno.h"
+#include "base_uapi.h"
 
 
 //struct vdev dev_isp, dev_vpss, dev_disp, dev_ldc, dev_rgn,dev_dpu,dev_hdmi;

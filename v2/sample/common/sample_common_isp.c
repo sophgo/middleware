@@ -15,7 +15,7 @@
 #include <sys/prctl.h>
 #include <sys/time.h>
 
-#include <linux/cvi_defines.h>
+#include <cvi_defines.h>
 #include "sample_comm.h"
 #include "cvi_awb.h"
 #include "cvi_af.h"
@@ -198,6 +198,7 @@ CVI_S32 SAMPLE_COMM_ISP_GetIspAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, ISP_PUB_ATT
 	case SONY_IMX412_MIPI_12M_30FPS_12BIT:
 	case OV_OS08B10_MIPI_8M_30FPS_10BIT:
 	case OV_OS08B10_MIPI_8M_30FPS_10BIT_WDR2TO1:
+	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
 		pstPubAttr->f32FrameRate = 30;
 		break;
 	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
@@ -687,6 +688,7 @@ CVI_VOID *SAMPLE_COMM_GetSnsObj(SAMPLE_SNS_TYPE_E enSnsType)
 	case PIXELPLUS_PR2100_2M_25FPS_8BIT:
 	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
 	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
+	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
 		pSnsObj = &stSnsPR2100_Obj;
 		break;
 #endif

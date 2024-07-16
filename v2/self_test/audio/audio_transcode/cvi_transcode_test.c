@@ -21,7 +21,7 @@
 #include <string.h>
 #include <unistd.h>
 #if defined(__CV181X__) || defined(__CV180X__)
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 #else
 #include "cvi_type.h"
 #endif

@@ -18,7 +18,7 @@
 
 #include "cvi_sys.h"
 #include "cvi_ive.h"
-#include "linux/cvi_ive_ioctl.h"
+#include "ive_uapi.h"
 
 #define IVE_DEV_NODE "/dev/soph-ive"
 #define STRFY(s) #s
@@ -1799,7 +1799,7 @@ CVI_S32 CVI_IVE_DUMP(IVE_HANDLE pIveHandle)
 CVI_S32 CVI_IVE_RESET(IVE_HANDLE pIveHandle, int s)
 {
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
-	struct cvi_ive_ioctl_arg ioctl_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
 
 	if (p->devfd <= 0) {
 		printf("Device ive is not open, please check it\n");
@@ -1813,8 +1813,8 @@ CVI_S32 CVI_IVE_RESET(IVE_HANDLE pIveHandle, int s)
 CVI_S32 CVI_IVE_QUERY(IVE_HANDLE pIveHandle, CVI_BOOL *pbFinish,
 			  CVI_BOOL bBlock)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_query_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_QUERY_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -1834,8 +1834,8 @@ CVI_S32 CVI_IVE_DMA(IVE_HANDLE pIveHandle, IVE_DATA_S *pstSrc,
 			IVE_DST_DATA_S *pstDst, IVE_DMA_CTRL_S *pstCtrl,
 			CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_dma_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_DMA_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -1857,8 +1857,8 @@ CVI_S32 CVI_IVE_And(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 			IVE_SRC_IMAGE_S *pstSrc2, IVE_DST_IMAGE_S *pstDst,
 			CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_and_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_AND_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -1872,7 +1872,7 @@ CVI_S32 CVI_IVE_And(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_And, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_AND, &ioctl_arg);
 	return 0;
 }
 
@@ -1880,8 +1880,8 @@ CVI_S32 CVI_IVE_Or(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 		   IVE_SRC_IMAGE_S *pstSrc2, IVE_DST_IMAGE_S *pstDst,
 		   CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_or_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_OR_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -1895,7 +1895,7 @@ CVI_S32 CVI_IVE_Or(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Or, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_OR, &ioctl_arg);
 	return 0;
 }
 
@@ -1903,8 +1903,8 @@ CVI_S32 CVI_IVE_Xor(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 			IVE_SRC_IMAGE_S *pstSrc2, IVE_DST_IMAGE_S *pstDst,
 			CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_xor_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_XOR_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -1918,7 +1918,7 @@ CVI_S32 CVI_IVE_Xor(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Xor, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_XOR, &ioctl_arg);
 	return 0;
 }
 
@@ -1926,8 +1926,8 @@ CVI_S32 CVI_IVE_Add(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 			IVE_SRC_IMAGE_S *pstSrc2, IVE_DST_IMAGE_S *pstDst,
 			IVE_ADD_CTRL_S *pstCtrl, CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_add_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_ADD_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 
@@ -1943,7 +1943,7 @@ CVI_S32 CVI_IVE_Add(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	if (ioctl(p->devfd, CVI_IVE_IOC_Add, &ioctl_arg) < 0) {
+	if (ioctl(p->devfd, CVI_IVE_IOC_ADD, &ioctl_arg) < 0) {
 		fprintf(stderr, "SYS_IOC_S_CTRL - %s NG\n", __func__);
 		return -1;
 	}
@@ -1954,8 +1954,8 @@ CVI_S32 CVI_IVE_Sub(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 			IVE_SRC_IMAGE_S *pstSrc2, IVE_DST_IMAGE_S *pstDst,
 			IVE_SUB_CTRL_S *pstCtrl, CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_sub_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_SUB_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -1970,7 +1970,7 @@ CVI_S32 CVI_IVE_Sub(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Sub, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_SUB, &ioctl_arg);
 	return 0;
 }
 
@@ -1978,8 +1978,8 @@ CVI_S32 CVI_IVE_Erode(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			  IVE_DST_IMAGE_S *pstDst, IVE_ERODE_CTRL_S *pstCtrl,
 			  CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_erode_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_ERODE_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -1993,7 +1993,7 @@ CVI_S32 CVI_IVE_Erode(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Erode, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_ERODE, &ioctl_arg);
 	return 0;
 }
 
@@ -2001,8 +2001,8 @@ CVI_S32 CVI_IVE_Dilate(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			   IVE_DST_IMAGE_S *pstDst, IVE_DILATE_CTRL_S *pstctrl,
 			   CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_dilate_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_DILATE_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2016,7 +2016,7 @@ CVI_S32 CVI_IVE_Dilate(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Dilate, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_DILATE, &ioctl_arg);
 	return 0;
 }
 
@@ -2024,8 +2024,8 @@ CVI_S32 CVI_IVE_Thresh(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			   IVE_DST_IMAGE_S *pstDst, IVE_THRESH_CTRL_S *pstCtrl,
 			   CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_thresh_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_THRESH_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2039,7 +2039,7 @@ CVI_S32 CVI_IVE_Thresh(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Thresh, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_THRESH, &ioctl_arg);
 	return 0;
 }
 
@@ -2050,8 +2050,8 @@ CVI_S32 CVI_IVE_MatchBgModel(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstCurImg,
 				 IVE_MATCH_BG_MODEL_CTRL_S *pstCtrl,
 				 CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_match_bgmodel_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_MATCH_BGMODEL_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2069,8 +2069,8 @@ CVI_S32 CVI_IVE_MatchBgModel(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstCurImg,
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
 	ioctl_arg.buffer = (void *)(uintptr_t)pstStatData->u64VirAddr;
-	ioctl_arg.u32Size = sizeof(IVE_BG_STAT_DATA_S);
-	ioctl(p->devfd, CVI_IVE_IOC_MatchBgModel, &ioctl_arg);
+	ioctl_arg.size = sizeof(IVE_BG_STAT_DATA_S);
+	ioctl(p->devfd, CVI_IVE_IOC_MATCH_BGMODEM, &ioctl_arg);
 	return 0;
 }
 
@@ -2081,8 +2081,8 @@ CVI_S32 CVI_IVE_UpdateBgModel(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstCurImg,
 				  IVE_UPDATE_BG_MODEL_CTRL_S *pstCtrl,
 				  CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_update_bgmodel_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_UPDATE_BGMODEL_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2101,8 +2101,8 @@ CVI_S32 CVI_IVE_UpdateBgModel(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstCurImg,
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
 	ioctl_arg.buffer = (void *)(uintptr_t)pstStatData->u64VirAddr;
-	ioctl_arg.u32Size = sizeof(IVE_BG_STAT_DATA_S);
-	ioctl(p->devfd, CVI_IVE_IOC_UpdateBgModel, &ioctl_arg);
+	ioctl_arg.size = sizeof(IVE_BG_STAT_DATA_S);
+	ioctl(p->devfd, CVI_IVE_IOC_UPDATE_BGMODEL, &ioctl_arg);
 	return 0;
 }
 
@@ -2111,8 +2111,8 @@ CVI_S32 CVI_IVE_GMM(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			IVE_MEM_INFO_S *pstModel, IVE_GMM_CTRL_S *pstCtrl,
 			CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_gmm_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_GMM_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2138,8 +2138,8 @@ CVI_S32 CVI_IVE_GMM2(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			 IVE_MEM_INFO_S *pstModel, IVE_GMM2_CTRL_S *pstCtrl,
 			 CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_gmm2_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_GMM2_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2165,8 +2165,8 @@ CVI_S32 CVI_IVE_Bernsen(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			IVE_DST_IMAGE_S *pstDst, IVE_BERNSEN_CTRL_S *pstCtrl,
 			CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_bernsen_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_BERNSEN_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2180,7 +2180,7 @@ CVI_S32 CVI_IVE_Bernsen(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Bernsen, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_BERNSEN, &ioctl_arg);
 	return 0;
 }
 
@@ -2188,8 +2188,8 @@ CVI_S32 CVI_IVE_Filter(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			   IVE_DST_IMAGE_S *pstDst, IVE_FILTER_CTRL_S *pstCtrl,
 			   CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_filter_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_FILTER_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2203,7 +2203,7 @@ CVI_S32 CVI_IVE_Filter(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Filter, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_FILTER, &ioctl_arg);
 	return 0;
 }
 
@@ -2211,8 +2211,8 @@ CVI_S32 CVI_IVE_Sobel(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			  IVE_DST_IMAGE_S *pstDstH, IVE_DST_IMAGE_S *pstDstV,
 			  IVE_SOBEL_CTRL_S *pstCtrl, CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_sobel_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_SOBEL_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2229,7 +2229,7 @@ CVI_S32 CVI_IVE_Sobel(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Sobel, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_SOBEL, &ioctl_arg);
 	return 0;
 }
 
@@ -2238,8 +2238,8 @@ CVI_S32 CVI_IVE_MagAndAng(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			  IVE_DST_IMAGE_S *pstDstAng,
 			  IVE_MAG_AND_ANG_CTRL_S *pstCtrl, CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_maganang_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_MAGANANG_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2256,7 +2256,7 @@ CVI_S32 CVI_IVE_MagAndAng(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_MagAndAng, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_MAG_AND_ANG, &ioctl_arg);
 	return 0;
 }
 
@@ -2264,8 +2264,8 @@ CVI_S32 CVI_IVE_CSC(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			IVE_DST_IMAGE_S *pstDst, IVE_CSC_CTRL_S *pstCtrl,
 			CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_csc_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_CSC_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2288,8 +2288,8 @@ CVI_S32 CVI_IVE_FilterAndCSC(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 				 IVE_FILTER_AND_CSC_CTRL_S *pstCtrl,
 				 CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_filter_and_csc_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_FILTER_AND_CSC_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2303,15 +2303,15 @@ CVI_S32 CVI_IVE_FilterAndCSC(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_FilterAndCSC, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_FILTER_AND_CSC, &ioctl_arg);
 	return 0;
 }
 
 CVI_S32 CVI_IVE_Hist(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			 IVE_DST_MEM_INFO_S *pstDst, CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_hist_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_HIST_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2324,7 +2324,7 @@ CVI_S32 CVI_IVE_Hist(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Hist, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_HIST, &ioctl_arg);
 	return 0;
 }
 
@@ -2332,8 +2332,8 @@ CVI_S32 CVI_IVE_Map(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			IVE_SRC_MEM_INFO_S *pstMap, IVE_DST_IMAGE_S *pstDst,
 			IVE_MAP_CTRL_S *pstCtrl, CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_map_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_MAP_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2349,8 +2349,8 @@ CVI_S32 CVI_IVE_Map(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
 	ioctl_arg.buffer = (void *)pstMap->u64VirAddr;
-	ioctl_arg.u32Size = pstMap->u32Size;
-	ioctl(p->devfd, CVI_IVE_IOC_Map, &ioctl_arg);
+	ioctl_arg.size = pstMap->u32Size;
+	ioctl(p->devfd, CVI_IVE_IOC_MAP, &ioctl_arg);
 	return 0;
 }
 
@@ -2358,8 +2358,8 @@ CVI_S32 CVI_IVE_NCC(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 			IVE_SRC_IMAGE_S *pstSrc2, IVE_DST_MEM_INFO_S *pstDst,
 			CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_ncc_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_NCC_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2374,7 +2374,7 @@ CVI_S32 CVI_IVE_NCC(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
 	ioctl_arg.buffer = (void *)pstDst->u64VirAddr;
-	ioctl_arg.u32Size = sizeof(IVE_NCC_DST_MEM_S);
+	ioctl_arg.size = sizeof(IVE_NCC_DST_MEM_S);
 	ioctl(p->devfd, CVI_IVE_IOC_NCC, &ioctl_arg);
 	return 0;
 }
@@ -2383,8 +2383,8 @@ CVI_S32 CVI_IVE_Integ(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			  IVE_DST_MEM_INFO_S *pstDst, IVE_INTEG_CTRL_S *pstCtrl,
 			  CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_integ_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_INTEG_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2398,7 +2398,7 @@ CVI_S32 CVI_IVE_Integ(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Integ, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_INTEG, &ioctl_arg);
 	return 0;
 }
 
@@ -2406,8 +2406,8 @@ CVI_S32 CVI_IVE_LBP(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			IVE_DST_IMAGE_S *pstDst, IVE_LBP_CTRL_S *pstCtrl,
 			CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_lbp_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_LBP_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2429,8 +2429,8 @@ CVI_S32 CVI_IVE_Thresh_S16(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			   IVE_DST_IMAGE_S *pstDst,
 			   IVE_THRESH_S16_CTRL_S *pstCtrl, CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_thresh_s16_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_THRESH_S16_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2444,7 +2444,7 @@ CVI_S32 CVI_IVE_Thresh_S16(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Thresh_S16, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_THRESH_S16, &ioctl_arg);
 	return 0;
 }
 
@@ -2452,8 +2452,8 @@ CVI_S32 CVI_IVE_Thresh_U16(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			   IVE_DST_IMAGE_S *pstDst,
 			   IVE_THRESH_U16_CTRL_S *pstCtrl, CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_thres_su16_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_THRESH_U16_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2467,7 +2467,7 @@ CVI_S32 CVI_IVE_Thresh_U16(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Thresh_U16, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_THRESH_U16, &ioctl_arg);
 	return 0;
 }
 
@@ -2476,8 +2476,8 @@ CVI_S32 CVI_IVE_16BitTo8Bit(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 				IVE_16BIT_TO_8BIT_CTRL_S *pstCtrl,
 				CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_16bit_to_8bit_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_16BIT_TO_8BIT_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2491,7 +2491,7 @@ CVI_S32 CVI_IVE_16BitTo8Bit(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_16BitTo8Bit, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_16BIT_TO_8BIT, &ioctl_arg);
 	return 0;
 }
 
@@ -2500,8 +2500,8 @@ CVI_S32 CVI_IVE_OrdStatFilter(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 				  IVE_ORD_STAT_FILTER_CTRL_S *pstCtrl,
 				  CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_ord_stat_filter_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_ORD_STAT_FILTER_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2515,7 +2515,7 @@ CVI_S32 CVI_IVE_OrdStatFilter(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_OrdStatFilter, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_ORD_STAT_FILTER, &ioctl_arg);
 	return 0;
 }
 
@@ -2535,8 +2535,8 @@ CVI_S32 CVI_IVE_CannyHysEdge(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 				 IVE_CANNY_HYS_EDGE_CTRL_S *pstCtrl,
 				 CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_canny_hys_edge_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_CANNY_HYS_EDGE_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2551,7 +2551,7 @@ CVI_S32 CVI_IVE_CannyHysEdge(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_CannyHysEdge, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_CANNYHYSEDGE, &ioctl_arg);
 	return 0;
 }
 
@@ -2560,8 +2560,8 @@ CVI_S32 CVI_IVE_NormGrad(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			 IVE_DST_IMAGE_S *pstDstHV,
 			 IVE_NORM_GRAD_CTRL_S *pstCtrl, CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_norm_grad_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_NORM_GRAD_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2580,7 +2580,7 @@ CVI_S32 CVI_IVE_NormGrad(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_NormGrad, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_NORMGRAD, &ioctl_arg);
 	return 0;
 }
 
@@ -2589,8 +2589,8 @@ CVI_S32 CVI_IVE_GradFg(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstBgDiffFg,
 			   IVE_DST_IMAGE_S *pstGradFg, IVE_GRAD_FG_CTRL_S *pstCtrl,
 			   CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_grad_fg_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_GRAD_FG_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2608,7 +2608,7 @@ CVI_S32 CVI_IVE_GradFg(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstBgDiffFg,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_GradFg, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_GRADFG, &ioctl_arg);
 	return 0;
 }
 
@@ -2617,8 +2617,8 @@ CVI_S32 CVI_IVE_SAD(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 			IVE_DST_IMAGE_S *pstThr, IVE_SAD_CTRL_S *pstCtrl,
 			CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_sad_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_SAD_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2642,8 +2642,8 @@ CVI_S32 CVI_IVE_Resize(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 			   IVE_DST_IMAGE_S *pstDst, IVE_RESIZE_CTRL_S *pstCtrl,
 			   CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_resize_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_RESIZE_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2657,7 +2657,7 @@ CVI_S32 CVI_IVE_Resize(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_Resize, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_RESIZE, &ioctl_arg);
 	return 0;
 }
 
@@ -2665,8 +2665,8 @@ CVI_S32 CVI_IVE_imgInToOdma(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 				IVE_DST_IMAGE_S *pstDst, IVE_FILTER_CTRL_S *pstCtrl,
 				CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_filter_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_FILTER_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2680,7 +2680,7 @@ CVI_S32 CVI_IVE_imgInToOdma(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_imgInToOdma, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_IMGIN_To_ODMA, &ioctl_arg);
 	return 0;
 }
 
@@ -2691,8 +2691,8 @@ CVI_S32 CVI_IVE_rgbPToYuvToErodeToDilate(IVE_HANDLE pIveHandle,
 					 IVE_FILTER_CTRL_S *pstCtrl,
 					 CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_rgbPToYuvToErodeToDilate ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_RGBP2YUV2ERODE2DILATE ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2707,7 +2707,7 @@ CVI_S32 CVI_IVE_rgbPToYuvToErodeToDilate(IVE_HANDLE pIveHandle,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_rgbPToYuvToErodeToDilate, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_RGBP2YUV2ERODE2DILATE, &ioctl_arg);
 	return 0;
 }
 
@@ -2716,8 +2716,8 @@ CVI_S32 CVI_IVE_STCandiCorner(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 				  IVE_ST_CANDI_CORNER_CTRL_S *pstCtrl,
 				  CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_stcandicorner ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_STCANDICORNER ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2731,7 +2731,7 @@ CVI_S32 CVI_IVE_STCandiCorner(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc,
 	ive_arg.bInstant = bInstant;
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
-	ioctl(p->devfd, CVI_IVE_IOC_STCandiCorner, &ioctl_arg);
+	ioctl(p->devfd, CVI_IVE_IOC_ST_CANDI_CORNER, &ioctl_arg);
 	return 0;
 }
 
@@ -2741,8 +2741,8 @@ CVI_S32 CVI_IVE_FrameDiffMotion(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *pstSrc1,
 				IVE_FRAME_DIFF_MOTION_CTRL_S *pstCtrl,
 				CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_md ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_MD ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2778,8 +2778,8 @@ CVI_S32 CVI_IVE_CCL(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *stSrcDst,
 			IVE_CCL_CTRL_S *stCclCtrl,
 			CVI_BOOL bInstant)
 {
-	struct cvi_ive_ioctl_arg ioctl_arg;
-	struct cvi_ive_ioctl_ccl_arg ive_arg;
+	CVI_IVE_IOCTL_ARG ioctl_arg;
+	CVI_IVE_IOCTL_CCL_ARG ive_arg;
 	struct IVE_HANDLE_CTX *p = (struct IVE_HANDLE_CTX *)pIveHandle;
 
 	if (p->devfd <= 0) {
@@ -2795,7 +2795,7 @@ CVI_S32 CVI_IVE_CCL(IVE_HANDLE pIveHandle, IVE_SRC_IMAGE_S *stSrcDst,
 
 	ioctl_arg.input_data = (CVI_U64)&ive_arg;
 	ioctl_arg.buffer = (void *)(uintptr_t)stBlob->u64VirAddr;
-	ioctl_arg.u32Size = sizeof(CVI_U16) + sizeof(CVI_S8) + sizeof(CVI_U8);
+	ioctl_arg.size = sizeof(CVI_U16) + sizeof(CVI_S8) + sizeof(CVI_U8);
 	ioctl(p->devfd, CVI_IVE_IOC_CCL, &ioctl_arg);
 	return 0;
 

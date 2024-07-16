@@ -1,0 +1,29 @@
+CC            := $(CROSS_COMPILE)gcc -lm
+
+DEBUG     ?= 0
+#CPU_ARCH  ?= armv7-a
+FLOAT_ABI ?=
+FPU       ?=
+
+#ifneq ($(CPU_ARCH),0)
+#CFLAGS += -march=$(CPU_ARCH)
+#endif
+ifneq ($(FPU),)
+  CFLAGS += -mfpu=$(FPU)
+endif
+ifneq ($(FLOAT_ABI),)
+  CFLAGS += -mfloat-abi=$(FLOAT_ABI)
+endif
+
+CFLAGS += -Werror=missing-braces
+CFLAGS += -std=c99 -Wall -fno-strict-aliasing
+
+ifeq ($(GPU_CHIP_ID_GCNanoUltraV), 1)
+CFLAGS += -DGPU_CHIP_ID_GCNanoUltraV
+endif
+
+ifeq ($(DEBUG), 1)
+CFLAGS += -g -g -O0 -DDEBUG -D_DEBUG
+else
+CFLAGS += -O2
+endif

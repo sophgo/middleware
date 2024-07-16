@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "rw_json.h"
 #include "cvi_miniz.h"
-#include <linux/cvi_comm_sys.h>
+#include <cvi_comm_sys.h>
 #include "cvi_bin.h"
 #include "cvi_debug.h"
 

@@ -7,7 +7,6 @@
 
 lib
 bin
-include
 tags
 
 *_asan

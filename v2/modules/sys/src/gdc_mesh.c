@@ -13,7 +13,7 @@
 #include "cvi_comm_video.h"
 #endif
 
-#include <linux/cvi_math.h>
+#include <cvi_math.h>
 #include "cvi_base.h"
 #include "cvi_vpss.h"
 #include "cvi_sys.h"
@@ -1739,6 +1739,28 @@ void gdc_free_all_tsk_mesh(void)
 			memset(tskMesh[i].Name, 0, sizeof(tskMesh[i].Name));
 		}
 	}
+}
+
+int gdc_set_tsk_mesh_by_name(const char *tskName, CVI_U64 paddr, CVI_VOID *vaddr)
+{
+	CVI_U8 idx;
+
+	idx = gdc_get_idle_tsk_mesh();
+	if (idx >= GDC_MAX_TSK_MESH) {
+		CVI_TRACE_GDC(CVI_DBG_ERR, "tsk mesh count(%d) is out of range(%d)\n", idx + 1, GDC_MAX_TSK_MESH);
+		return CVI_ERR_GDC_ILLEGAL_PARAM;
+	}
+
+	if (!paddr || !vaddr) {
+		CVI_TRACE_GDC(CVI_DBG_ERR, "null mesh\n");
+		return CVI_ERR_GDC_ILLEGAL_PARAM;
+	}
+
+	strcpy(tskMesh[idx].Name, tskName);
+	tskMesh[idx].paddr = paddr;
+	tskMesh[idx].vaddr = vaddr;
+
+	return 0;
 }
 
 CVI_S32 CVI_GDC_GenLDCMesh(CVI_U32 u32Width, CVI_U32 u32Height, const LDC_ATTR_S *pstLDCAttr,

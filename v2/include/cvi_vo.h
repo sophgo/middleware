@@ -9,7 +9,7 @@
 #ifndef __CVI_VO_H__
 #define __CVI_VO_H__
 
-#include <linux/cvi_comm_vo.h>
+#include <cvi_comm_vo.h>
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -68,30 +68,21 @@ CVI_S32 CVI_VO_SetLVDSParam(VO_DEV VoDev, const VO_LVDS_ATTR_S *pstLVDSParam);
  */
 CVI_S32 CVI_VO_GetLVDSParam(VO_DEV VoDev, VO_LVDS_ATTR_S *pstLVDSParam);
 
-/* CVI_VO_SetI80Param: set i80 param
+/* CVI_VO_SetBTParam: set bt param
  *
  * @param VoDev: Video output device
- * @param pstI80Param: i80 param
+ * @param pstBTParam: bt param
  * @return: status of operation. CVI_SUCCESS if OK.
  */
-CVI_S32 CVI_VO_SetI80Param(VO_DEV VoDev, const VO_I80_CFG_S *pstI80Param);
+CVI_S32 CVI_VO_SetBTParam(VO_DEV VoDev, const VO_BT_ATTR_S *pstBTParam);
 
-/* CVI_VO_GetI80Param: get lvds param
+/* CVI_VO_GetBTSParam: get bt param
  *
  * @param VoDev: Video output device
- * @param pstI80Param: i80 param
+ * @param pstBTParam: bt param
  * @return: status of operation. CVI_SUCCESS if OK.
  */
-CVI_S32 CVI_VO_GetI80Param(VO_DEV VoDev, VO_I80_CFG_S *pstI80Param);
-
-/* CVI_VO_I80Init: init i80 per instructions
- *
- * @param VoDev: the chn which has vb to be released
- * @param pi80Instr: i80 init instructions
- * @param size: number of pi80Instr
- * @return: status of operation. CVI_SUCCESS if OK.
- */
-CVI_S32 CVI_VO_I80Init(VO_DEV VoDev, const VO_I80_INSTR_S *pi80Instr, CVI_U8 size);
+CVI_S32 CVI_VO_GetBTParam(VO_DEV VoDev, VO_BT_ATTR_S *pstBTParam);
 
 /* CVI_VO_IsEnabled: Check if VO is enabled
  *
@@ -120,7 +111,7 @@ CVI_S32 CVI_VO_Disable(VO_DEV VoDev);
  * @param PatternId: pattern id
  * @return: status of operation. CVI_SUCCESS if OK.
  */
-CVI_S32 CVI_VO_ShowPattern(VO_DEV VoDev, enum VO_PATTERN_MODE PatternId);
+CVI_S32 CVI_VO_ShowPattern(VO_DEV VoDev, VO_PATTERN_MODE PatternId);
 
 /* CVI_VO_CloseFd: close vo fd
  *
@@ -235,10 +226,6 @@ CVI_S32 CVI_VO_BindLayer(VO_LAYER VoLayer, VO_DEV VoDev);
  */
 CVI_S32 CVI_VO_UnBindLayer(VO_LAYER VoLayer, VO_DEV VoDev);
 
-CVI_S32 CVI_VO_BatchBegin(VO_LAYER VoLayer);
-CVI_S32 CVI_VO_BatchEnd(VO_LAYER VoLayer);
-
-
 /* Display relative operations */
 
 /* CVI_VO_SetPlayToleration: Set playback tolerance
@@ -327,9 +314,6 @@ CVI_S32 CVI_VO_SetChnParam(VO_LAYER VoLayer, VO_CHN VoChn, const VO_CHN_PARAM_S 
  * @return: status of operation. CVI_SUCCESS if OK.
  */
 CVI_S32 CVI_VO_GetChnParam(VO_LAYER VoLayer, VO_CHN VoChn, VO_CHN_PARAM_S *pstChnParam);
-
-CVI_S32 CVI_VO_SetChnDisplayPosition(VO_LAYER VoLayer, VO_CHN VoChn, const POINT_S *pstDispPos);
-CVI_S32 CVI_VO_GetChnDisplayPosition(VO_LAYER VoLayer, VO_CHN VoChn, POINT_S *pstDispPos);
 
 /* CVI_VO_SetChnZoomInWindow: set chn Local amplification parameters
  *
@@ -559,18 +543,6 @@ CVI_S32 CVI_VO_SetChnRotation(VO_LAYER VoLayer, VO_CHN VoChn, ROTATION_E enRotat
  */
 CVI_S32 CVI_VO_GetChnRotation(VO_LAYER VoLayer, VO_CHN VoChn, ROTATION_E *penRotation);
 
-CVI_S32 CVI_VO_SetDevFrameRate(VO_DEV VoDev, CVI_U32 u32FrameRate);
-CVI_S32 CVI_VO_GetDevFrameRate(VO_DEV VoDev, CVI_U32 *pu32FrameRate);
-
-/* Module Parameter Settings */
-CVI_S32 CVI_VO_SetVtth(VO_DEV VoDev, CVI_U32 u32Vtth);
-CVI_S32 CVI_VO_GetVtth(VO_DEV VoDev, CVI_U32 *pu32Vtth);
-
-CVI_S32 CVI_VO_Get_Panel_Status(VO_LAYER VoLayer, VO_CHN VoChn, CVI_U32 *is_init);
-
-CVI_S32 CVI_VO_RegPmCallBack(VO_DEV VoDev, VO_PM_OPS_S *pstPmOps, void *pvData);
-CVI_S32 CVI_VO_UnRegPmCallBack(VO_DEV VoDev);
-
 /* CVI_VO_SetGammaInfo: set gamma attr
  *
  * @param VO_GAMMA_INFO_S: gamma attr
@@ -679,6 +651,13 @@ CVI_S32 CVI_VO_GetWbcFrame(VO_WBC VoWbc, VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_
  * @return: status of operation. CVI_SUCCESS if OK.
  */
 CVI_S32 CVI_VO_ReleaseWbcFrame(VO_WBC VoWbc, const VIDEO_FRAME_INFO_S *pstVideoFrame);
+
+/* Module Parameter Settings */
+CVI_S32 CVI_VO_Get_Panel_Status(VO_LAYER VoLayer, VO_CHN VoChn, CVI_U32 *is_init);
+CVI_S32 CVI_VO_RegPmCallBack(VO_DEV VoDev, VO_PM_OPS_S *pstPmOps, void *pvData);
+CVI_S32 CVI_VO_UnRegPmCallBack(VO_DEV VoDev);
+CVI_S32 CVI_VO_Suspend(void);
+CVI_S32 CVI_VO_Resume(void);
 
 #ifdef __cplusplus
 #if __cplusplus

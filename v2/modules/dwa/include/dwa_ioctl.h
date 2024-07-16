@@ -3,7 +3,7 @@
 
 #include <sys/ioctl.h>
 
-#include <linux/dwa_uapi.h>
+#include <dwa_uapi.h>
 
 /* Configured from user  */
 CVI_S32 dwa_init(CVI_S32 fd);

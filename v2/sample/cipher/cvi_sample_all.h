@@ -45,7 +45,6 @@ int sample_rng(void);
 int sample_mutiltcipher(void);
 int sample_rsa_enc(void);
 int sample_rsa_sign(void);
-int sample_efuse(void);
 int sample_otp(void);
 
 #endif /* end of include guard: SAMPLE_ALL_H_GPPRF9BL */

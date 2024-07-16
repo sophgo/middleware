@@ -12,9 +12,9 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 
@@ -86,12 +86,14 @@ typedef struct _F23_MODE_S {
 
 extern ISP_SNS_STATE_S *g_pastF23[VI_MAX_PIPE_NUM];
 extern ISP_SNS_COMMBUS_U g_aunF23_BusInfo[];
+extern ISP_SNS_COMMADDR_U g_aunF23_AddrInfo[];
 extern CVI_U16 g_au16F23_GainMode[];
 extern const CVI_U8 f23_i2c_addr;
 extern const CVI_U32 f23_addr_byte;
 extern const CVI_U32 f23_data_byte;
 extern void f23_init(VI_PIPE ViPipe);
 extern void f23_exit(VI_PIPE ViPipe);
+extern int  f23_i2c_exit(VI_PIPE ViPipe);
 extern void f23_standby(VI_PIPE ViPipe);
 extern void f23_restart(VI_PIPE ViPipe);
 extern int  f23_write_register(VI_PIPE ViPipe, int addr, int data);

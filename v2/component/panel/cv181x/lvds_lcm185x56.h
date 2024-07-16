@@ -1,7 +1,7 @@
 #ifndef _LVDS_PARAM_LCM185X56_H_
 #define _LVDS_PARAM_LCM185X56_H_
 
-#include <linux/cvi_comm_vo.h>
+#include <cvi_comm_vo.h>
 
 VO_LVDS_ATTR_S lvds_lcm185x56_cfg = {
 	.lvds_vesa_mode = VO_LVDS_MODE_VESA,

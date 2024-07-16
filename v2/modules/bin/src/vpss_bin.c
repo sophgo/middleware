@@ -1,10 +1,10 @@
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 #include "cvi_bin.h"
 #include "cvi_base.h"
 #include "vpss_bin.h"
 #include "cvi_vpss.h"
 #include "rw_json.h"
-#include <linux/cvi_defines.h>
+#include <cvi_defines.h>
 #include "vpss_json_struct.h"
 #include "cvi_json_struct_comm.h"
 #include "vpss_ioctl.h"
@@ -13,8 +13,8 @@ extern CVI_S32 get_vpss_fd();
 static CVI_S32 get_vpss_ctx_proc_amp(VPSS_BIN_DATA *pBinData)
 {
 	CVI_S32 fd = get_vpss_fd();
-	CVI_S32 s32Ret;
-	struct vpss_all_proc_amp_cfg cfg;
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	struct vpss_all_proc_amp_cfg cfg = {0};
 
 	s32Ret = vpss_get_all_proc_amp(fd, &cfg);
 	if (s32Ret != CVI_SUCCESS) {
@@ -61,7 +61,7 @@ CVI_S32 vpss_bin_setparamtobuf(enum CVI_BIN_SECTION_ID id, CVI_U8 *buffer)
 	CVI_S32 ret = CVI_SUCCESS;
 	CVI_U32 u32DataSize = 0;
 	VPSS_BIN_DATA *pstVpssBinData = get_vpssbindata_addr();
-	VPSS_BIN_DATA stVpssCtxProcAmp[VPSS_MAX_GRP_NUM];
+	VPSS_BIN_DATA stVpssCtxProcAmp[VPSS_MAX_GRP_NUM] = {0};
 
 	get_vpss_ctx_proc_amp(stVpssCtxProcAmp);
 	vpss_bin_getbinsize(id, &u32DataSize);
@@ -103,12 +103,13 @@ static CVI_S32 vpss_json_getparam(CVI_U8 *addr)
 	CVI_U32 u32DataSize = 0;
 	VPSS_BIN_DATA *pstPtr = (VPSS_BIN_DATA *)addr;
 	VPSS_BIN_DATA *pstVpssBinData = get_vpssbindata_addr();
-	VPSS_BIN_DATA stVpssCtxProcAmp[VPSS_MAX_GRP_NUM];
+	VPSS_BIN_DATA stVpssCtxProcAmp[VPSS_MAX_GRP_NUM] = {0};
 
 	get_vpss_ctx_proc_amp(stVpssCtxProcAmp);
 	vpss_bin_getbinsize(CVI_BIN_ID_VPSS, &u32DataSize);
-	for (int i = 0; i < VPSS_MAX_GRP_NUM; ++i)
+	for (int i = 0; i < VPSS_MAX_GRP_NUM; ++i) {
 		memcpy(pstVpssBinData[i].proc_amp, stVpssCtxProcAmp[i].proc_amp, sizeof(pstVpssBinData[i].proc_amp));
+	}
 
 	memcpy(pstPtr, pstVpssBinData, u32DataSize);
 
@@ -152,7 +153,7 @@ CVI_S32 vpss_json_getParamFromJsonbuffer(const char *buffer, enum CVI_BIN_SECTIO
 CVI_S32 vpss_json_setParamToJsonbuffer(CVI_S8 **buffer, enum CVI_BIN_SECTION_ID id, CVI_S32 *len)
 {
 	VPSS_PARAMETER_BUFFER vpss_parameter = { 0 };
-	JSON *json_object;
+	JSON *json_object = NULL;
 	CVI_S32 ret = CVI_SUCCESS;
 
 	json_object = JSON_GetNewObject();

@@ -12,9 +12,9 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "n5_cmos_ex.h"

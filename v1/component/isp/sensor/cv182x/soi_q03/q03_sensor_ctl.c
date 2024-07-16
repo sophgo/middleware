@@ -11,8 +11,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "q03_cmos_ex.h"
@@ -47,7 +47,7 @@ int q03_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, q03_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_aunQ03_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -219,11 +219,6 @@ void q03_init(VI_PIPE ViPipe)
 	q03_linear_1296p30_init(ViPipe);
 
 	g_pastQ03[ViPipe]->bInit = CVI_TRUE;
-}
-
-void q03_exit(VI_PIPE ViPipe)
-{
-	q03_i2c_exit(ViPipe);
 }
 
 static void q03_linear_1296p30_init(VI_PIPE ViPipe)

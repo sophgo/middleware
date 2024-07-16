@@ -18,7 +18,7 @@ COMM_INC := $(COMMON_DIR)
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
 SRCS += ../audio_utility/cvi_audio_loadcheck.c
-INCS = -I$(MW_INC) -I$(ISP_INC) -I$(KERNEL_INC) -I ../include -I$(COMM_INC) -I ../audio_utility
+INCS = -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(KERNEL_INC) -I ../include -I$(COMM_INC) -I ../audio_utility
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 DEFS += -DSUPPORT_EXTERNAL_AAC

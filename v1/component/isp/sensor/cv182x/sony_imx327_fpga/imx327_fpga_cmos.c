@@ -9,9 +9,9 @@
 #include "cvi_comm_video.h"
 #include <linux/cvi_vip_snsr.h>
 #else
-#include <linux/cvi_type.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/vi_snsr.h>
+#include <cvi_type.h>
+#include <cvi_comm_video.h>
+
 #endif
 #include "cvi_debug.h"
 #include "cvi_comm_sns.h"
@@ -30,19 +30,29 @@
 #define IMX327_FPGA_ID 327
 #define SENSOR_IMX327_FPGA_WIDTH 1920
 #define SENSOR_IMX327_FPGA_HEIGHT 1080
+#define IMX327_FPGA_I2C_ADDR 0x1A
+#define IMX327_FPGA_I2C_ADDR_IS_VALID(addr)      ((addr) == IMX327_FPGA_I2C_ADDR)
 /****************************************************************************
  * global variables                                                            *
  ****************************************************************************/
 
 ISP_SNS_STATE_S *g_pastImx327_fpga[VI_MAX_PIPE_NUM] = {CVI_NULL};
+SNS_COMBO_DEV_ATTR_S *g_pastImx327_fpgaComboDevArray[VI_MAX_PIPE_NUM] = {CVI_NULL};
 
 #define IMX327_FPGA_SENSOR_GET_CTX(dev, pstCtx)   (pstCtx = g_pastImx327_fpga[dev])
 #define IMX327_FPGA_SENSOR_SET_CTX(dev, pstCtx)   (g_pastImx327_fpga[dev] = pstCtx)
 #define IMX327_FPGA_SENSOR_RESET_CTX(dev)         (g_pastImx327_fpga[dev] = CVI_NULL)
+#define IMX327_FPGA_SENSOR_GET_COMBO(dev, pstCtx)   (pstCtx = g_pastImx327_fpgaComboDevArray[dev])
+#define IMX327_FPGA_SENSOR_SET_COMBO(dev, pstCtx)   (g_pastImx327_fpgaComboDevArray[dev] = pstCtx)
 
 ISP_SNS_COMMBUS_U g_aunImx327_fpga_BusInfo[VI_MAX_PIPE_NUM] = {
 	[0] = { .s8I2cDev = 0},
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cDev = -1}
+};
+
+ISP_SNS_COMMADDR_U g_aunImx327_fpga_AddrInfo[VI_MAX_PIPE_NUM] = {
+	[0] = { .s8I2cAddr = 0},
+	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
 };
 
 CVI_U16 g_au16Imx327_fpga_GainMode[VI_MAX_PIPE_NUM] = {0};
@@ -824,7 +834,7 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 
 		for (i = 0; i < pstCfg0->snsCfg.u32RegNum; i++) {
 			pstI2c_data[i].bUpdate = CVI_TRUE;
-			pstI2c_data[i].u8DevAddr = imx327_fpga_i2c_addr;
+			pstI2c_data[i].u8DevAddr = g_aunImx327_fpga_AddrInfo[ViPipe].s8I2cAddr;
 			pstI2c_data[i].u32AddrByteNum = imx327_fpga_addr_byte;
 			pstI2c_data[i].u32DataByteNum = imx327_fpga_data_byte;
 		}
@@ -1023,10 +1033,14 @@ static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 {
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+	SNS_COMBO_DEV_ATTR_S *pstRxAttrSrc = CVI_NULL;
 
 	IMX327_FPGA_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	IMX327_FPGA_SENSOR_GET_COMBO(ViPipe, pstRxAttrSrc);
+
 	CMOS_CHECK_POINTER(pstSnsState);
 	CMOS_CHECK_POINTER(pstRxAttr);
+	CMOS_CHECK_POINTER(pstRxAttrSrc);
 
 	memcpy(pstRxAttr, &imx327_fpga_rx_attr, sizeof(*pstRxAttr));
 
@@ -1042,15 +1056,22 @@ static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 	} else {
 		pstRxAttr->mipi_attr.wdr_mode = CVI_MIPI_WDR_MODE_NONE;
 	}
-
+	pstRxAttrSrc = CVI_NULL;
 	return CVI_SUCCESS;
-
 }
 
-static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
+static CVI_S32 sensor_patch_rx_attr(VI_PIPE ViPipe, RX_INIT_ATTR_S *pstRxInitAttr)
 {
-	SNS_COMBO_DEV_ATTR_S *pstRxAttr = &imx327_fpga_rx_attr;
 	int i;
+	SNS_COMBO_DEV_ATTR_S *pstRxAttr = CVI_NULL;
+
+	if (!g_pastImx327_fpgaComboDevArray[ViPipe]) {
+		pstRxAttr = malloc(sizeof(SNS_COMBO_DEV_ATTR_S));
+	} else {
+		IMX327_FPGA_SENSOR_GET_COMBO(ViPipe, pstRxAttr);
+	}
+	memcpy(pstRxAttr, &imx327_fpga_rx_attr, sizeof(SNS_COMBO_DEV_ATTR_S));
+	IMX327_FPGA_SENSOR_SET_COMBO(ViPipe, pstRxAttr);
 
 	CMOS_CHECK_POINTER(pstRxInitAttr);
 
@@ -1078,8 +1099,17 @@ static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
 			attr->pn_swap[i] = pstRxInitAttr->as8PNSwap[i];
 		}
 	}
-
+	pstRxAttr = CVI_NULL;
 	return CVI_SUCCESS;
+}
+
+void imx327_fpga_exit(VI_PIPE ViPipe)
+{
+	if(g_pastImx327_fpgaComboDevArray[ViPipe]) {
+		free(g_pastImx327_fpgaComboDevArray[ViPipe]);
+		g_pastImx327_fpgaComboDevArray[ViPipe] = CVI_NULL;
+	}
+	imx327_fpga_i2c_exit(ViPipe);
 }
 
 static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExpFunc)
@@ -1103,6 +1133,15 @@ static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExp
 /****************************************************************************
  * callback structure                                                       *
  ****************************************************************************/
+static CVI_VOID sensor_patch_i2c_addr(VI_PIPE ViPipe, CVI_S32 s32I2cAddr)
+{
+	if (IMX327_FPGA_I2C_ADDR_IS_VALID(s32I2cAddr))
+		g_aunImx327_fpga_AddrInfo[ViPipe].s8I2cAddr = s32I2cAddr;
+	else {
+		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C addr input error ,please check [0x%x]\n", s32I2cAddr);
+		g_aunImx327_fpga_AddrInfo[ViPipe].s8I2cAddr = IMX327_FPGA_I2C_ADDR;
+	}
+}
 
 static CVI_S32 imx327_fpga_set_bus_info(VI_PIPE ViPipe, ISP_SNS_COMMBUS_U unSNSBusInfo)
 {
@@ -1243,7 +1282,7 @@ ISP_SNS_OBJ_S stSnsImx327_fpga_Obj = {
 	.pfnSetBusInfo          = imx327_fpga_set_bus_info,
 	.pfnSetInit             = sensor_set_init,
 	.pfnPatchRxAttr		= sensor_patch_rx_attr,
-	.pfnPatchI2cAddr	= CVI_NULL,
+	.pfnPatchI2cAddr	= sensor_patch_i2c_addr,
 	.pfnGetRxAttr		= sensor_rx_attr,
 	.pfnExpSensorCb		= cmos_init_sensor_exp_function,
 	.pfnExpAeCb		= cmos_init_ae_exp_function,

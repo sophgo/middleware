@@ -12,9 +12,9 @@ extern "C" {
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_type.h"
 #else
-#include <linux/cif_uapi.h>
-#include <linux/vi_snsr.h>
-#include <linux/cvi_type.h>
+#include <cvi_comm_cif.h>
+
+#include <cvi_type.h>
 #endif
 #include "cvi_sns_ctrl.h"
 
@@ -58,6 +58,7 @@ typedef struct _Q03_MODE_S {
 
 extern ISP_SNS_STATE_S *g_pastQ03[VI_MAX_PIPE_NUM];
 extern ISP_SNS_COMMBUS_U g_aunQ03_BusInfo[];
+extern ISP_SNS_COMMADDR_U g_aunQ03_AddrInfo[];
 extern CVI_U16 g_au16Q03_GainMode[];
 extern CVI_U16 g_au16Q03_L2SMode[];
 extern CVI_U8 q03_i2c_addr;
@@ -66,6 +67,7 @@ extern const CVI_U32 q03_data_byte;
 extern void q03_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFlip);
 extern void q03_init(VI_PIPE ViPipe);
 extern void q03_exit(VI_PIPE ViPipe);
+extern int  q03_i2c_exit(VI_PIPE ViPipe);
 extern void q03_standby(VI_PIPE ViPipe);
 extern void q03_restart(VI_PIPE ViPipe);
 extern int  q03_write_register(VI_PIPE ViPipe, int addr, int data);

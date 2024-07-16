@@ -1,8 +1,7 @@
 #ifndef _MIPI_TX_PARAM_GM8775C_1080P_H_
 #define _MIPI_TX_PARAM_GM8775C_1080P_H_
 
-#include <linux/cvi_mipi_tx.h>
-#include "linux/cvi_comm_mipi_tx.h"
+#include "cvi_comm_mipi_tx.h"
 
 #define _BIST_COLOR             0
 
@@ -46,7 +45,7 @@ struct combo_dev_cfg_s dev_cfg_gm8775c = {
 	.pixel_clk = PIXEL_CLK(_HX8775C_RX),
 };
 
-const struct hs_settle_s hs_timing_cfg_gm8775c = { .prepare = 6, .zero = 32, .trail = 1 };
+struct hs_settle_s hs_timing_cfg_gm8775c = { .prepare = 6, .zero = 32, .trail = 1 };
 
 static CVI_U8 data_gm8775c_0[] = { 0x27, 0xAA };
 static CVI_U8 data_gm8775c_1[] = { 0x48, 0x02 };
@@ -103,7 +102,7 @@ static CVI_U8 data_gm8775c_34[] = { 0x2A, 0x01 };
 // static CVI_U8 data_gm8775c_41[] = { 0x71, 0x00 };
 #endif
 
-const struct dsc_instr dsi_init_cmds_gm8775c[] = {
+struct dsc_instr dsi_init_cmds_gm8775c[] = {
 	{.delay = 0, .data_type = 0x23, .size = 2, .data = data_gm8775c_0 },
 	{.delay = 0, .data_type = 0x23, .size = 2, .data = data_gm8775c_1 },
 	{.delay = 0, .data_type = 0x23, .size = 2, .data = data_gm8775c_2 },

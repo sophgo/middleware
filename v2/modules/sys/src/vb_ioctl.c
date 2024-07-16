@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -11,6 +12,7 @@
 #include <sys/ioctl.h>
 
 #include "vb_ioctl.h"
+
 
 #define VB_CTRL_PTR(_fd, _cfg, _ioctl)\
 	do {\
@@ -65,12 +67,12 @@
 		return ret;\
 	} while (0)
 
-int vb_ioctl_set_config(int fd, struct cvi_vb_cfg *cfg)
+int vb_ioctl_set_config(int fd, struct vb_cfg *cfg)
 {
 	VB_CTRL_PTR(fd, cfg, VB_IOCTL_SET_CONFIG);
 }
 
-int vb_ioctl_get_config(int fd, struct cvi_vb_cfg *cfg)
+int vb_ioctl_get_config(int fd, struct vb_cfg *cfg)
 {
 	VB_CTRL_PTR(fd, cfg, VB_IOCTL_GET_CONFIG);
 }
@@ -85,7 +87,7 @@ int vb_ioctl_exit(int fd)
 	VB_CTRL_PTR(fd, NULL, VB_IOCTL_EXIT);
 }
 
-int vb_ioctl_create_pool(int fd, struct cvi_vb_pool_cfg *cfg)
+int vb_ioctl_create_pool(int fd, struct vb_pool_cfg *cfg)
 {
 	VB_CTRL_PTR(fd, cfg, VB_IOCTL_CREATE_POOL);
 }
@@ -95,22 +97,22 @@ int vb_ioctl_destroy_pool(int fd, VB_POOL poolId)
 	VB_CTRL_S_VALUE(fd, poolId, VB_IOCTL_DESTROY_POOL);
 }
 
-int vb_ioctl_phys_to_handle(int fd, struct cvi_vb_blk_info *blk_info)
+int vb_ioctl_phys_to_handle(int fd, struct vb_blk_info *blk_info)
 {
 	VB_CTRL_PTR(fd, blk_info, VB_IOCTL_PHYS_TO_HANDLE);
 }
 
-int vb_ioctl_get_blk_info(int fd, struct cvi_vb_blk_info *blk_info)
+int vb_ioctl_get_blk_info(int fd, struct vb_blk_info *blk_info)
 {
 	VB_CTRL_PTR(fd, blk_info, VB_IOCTL_GET_BLK_INFO);
 }
 
-int vb_ioctl_get_pool_cfg(int fd, struct cvi_vb_pool_cfg *pool_cfg)
+int vb_ioctl_get_pool_cfg(int fd, struct vb_pool_cfg *pool_cfg)
 {
 	VB_CTRL_PTR(fd, pool_cfg, VB_IOCTL_GET_POOL_CFG);
 }
 
-int vb_ioctl_get_block(int fd, struct cvi_vb_blk_cfg *blk_cfg)
+int vb_ioctl_get_block(int fd, struct vb_blk_cfg *blk_cfg)
 {
 	VB_CTRL_PTR(fd, blk_cfg, VB_IOCTL_GET_BLOCK);
 }
@@ -120,7 +122,7 @@ int vb_ioctl_release_block(int fd, VB_BLK blk)
 	VB_CTRL_S_VALUE64(fd, blk, VB_IOCTL_RELEASE_BLOCK);
 }
 
-int vb_ioctl_get_pool_max_cnt(int fd, CVI_U32 *vb_max_pools)
+int vb_ioctl_get_pool_max_cnt(int fd, unsigned int *vb_max_pools)
 {
 	VB_CTRL_G_VALUE(fd, vb_max_pools, VB_IOCTL_GET_POOL_MAX_CNT);
 }
@@ -130,7 +132,8 @@ int vb_ioctl_print_pool(int fd, VB_POOL poolId)
 	VB_CTRL_S_VALUE(fd, poolId, VB_IOCTL_PRINT_POOL);
 }
 
-int vb_ioctl_unit_test(int fd, CVI_U32 op)
+int vb_ioctl_unit_test(int fd, unsigned int op)
 {
 	VB_CTRL_S_VALUE(fd, op, VB_IOCTL_UNIT_TEST);
 }
+

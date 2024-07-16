@@ -39,7 +39,6 @@ static inline CVI_VOID PRINTF_VDEC_CHN_STATUS(CVI_S32 Chn, VDEC_CHN_STATUS_S stS
 	printf("-----------------------------------------------------------\033[0;39m\n");
 }
 
-
 static inline CVI_S32 SAVE_FILE_NAME(CVI_CHAR *aFileName, CVI_CHAR *cStreamName,
 				      PIXEL_FORMAT_E enPixelFormat)
 {
@@ -311,59 +310,88 @@ CVI_VOID SAMPLE_COMM_VDEC_ExitVBPool(CVI_VOID)
 		}
 	}
 }
-static CVI_S32 stream264Parse(void *pData, int *ps32ReadLen) {
+
+static CVI_S32 stream264Parse(void *pData, int dataLen, CVI_BOOL bFinalPart, int *pFindNalLen) {
     CVI_S32 s32Ret = CVI_SUCCESS;
     CVI_U8 *pu8Buf = (CVI_U8 *)pData;
     CVI_S32 i = 0;
     CVI_S32 tmp = 0;
     CVI_BOOL bFindStart = CVI_FALSE;
     CVI_BOOL bFindEnd = CVI_FALSE;
+    CVI_S32 s32StartCodeLen = 4;
 
-    for (i = 0; i < *ps32ReadLen - 8; i++) {
-        tmp = pu8Buf[i + 3] & 0x1F;
-        if (pu8Buf[i] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 1
-                && (((tmp == 0x5 || tmp == 0x1) && ((pu8Buf[i + 4] & 0x80) == 0x80))
-                || (tmp == 20 && (pu8Buf[i + 7] & 0x80) == 0x80))) {
+    for (i = 0; i < dataLen - 8; i++) {
+        if (pu8Buf[i] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 1) {
+            s32StartCodeLen = 3;
+        } else if ((pu8Buf[i] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 0 && pu8Buf[i + 3] == 1)) {
+            s32StartCodeLen = 4;
+        } else {
+            continue;
+        }
+
+        // 1. (pu8Buf[i + s32StartCodeLen + 1] & 0x80) == 0x80 is to check first MB is start of slice
+        tmp = pu8Buf[i + s32StartCodeLen] & 0x1F;
+        if (((tmp == 0x5 || tmp == 0x1) && ((pu8Buf[i + s32StartCodeLen + 1] & 0x80) == 0x80))
+            || (tmp == 20 && (pu8Buf[i + s32StartCodeLen + 4] & 0x80) == 0x80)) {
             bFindStart = CVI_TRUE;
             i += 8;
             break;
         }
     }
 
-    for (; i < *ps32ReadLen - 8; i++) {
-        tmp = pu8Buf[i + 3] & 0x1F;
-        if (pu8Buf[i] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 1 &&
-            (tmp == 15 || tmp == 7 || tmp == 8 || tmp == 6 ||
-                ((tmp == 5 || tmp == 1) && ((pu8Buf[i + 4] & 0x80) == 0x80)) ||
-                (tmp == 20 && (pu8Buf[i + 7] & 0x80) == 0x80))) {
+    for (; i < dataLen - 8; i++) {
+        if ((pu8Buf[i] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 0 && pu8Buf[i + 3] == 1)) {
+            s32StartCodeLen = 4;
+        } else if (pu8Buf[i] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 1) {
+            s32StartCodeLen = 3;
+        } else {
+            continue;
+        }
+
+        tmp = pu8Buf[i + s32StartCodeLen] & 0x1F;
+        if (tmp == 15 || tmp == 7 || tmp == 8 || tmp == 6 ||
+            ((tmp == 5 || tmp == 1) && ((pu8Buf[i + s32StartCodeLen + 1] & 0x80) == 0x80)) ||
+            (tmp == 20 && (pu8Buf[i + s32StartCodeLen + 4] & 0x80) == 0x80)) {
             bFindEnd = CVI_TRUE;
+            // printf("find nal end %d \n", i);
             break;
         }
     }
     if (i > 0) {
-        *ps32ReadLen = i;
+        *pFindNalLen = i;
     }
     if (bFindStart == CVI_FALSE) {
         return CVI_FAILURE;
     }
     if (bFindEnd == CVI_FALSE) {
-        *ps32ReadLen = i + 8;
+        *pFindNalLen = i + 8;
+        if (bFinalPart == CVI_TRUE) {
+            return CVI_SUCCESS;
+        }
+        return CVI_FAILURE;
     }
     return s32Ret;
 }
-static CVI_S32 stream265Parse(void *pData, int *ps32ReadLen) {
+static CVI_S32 stream265Parse(void *pData, int dataLen, CVI_BOOL bFinalPart, int *ps32ReadLen) {
     CVI_BOOL bNewPic = CVI_FALSE;
     CVI_U8 *pu8Buf = (CVI_U8 *)pData;
     CVI_S32 i = 0;
     CVI_S32 tmp = 0;
     CVI_BOOL bFindStart = CVI_FALSE;
     CVI_BOOL bFindEnd = CVI_FALSE;
+    CVI_S32 s32StartCodeLen = 4;
 
-    for (i = 0; i < *ps32ReadLen - 6; i++) {
-        tmp = (pu8Buf[i + 3] & 0x7E) >> 1;
+    for (i = 0; i < dataLen - 6; i++) {
+        if (pu8Buf[i] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 1) {
+            s32StartCodeLen = 3;
+        } else if ((pu8Buf[i] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 0 && pu8Buf[i + 3] == 1)) {
+            s32StartCodeLen = 4;
+        } else {
+            continue;
+        }
 
-        bNewPic = (pu8Buf[i + 0] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 1 &&
-                (tmp <= 21) && ((pu8Buf[i + 5] & 0x80) == 0x80));
+        tmp = (pu8Buf[i + s32StartCodeLen] & 0x7E) >> 1;
+        bNewPic = (tmp <= 21) && ((pu8Buf[i + s32StartCodeLen + 2] & 0x80) == 0x80);
 
         if (bNewPic) {
             bFindStart = CVI_TRUE;
@@ -372,12 +400,19 @@ static CVI_S32 stream265Parse(void *pData, int *ps32ReadLen) {
         }
     }
 
-    for (; i < *ps32ReadLen - 6; i++) {
-        tmp = (pu8Buf[i + 3] & 0x7E) >> 1;
+    for (; i < dataLen - 6; i++) {
+        if (pu8Buf[i] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 1) {
+            s32StartCodeLen = 3;
+        } else if ((pu8Buf[i] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 0 && pu8Buf[i + 3] == 1)) {
+            s32StartCodeLen = 4;
+        } else {
+            continue;
+        }
 
-        bNewPic = (pu8Buf[i + 0] == 0 && pu8Buf[i + 1] == 0 && pu8Buf[i + 2] == 1 &&
-                (tmp == 32 || tmp == 33 || tmp == 34 || tmp == 39 || tmp == 40 ||
-                ((tmp <= 21) && (pu8Buf[i + 5] & 0x80) == 0x80)));
+        tmp = (pu8Buf[i + s32StartCodeLen] & 0x7E) >> 1;
+
+        bNewPic =(tmp == 32 || tmp == 33 || tmp == 34 || tmp == 39 || tmp == 40 ||
+                ((tmp <= 21) && (pu8Buf[i + s32StartCodeLen + 2] & 0x80) == 0x80));
 
         if (bNewPic) {
             bFindEnd = CVI_TRUE;
@@ -392,18 +427,25 @@ static CVI_S32 stream265Parse(void *pData, int *ps32ReadLen) {
     }
     if (bFindEnd == CVI_FALSE) {
         *ps32ReadLen = i + 6;
+        if (bFinalPart == CVI_TRUE) {
+            return CVI_SUCCESS;
+        }
+        return CVI_FAILURE;
     }
 
     return CVI_SUCCESS;
 }
-static CVI_S32 mjpegParse(void *pData, int *ps32ReadLen, unsigned int *pu32Start) {
+static CVI_S32 mjpegParse(void *pData, int dataLen, int *ps32ReadLen, unsigned int *pu32Start) {
     CVI_BOOL bFindStart = CVI_FALSE;
     CVI_BOOL bFindEnd = CVI_FALSE;
     CVI_U8 *pu8Buf = (CVI_U8 *)pData;
     CVI_S32 i = 0;
     CVI_S32 u32Len = 0;
 
-    for (i = 0; i < *ps32ReadLen - 1; i++) {
+    // FFD8: SOI (Start of Image)
+    // FFE0: APPn (Application-specific)
+    // FFD9: EOI (End of Image)
+    for (i = 0; i < dataLen - 1; i++) {
     	if (pu8Buf[i] == 0xFF && pu8Buf[i + 1] == 0xD8) {
     		*pu32Start = i;
     		bFindStart = CVI_TRUE;
@@ -411,7 +453,7 @@ static CVI_S32 mjpegParse(void *pData, int *ps32ReadLen, unsigned int *pu32Start
     		break;
     	}
     }
-    for (; i < *ps32ReadLen - 3; i++) {
+    for (; i < dataLen - 3; i++) {
     	if ((pu8Buf[i] == 0xFF) && (pu8Buf[i + 1] & 0xF0) == 0xE0) {
     		u32Len = (pu8Buf[i + 2] << 8) + pu8Buf[i + 3];
     		i += 1 + u32Len;
@@ -419,7 +461,7 @@ static CVI_S32 mjpegParse(void *pData, int *ps32ReadLen, unsigned int *pu32Start
     		break;
     	}
     }
-    for (; i < *ps32ReadLen - 1; i++) {
+    for (; i < dataLen - 1; i++) {
     	if (pu8Buf[i] == 0xFF && pu8Buf[i + 1] == 0xD9) {
     		bFindEnd = CVI_TRUE;
     		break;
@@ -433,30 +475,77 @@ static CVI_S32 mjpegParse(void *pData, int *ps32ReadLen, unsigned int *pu32Start
     return CVI_SUCCESS;
 }
 
+static CVI_S32 SAMPLE_VDEC_GetFrame(VDEC_THREAD_PARAM_S *pstVdecThreadParam)
+{
+	CVI_S32 s32Ret = 0;
+	VIDEO_FRAME_INFO_S stVFrame;
+	CVI_CHAR cSaveFile[256] = {0};
+
+	s32Ret = CVI_VDEC_GetFrame(
+				pstVdecThreadParam->s32ChnId,
+				&stVFrame,
+				pstVdecThreadParam->s32MilliSec_out);
+
+	if (s32Ret == CVI_SUCCESS) {
+		if (pstVdecThreadParam->bDumpYUV == 1) {
+			if (pstVdecThreadParam->pDumpFile == NULL) {
+				SAVE_FILE_NAME(cSaveFile,
+					pstVdecThreadParam->outFileName, stVFrame.stVFrame.enPixelFormat);
+				printf("SAVE_FILE_NAME %s\n\n", cSaveFile);
+
+				pstVdecThreadParam->pDumpFile = fopen(cSaveFile, "wb");
+				if (pstVdecThreadParam->pDumpFile == NULL) {
+					printf("chn %d can't open file %s\n",
+							pstVdecThreadParam->s32ChnId, cSaveFile);
+					return CVI_FAILURE;
+				}
+				printf("\033[0;34m chn %d saving yuv file:%s \033[0;39m\n",
+						pstVdecThreadParam->s32ChnId, cSaveFile);
+			}
+
+			write_yuv(pstVdecThreadParam->pDumpFile, stVFrame.stVFrame);
+		} else if (pstVdecThreadParam->bDumpYUV == 0)  {
+			md5Sum_update(&pstVdecThreadParam->tMD5Ctx, stVFrame.stVFrame);
+		}
+
+		s32Ret = CVI_VDEC_ReleaseFrame(pstVdecThreadParam->s32ChnId, &stVFrame);
+		if (s32Ret != CVI_SUCCESS) {
+			printf("chn %d CVI_VDEC_ReleaseFrame fail for s32Ret=0x%x!\n",
+					pstVdecThreadParam->s32ChnId, s32Ret);
+		}
+	}
+
+	return s32Ret;
+}
+
 CVI_VOID *SAMPLE_COMM_VDEC_SendStream(CVI_VOID *pArgs)
 {
 	VDEC_THREAD_PARAM_S *pstVdecThreadParam = (VDEC_THREAD_PARAM_S *)pArgs;
 	CVI_BOOL bEndOfStream = CVI_FALSE;
 	CVI_S32 s32UsedBytes = 0, s32ReadLen = 0;
-	FILE *fpStrm = NULL;
-	CVI_U8 *pu8Buf = NULL;
+	CVI_U8 *pu8OriginBuf = NULL, *pu8Buf = NULL;
 	CVI_U8 *pu8Buf_tmp = NULL;
 	CVI_S32 s32ReadLen_tmp = 0;
 	VDEC_STREAM_S stStream;
 	CVI_U64 u64PTS = 0;
 	CVI_U32 u32Start;
-	CVI_S32 s32Ret = 0, s32Cnt = 0;
+	CVI_S32 s32Ret = 0, s32SendRet = 0;
+	CVI_BOOL bSendFirstFrame = 0;
 	CVI_CHAR cStreamFile[256];
-	CVI_CHAR cSaveFile[256];
-	FILE *fp = CVI_NULL;
-	VIDEO_FRAME_INFO_S stVFrame;
+	FILE *fpStrm = NULL;
 	CVI_S32 s32FileLen;
+	CVI_BOOL bDecodeEnd = 0;
+	CVI_CHAR TaskName[64];
+	CVI_S32 s32RemainBufferLen = 0;
+	CVI_BOOL bFinalPart = CVI_FALSE;
 
-	BOOL jpeg_perf_test = (pstVdecThreadParam->enType == PT_JPEG && pstVdecThreadParam->bDumpYUV == 2);
+	BOOL jpeg_perf_test =
+			(pstVdecThreadParam->enType == PT_JPEG && pstVdecThreadParam->bDumpYUV == 2);
 
 	printf("\n");
 
-	prctl(PR_SET_NAME, "VideoSendStream", 0, 0, 0);
+	sprintf(TaskName, "chn%dVdecSendFrame", pstVdecThreadParam->s32ChnId);
+	prctl(PR_SET_NAME, TaskName, 0, 0, 0);
 
 	snprintf(cStreamFile, sizeof(cStreamFile), "%s", pstVdecThreadParam->inFileName);
 	if (cStreamFile != 0) {
@@ -471,7 +560,7 @@ CVI_VOID *SAMPLE_COMM_VDEC_SendStream(CVI_VOID *pArgs)
 		}
 	}
 
-	// make sure s32MinBufSize >= file size
+	// for jpeg: make sure s32MinBufSize >= file size
 	if (pstVdecThreadParam->enType == PT_JPEG) {
 		fseek(fpStrm, 0, SEEK_END);
 		s32FileLen = ftell(fpStrm);
@@ -488,8 +577,8 @@ CVI_VOID *SAMPLE_COMM_VDEC_SendStream(CVI_VOID *pArgs)
 			pstVdecThreadParam->inFileName,
 			pstVdecThreadParam->s32MinBufSize);
 
-	pu8Buf = malloc(pstVdecThreadParam->s32MinBufSize);
-	if (pu8Buf == NULL) {
+	pu8OriginBuf = malloc(pstVdecThreadParam->s32MinBufSize);
+	if (pu8OriginBuf == NULL) {
 		printf("chn %d can't alloc %d in send stream thread!\n",
 				pstVdecThreadParam->s32ChnId,
 				pstVdecThreadParam->s32MinBufSize);
@@ -512,147 +601,136 @@ CVI_VOID *SAMPLE_COMM_VDEC_SendStream(CVI_VOID *pArgs)
 		bEndOfStream = CVI_FALSE;
 		u32Start = 0;
 
-		if (!jpeg_perf_test || s32Cnt == 0) {
-				s32Ret = fseek(fpStrm, s32UsedBytes, SEEK_SET);
-				s32ReadLen = fread(pu8Buf, 1, pstVdecThreadParam->s32MinBufSize, fpStrm);
+		// 1. read bitstream
+		if ((s32RemainBufferLen == 0) && (!jpeg_perf_test || bSendFirstFrame == CVI_FALSE)) {
+			fseek(fpStrm, s32UsedBytes, SEEK_SET);
+			s32RemainBufferLen = fread(pu8OriginBuf, 1, pstVdecThreadParam->s32MinBufSize, fpStrm);
+			pu8Buf = pu8OriginBuf;
+			if (s32RemainBufferLen < pstVdecThreadParam->s32MinBufSize) {
+				bFinalPart = CVI_TRUE;
+			} else {
+				bFinalPart = CVI_FALSE;
+			}
 		}
-		if (s32ReadLen == 0) {
+
+		// 2. parse the bitstream to get complete frame
+		if (s32RemainBufferLen == 0) {
 			if (pstVdecThreadParam->bCircleSend == CVI_TRUE) {
 				s32UsedBytes = 0;
-				fseek(fpStrm, 0, SEEK_SET);
-				s32ReadLen = fread(pu8Buf, 1, pstVdecThreadParam->s32MinBufSize, fpStrm);
+				fseek(fpStrm, s32UsedBytes, SEEK_SET);
+				s32RemainBufferLen = fread(pu8Buf, 1, pstVdecThreadParam->s32MinBufSize, fpStrm);
+				pu8Buf = pu8OriginBuf;
+			} else {
+				bDecodeEnd = CVI_TRUE;
+				printf("decode end\n");
+			}
+		} else {
+			if (!jpeg_perf_test || bSendFirstFrame == CVI_FALSE) {
+				if (pstVdecThreadParam->s32StreamMode == VIDEO_MODE_FRAME) {
+					if (pstVdecThreadParam->enType == PT_H264) {
+						s32Ret = stream264Parse(pu8Buf, s32RemainBufferLen, bFinalPart, &s32ReadLen);
+					}
+					if (pstVdecThreadParam->enType == PT_H265) {
+						s32Ret = stream265Parse(pu8Buf, s32RemainBufferLen, bFinalPart, &s32ReadLen);
+					}
+
+					if (s32Ret != CVI_SUCCESS) {
+						if (s32ReadLen >= pstVdecThreadParam->s32MinBufSize) {
+							printf("can not find start code! s32ReadLen:%d s32UsedBytes:%d.!\n", s32ReadLen, s32UsedBytes);
+						} else {
+							// printf("stream not a complete frame! s32ReadLen:%d s32UsedBytes:%d.!\n", s32ReadLen, s32UsedBytes);
+						}
+						s32RemainBufferLen = 0;
+						continue;
+					}
+				} else if (pstVdecThreadParam->enType == PT_MJPEG || pstVdecThreadParam->enType == PT_JPEG) {
+					s32Ret = mjpegParse(pu8Buf, s32RemainBufferLen, &s32ReadLen, &u32Start);
+					if (s32Ret != CVI_SUCCESS) {
+						printf("can not find JPEG start code! s32ReadLen:%d s32UsedBytes:%d.!\n", s32ReadLen, s32UsedBytes);
+						if (pstVdecThreadParam->enType == PT_JPEG)
+							break;
+					}
+				}
+
+				if ((s32ReadLen != 0) && (s32ReadLen < pstVdecThreadParam->s32MinBufSize)) {
+					bEndOfStream = CVI_TRUE;
+				}
+			}
+
+			if (bSendFirstFrame == CVI_FALSE) {
+				pu8Buf_tmp = pu8Buf + u32Start;
+				s32ReadLen_tmp = s32ReadLen;
+			}
+
+			if (!jpeg_perf_test || bSendFirstFrame == CVI_FALSE) {
+				stStream.pu8Addr = pu8Buf + u32Start;
+				stStream.u32Len = s32ReadLen;
+
+				pu8Buf += s32ReadLen;
+				s32RemainBufferLen -= s32ReadLen;
+			}
+			if (jpeg_perf_test && bSendFirstFrame) {
+				stStream.pu8Addr = pu8Buf_tmp;
+				stStream.u32Len = s32ReadLen_tmp;
+			}
+
+			stStream.u64PTS = u64PTS;
+			stStream.bEndOfFrame = (pstVdecThreadParam->s32StreamMode == VIDEO_MODE_FRAME) ? CVI_TRUE : CVI_FALSE;
+			stStream.bEndOfStream = bEndOfStream;
+			stStream.bDisplay = 1;
+		}
+
+SendAgain:
+		if (bDecodeEnd == CVI_TRUE) {
+			if (pstVdecThreadParam->enType == PT_MJPEG || pstVdecThreadParam->enType == PT_JPEG) {
+				break;
+			}
+			/* send the flag of stream end */
+			memset(&stStream, 0, sizeof(VDEC_STREAM_S));
+			stStream.bEndOfStream = CVI_TRUE;
+		}
+
+		s32SendRet = CVI_VDEC_SendStream(pstVdecThreadParam->s32ChnId,
+				&stStream, pstVdecThreadParam->s32MilliSec_in);
+		SAMPLE_VDEC_GetFrame(pstVdecThreadParam);
+
+		if ((s32SendRet != CVI_SUCCESS) &&
+			(pstVdecThreadParam->eThreadCtrl == THREAD_CTRL_START)) {
+			if (s32SendRet == CVI_ERR_VDEC_BUSY)
+				printf("timeout in vdec sendstream\n");
+			usleep(pstVdecThreadParam->s32IntervalTime);
+			goto SendAgain;
+		} else {
+			bSendFirstFrame = CVI_TRUE;
+			if (bDecodeEnd == CVI_FALSE) {
+				bEndOfStream = CVI_FALSE;
+				s32UsedBytes = s32UsedBytes + s32ReadLen + u32Start;
+				u64PTS += pstVdecThreadParam->u64PtsIncrease;
 			} else {
 				break;
 			}
 		}
 
-		if (!jpeg_perf_test || s32Cnt == 0) {
-			if (pstVdecThreadParam->s32StreamMode == VIDEO_MODE_FRAME) {
-				if (pstVdecThreadParam->enType == PT_H264) {
-					s32Ret = stream264Parse(pu8Buf, &s32ReadLen);
-				}
-				if (pstVdecThreadParam->enType == PT_H265) {
-					s32Ret = stream265Parse(pu8Buf, &s32ReadLen);
-				}
-				if (s32Ret != CVI_SUCCESS) {
-					if (s32ReadLen >= pstVdecThreadParam->s32MinBufSize) {
-						printf("can not find start code! s32ReadLen:%d s32UsedBytes:%d.!\n", s32ReadLen, s32UsedBytes);
-					} else {
-						printf("stream not a complete frame!\n");
-					}
-				}
-			} else if (pstVdecThreadParam->enType == PT_MJPEG || pstVdecThreadParam->enType == PT_JPEG) {
-				s32Ret = mjpegParse(pu8Buf, &s32ReadLen, &u32Start);
-				if (s32Ret != CVI_SUCCESS) {
-					printf("can not find JPEG start code! s32ReadLen:%d s32UsedBytes:%d.!\n", s32ReadLen, s32UsedBytes);
-				}
-			}
-			if ((s32ReadLen != 0) && (s32ReadLen < pstVdecThreadParam->s32MinBufSize)) {
-				bEndOfStream = CVI_TRUE;
-			}
-		}
-		if (s32Cnt == 0) {
-			pu8Buf_tmp = pu8Buf + u32Start;
-			s32ReadLen_tmp = s32ReadLen;
-
-		}
-		if (!jpeg_perf_test || s32Cnt == 0) {
-			stStream.pu8Addr = pu8Buf + u32Start;
-			stStream.u32Len = s32ReadLen;
-		}
-		if (jpeg_perf_test && s32Cnt > 0) {
-			stStream.pu8Addr = pu8Buf_tmp;
-			stStream.u32Len = s32ReadLen_tmp;
-		}
-		stStream.u64PTS = u64PTS;
-		stStream.bEndOfFrame = (pstVdecThreadParam->s32StreamMode == VIDEO_MODE_FRAME) ? CVI_TRUE : CVI_FALSE;
-		stStream.bEndOfStream = bEndOfStream;
-		stStream.bDisplay = 1;
-
-SendAgain:
-		s32Ret = CVI_VDEC_SendStream(pstVdecThreadParam->s32ChnId,
-				&stStream, pstVdecThreadParam->s32MilliSec_in);
-		if ((s32Ret != CVI_SUCCESS) &&
-			(pstVdecThreadParam->eThreadCtrl == THREAD_CTRL_START)) {
-			usleep(pstVdecThreadParam->s32IntervalTime);
-
-			if (s32Ret == CVI_ERR_VDEC_BUSY)
-				printf("timeout in vdec sendstream\n");
-
-			goto SendAgain;
-		} else {
-			bEndOfStream = CVI_FALSE;
-			s32UsedBytes = s32UsedBytes + s32ReadLen + u32Start;
-			u64PTS += pstVdecThreadParam->u64PtsIncrease;
-		}
-
-		if (pstVdecThreadParam->enType == PT_JPEG || pstVdecThreadParam->enType == PT_MJPEG) {
-
-			s32Ret = CVI_VDEC_GetFrame(
-				pstVdecThreadParam->s32ChnId,
-				&stVFrame,
-				pstVdecThreadParam->s32MilliSec_out);
-
-			if (s32Ret == CVI_SUCCESS) {
-				if (pstVdecThreadParam->bDumpYUV == 1) {
-
-					if (s32Cnt == 0) {
-						SAVE_FILE_NAME(cSaveFile,
-								pstVdecThreadParam->outFileName, stVFrame.stVFrame.enPixelFormat);
-						printf("SAVE_FILE_NAME %s\n\n", cSaveFile);
-
-						fp = fopen(cSaveFile, "wb");
-						if (fp == NULL) {
-							printf("chn %d can't open file %s\n",
-								   pstVdecThreadParam->s32ChnId, cSaveFile);
-							return (CVI_VOID *)(CVI_FAILURE);
-						}
-						printf("\033[0;34m chn %d saving yuv file:%s \033[0;39m\n",
-							   pstVdecThreadParam->s32ChnId, cSaveFile);
-
-					}
-
-					write_yuv(fp, stVFrame.stVFrame);
-
-				} else if (pstVdecThreadParam->bDumpYUV == 0)  {
-					md5Sum_update(&pstVdecThreadParam->tMD5Ctx, stVFrame.stVFrame);
-				}
-
-				// make sure log above only print once
-				s32Cnt++;
-
-				s32Ret = CVI_VDEC_ReleaseFrame(pstVdecThreadParam->s32ChnId, &stVFrame);
-				if (s32Ret != CVI_SUCCESS) {
-					printf("chn %d CVI_VDEC_ReleaseFrame fail for s32Ret=0x%x!\n",
-						   pstVdecThreadParam->s32ChnId, s32Ret);
-				}
-				if (jpeg_perf_test && s32Cnt ==  1000){  //jpeg perf test, decode 1000 times
-					break;
-				}
-			}
-		}
 		usleep(pstVdecThreadParam->s32IntervalTime);
 	}
 
+	// close output file or md5 context
 	if (pstVdecThreadParam->enType == PT_JPEG || pstVdecThreadParam->enType == PT_MJPEG) {
-		if (fp != CVI_NULL) {
-			fclose(fp);
+		if (pstVdecThreadParam->pDumpFile != CVI_NULL) {
+			fclose(pstVdecThreadParam->pDumpFile);
+			pstVdecThreadParam->pDumpFile = CVI_NULL;
 		}
 
 		if (pstVdecThreadParam->bDumpYUV == 0) {
 			outputMD5Sum(pstVdecThreadParam);
 		}
-	}
-
-	/* send the flag of stream end */
-	memset(&stStream, 0, sizeof(VDEC_STREAM_S));
-	stStream.bEndOfStream = CVI_TRUE;
-
-SendAgain2:
-	s32Ret = CVI_VDEC_SendStream(pstVdecThreadParam->s32ChnId, &stStream, -1);
-	if (s32Ret != CVI_SUCCESS) {
-		usleep(pstVdecThreadParam->s32IntervalTime);
-		goto SendAgain2;
+	} else {
+		if (pstVdecThreadParam->bDumpYUV == 1) {
+			if (pstVdecThreadParam->pDumpFile != CVI_NULL) {
+				fclose(pstVdecThreadParam->pDumpFile);
+				pstVdecThreadParam->pDumpFile = CVI_NULL;
+			}
+		}
 	}
 
 	printf("\033[0;35m chn %d send steam thread return ...  \033[0;39m\n",
@@ -662,8 +740,9 @@ SendAgain2:
 	printf("File end in chn[%d]\n", pstVdecThreadParam->s32ChnId);
 
 	fflush(stdout);
-	if (pu8Buf != CVI_NULL) {
-		free(pu8Buf);
+	if (pu8OriginBuf != CVI_NULL) {
+		free(pu8OriginBuf);
+		pu8OriginBuf = CVI_NULL;
 	}
 	fclose(fpStrm);
 
@@ -744,121 +823,6 @@ CVI_VOID SAMPLE_COMM_VDEC_StopSendStream(VDEC_THREAD_PARAM_S *pstVdecSend, pthre
 	}
 }
 
-CVI_VOID *SAMPLE_COMM_VDEC_GetPic(CVI_VOID *pArgs)
-{
-	VDEC_THREAD_PARAM_S *pstVdecThreadParam = (VDEC_THREAD_PARAM_S *)pArgs;
-	FILE *fp = CVI_NULL;
-	CVI_S32 s32Ret, s32Cnt = 0;
-	VDEC_CHN_ATTR_S stAttr;
-	VIDEO_FRAME_INFO_S stVFrame;
-	VIDEO_FRAME_S *pstVFrame = &stVFrame.stVFrame;
-	CVI_CHAR cSaveFile[256];
-
-	printf("\n");
-
-	prctl(PR_SET_NAME, "VdecGetPic", 0, 0, 0);
-
-	s32Ret = CVI_VDEC_GetChnAttr(pstVdecThreadParam->s32ChnId, &stAttr);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("chn %d get chn attr fail for %#x!\n",
-				pstVdecThreadParam->s32ChnId,
-				s32Ret);
-		return (CVI_VOID *)(CVI_FAILURE);
-	}
-
-	if (stAttr.enType != PT_JPEG &&
-	    stAttr.enType != PT_H264 &&
-	    stAttr.enType != PT_H265 &&
-	    stAttr.enType != PT_MJPEG) {
-		printf("chn %d enType %d do not support save file!\n",
-				pstVdecThreadParam->s32ChnId,
-				stAttr.enType);
-		return (CVI_VOID *)(CVI_FAILURE);
-	}
-
-	while (1) {
-RETRY_GET_FRAME:
-		if (pstVdecThreadParam->eThreadCtrl == THREAD_CTRL_STOP)
-			break;
-
-		s32Ret = CVI_VDEC_GetFrame(
-				pstVdecThreadParam->s32ChnId,
-				&stVFrame,
-				pstVdecThreadParam->s32MilliSec_out);
-		if (s32Ret == CVI_SUCCESS) {
-			printf("PTS = %"PRId64", u32TimeRef = %d\n",
-					pstVFrame->u64PTS, pstVFrame->u32TimeRef);
-
-			if (pstVdecThreadParam->bDumpYUV == 1) {
-				if (s32Cnt == 0) {
-					SAVE_FILE_NAME(cSaveFile,
-							pstVdecThreadParam->outFileName, stVFrame.stVFrame.enPixelFormat);
-					printf("SAVE_FILE_NAME %s\n\n", cSaveFile);
-
-					fp = fopen(cSaveFile, "wb");
-					if (fp == NULL) {
-						printf("chn %d can't open file %s\n",
-							   pstVdecThreadParam->s32ChnId, cSaveFile);
-						return (CVI_VOID *)(CVI_FAILURE);
-					}
-					printf("\033[0;34m chn %d saving yuv file:%s \033[0;39m\n",
-						   pstVdecThreadParam->s32ChnId, cSaveFile);
-				}
-
-				write_yuv(fp, stVFrame.stVFrame);
-			} else if (pstVdecThreadParam->bDumpYUV == 0){
-				md5Sum_update(&pstVdecThreadParam->tMD5Ctx, stVFrame.stVFrame);
-			}
-
-			s32Cnt++;
-
-			s32Ret = CVI_VDEC_ReleaseFrame(pstVdecThreadParam->s32ChnId, &stVFrame);
-			if (s32Ret != CVI_SUCCESS) {
-				printf("chn %d CVI_MPI_VDEC_ReleaseFrame fail for s32Ret=0x%x!\n",
-					   pstVdecThreadParam->s32ChnId, s32Ret);
-			}
-		} else {
-			if (s32Ret == CVI_ERR_VDEC_BUSY) {
-				printf("vdec getframe timeout...retry\n");
-				goto RETRY_GET_FRAME;
-			}
-			usleep(pstVdecThreadParam->s32IntervalTime);
-		}
-	}
-
-	if (pstVdecThreadParam->bDumpYUV == 1) {
-		if (fp != CVI_NULL)
-			fclose(fp);
-	}
-
-	printf("\033[0;35m chn %d get pic thread return ...  \033[0;39m\n", pstVdecThreadParam->s32ChnId);
-
-	return (CVI_VOID *)CVI_SUCCESS;
-}
-
-CVI_VOID SAMPLE_COMM_VDEC_StartGetPic(VDEC_THREAD_PARAM_S *pstVdecGet,
-		pthread_t *pVdecThread)
-{
-	struct sched_param param;
-	pthread_attr_t attr;
-
-	param.sched_priority = 80;
-	pthread_attr_init(&attr);
-	pthread_attr_setschedpolicy(&attr, SCHED_RR);
-	pthread_attr_setschedparam(&attr, &param);
-	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-	pthread_create(pVdecThread, &attr, SAMPLE_COMM_VDEC_GetPic, (CVI_VOID *)pstVdecGet);
-}
-
-CVI_VOID SAMPLE_COMM_VDEC_StopGetPic(VDEC_THREAD_PARAM_S *pstVdecGet, pthread_t *pVdecThread)
-{
-	pstVdecGet->eThreadCtrl = THREAD_CTRL_STOP;
-	if (*pVdecThread != 0) {
-		pthread_join(*pVdecThread, CVI_NULL);
-		*pVdecThread = 0;
-	}
-}
-
 CVI_S32 SAMPLE_COMM_VDEC_SetVbMode(CVI_S32 VdecVbSrc)
 {
 	if (VdecVbSrc == 0)
@@ -885,6 +849,7 @@ CVI_S32 SAMPLE_COMM_VDEC_Start(vdecChnCtx *pvdchnCtx)
 	VDEC_CHN_PARAM_S stChnParam;
 	VDEC_MOD_PARAM_S stModParam;
 
+	memset(&stChnAttr, 0, sizeof(VDEC_CHN_ATTR_S));
 	pstChnAttr->enType = psvdattr->enType;
 	pstChnAttr->enMode = psvdattr->enMode;
 	pstChnAttr->u32PicWidth = psvdattr->u32Width;
@@ -892,6 +857,7 @@ CVI_S32 SAMPLE_COMM_VDEC_Start(vdecChnCtx *pvdchnCtx)
 	pstChnAttr->u32StreamBufSize = ALIGN(psvdattr->u32Width * psvdattr->u32Height, 0x4000);
 	printf("u32StreamBufSize = 0x%X\n", pstChnAttr->u32StreamBufSize);
 	pstChnAttr->u32FrameBufCnt = psvdattr->u32FrameBufCnt;
+	pstChnAttr->u8ReorderEnable = CVI_TRUE;
 
 	if (psvdattr->enType == PT_JPEG || psvdattr->enType == PT_MJPEG) {
 		pstChnAttr->enMode = VIDEO_MODE_FRAME;

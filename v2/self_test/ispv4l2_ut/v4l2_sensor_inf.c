@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
-#include <linux/sns_v4l2_uapi.h>
+#include <sns_v4l2_uapi.h>
 
 #ifndef UNUSED
 #define UNUSED(x) ((void)(x))

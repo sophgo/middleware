@@ -7,12 +7,7 @@ extern "C" {
 #endif
 #endif /* End of #ifdef __cplusplus */
 
-#if defined(ARCH_CV183X) || defined(ARCH_CV182X)
 #include "cvi_common.h"
-#elif defined(__CV181X__) || defined(__CV180X__) || defined(__CV186X__)
-#include <linux/cvi_common.h>
-#endif // SOCs
-
 #include "sample_comm.h"
 
 typedef struct {

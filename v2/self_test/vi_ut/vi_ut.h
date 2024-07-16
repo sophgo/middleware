@@ -21,17 +21,16 @@ extern "C" {
 #include <errno.h>
 #include <inttypes.h>
 
-#include <linux/cvi_common.h>
+#include <cvi_common.h>
 #include "sample_comm.h"
 #include "cvi_sns_ctrl.h"
 #include "cvi_sys.h"
 #include "cvi_base.h"
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 
-#include <linux/vi_uapi.h>
-#include <linux/vi_isp.h>
-#include <linux/vi_tun_cfg.h>
-#include <linux/cvi_vi_ctx.h>
+#include <vi_uapi.h>
+#include <vi_isp.h>
+#include <vi_tun_cfg.h>
 
 #if defined(__CV181X__)
 #define CHIP_TYPE "cv181x_vi"

@@ -12,7 +12,7 @@ TARGET_bg = ive_bg_ut
 
 SDIR = $(PWD)/src
 SRCS = $(wildcard $(SDIR)/*.c)
-INCS = -Iinclude -I$(MW_INC) -I$(ISP_INC) -I$(COMM_INC) -I$(KERNEL_INC)
+INCS = -Iinclude -I$(MW_INC) -I$(ISP_INC) -I$(VI_INC) -I$(COMM_INC) -I$(KERNEL_INC)
 OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 OBJ_1st = 	$(SDIR)/ive_dump.o $(SDIR)/ive_reset.o $(SDIR)/sample_add.o \

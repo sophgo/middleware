@@ -55,8 +55,8 @@ typedef enum {
     CVI_TDE_COLOR_FORMAT_BGRA4444,         /* BGRA4444 format */
     CVI_TDE_COLOR_FORMAT_ARGB1555,         /* ARGB1555 format */
     CVI_TDE_COLOR_FORMAT_ABGR1555,         /* ABGR1555 format */
-    CVI_TDE_COLOR_FORMAT_RGBA1555,         /* RGBA1555 format */
-    CVI_TDE_COLOR_FORMAT_BGRA1555,         /* BGRA1555 format */
+    CVI_TDE_COLOR_FORMAT_RGBA5551,         /* RGBA5551 format */
+    CVI_TDE_COLOR_FORMAT_BGRA5551,         /* BGRA5551 format */
     CVI_TDE_COLOR_FORMAT_ARGB8565,         /* ARGB8565 format */
     CVI_TDE_COLOR_FORMAT_ABGR8565,         /* ABGR8565 format */
     CVI_TDE_COLOR_FORMAT_RGBA8565,         /* RGBA8565 format */

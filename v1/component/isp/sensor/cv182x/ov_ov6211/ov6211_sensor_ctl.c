@@ -11,8 +11,8 @@
 #include <linux/cvi_vip_snsr.h>
 #include "cvi_comm_video.h"
 #else
-#include <linux/vi_snsr.h>
-#include <linux/cvi_comm_video.h>
+
+#include <cvi_comm_video.h>
 #endif
 #include "cvi_sns_ctrl.h"
 #include "ov6211_cmos_ex.h"
@@ -43,7 +43,7 @@ int ov6211_i2c_init(VI_PIPE ViPipe)
 		return CVI_FAILURE;
 	}
 
-	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, ov6211_i2c_addr);
+	ret = ioctl(g_fd[ViPipe], I2C_SLAVE_FORCE, g_aunOv6211_AddrInfo[ViPipe].s8I2cAddr);
 	if (ret < 0) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C_SLAVE_FORCE error!\n");
 		close(g_fd[ViPipe]);
@@ -231,11 +231,6 @@ void ov6211_init(VI_PIPE ViPipe)
 	ov6211_linear_400p120_init(ViPipe);
 
 	g_pastOv6211[ViPipe]->bInit = CVI_TRUE;
-}
-
-void ov6211_exit(VI_PIPE ViPipe)
-{
-	ov6211_i2c_exit(ViPipe);
 }
 
 /* 1944P30 and 1944P25 */

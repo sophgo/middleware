@@ -9,9 +9,9 @@
 #include "cvi_comm_video.h"
 #include <linux/cvi_vip_snsr.h>
 #else
-#include <linux/cvi_type.h>
-#include <linux/cvi_comm_video.h>
-#include <linux/vi_snsr.h>
+#include <cvi_type.h>
+#include <cvi_comm_video.h>
+
 #endif
 #include "cvi_debug.h"
 #include "cvi_comm_sns.h"
@@ -40,14 +40,22 @@
  ****************************************************************************/
 
 ISP_SNS_STATE_S *g_pastQ03[VI_MAX_PIPE_NUM] = {CVI_NULL};
+SNS_COMBO_DEV_ATTR_S* g_pastQ03ComboDevArray[VI_MAX_PIPE_NUM] = {CVI_NULL};
 
 #define Q03_SENSOR_GET_CTX(dev, pstCtx)   (pstCtx = g_pastQ03[dev])
 #define Q03_SENSOR_SET_CTX(dev, pstCtx)   (g_pastQ03[dev] = pstCtx)
 #define Q03_SENSOR_RESET_CTX(dev)         (g_pastQ03[dev] = CVI_NULL)
+#define Q03_SENSOR_GET_COMBO(dev, pstCtx)   (pstCtx = g_pastQ03ComboDevArray[dev])
+#define Q03_SENSOR_SET_COMBO(dev, pstCtx)   (g_pastQ03ComboDevArray[dev] = pstCtx)
 
 ISP_SNS_COMMBUS_U g_aunQ03_BusInfo[VI_MAX_PIPE_NUM] = {
 	[0] = { .s8I2cDev = 0},
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cDev = -1}
+};
+
+ISP_SNS_COMMADDR_U g_aunQ03_AddrInfo[VI_MAX_PIPE_NUM] = {
+	[0] = { .s8I2cAddr = 0},
+	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
 };
 
 CVI_U16 g_au16Q03_GainMode[VI_MAX_PIPE_NUM] = {0};
@@ -489,7 +497,7 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 
 		for (i = 0; i < pstCfg0->snsCfg.u32RegNum; i++) {
 			pstI2c_data[i].bUpdate = CVI_TRUE;
-			pstI2c_data[i].u8DevAddr = q03_i2c_addr;
+			pstI2c_data[i].u8DevAddr = g_aunQ03_AddrInfo[ViPipe].s8I2cAddr;
 			pstI2c_data[i].u32AddrByteNum = q03_addr_byte;
 			pstI2c_data[i].u32DataByteNum = q03_data_byte;
 		}
@@ -620,27 +628,39 @@ static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 {
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+	SNS_COMBO_DEV_ATTR_S *pstRxAttrSrc = CVI_NULL;
 
 	Q03_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	Q03_SENSOR_GET_COMBO(ViPipe, pstRxAttrSrc);
+
 	CMOS_CHECK_POINTER(pstSnsState);
 	CMOS_CHECK_POINTER(pstRxAttr);
+	CMOS_CHECK_POINTER(pstRxAttrSrc);
 
-	memcpy(pstRxAttr, &q03_rx_attr, sizeof(*pstRxAttr));
+	memcpy(pstRxAttr, &pstRxAttrSrc, sizeof(*pstRxAttr));
 
 	pstRxAttr->img_size.width = g_astQ03_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Width;
 	pstRxAttr->img_size.height = g_astQ03_mode[pstSnsState->u8ImgMode].astImg[0].stSnsSize.u32Height;
 	if (pstSnsState->enWDRMode == WDR_MODE_NONE) {
 		pstRxAttr->mipi_attr.wdr_mode = CVI_MIPI_WDR_MODE_NONE;
 	}
-
+	pstRxAttrSrc = CVI_NULL;
 	return CVI_SUCCESS;
 
 }
 
-static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
+static CVI_S32 sensor_patch_rx_attr(VI_PIPE ViPipe, RX_INIT_ATTR_S *pstRxInitAttr)
 {
-	SNS_COMBO_DEV_ATTR_S *pstRxAttr = &q03_rx_attr;
 	int i;
+	SNS_COMBO_DEV_ATTR_S* pstRxAttr = malloc(sizeof(SNS_COMBO_DEV_ATTR_S));
+
+	if(!g_pastQ03ComboDevArray[ViPipe]) {
+		pstRxAttr = malloc(sizeof(SNS_COMBO_DEV_ATTR_S));
+	} else {
+		Q03_SENSOR_GET_COMBO(ViPipe, pstRxAttr);
+	}
+	memcpy(pstRxAttr, &q03_rx_attr, sizeof(SNS_COMBO_DEV_ATTR_S));
+	Q03_SENSOR_SET_COMBO(ViPipe, pstRxAttr);
 
 	CMOS_CHECK_POINTER(pstRxInitAttr);
 
@@ -651,6 +671,7 @@ static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
 		return CVI_SUCCESS;
 
 	pstRxAttr->devno = pstRxInitAttr->MipiDev;
+	pstRxAttr->cif_mode = pstRxInitAttr->MipiMode;
 
 	if (pstRxAttr->input_mode == INPUT_MODE_MIPI) {
 		struct mipi_dev_attr_s *attr = &pstRxAttr->mipi_attr;
@@ -667,8 +688,17 @@ static CVI_S32 sensor_patch_rx_attr(RX_INIT_ATTR_S *pstRxInitAttr)
 			attr->pn_swap[i] = pstRxInitAttr->as8PNSwap[i];
 		}
 	}
-
+	pstRxAttr = CVI_NULL;
 	return CVI_SUCCESS;
+}
+
+void q03_exit(VI_PIPE ViPipe)
+{
+	if(g_pastQ03ComboDevArray[ViPipe]) {
+		free(g_pastQ03ComboDevArray[ViPipe]);
+		g_pastQ03ComboDevArray[ViPipe] = CVI_NULL;
+	}
+	q03_i2c_exit(ViPipe);
 }
 
 static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExpFunc)
@@ -677,10 +707,10 @@ static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExp
 
 	memset(pstSensorExpFunc, 0, sizeof(ISP_SENSOR_EXP_FUNC_S));
 
-	pstSensorExpFunc->pfn_cmos_sensor_init = q03_init;
-	pstSensorExpFunc->pfn_cmos_sensor_exit = q03_exit;
-	pstSensorExpFunc->pfn_cmos_sensor_global_init = sensor_global_init;
-	pstSensorExpFunc->pfn_cmos_set_image_mode = cmos_set_image_mode;
+			pstSensorExpFunc->pfn_cmos_sensor_init = q03_init;
+			pstSensorExpFunc->pfn_cmos_sensor_exit = q03_exit;
+			pstSensorExpFunc->pfn_cmos_sensor_global_init = sensor_global_init;
+			pstSensorExpFunc->pfn_cmos_set_image_mode = cmos_set_image_mode;
 	pstSensorExpFunc->pfn_cmos_set_wdr_mode = cmos_set_wdr_mode;
 
 	pstSensorExpFunc->pfn_cmos_get_isp_default = cmos_get_isp_default;
@@ -693,10 +723,14 @@ static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExp
 /****************************************************************************
  * callback structure                                                       *
  ****************************************************************************/
-static CVI_VOID sensor_patch_i2c_addr(CVI_S32 s32I2cAddr)
+static CVI_VOID sensor_patch_i2c_addr(VI_PIPE ViPipe, CVI_S32 s32I2cAddr)
 {
 	if (Q03_I2C_ADDR_IS_VALID(s32I2cAddr))
-		q03_i2c_addr = s32I2cAddr;
+		g_aunQ03_AddrInfo[ViPipe].s8I2cAddr = s32I2cAddr;
+	else {
+		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C addr input error ,please check [0x%x]\n", s32I2cAddr);
+		g_aunQ03_AddrInfo[ViPipe].s8I2cAddr = Q03_I2C_ADDR_1;
+	}
 }
 
 static CVI_S32 q03_set_bus_info(VI_PIPE ViPipe, ISP_SNS_COMMBUS_U unSNSBusInfo)

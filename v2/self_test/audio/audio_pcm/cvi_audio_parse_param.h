@@ -6,8 +6,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <linux/cvi_type.h>
-#include <linux/cvi_common.h>
+#include <cvi_type.h>
+#include <cvi_common.h>
 #include <string.h>
 #else
 #include "cvi_common.h"

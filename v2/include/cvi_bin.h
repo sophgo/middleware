@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 #include "stdio.h"
-#include <linux/cvi_type.h>
-#include <linux/cvi_comm_video.h>
+#include <cvi_type.h>
+#include <cvi_comm_video.h>
 
 // ++++++++ If you want to change these interfaces, please contact the isp team. ++++++++
 #define BIN_FILE_LENGTH	256

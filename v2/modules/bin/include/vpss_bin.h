@@ -1,7 +1,7 @@
 #ifndef _VPSS_BIN_H
 #define _VPSS_BIN_H
 
-#include <linux/cvi_type.h>
+#include <cvi_type.h>
 #include "cvi_base.h"
 
 

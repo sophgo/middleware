@@ -5,13 +5,11 @@ ifeq ($(PARAM_FILE), )
 endif
 
 CHIP_NAME = cv186x
-V4L2_INC = $(TOP_DIR)/linux_5.10/drivers/media/platform/soph/osdrv_include
 
 SDIR = $(PWD)
 SRCS = $(wildcard $(SDIR)/*.c)
 
-INCS += -I$(V4L2_INC)/chip/$(CHIP_NAME)/uapi/
-INCS += -I$(V4L2_INC)/common/uapi/
+INCS += -I$(MW_INC) -I$(VI_INC)
 
 ifeq ($(V4L2_ISP_ENABLE),1)
 #for isp mw
