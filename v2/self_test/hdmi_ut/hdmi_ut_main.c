@@ -857,6 +857,11 @@ static CVI_S32 _hdmi_ut_handle_op(CVI_S32 op)
 		infoframe.infoframe_unit.avi_infoframe.colorimetry = CVI_HDMI_COMMON_COLORIMETRY_ITU709;
 		infoframe.infoframe_unit.avi_infoframe.rgb_quant = CVI_HDMI_RGB_QUANT_DEFAULT_RANGE;
 
+		infoframe.infoframe_unit.audio_infoframe.chn_alloc = 0x1f;
+		infoframe.infoframe_unit.audio_infoframe.coding_type = PCM;
+		infoframe.infoframe_unit.audio_infoframe.sample_size = CVI_HDMI_AUDIO_SAMPLE_SIZE_24;
+		infoframe.infoframe_unit.audio_infoframe.sampling_freq = CVI_HDMI_AUDIO_SAMPLE_FREQ_192000;
+
 		s32Ret =  CVI_HDMI_Init();
 		if(s32Ret){
 			SAMPLE_PRT("HDMI init error with %#x\n", s32Ret);

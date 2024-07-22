@@ -77,8 +77,12 @@ int os08b10_read_register(VI_PIPE ViPipe, int addr)
 	CVI_U8 buf[8];
 	CVI_U8 idx = 0;
 
-	if (g_fd[ViPipe] < 0)
-		return CVI_FAILURE;
+	if (g_fd[ViPipe] < 0) {
+		ret = os08b10_i2c_init(ViPipe);
+		if (ret != CVI_SUCCESS) {
+			return CVI_FAILURE;
+		}
+	}
 
 	if (os08b10_addr_byte == 2)
 		buf[idx++] = (addr >> 8) & 0xff;
