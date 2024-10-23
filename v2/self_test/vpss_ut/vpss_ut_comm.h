@@ -13,12 +13,10 @@
 
 #define TEST_CHECK_RET(s32Ret) \
 	do { \
-		sleep(1); \
 		if (s32Ret == CVI_SUCCESS) \
 			printf(GREEN"\n=== %s pass ===\n"NONE"\n", __func__); \
 		else \
 			printf(RED"\n=== %s fail ===\n"NONE"\n", __func__); \
-		sleep(1); \
 	} while (0)
 
 #ifndef MIN
@@ -46,5 +44,8 @@ CVI_S32 FrameFullSaveToFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVid
 
 CVI_S32 CompareWithFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVideoFrame);
 CVI_S32 CompareWithMD5(const CVI_CHAR *md5sum, VIDEO_FRAME_INFO_S *pstVideoFrame);
+
+CVI_S32 CompareCmodel_rgb2yuv(VIDEO_FRAME_INFO_S *pstVideoFrameIn, VIDEO_FRAME_INFO_S *pstVideoFrameOut);
+CVI_S32 CompareCmodel_yuv2rgb(VIDEO_FRAME_INFO_S *pstVideoFrameIn, VIDEO_FRAME_INFO_S *pstVideoFrameOut);
 
 #endif

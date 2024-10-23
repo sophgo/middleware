@@ -64,11 +64,23 @@ VB_BLK CVI_VB_GetBlock(VB_POOL Pool, CVI_U32 u32BlkSize)
 {
 	CVI_S32 s32Ret, fd;
 	struct vb_blk_cfg cfg;
+	unsigned int vb_max_pools;
 
 	fd = get_base_fd();
 	if (fd == -1) {
 		CVI_TRACE_VB(CVI_DBG_ERR, "get_base_fd failed.\n");
 		return VB_INVALID_HANDLE;
+	}
+
+	vb_ioctl_get_pool_max_cnt(fd, &vb_max_pools);
+	if (Pool != VB_INVALID_POOLID && Pool != VB_STATIC_POOLID && Pool >= vb_max_pools) {
+		CVI_TRACE_VB(CVI_DBG_ERR, "Invalid vb pool(%d)\n", Pool);
+		return CVI_ERR_VB_ILLEGAL_PARAM;
+	}
+
+	if (u32BlkSize == 0) {
+		CVI_TRACE_VB(CVI_DBG_ERR, "Invalid u32BlkSize(%d)\n", u32BlkSize);
+		return CVI_ERR_VB_ILLEGAL_PARAM;
 	}
 
 	memset(&cfg, 0, sizeof(cfg));
@@ -90,6 +102,8 @@ VB_BLK CVI_VB_GetBlock(VB_POOL Pool, CVI_U32 u32BlkSize)
 CVI_S32 CVI_VB_ReleaseBlock(VB_BLK Block)
 {
 	CVI_S32 s32Ret, fd;
+
+	MOD_CHECK_NULL_PTR(CVI_ID_VB, Block);
 
 	fd = get_base_fd();
 	if (fd == -1) {
@@ -253,11 +267,28 @@ VB_POOL CVI_VB_CreatePool(VB_POOL_CONFIG_S *pstVbPoolCfg)
 		return CVI_ERR_VB_NOTREADY;
 	}
 
+	if (pstVbPoolCfg->u32BlkSize == 0) {
+		CVI_TRACE_VB(CVI_DBG_ERR, "Invalid vb u32BlkSize(%d)\n", pstVbPoolCfg->u32BlkSize);
+		return CVI_ERR_VB_ILLEGAL_PARAM;
+	}
+
+	if (pstVbPoolCfg->u32BlkCnt == 0) {
+		CVI_TRACE_VB(CVI_DBG_ERR, "Invalid vb u32BlkCnt(%d)\n", pstVbPoolCfg->u32BlkCnt);
+		return CVI_ERR_VB_ILLEGAL_PARAM;
+	}
+
+	if (pstVbPoolCfg->enRemapMode < VB_REMAP_MODE_NONE ||
+		pstVbPoolCfg->enRemapMode >= VB_REMAP_MODE_BUTT) {
+		CVI_TRACE_VB(CVI_DBG_ERR, "Invalid vb enRemapMode(%d)\n", pstVbPoolCfg->enRemapMode);
+		return CVI_ERR_VB_ILLEGAL_PARAM;
+	}
+
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.blk_size = pstVbPoolCfg->u32BlkSize;
 	cfg.blk_cnt = pstVbPoolCfg->u32BlkCnt;
 	cfg.remap_mode = pstVbPoolCfg->enRemapMode;
 	strncpy((char *)cfg.pool_name, pstVbPoolCfg->acName, VB_POOL_NAME_LEN - 1);
+	cfg.pool_name[VB_POOL_NAME_LEN - 1] = '\0';
 
 	s32Ret = vb_ioctl_create_pool(fd, &cfg);
 	if (s32Ret != CVI_SUCCESS) {
@@ -301,6 +332,28 @@ CVI_S32 CVI_VB_SetConfig(const VB_CONFIG_S *pstVbConfig)
 			pstVbConfig->u32MaxPoolCnt);
 		return CVI_ERR_VB_ILLEGAL_PARAM;
 	}
+
+	for (i = 0; i < pstVbConfig->u32MaxPoolCnt; i++) {
+		if (pstVbConfig->astCommPool[i].u32BlkSize == 0) {
+			CVI_TRACE_VB(CVI_DBG_ERR, "Invalid vb pool(%d) u32BlkSize(%d)\n",
+				i, pstVbConfig->astCommPool[i].u32BlkSize);
+			return CVI_ERR_VB_ILLEGAL_PARAM;
+		}
+
+		if (pstVbConfig->astCommPool[i].u32BlkCnt == 0) {
+			CVI_TRACE_VB(CVI_DBG_ERR, "Invalid vb pool(%d) u32BlkCnt(%d)\n",
+				i, pstVbConfig->astCommPool[i].u32BlkCnt);
+			return CVI_ERR_VB_ILLEGAL_PARAM;
+		}
+
+		if (pstVbConfig->astCommPool[i].enRemapMode < VB_REMAP_MODE_NONE ||
+			pstVbConfig->astCommPool[i].enRemapMode >= VB_REMAP_MODE_BUTT) {
+			CVI_TRACE_VB(CVI_DBG_ERR, "Invalid vb pool(%d) enRemapMode(%d)\n",
+						i, pstVbConfig->astCommPool[i].enRemapMode);
+			return CVI_ERR_VB_ILLEGAL_PARAM;
+		}
+	}
+
 
 	fd = get_base_fd();
 	if (fd == -1) {

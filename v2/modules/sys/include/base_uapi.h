@@ -108,6 +108,77 @@ struct sys_bind_cfg {
 	MMF_BIND_DEST_S bind_dst;
 };
 
+enum cvi_rgn_format {
+	CVI_RGN_FMT_ARGB8888,
+	CVI_RGN_FMT_ARGB4444,
+	CVI_RGN_FMT_ARGB1555,
+	CVI_RGN_FMT_256LUT,
+	CVI_RGN_FMT_16LUT,
+	CVI_RGN_FMT_FONT,
+	CVI_RGN_FMT_MAX
+};
+
+struct cvi_rect {
+	__s32 left;
+	__s32 top;
+	__u32 width;
+	__u32 height;
+};
+
+struct cvi_rgn_param {
+	enum cvi_rgn_format fmt;
+	struct cvi_rect rect;
+	__u32 stride;
+	__u64 phy_addr;
+};
+
+struct cvi_rgn_lut_cfg {
+	__u16 lut_length;
+	__u16 lut_addr[256];
+	__u8 lut_layer;
+	// __u8 rgnex_en;
+	__u8 is_updated;
+};
+
+struct cvi_rgn_odec {
+	__u8 enable;
+	__u8 attached_ow;
+	__u8 canvas_updated;
+	__u32 bso_sz;
+	__u64 canvas_mutex_lock;
+	__u64 rgn_canvas_waitq;
+	__u64 rgn_canvas_doneq;
+};
+
+struct rgn_cfg {
+	struct cvi_rgn_param param[8];
+	struct cvi_rgn_lut_cfg rgn_lut_cfg;
+	struct cvi_rgn_odec odec;
+	__u8 num_of_rgn;
+	__u8 hscale_x2;
+	__u8 vscale_x2;
+	__u8 colorkey_en;
+	__u32 colorkey;
+};
+struct rgn_coverex_param {
+	RECT_S rect;
+	__u32 color;
+	__u8 enable;
+};
+
+struct rgn_coverex_cfg {
+	struct rgn_coverex_param cover_param[4];
+};
+
+struct rgn_mosaic_cfg {
+	__u8 enable;
+	__u8 blk_size;	//0: 8x8   1:16x16
+	__u16 start_x;
+	__u16 start_y;
+	__u16 end_x;
+	__u16 end_y;
+	__u64 phy_addr;
+};
 
 #define IOCTL_BASE_MAGIC	'b'
 #define BASE_VB_CMD		    _IOWR(IOCTL_BASE_MAGIC, 0x01, struct vb_ext_control)

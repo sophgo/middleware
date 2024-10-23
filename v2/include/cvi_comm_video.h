@@ -511,21 +511,17 @@ typedef struct _GRID_INFO_ATTR_S {
 	CVI_BOOL isBlending;
 	CVI_BOOL bEISEnable; /* enable EIS */
 	uint8_t homoRgnNum;
-#if 0
-	HOMOGRAPH_REGION_S homo_regions[GDC_MAX_REGION_NUM];
-#endif
 } GRID_INFO_ATTR_S;
 
 typedef struct _LDC_ATTR_S {
 	CVI_BOOL bAspect; /* RW;Whether aspect ration  is keep */
-	CVI_S32 s32XRatio; /* RW; Range: [0, 100], field angle ration of  horizontal,valid when bAspect=0.*/
-	CVI_S32 s32YRatio; /* RW; Range: [0, 100], field angle ration of  vertical,valid when bAspect=0.*/
-	CVI_S32 s32XYRatio; /* RW; Range: [0, 100], field angle ration of  all,valid when bAspect=1.*/
-	CVI_S32 s32CenterXOffset;
-	CVI_S32 s32CenterYOffset;
-	CVI_S32 s32DistortionRatio;
+	CVI_S32 s32XRatio; /* RW; Range: [0, 0x64], field angle ration of  horizontal,valid when bAspect=0.*/
+	CVI_S32 s32YRatio; /* RW; Range: [0, 0x64], field angle ration of  vertical,valid when bAspect=0.*/
+	CVI_S32 s32XYRatio; /* RW; Range: [0, 0x64], field angle ration of  all,valid when bAspect=1.*/
+	CVI_S32 s32CenterXOffset; /* RW; Range: [-0x1ff, 0x1ff] */
+	CVI_S32 s32CenterYOffset; /* RW; Range: [-0x1ff, 0x1ff] */
+	CVI_S32 s32DistortionRatio; /* RW; Range: [-0x12c, 0x1f4] */
 	GRID_INFO_ATTR_S stGridInfoAttr;
-	CVI_BOOL bEnHWLDC;
 	ROTATION_E enRotation;
 } LDC_ATTR_S;
 // -------- If you want to change these interfaces, please contact the isp team. --------

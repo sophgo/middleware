@@ -1109,7 +1109,7 @@ static int case_dump_vi_smooth_raw_frame(void *p)
 	int tmp;
 	VI_PIPE ViPipe = 0;
 	VB_POOL PoolID;
-	VB_POOL_CONFIG_S cfg;
+	VB_POOL_CONFIG_S cfg = {0};
 	VI_SMOOTH_RAW_DUMP_INFO_S stDumpInfo;
 	VIDEO_FRAME_INFO_S stVideoFrame[2];
 	VI_DEV_ATTR_S stDevAttr;

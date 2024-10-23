@@ -8,8 +8,9 @@
 #define USE_OLD 0
 
 extern MESH_DATA_ALL_S g_MeshData[MESH_DATA_MAX_NUM];
+extern MESH_DATA_EIS_S g_MeshEIS[MESH_DATA_MAX_NUM];
 
-static int match_meshdata(char *bindName)
+int match_meshdata(char *bindName)
 {
 	if (!bindName) {
 		CVI_TRACE_GDC(CVI_DBG_ERR, "bindName is NULL.\n");
@@ -47,13 +48,13 @@ int load_meshdata(const char *path, MESH_DATA_ALL_S *pmeshdata, const char *bind
 	FILE *fpGrid;
 
 	if (path == NULL) {
-		CVI_TRACE_GDC(CVI_DBG_ERR, "file [%s] null\n", path);
+		CVI_TRACE_GDC(CVI_DBG_ERR, "meshdata file null\n" );
 		return -1;
 	}
 
 	fpGrid = fopen(path, "rb");
 	if (fpGrid == NULL) {
-		CVI_TRACE_GDC(CVI_DBG_ERR, "open file fail, %s\n", path);
+		CVI_TRACE_GDC(CVI_DBG_ERR, "open file fail\n");
 		return -1;
 	}
 
@@ -88,7 +89,20 @@ int load_meshdata(const char *path, MESH_DATA_ALL_S *pmeshdata, const char *bind
 	pmeshdata->_nbr_mesh_x = info[9];	// total meshes in horizontal
 	pmeshdata->_nbr_mesh_y = info[10];	// total meshes in vertical
 	memcpy(pmeshdata->corners, info + 11, sizeof(int) * 10);
+
 	pmeshdata->grid_mode = (enum grid_info_mode)info[21]; //grid_info_mode
+	pmeshdata->slice_info.magic = info[22];
+	if (pmeshdata->slice_info.magic == SLICE_MAGIC) {
+		pmeshdata->slice_info.slice_h_cnt = info[23];
+		pmeshdata->slice_info.slice_v_cnt = info[24];
+		pmeshdata->slice_info.cache_hit_cnt = info[25];
+		pmeshdata->slice_info.cache_miss_cnt = info[26];
+		pmeshdata->slice_info.cache_req_cnt = info[27];
+		CVI_TRACE_GDC(CVI_DBG_INFO, "slice_info: %d %d %d %d %d\n", info[23], info[24], info[25], info[26], info[27]);
+	} else {
+		memset(&pmeshdata->slice_info, 0, sizeof(pmeshdata->slice_info));
+		CVI_TRACE_GDC(CVI_DBG_INFO, "slice magic invalid, use default slice info\n");
+	}
 
 	int _nbr_mesh_y = pmeshdata->mesh_vercnt; // for roi, not for whole image
 	int _nbr_mesh_x = pmeshdata->mesh_horcnt;
@@ -167,12 +181,23 @@ int free_cur_meshdata(char *bindName)
 	//SAFE_FREE_POINTER(pMeshData->_pmapy);
 	g_MeshData[grid_idx].balloc = false;
 	g_MeshData[grid_idx]._bhomo = false;
+	memset(g_MeshData[grid_idx].grid_name, 0, sizeof(g_MeshData[grid_idx].grid_name));
 
+	if (g_MeshEIS[grid_idx].enable) {
+		SAFE_FREE_POINTER(g_MeshEIS[grid_idx].slice_tbl_lut);
+		SAFE_FREE_POINTER(g_MeshEIS[grid_idx].slice_val_pos);
+		SAFE_FREE_POINTER(g_MeshEIS[grid_idx].reorder_mesh_id_list);
+	}
 	return 0;
 }
 
 int free_meshdata(MESH_DATA_ALL_S *pmeshdata)
 {
+	if (!pmeshdata) {
+		CVI_TRACE_GDC(CVI_DBG_ERR, "null ptr\n");
+		return -1;
+	}
+
 	SAFE_FREE_POINTER(pmeshdata->pgrid_src);
 	SAFE_FREE_POINTER(pmeshdata->pgrid_dst);
 	SAFE_FREE_POINTER(pmeshdata->pmesh_src);
@@ -182,6 +207,7 @@ int free_meshdata(MESH_DATA_ALL_S *pmeshdata)
 
 	pmeshdata->balloc = false;
 	pmeshdata->_bhomo = false;
+	memset(pmeshdata->grid_name, 0, sizeof(pmeshdata->grid_name));
 
 	return 0;
 }
@@ -199,6 +225,13 @@ int free_all_meshdata(void)
 			//SAFE_FREE_POINTER(pMeshData->_pmapx);
 			//SAFE_FREE_POINTER(pMeshData->_pmapy);
 			g_MeshData[i].balloc = false;
+			memset(g_MeshData[i].grid_name, 0, sizeof(g_MeshData[i].grid_name));
+		}
+
+		if (g_MeshEIS[i].enable) {
+			SAFE_FREE_POINTER(g_MeshEIS[i].slice_tbl_lut);
+			SAFE_FREE_POINTER(g_MeshEIS[i].slice_val_pos);
+			SAFE_FREE_POINTER(g_MeshEIS[i].reorder_mesh_id_list);
 		}
 	}
 	return 0;
@@ -207,7 +240,7 @@ int free_all_meshdata(void)
 int save_meshdata(char *path, MESH_DATA_ALL_S *pstMeshData)
 {
 	if (!path) {
-		CVI_TRACE_GDC(CVI_DBG_DEBUG, "path [%s]\n", path);
+		CVI_TRACE_GDC(CVI_DBG_DEBUG, "save meshdata path is null\n");
 		return -1;
 	}
 

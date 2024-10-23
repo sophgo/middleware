@@ -49,9 +49,9 @@
 
 #define CHECK_VO_WBC_VALID(VoWbc)\
 	do {\
-		if ((VoWbc >= VO_MAX_DEV_NUM) || (VoWbc < 0)) {\
+		if ((VoWbc >= VO_MAX_WBC_NUM) || (VoWbc < 0)) {\
 			CVI_TRACE_VO(CVI_DBG_ERR, "VoWbc(%d) invalid.\n", VoWbc);\
-			return CVI_ERR_VO_INVALID_DEVID;\
+			return CVI_ERR_VO_INVALID_WBCID;\
 		} \
 	} while (0)
 
@@ -1937,7 +1937,7 @@ CVI_BOOL CVI_VO_IsEnabled(VO_DEV VoDev)
 
 	if ((VoDev >= VO_MAX_DEV_NUM) || (VoDev < 0)) {
 		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) invalid.\n", VoDev);
-		return 0;
+		return CVI_FALSE;
 	}
 
 	if (_check_vo_exist(&fd)) {

@@ -16,4 +16,5 @@
 | multi thread               | ./sample_fish 9    | Implement the multi thread                                           |
 | ldc grid_info              | ./sample_fish 10   | Implement the ldc with gridinfo                                      |
 | reset                      | ./sample_fish 11   | Implement the reset                                                  |
+| dis                        | ./sample_fish 12   | Implement the dis                                                    |
 |                            |                    |                                                                      |

@@ -72,7 +72,7 @@ CVI_S32 CVI_VDEC_CreateChn(VDEC_CHN VdChn, const VDEC_CHN_ATTR_S *pstAttr)
 	CVI_CHAR devName[255];
 
     if(!pstAttr) {
-        return CVI_ERR_VDEC_ILLEGAL_PARAM;
+        return CVI_ERR_VDEC_NULL_PTR;
     }
 
     if((pstAttr->enType == PT_MJPEG)
@@ -89,7 +89,7 @@ CVI_S32 CVI_VDEC_CreateChn(VDEC_CHN VdChn, const VDEC_CHN_ATTR_S *pstAttr)
 
 	if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -111,9 +111,9 @@ CVI_S32 CVI_VDEC_DestroyChn(VDEC_CHN VdChn)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -137,9 +137,9 @@ CVI_S32 CVI_VDEC_DestroyChn(VDEC_CHN VdChn)
 
 CVI_S32 CVI_VDEC_GetChnAttr(VDEC_CHN VdChn, VDEC_CHN_ATTR_S *pstAttr)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
         printf("openDevice fail\n");
-        return CVI_FAILURE;
+        return CVI_ERR_VDEC_INVALID_CHNID;
     }
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -150,9 +150,9 @@ CVI_S32 CVI_VDEC_GetChnAttr(VDEC_CHN VdChn, VDEC_CHN_ATTR_S *pstAttr)
 
 CVI_S32 CVI_VDEC_SetChnAttr(VDEC_CHN VdChn, const VDEC_CHN_ATTR_S *pstAttr)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -163,9 +163,9 @@ CVI_S32 CVI_VDEC_SetChnAttr(VDEC_CHN VdChn, const VDEC_CHN_ATTR_S *pstAttr)
 
 CVI_S32 CVI_VDEC_StartRecvStream(VDEC_CHN VdChn)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -176,9 +176,9 @@ CVI_S32 CVI_VDEC_StartRecvStream(VDEC_CHN VdChn)
 
 CVI_S32 CVI_VDEC_StopRecvStream(VDEC_CHN VdChn)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -189,9 +189,9 @@ CVI_S32 CVI_VDEC_StopRecvStream(VDEC_CHN VdChn)
 
 CVI_S32 CVI_VDEC_QueryStatus(VDEC_CHN VdChn, VDEC_CHN_STATUS_S *pstStatus)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -202,9 +202,9 @@ CVI_S32 CVI_VDEC_QueryStatus(VDEC_CHN VdChn, VDEC_CHN_STATUS_S *pstStatus)
 
 CVI_S32 CVI_VDEC_GetFd(VDEC_CHN VdChn)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	return s32VdecFd[VdChn];
@@ -219,9 +219,9 @@ CVI_S32 CVI_VDEC_CloseFd(VDEC_CHN VdChn)
 
 CVI_S32 CVI_VDEC_ResetChn(VDEC_CHN VdChn)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -232,9 +232,9 @@ CVI_S32 CVI_VDEC_ResetChn(VDEC_CHN VdChn)
 
 CVI_S32 CVI_VDEC_SetChnParam(VDEC_CHN VdChn, const VDEC_CHN_PARAM_S *pstParam)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -245,9 +245,9 @@ CVI_S32 CVI_VDEC_SetChnParam(VDEC_CHN VdChn, const VDEC_CHN_PARAM_S *pstParam)
 
 CVI_S32 CVI_VDEC_GetChnParam(VDEC_CHN VdChn, VDEC_CHN_PARAM_S *pstParam)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -259,9 +259,9 @@ CVI_S32 CVI_VDEC_GetChnParam(VDEC_CHN VdChn, VDEC_CHN_PARAM_S *pstParam)
 /* s32MilliSec: -1 is block,0 is no block,other positive number is timeout */
 CVI_S32 CVI_VDEC_SendStream(VDEC_CHN VdChn, const VDEC_STREAM_S *pstStream, CVI_S32 s32MilliSec)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -277,9 +277,9 @@ CVI_S32 CVI_VDEC_SendStream(VDEC_CHN VdChn, const VDEC_STREAM_S *pstStream, CVI_
 
 CVI_S32 CVI_VDEC_GetFrame(VDEC_CHN VdChn, VIDEO_FRAME_INFO_S *pstFrameInfo, CVI_S32 s32MilliSec)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -305,14 +305,15 @@ CVI_S32 CVI_VDEC_GetFrame(VDEC_CHN VdChn, VIDEO_FRAME_INFO_S *pstFrameInfo, CVI_
 		}
 		return s32Ret;
 	}
+	printf("fail\n");
 	return CVI_FAILURE;
 }
 
 CVI_S32 CVI_VDEC_ReleaseFrame(VDEC_CHN VdChn, const VIDEO_FRAME_INFO_S *pstFrameInfo)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -330,9 +331,9 @@ CVI_S32 CVI_VDEC_ReleaseFrame(VDEC_CHN VdChn, const VIDEO_FRAME_INFO_S *pstFrame
 
 CVI_S32 CVI_VDEC_AttachVbPool(VDEC_CHN VdChn, const VDEC_CHN_POOL_S *pstPool)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -343,9 +344,9 @@ CVI_S32 CVI_VDEC_AttachVbPool(VDEC_CHN VdChn, const VDEC_CHN_POOL_S *pstPool)
 
 CVI_S32 CVI_VDEC_DetachVbPool(VDEC_CHN VdChn)
 {
-    if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+    if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -358,9 +359,9 @@ CVI_S32 CVI_VDEC_SetModParam(const VDEC_MOD_PARAM_S *pstModParam)
 {
 	VDEC_CHN VdChn = 0;	// default hard-code
 
-	if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+	if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -373,9 +374,9 @@ CVI_S32 CVI_VDEC_GetModParam(VDEC_MOD_PARAM_S *pstModParam)
 {
 	VDEC_CHN VdChn = 0;	// default hard-code
 
-	if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+	if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -386,9 +387,9 @@ CVI_S32 CVI_VDEC_GetModParam(VDEC_MOD_PARAM_S *pstModParam)
 
 CVI_S32 CVI_VDEC_SetStrideAlign(VDEC_CHN VdChn, CVI_U32 align)
 {
-	if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+	if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -400,9 +401,9 @@ CVI_S32 CVI_VDEC_SetStrideAlign(VDEC_CHN VdChn, CVI_U32 align)
 
 CVI_S32 CVI_VDEC_SetUserPic(VDEC_CHN VdChn, const VIDEO_FRAME_INFO_S *pstUsrPic)
 {
-	if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+	if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -413,9 +414,9 @@ CVI_S32 CVI_VDEC_SetUserPic(VDEC_CHN VdChn, const VIDEO_FRAME_INFO_S *pstUsrPic)
 
 CVI_S32 CVI_VDEC_EnableUserPic(VDEC_CHN VdChn, CVI_BOOL bInstant)
 {
-	if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+	if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -426,9 +427,9 @@ CVI_S32 CVI_VDEC_EnableUserPic(VDEC_CHN VdChn, CVI_BOOL bInstant)
 
 CVI_S32 CVI_VDEC_DisableUserPic(VDEC_CHN VdChn)
 {
-	if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+	if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {
@@ -439,9 +440,9 @@ CVI_S32 CVI_VDEC_DisableUserPic(VDEC_CHN VdChn)
 
 CVI_S32 CVI_VDEC_SetDisplayMode(VDEC_CHN VdChn, VIDEO_DISPLAY_MODE_E enDisplayMode)
 {
-	if (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS) {
+	if (VdChn < 0 || (s32VdecFd[VdChn] < 0 && openDevice(VdChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VDEC_INVALID_CHNID;
 	}
 
 	if (s32VdecFd[VdChn] >= 0) {

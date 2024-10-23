@@ -168,6 +168,9 @@
 #endif
 #define MAX_FUNC_CNT 100
 
+#define DEFAULT_GRP_ID 0
+#define MULTI_GRP_CNT 8
+
 typedef CVI_S32 (*p_func)(void);
 
 static CVI_BOOL g_stitch_save_file;
@@ -194,14 +197,12 @@ typedef enum _STITCH_TEST_OP {
 	STITCH_TEST_SIZE_MIN1,
 	STITCH_TEST_SIZE_MIN2,
 	STITCH_TEST_SIZE_MIDDLE,
-	STITCH_TEST_SIZE_MAX,
 	STITCH_TEST_ONLINE,
 	STITCH_TEST_MULTI_THREAD,
 	STITCH_TEST_PEF,
 	STITCH_TEST_NO_VB,
 	STITCH_TEST_EN_DIS_DEV_LOOP,
 	STITCH_TEST_RST,
-	STITCH_TEST_PRESURE_SIZE_FOR_EACH = 98,
 	STITCH_TEST_AUTO_REGRESSION = 99,
 	STITCH_TEST_USER_CONFIG = 100,
 	STITCH_TEST_DUP_FD = 101,
@@ -230,6 +231,7 @@ typedef struct _STITCH_BASIC_TEST_PARAM {
 	CVI_BOOL needPef;
 	CVI_BOOL needSuspend;
 	CVI_BOOL needDumpReg;
+	int threadId;
 } STITCH_BASIC_TEST_PARAM;
 
 void stitch_ut_HandleSig(CVI_S32 signo)
@@ -308,6 +310,54 @@ static CVI_S32 cfg_wgt_image2(SIZE_S size, enum stitch_wgt_mode wgtmode, CVI_U64
 	return CVI_SUCCESS;
 }
 
+static CVI_S32 cfg_chn_frame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_U64 *pu64PhyAddr, CVI_VOID **ppVirAddr)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	VB_CAL_CONFIG_S stVbCalConfig;
+
+	COMMON_GetPicBufferConfig(stSize->u32Width, stSize->u32Height, enPixelFormat, DATA_BITWIDTH_8
+		, COMPRESS_MODE_NONE, STITCH_ALIGN, &stVbCalConfig);
+
+	pstVideoFrame->stVFrame.enCompressMode = COMPRESS_MODE_NONE;
+	pstVideoFrame->stVFrame.enPixelFormat = enPixelFormat;
+	pstVideoFrame->stVFrame.enVideoFormat = VIDEO_FORMAT_LINEAR;
+	pstVideoFrame->stVFrame.enColorGamut = COLOR_GAMUT_BT709;
+	pstVideoFrame->stVFrame.u32Width = stSize->u32Width;
+	pstVideoFrame->stVFrame.u32Height = stSize->u32Height;
+	pstVideoFrame->stVFrame.u32Stride[0] = stVbCalConfig.u32MainStride;
+	pstVideoFrame->stVFrame.u32Stride[1] = stVbCalConfig.u32CStride;
+	pstVideoFrame->stVFrame.u32Stride[2] = stVbCalConfig.u32CStride;
+	pstVideoFrame->stVFrame.u32TimeRef = 0;
+	pstVideoFrame->stVFrame.u64PTS = 0;
+	pstVideoFrame->stVFrame.enDynamicRange = DYNAMIC_RANGE_SDR8;
+
+	if (CVI_SYS_IonAlloc(pu64PhyAddr, ppVirAddr, "stitch_chn_frm", stVbCalConfig.u32VBSize)) {
+		STITCH_UT_PRT("CVI_SYS_IonAlloc_Cached NG.\n");
+		return CVI_FAILURE;
+	}
+
+	pstVideoFrame->stVFrame.u32Length[0] = stVbCalConfig.u32MainYSize;
+	pstVideoFrame->stVFrame.u32Length[1] = stVbCalConfig.u32MainCSize;
+	pstVideoFrame->stVFrame.u64PhyAddr[0] = *pu64PhyAddr;
+	pstVideoFrame->stVFrame.u64PhyAddr[1] = pstVideoFrame->stVFrame.u64PhyAddr[0]
+		+ ALIGN(stVbCalConfig.u32MainYSize, stVbCalConfig.u16AddrAlign);
+	if (stVbCalConfig.plane_num == 3) {
+		pstVideoFrame->stVFrame.u32Length[2] = stVbCalConfig.u32MainCSize;
+		pstVideoFrame->stVFrame.u64PhyAddr[2] = pstVideoFrame->stVFrame.u64PhyAddr[1]
+			+ ALIGN(stVbCalConfig.u32MainCSize, stVbCalConfig.u16AddrAlign);
+	}
+	pstVideoFrame->stVFrame.u32Align = STITCH_ALIGN;
+
+	STITCH_UT_PRT("length of buffer(%d, %d, %d)\n", pstVideoFrame->stVFrame.u32Length[0]
+		, pstVideoFrame->stVFrame.u32Length[1], pstVideoFrame->stVFrame.u32Length[2]);
+	STITCH_UT_PRT("phy addr(%#"PRIx64", %#"PRIx64", %#"PRIx64")\n", pstVideoFrame->stVFrame.u64PhyAddr[0]
+		, pstVideoFrame->stVFrame.u64PhyAddr[1], pstVideoFrame->stVFrame.u64PhyAddr[2]);
+	STITCH_UT_PRT("vir addr(%p, %p, %p)\n", pstVideoFrame->stVFrame.pu8VirAddr[0]
+		, pstVideoFrame->stVFrame.pu8VirAddr[1], pstVideoFrame->stVFrame.pu8VirAddr[2]);
+
+	return s32Ret;
+}
+
 static CVI_S32 basic(STITCH_BASIC_TEST_PARAM *pParam, CVI_S32 times)
 {
 	CVI_U32 i;
@@ -374,25 +424,32 @@ static CVI_S32 basic(STITCH_BASIC_TEST_PARAM *pParam, CVI_S32 times)
 		goto exit1;
 	}
 
-	s32Ret = CVI_STITCH_SetSrcAttr(&pParam->srcAttr);
+	/*start stitch*/
+	s32Ret=  CVI_STITCH_InitGrp(DEFAULT_GRP_ID);
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_InitGrp failed!\n");
+		goto exit2;
+	}
+
+	s32Ret = CVI_STITCH_SetSrcAttr(DEFAULT_GRP_ID, &pParam->srcAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetSrcAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetChnAttr(&pParam->chnAttr);
+	s32Ret = CVI_STITCH_SetChnAttr(DEFAULT_GRP_ID, &pParam->chnAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetChnAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetOpAttr(&pParam->opAttr);
+	s32Ret = CVI_STITCH_SetOpAttr(DEFAULT_GRP_ID, &pParam->opAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetOpAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetWgtAttr(&pParam->wgtAttr);
+	s32Ret = CVI_STITCH_SetWgtAttr(DEFAULT_GRP_ID, &pParam->wgtAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetWgtAttr failed!\n");
 		goto exit2;
@@ -404,16 +461,15 @@ static CVI_S32 basic(STITCH_BASIC_TEST_PARAM *pParam, CVI_S32 times)
 		goto exit2;
 	}
 
-	/*start stitch*/
-	s32Ret = CVI_STITCH_EnableDev();
+	s32Ret = CVI_STITCH_AttachVbPool(DEFAULT_GRP_ID, (VB_POOL)pParam->srcNum);
 	if (s32Ret != CVI_SUCCESS) {
-		STITCH_UT_PRT("CVI_STITCH_EnableDev failed!\n");
+		STITCH_UT_PRT("CVI_STITCH_AttachVbPool failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_AttachVbPool((VB_POOL)pParam->srcNum);
+	s32Ret = CVI_STITCH_EnableGrp(DEFAULT_GRP_ID);
 	if (s32Ret != CVI_SUCCESS) {
-		STITCH_UT_PRT("CVI_STITCH_AttachVbPool failed!\n");
+		STITCH_UT_PRT("CVI_STITCH_EnableGrp failed!\n");
 		goto exit2;
 	}
 
@@ -443,7 +499,7 @@ static CVI_S32 basic(STITCH_BASIC_TEST_PARAM *pParam, CVI_S32 times)
 		}
 
 		memset(&pParam->stVideoFrameOut, 0, sizeof(pParam->stVideoFrameOut));
-		s32Ret = CVI_STITCH_GetChnFrame(&pParam->stVideoFrameOut, timout_ms);
+		s32Ret = CVI_STITCH_GetChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut, timout_ms);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_GetChnFrame fail. s32Ret: 0x%x !\n", s32Ret);
 			pParam->needDumpReg = CVI_TRUE;
@@ -459,7 +515,7 @@ static CVI_S32 basic(STITCH_BASIC_TEST_PARAM *pParam, CVI_S32 times)
 				s32Ret = FrameSaveToFile(pParam->filename_out, &pParam->stVideoFrameOut);
 				if (s32Ret != CVI_SUCCESS) {
 					STITCH_UT_PRT("FrameSaveToFile. s32Ret: 0x%x !\n", s32Ret);
-					CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+					CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 					goto exit3;
 				}
 				STITCH_UT_PRT("output file:%s\n", pParam->filename_out);
@@ -469,13 +525,13 @@ static CVI_S32 basic(STITCH_BASIC_TEST_PARAM *pParam, CVI_S32 times)
 				s32Ret = CompareWithFile(pParam->filename_pef, &pParam->stVideoFrameOut);
 				if (s32Ret != CVI_SUCCESS) {
 					STITCH_UT_PRT("CompareWithFile fail.\n");
-					CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+					CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 					goto exit3;
 				}
 			}
 		}
 
-		s32Ret = CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+		s32Ret = CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_ReleaseChnFrame fail s32Ret: 0x%x !\n", s32Ret);
 			goto exit3;
@@ -485,7 +541,7 @@ exit3:
 	if (pParam->needDumpReg)
 		CVI_STITCH_DumpRegInfo();
 
-	CVI_STITCH_DisableDev();
+	CVI_STITCH_DisableGrp(DEFAULT_GRP_ID);
 
 	if (g_stitch_need_rst)
 		CVI_STITCH_Reset();
@@ -1492,25 +1548,32 @@ static CVI_S32 basic2(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetSrcAttr(&pParam->srcAttr);
+	/*start stitch*/
+	s32Ret=  CVI_STITCH_InitGrp(DEFAULT_GRP_ID);
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_InitGrp failed!\n");
+		goto exit2;
+	}
+
+	s32Ret = CVI_STITCH_SetSrcAttr(DEFAULT_GRP_ID, &pParam->srcAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetSrcAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetChnAttr(&pParam->chnAttr);
+	s32Ret = CVI_STITCH_SetChnAttr(DEFAULT_GRP_ID, &pParam->chnAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetChnAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetOpAttr(&pParam->opAttr);
+	s32Ret = CVI_STITCH_SetOpAttr(DEFAULT_GRP_ID, &pParam->opAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetOpAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetWgtAttr(&pParam->wgtAttr);
+	s32Ret = CVI_STITCH_SetWgtAttr(DEFAULT_GRP_ID, &pParam->wgtAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetWgtAttr failed!\n");
 		goto exit2;
@@ -1523,13 +1586,13 @@ static CVI_S32 basic2(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 	}
 
 	/*start stitch*/
-	s32Ret = CVI_STITCH_EnableDev();
+	s32Ret = CVI_STITCH_EnableGrp(DEFAULT_GRP_ID);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_EnableDev failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_AttachVbPool((VB_POOL)pParam->srcNum);
+	s32Ret = CVI_STITCH_AttachVbPool(DEFAULT_GRP_ID, (VB_POOL)pParam->srcNum);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_AttachVbPool failed!\n");
 		goto exit2;
@@ -1546,7 +1609,7 @@ static CVI_S32 basic2(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 	}
 
 	memset(&pParam->stVideoFrameOut, 0, sizeof(pParam->stVideoFrameOut));
-	s32Ret = CVI_STITCH_GetChnFrame(&pParam->stVideoFrameOut, timout_ms);
+	s32Ret = CVI_STITCH_GetChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut, timout_ms);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_GetChnFrame fail. s32Ret: 0x%x !\n", s32Ret);
 		pParam->needDumpReg = CVI_TRUE;
@@ -1562,7 +1625,7 @@ static CVI_S32 basic2(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 			s32Ret = FrameSaveToFile(pParam->filename_out, &pParam->stVideoFrameOut);
 			if (s32Ret != CVI_SUCCESS) {
 				STITCH_UT_PRT("FrameSaveToFile. s32Ret: 0x%x !\n", s32Ret);
-				CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+				CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 				goto exit3;
 			}
 			STITCH_UT_PRT("output file:%s\n", pParam->filename_out);
@@ -1572,14 +1635,14 @@ static CVI_S32 basic2(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 			s32Ret = CompareWithFile(pParam->filename_pef, &pParam->stVideoFrameOut);
 			if (s32Ret != CVI_SUCCESS) {
 				STITCH_UT_PRT("CompareWithFile fail.\n");
-				CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+				CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 				goto exit3;
 			}
 		}
 	}
 
 	if (pParam->CurSrcID[1] == 3) {//last job in send can release chn frm.
-		s32Ret = CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+		s32Ret = CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_ReleaseChnFrame fail s32Ret: 0x%x !\n", s32Ret);
 			goto exit3;
@@ -1589,7 +1652,7 @@ exit3:
 	if (pParam->needDumpReg)
 		CVI_STITCH_DumpRegInfo();
 
-	CVI_STITCH_DisableDev();
+	CVI_STITCH_DisableGrp(DEFAULT_GRP_ID);
 
 	if (g_stitch_need_rst)
 		CVI_STITCH_Reset();
@@ -1722,8 +1785,11 @@ static CVI_S32 stitch_test_4way_fake(CVI_VOID)
 		}
 
 		for (i = 0; i < 2; i++) {
-			if (u64PhyAddr[i] && VirAddr[i])
+			if (u64PhyAddr[i] && VirAddr[i]){
 				CVI_SYS_IonFree(u64PhyAddr[i], VirAddr[i]);
+				u64PhyAddr[i] = 0;
+				VirAddr[i] = NULL;
+			}
 		}
 	}
 
@@ -1836,8 +1902,11 @@ static CVI_S32 stitch_test_4way_fake(CVI_VOID)
 		}
 
 		for (i = 0; i < param.srcNum; i++) {
-			if (u64PhyAddr[i] && VirAddr[i])
+			if (u64PhyAddr[i] && VirAddr[i]) {
 				CVI_SYS_IonFree(u64PhyAddr[i], VirAddr[i]);
+				u64PhyAddr[i] = 0;
+				VirAddr[i] = NULL;
+			}
 		}
 	}
 
@@ -1948,8 +2017,11 @@ static CVI_S32 stitch_test_4way_fake_middle(CVI_VOID)
 		}
 
 		for (i = 0; i < param.srcNum; i++) {
-			if (u64PhyAddr[i] && VirAddr[i])
+			if (u64PhyAddr[i] && VirAddr[i]) {
 				CVI_SYS_IonFree(u64PhyAddr[i], VirAddr[i]);
+				u64PhyAddr[i] = 0;
+				VirAddr[i] = NULL;
+			}
 		}
 	}
 
@@ -1982,25 +2054,32 @@ static CVI_S32 basic3(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetSrcAttr(&pParam->srcAttr);
+	/*start stitch*/
+	s32Ret=  CVI_STITCH_InitGrp(DEFAULT_GRP_ID);
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_InitGrp failed!\n");
+		goto exit2;
+	}
+
+	s32Ret = CVI_STITCH_SetSrcAttr(DEFAULT_GRP_ID, &pParam->srcAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetSrcAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetChnAttr(&pParam->chnAttr);
+	s32Ret = CVI_STITCH_SetChnAttr(DEFAULT_GRP_ID, &pParam->chnAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetChnAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetOpAttr(&pParam->opAttr);
+	s32Ret = CVI_STITCH_SetOpAttr(DEFAULT_GRP_ID, &pParam->opAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetOpAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetWgtAttr(&pParam->wgtAttr);
+	s32Ret = CVI_STITCH_SetWgtAttr(DEFAULT_GRP_ID, &pParam->wgtAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetWgtAttr failed!\n");
 		goto exit2;
@@ -2013,13 +2092,13 @@ static CVI_S32 basic3(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 	}
 
 	/*start stitch*/
-	s32Ret = CVI_STITCH_EnableDev();
+	s32Ret = CVI_STITCH_EnableGrp(DEFAULT_GRP_ID);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_EnableDev failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_AttachVbPool(chn_pool_id);
+	s32Ret = CVI_STITCH_AttachVbPool(DEFAULT_GRP_ID, chn_pool_id);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_AttachVbPool failed!\n");
 		goto exit2;
@@ -2042,7 +2121,7 @@ static CVI_S32 basic3(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 
 
 		memset(&pParam->stVideoFrameOut, 0, sizeof(pParam->stVideoFrameOut));
-		s32Ret = CVI_STITCH_GetChnFrame(&pParam->stVideoFrameOut, timout_ms*10);
+		s32Ret = CVI_STITCH_GetChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut, timout_ms*10);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_GetChnFrame fail. s32Ret: 0x%x !\n", s32Ret);
 			//pParam->needDumpReg = CVI_TRUE;
@@ -2058,7 +2137,7 @@ static CVI_S32 basic3(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 				s32Ret = FrameSaveToFile(pParam->filename_out, &pParam->stVideoFrameOut);
 				if (s32Ret != CVI_SUCCESS) {
 					STITCH_UT_PRT("FrameSaveToFile. s32Ret: 0x%x !\n", s32Ret);
-					CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+					CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 					goto exit3;
 				}
 				STITCH_UT_PRT("output file:%s\n", pParam->filename_out);
@@ -2068,13 +2147,13 @@ static CVI_S32 basic3(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 				s32Ret = CompareWithFile(pParam->filename_pef, &pParam->stVideoFrameOut);
 				if (s32Ret != CVI_SUCCESS) {
 					STITCH_UT_PRT("CompareWithFile fail.\n");
-					CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+					CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 					goto exit3;
 				}
 			}
 		}
 
-		s32Ret = CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+		s32Ret = CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_ReleaseChnFrame fail s32Ret: 0x%x !\n", s32Ret);
 			goto exit3;
@@ -2084,7 +2163,7 @@ exit3:
 	if (pParam->needDumpReg)
 		CVI_STITCH_DumpRegInfo();
 
-	CVI_STITCH_DisableDev();
+	CVI_STITCH_DisableGrp(DEFAULT_GRP_ID);
 
 if (g_stitch_need_rst)
 	CVI_STITCH_Reset();
@@ -2603,18 +2682,6 @@ free:
 	return s32Ret;
 }
 
-
-/*same with full ovlp case, img height is not restriction*/
-static CVI_S32 stitch_test_size_max(CVI_VOID)
-{
-	CVI_S32 s32Ret;
-
-	s32Ret = stitch_test_full_ovlp();
-
-	STITCH_TEST_CHECK_RET(s32Ret);
-	return s32Ret;
-}
-
 static CVI_S32 stitch_test_rst(CVI_VOID)
 {
 	CVI_S32 s32Ret;
@@ -2627,17 +2694,345 @@ static CVI_S32 stitch_test_rst(CVI_VOID)
 	return s32Ret;
 }
 
-static CVI_S32 stitch_test_online(CVI_VOID)
+static STITCH_GRP g_grp[MULTI_GRP_CNT] = { [0 ... MULTI_GRP_CNT-1] = -1};
+void *stitch_multi_thread_do_job(void *data)
 {
-	CVI_S32 s32Ret = CVI_SUCCESS;
+	int times = STITCH_REPECT_TIMES * 10;
+	CVI_S32 s32Ret;
+	CVI_S32 timout_ms = STITCH_TIMEOUT;
+	STITCH_BASIC_TEST_PARAM *param = (STITCH_BASIC_TEST_PARAM *)(data);
+	CVI_U64 u64PhyAddr[STITCH_MAX_SRC_NUM] = {0};
+	CVI_VOID *pVirAddr[STITCH_MAX_SRC_NUM] = {0};
+	CVI_BOOL bGetFlag = CVI_TRUE;
+	int grp_id = g_grp[param->threadId];
 
+	do {
+		memset(&param->stVideoFrameOut, 0, sizeof(param->stVideoFrameOut));
+		s32Ret = cfg_chn_frame(&param->chnAttr.size, param->chnAttr.fmt_out, &param->stVideoFrameOut, &u64PhyAddr[2], &pVirAddr[2]);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("cfg_chn_frame NG.\n");
+			goto exit3;
+		}
+
+		s32Ret = CVI_STITCH_SendChnFrame(grp_id, &param->stVideoFrameOut, 1000);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("CVI_STITCH_SendChnFrame fail.\n");
+			//goto exit3;
+			bGetFlag = CVI_FALSE;
+		}
+
+		if (bGetFlag) {
+			for (int i = 0; i < param->srcNum; i++) {
+				STITCH_UT_PRT("start send src frame[%d]\n", i);
+
+				s32Ret = FileSendToStitchNoVb((STITCH_SRC_IDX)i, &param->srcAttr.size[i], param->srcAttr.fmt_in, param->filename_in[i], &u64PhyAddr[i], &pVirAddr[i], grp_id);
+				if (s32Ret != CVI_SUCCESS) {
+					STITCH_UT_PRT("FileSendToStitch[%d] fail, s32Ret: 0x%x !\n", i, s32Ret);
+					//goto exit3;
+					bGetFlag = CVI_FALSE;
+					break;
+				}
+			}
+
+			s32Ret = CVI_STITCH_GetChnFrame(grp_id, &param->stVideoFrameOut, timout_ms);
+			if (s32Ret != CVI_SUCCESS) {
+				STITCH_UT_PRT("CVI_STITCH_GetChnFrame fail. s32Ret: 0x%x !\n", s32Ret);
+				//pParam->needDumpReg = CVI_TRUE;
+				goto exit3;
+			}
+		}
+		bGetFlag = CVI_TRUE;
+
+#if 0
+		STITCH_UT_PRT("***CVI_STITCH_GetChnFrame Success, start save and compare with golden***\n");
+		STITCH_UT_PRT("phy addr(%#"PRIx64", %#"PRIx64", %#"PRIx64")\n", param->stVideoFrameOut.stVFrame.u64PhyAddr[0]
+			, param->stVideoFrameOut.stVFrame.u64PhyAddr[1], param->stVideoFrameOut.stVFrame.u64PhyAddr[2]);
+
+		if (g_stitch_save_file) {
+			if (strlen(param->filename_out)) {
+				s32Ret = FrameSaveToFile(param->filename_out, &param->stVideoFrameOut);
+				if (s32Ret != CVI_SUCCESS) {
+					STITCH_UT_PRT("FrameSaveToFile. s32Ret: 0x%x !\n", s32Ret);
+					CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &param->stVideoFrameOut);
+					goto exit3;
+				}
+				//STITCH_UT_PRT("output file:%s\n", param->filename_out);
+			}
+
+			if (param->needPef) {
+				s32Ret = CompareWithFile(param->filename_pef, &param->stVideoFrameOut);
+				if (s32Ret != CVI_SUCCESS) {
+					STITCH_UT_PRT("CompareWithFile fail.\n");
+					CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &param->stVideoFrameOut);
+					goto exit3;
+				}
+			}
+		}
+#endif
+		for (int i = 0; i < 3; ++i) {
+			if (u64PhyAddr[i] && pVirAddr[i])
+				CVI_SYS_IonFree(u64PhyAddr[i], pVirAddr[i]);
+			u64PhyAddr[i] = 0;
+			pVirAddr[i] = NULL;
+		}
+		usleep(1000*50*MULTI_GRP_CNT);
+	} while (times--);
+
+exit3:
+	if (param->needDumpReg)
+		CVI_STITCH_DumpRegInfo();
+
+	for (int i = 0; i < 3; ++i) {
+		if (u64PhyAddr[i] && pVirAddr[i])
+			CVI_SYS_IonFree(u64PhyAddr[i], pVirAddr[i]);
+	}
+
+	if (g_stitch_need_rst)
+		CVI_STITCH_Reset();
 	STITCH_TEST_CHECK_RET(s32Ret);
-	return s32Ret;
+
+	pthread_exit(0);
 }
+
+static CVI_S32 basic_init_stitch(STITCH_BASIC_TEST_PARAM *pParam, int grpCnt)
+{
+	CVI_U32 i;
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	VB_CONFIG_S stVbConf;
+	CVI_U32 u32BlkSize[STITCH_MAX_SRC_NUM + 1];
+	PIXEL_FORMAT_E fmt_in = pParam->srcAttr.fmt_in;
+	PIXEL_FORMAT_E fmt_out = pParam->chnAttr.fmt_out;
+	STITCH_GRP grp;
+
+	/************************************************
+	 * step1:  Init SYS and common VB
+	 ************************************************/
+	memset(&stVbConf, 0, sizeof(VB_CONFIG_S));
+
+	for (i = 0; i < pParam->srcNum; i++) {
+		u32BlkSize[i] = COMMON_GetPicBufferSize(pParam->srcAttr.size[i].u32Width, pParam->srcAttr.size[i].u32Height, fmt_in
+			, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, STITCH_ALIGN);
+		STITCH_UT_PRT("src[%d], w[%d], h[%d]\n", i, pParam->srcAttr.size[i].u32Width, pParam->srcAttr.size[i].u32Height);
+	}
+
+	u32BlkSize[i] = COMMON_GetPicBufferSize(pParam->chnAttr.size.u32Width, pParam->chnAttr.size.u32Height, fmt_out
+		, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, STITCH_ALIGN);
+
+	stVbConf.u32MaxPoolCnt              = pParam->srcNum + 1;
+
+	for (i = 0; i < stVbConf.u32MaxPoolCnt; i++) {
+		stVbConf.astCommPool[i].u32BlkSize	= u32BlkSize[i];
+		stVbConf.astCommPool[i].u32BlkCnt	= grpCnt;
+		stVbConf.astCommPool[i].enRemapMode	= VB_REMAP_MODE_CACHED;
+		STITCH_UT_PRT("common pool[%d] BlkSize %d\n", i, stVbConf.astCommPool[i].u32BlkSize);
+	}
+
+	s32Ret = CVI_VB_SetConfig(&stVbConf);
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_VB_SetConf failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_VB_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_VB_Init failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_SYS_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_SYS_Init failed!\n");
+		goto exit0;
+	}
+
+	/************************************************
+	 * step2:  Init STITCH
+	 ************************************************/
+	s32Ret = CVI_STITCH_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_Init failed!\n");
+		goto exit1;
+	}
+
+	s32Ret = CVI_STITCH_Reset();
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_Reset failed!\n");
+		goto exit1;
+	}
+
+	s32Ret = CVI_STITCH_SetRegX(16);
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_SetRegX failed!\n");
+		goto exit2;
+	}
+
+	for (int i = 0; i < grpCnt; i++) {
+		grp = CVI_STITCH_GetAvailableGrp();
+		if (grp == STITCH_INVALID_GRP || grp >= STITCH_MAX_GRP_NUM) {
+			STITCH_UT_PRT("CVI_STITCH_GetAvailableGrp failed!\n");
+			goto exit2;
+		}
+
+		/*start stitch*/
+		s32Ret=  CVI_STITCH_InitGrp(grp);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("CVI_STITCH_InitGrp failed!\n");
+			goto exit2;
+		}
+
+		s32Ret = CVI_STITCH_SetSrcAttr(grp, &pParam->srcAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("CVI_STITCH_SetSrcAttr failed!\n");
+			goto exit2;
+		}
+
+		s32Ret = CVI_STITCH_SetChnAttr(grp, &pParam->chnAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("CVI_STITCH_SetChnAttr failed!\n");
+			goto exit2;
+		}
+
+		s32Ret = CVI_STITCH_SetOpAttr(grp, &pParam->opAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("CVI_STITCH_SetOpAttr failed!\n");
+			goto exit2;
+		}
+
+		s32Ret = CVI_STITCH_SetWgtAttr(grp, &pParam->wgtAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("CVI_STITCH_SetWgtAttr failed!\n");
+			goto exit2;
+		}
+
+		s32Ret = CVI_STITCH_EnableGrp(grp);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("CVI_STITCH_EnableDev failed!\n");
+			goto exit2;
+		}
+
+		s32Ret = CVI_STITCH_AttachVbPool(grp, (VB_POOL)pParam->srcNum);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("CVI_STITCH_AttachVbPool failed!\n");
+			goto exit2;
+		}
+		g_grp[i] = grp;
+	}
+	return 0;
+
+exit2:
+	CVI_STITCH_DeInit();
+exit1:
+	CVI_SYS_Exit();
+exit0:
+	CVI_VB_Exit();
+	return -1;
+}
+
 
 static CVI_S32 stitch_test_multi_thread(CVI_VOID)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
+	int i, j;
+	STITCH_BASIC_TEST_PARAM param[8] = {0};
+	CVI_U64 u64PhyAddr[STITCH_MAX_SRC_NUM] = {0};
+	CVI_VOID *VirAddr[STITCH_MAX_SRC_NUM] = {0};
+	char *wgt_name[STITCH_MAX_SRC_NUM] = {STITCH_FILE_IN_WGT_ALPHA, STITCH_FILE_IN_WGT_BETA};
+	char *filename_in[STITCH_MAX_SRC_NUM] = {STITCH_FILE_IN_LFT, STITCH_FILE_IN_RHT};
+	char *filename_out = STITCH_FILE_OUT;
+	char *filename_pef = STITCH_FILE_PEF;
+	pthread_t thread[MULTI_GRP_CNT] = {[0 ... MULTI_GRP_CNT-1] = -1};
+	CVI_VOID *vaddr[MULTI_GRP_CNT][2];
+
+	for (i = 0; i < MULTI_GRP_CNT; i++) {
+		param[i].needPef = CVI_TRUE;
+		param[i].needDumpReg = CVI_FALSE;
+		param[i].srcNum = 2;
+		param[i].srcAttr.size[0].u32Width = 4608;
+		param[i].srcAttr.size[0].u32Height = 288;
+		param[i].srcAttr.size[1].u32Width = 4608;
+		param[i].srcAttr.size[1].u32Height = 288;
+
+		param[i].chnAttr.size.u32Width = 6912;
+		param[i].chnAttr.size.u32Height = 288;
+
+		param[i].srcAttr.fmt_in = PIXEL_FORMAT_YUV_PLANAR_420;
+		param[i].chnAttr.fmt_out = PIXEL_FORMAT_YUV_PLANAR_420;
+
+		param[i].srcAttr.way_num = STITCH_2_WAY;
+
+		param[i].srcAttr.bd_attr.bd_lx[0] = 0;//left img, bd_attr from algo
+		param[i].srcAttr.bd_attr.bd_rx[0] = 0;
+		param[i].srcAttr.bd_attr.bd_lx[1] = 0;//right img, bd_attr from algo
+		param[i].srcAttr.bd_attr.bd_rx[1] = 0;
+
+		param[i].srcAttr.ovlap_attr.ovlp_lx[0] = 2304;//ovlap_attr from algo
+		param[i].srcAttr.ovlap_attr.ovlp_rx[0] = 4607;
+
+		param[i].opAttr.data_src = STITCH_DATA_SRC_DDR;
+		param[i].opAttr.wgt_mode = STITCH_WGT_YUV_SHARE;
+
+		param[i].wgtAttr.size_wgt[0].u32Width =
+			ALIGN(param[i].srcAttr.ovlap_attr.ovlp_rx[0] - param[i].srcAttr.ovlap_attr.ovlp_lx[0] + 1, STITCH_ALIGN);
+		param[i].wgtAttr.size_wgt[0].u32Height = param[i].srcAttr.size[0].u32Height;
+
+		strcpy(param[i].filename_out, filename_out);
+		strcpy(param[i].filename_pef, filename_pef);
+		for (j = 0; j < param[i].srcNum; j++) {
+			strcpy(param[i].wgt_name[j], wgt_name[j]);
+			strcpy(param[i].filename_in[j], filename_in[j]);
+
+			s32Ret = cfg_wgt_image(param[i].wgtAttr.size_wgt[0], param[i].opAttr.wgt_mode
+				, param[i].wgt_name[j], &u64PhyAddr[j], &VirAddr[j]);
+			if (s32Ret != CVI_SUCCESS) {
+				STITCH_UT_PRT("cfg_wgt_image src[%d] failed!\n", j);
+				return s32Ret;
+			}
+			param[i].wgtAttr.phy_addr_wgt[0][j] = (__u64)u64PhyAddr[j];
+			vaddr[i][j] = VirAddr[j];
+		}
+	}
+
+	s32Ret = basic_init_stitch(&param[0], MULTI_GRP_CNT);
+	if (s32Ret) {
+		STITCH_UT_PRT("basic_init_stitch failed!\n");
+		return s32Ret;
+	}
+
+	for (i = 0; i < MULTI_GRP_CNT; i++) {
+		param[i].threadId = i;
+		s32Ret = pthread_create(&thread[i], NULL, stitch_multi_thread_do_job, (void *)&param[i]);
+		if (s32Ret) {
+			STITCH_UT_PRT("pthread_create fail. s32Ret:%d, threadId:%d\n", s32Ret, i);
+			break;
+		}
+		sleep(1);
+	}
+
+	for (i = 0; i < MULTI_GRP_CNT; i++) {
+		pthread_join(thread[i], NULL);
+		for (j = 0; j < param[i].srcNum; j++) {
+			if (param[i].wgtAttr.phy_addr_wgt[0][j])
+				CVI_SYS_IonFree(param[i].wgtAttr.phy_addr_wgt[0][j], vaddr[i][j]);
+		}
+
+		s32Ret = CVI_STITCH_DisableGrp(g_grp[i]);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("CVI_STITCH_DisableGrp [%d] failed!\n", i);
+		}
+
+		s32Ret = CVI_STITCH_DeInitGrp(g_grp[i]);
+		if (s32Ret != CVI_SUCCESS) {
+			STITCH_UT_PRT("CVI_STITCH_DeInitGrp [%d] failed!\n", i);
+		}
+	}
+
+	s32Ret |= CVI_STITCH_DeInit();
+	if (s32Ret) {
+		STITCH_UT_PRT("CVI_STITCH_DeInit failed!\n");
+	}
+
+	s32Ret |= CVI_SYS_Exit();
+	s32Ret |= CVI_VB_Exit();
 
 	STITCH_TEST_CHECK_RET(s32Ret);
 	return s32Ret;
@@ -2711,54 +3106,6 @@ free:
 	return s32Ret;
 }
 
-static CVI_S32 cfg_chn_frame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_U64 *pu64PhyAddr, CVI_VOID **ppVirAddr)
-{
-	CVI_S32 s32Ret = CVI_SUCCESS;
-	VB_CAL_CONFIG_S stVbCalConfig;
-
-	COMMON_GetPicBufferConfig(stSize->u32Width, stSize->u32Height, enPixelFormat, DATA_BITWIDTH_8
-		, COMPRESS_MODE_NONE, STITCH_ALIGN, &stVbCalConfig);
-
-	pstVideoFrame->stVFrame.enCompressMode = COMPRESS_MODE_NONE;
-	pstVideoFrame->stVFrame.enPixelFormat = enPixelFormat;
-	pstVideoFrame->stVFrame.enVideoFormat = VIDEO_FORMAT_LINEAR;
-	pstVideoFrame->stVFrame.enColorGamut = COLOR_GAMUT_BT709;
-	pstVideoFrame->stVFrame.u32Width = stSize->u32Width;
-	pstVideoFrame->stVFrame.u32Height = stSize->u32Height;
-	pstVideoFrame->stVFrame.u32Stride[0] = stVbCalConfig.u32MainStride;
-	pstVideoFrame->stVFrame.u32Stride[1] = stVbCalConfig.u32CStride;
-	pstVideoFrame->stVFrame.u32Stride[2] = stVbCalConfig.u32CStride;
-	pstVideoFrame->stVFrame.u32TimeRef = 0;
-	pstVideoFrame->stVFrame.u64PTS = 0;
-	pstVideoFrame->stVFrame.enDynamicRange = DYNAMIC_RANGE_SDR8;
-
-	if (CVI_SYS_IonAlloc(pu64PhyAddr, ppVirAddr, "stitch_chn_frm", stVbCalConfig.u32VBSize)) {
-		STITCH_UT_PRT("CVI_SYS_IonAlloc_Cached NG.\n");
-		return CVI_FAILURE;
-	}
-
-	pstVideoFrame->stVFrame.u32Length[0] = stVbCalConfig.u32MainYSize;
-	pstVideoFrame->stVFrame.u32Length[1] = stVbCalConfig.u32MainCSize;
-	pstVideoFrame->stVFrame.u64PhyAddr[0] = *pu64PhyAddr;
-	pstVideoFrame->stVFrame.u64PhyAddr[1] = pstVideoFrame->stVFrame.u64PhyAddr[0]
-		+ ALIGN(stVbCalConfig.u32MainYSize, stVbCalConfig.u16AddrAlign);
-	if (stVbCalConfig.plane_num == 3) {
-		pstVideoFrame->stVFrame.u32Length[2] = stVbCalConfig.u32MainCSize;
-		pstVideoFrame->stVFrame.u64PhyAddr[2] = pstVideoFrame->stVFrame.u64PhyAddr[1]
-			+ ALIGN(stVbCalConfig.u32MainCSize, stVbCalConfig.u16AddrAlign);
-	}
-	pstVideoFrame->stVFrame.u32Align = STITCH_ALIGN;
-
-	STITCH_UT_PRT("length of buffer(%d, %d, %d)\n", pstVideoFrame->stVFrame.u32Length[0]
-		, pstVideoFrame->stVFrame.u32Length[1], pstVideoFrame->stVFrame.u32Length[2]);
-	STITCH_UT_PRT("phy addr(%#"PRIx64", %#"PRIx64", %#"PRIx64")\n", pstVideoFrame->stVFrame.u64PhyAddr[0]
-		, pstVideoFrame->stVFrame.u64PhyAddr[1], pstVideoFrame->stVFrame.u64PhyAddr[2]);
-	STITCH_UT_PRT("vir addr(%p, %p, %p)\n", pstVideoFrame->stVFrame.pu8VirAddr[0]
-		, pstVideoFrame->stVFrame.pu8VirAddr[1], pstVideoFrame->stVFrame.pu8VirAddr[2]);
-
-	return s32Ret;
-}
-
 static CVI_S32 basic4(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
@@ -2780,25 +3127,32 @@ static CVI_S32 basic4(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetSrcAttr(&pParam->srcAttr);
+	/*start stitch*/
+	s32Ret=  CVI_STITCH_InitGrp(DEFAULT_GRP_ID);
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_InitGrp failed!\n");
+		goto exit2;
+	}
+
+	s32Ret = CVI_STITCH_SetSrcAttr(DEFAULT_GRP_ID, &pParam->srcAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetSrcAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetChnAttr(&pParam->chnAttr);
+	s32Ret = CVI_STITCH_SetChnAttr(DEFAULT_GRP_ID, &pParam->chnAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetChnAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetOpAttr(&pParam->opAttr);
+	s32Ret = CVI_STITCH_SetOpAttr(DEFAULT_GRP_ID, &pParam->opAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetOpAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetWgtAttr(&pParam->wgtAttr);
+	s32Ret = CVI_STITCH_SetWgtAttr(DEFAULT_GRP_ID, &pParam->wgtAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetWgtAttr failed!\n");
 		goto exit2;
@@ -2810,7 +3164,7 @@ static CVI_S32 basic4(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_EnableDev();
+	s32Ret = CVI_STITCH_EnableGrp(DEFAULT_GRP_ID);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_EnableDev failed!\n");
 		goto exit2;
@@ -2824,7 +3178,7 @@ static CVI_S32 basic4(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 			goto exit3;
 		}
 
-		s32Ret = CVI_STITCH_SendChnFrame(&pParam->stVideoFrameOut, 1000);
+		s32Ret = CVI_STITCH_SendChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut, 1000);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_SendChnFrame fail.\n");
 			goto exit3;
@@ -2832,7 +3186,7 @@ static CVI_S32 basic4(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 		for (int i = 0; i < pParam->srcNum; i++) {
 			STITCH_UT_PRT("start send src frame[%d]\n", i);
 
-			s32Ret = FileSendToStitchNoVb((STITCH_SRC_IDX)i, &pParam->srcAttr.size[i], pParam->srcAttr.fmt_in, pParam->filename_in[i], &u64PhyAddr[i], &pVirAddr[i]);
+			s32Ret = FileSendToStitchNoVb((STITCH_SRC_IDX)i, &pParam->srcAttr.size[i], pParam->srcAttr.fmt_in, pParam->filename_in[i], &u64PhyAddr[i], &pVirAddr[i], DEFAULT_GRP_ID);
 			if (s32Ret != CVI_SUCCESS) {
 				STITCH_UT_PRT("FileSendToStitch[%d] fail, s32Ret: 0x%x !\n", i, s32Ret);
 				goto exit3;
@@ -2841,7 +3195,7 @@ static CVI_S32 basic4(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 
 
 
-		s32Ret = CVI_STITCH_GetChnFrame(&pParam->stVideoFrameOut, timout_ms*10);
+		s32Ret = CVI_STITCH_GetChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut, timout_ms*10);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_GetChnFrame fail. s32Ret: 0x%x !\n", s32Ret);
 			//pParam->needDumpReg = CVI_TRUE;
@@ -2857,7 +3211,7 @@ static CVI_S32 basic4(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 				s32Ret = FrameSaveToFile(pParam->filename_out, &pParam->stVideoFrameOut);
 				if (s32Ret != CVI_SUCCESS) {
 					STITCH_UT_PRT("FrameSaveToFile. s32Ret: 0x%x !\n", s32Ret);
-					CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+					CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 					goto exit3;
 				}
 				STITCH_UT_PRT("output file:%s\n", pParam->filename_out);
@@ -2867,7 +3221,7 @@ static CVI_S32 basic4(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 				s32Ret = CompareWithFile(pParam->filename_pef, &pParam->stVideoFrameOut);
 				if (s32Ret != CVI_SUCCESS) {
 					STITCH_UT_PRT("CompareWithFile fail.\n");
-					CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+					CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 					goto exit3;
 				}
 			}
@@ -2884,7 +3238,7 @@ exit3:
 	if (pParam->needDumpReg)
 		CVI_STITCH_DumpRegInfo();
 
-	CVI_STITCH_DisableDev();
+	CVI_STITCH_DisableGrp(DEFAULT_GRP_ID);
 	for (int i = 0; i < 3; ++i) {
 		if (u64PhyAddr[i] && pVirAddr[i])
 			CVI_SYS_IonFree(u64PhyAddr[i], pVirAddr[i]);
@@ -2917,25 +3271,32 @@ static CVI_S32 basic5(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetSrcAttr(&pParam->srcAttr);
+	/*start stitch*/
+	s32Ret=  CVI_STITCH_InitGrp(DEFAULT_GRP_ID);
+	if (s32Ret != CVI_SUCCESS) {
+		STITCH_UT_PRT("CVI_STITCH_InitGrp failed!\n");
+		goto exit2;
+	}
+
+	s32Ret = CVI_STITCH_SetSrcAttr(DEFAULT_GRP_ID, &pParam->srcAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetSrcAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetChnAttr(&pParam->chnAttr);
+	s32Ret = CVI_STITCH_SetChnAttr(DEFAULT_GRP_ID, &pParam->chnAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetChnAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetOpAttr(&pParam->opAttr);
+	s32Ret = CVI_STITCH_SetOpAttr(DEFAULT_GRP_ID, &pParam->opAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetOpAttr failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_STITCH_SetWgtAttr(&pParam->wgtAttr);
+	s32Ret = CVI_STITCH_SetWgtAttr(DEFAULT_GRP_ID, &pParam->wgtAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		STITCH_UT_PRT("CVI_STITCH_SetWgtAttr failed!\n");
 		goto exit2;
@@ -2948,7 +3309,7 @@ static CVI_S32 basic5(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 	}
 
 	do {
-		s32Ret = CVI_STITCH_EnableDev();
+		s32Ret = CVI_STITCH_EnableGrp(DEFAULT_GRP_ID);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_EnableDev failed!\n");
 			goto exit3;
@@ -2961,7 +3322,7 @@ static CVI_S32 basic5(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 			goto exit3;
 		}
 
-		s32Ret = CVI_STITCH_SendChnFrame(&pParam->stVideoFrameOut, 1000);
+		s32Ret = CVI_STITCH_SendChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut, 1000);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_SendChnFrame fail.\n");
 			goto exit3;
@@ -2970,21 +3331,21 @@ static CVI_S32 basic5(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 		for (int i = 0; i < pParam->srcNum; i++) {
 			STITCH_UT_PRT("start send src frame[%d]\n", i);
 
-			s32Ret = FileSendToStitchNoVb((STITCH_SRC_IDX)i, &pParam->srcAttr.size[i], pParam->srcAttr.fmt_in, pParam->filename_in[i], &u64PhyAddr[i], &pVirAddr[i]);
+			s32Ret = FileSendToStitchNoVb((STITCH_SRC_IDX)i, &pParam->srcAttr.size[i], pParam->srcAttr.fmt_in, pParam->filename_in[i], &u64PhyAddr[i], &pVirAddr[i], DEFAULT_GRP_ID);
 			if (s32Ret != CVI_SUCCESS) {
 				STITCH_UT_PRT("FileSendToStitch[%d] fail, s32Ret: 0x%x !\n", i, s32Ret);
 				goto exit3;
 			}
 		}
 
-		s32Ret = CVI_STITCH_GetChnFrame(&pParam->stVideoFrameOut, timout_ms*10);
+		s32Ret = CVI_STITCH_GetChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut, timout_ms*10);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_GetChnFrame fail. s32Ret: 0x%x !\n", s32Ret);
 			//pParam->needDumpReg = CVI_TRUE;
 			goto exit3;
 		}
 
-		s32Ret = CVI_STITCH_DisableDev();
+		s32Ret = CVI_STITCH_DisableGrp(DEFAULT_GRP_ID);
 		if (s32Ret != CVI_SUCCESS) {
 			STITCH_UT_PRT("CVI_STITCH_DisableDev failed!\n");
 			goto exit3;
@@ -2999,7 +3360,7 @@ static CVI_S32 basic5(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 				s32Ret = FrameSaveToFile(pParam->filename_out, &pParam->stVideoFrameOut);
 				if (s32Ret != CVI_SUCCESS) {
 					STITCH_UT_PRT("FrameSaveToFile. s32Ret: 0x%x !\n", s32Ret);
-					CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+					CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 					goto exit3;
 				}
 				STITCH_UT_PRT("output file:%s\n", pParam->filename_out);
@@ -3009,7 +3370,7 @@ static CVI_S32 basic5(STITCH_BASIC_TEST_PARAM *pParam, CVI_U8 times)
 				s32Ret = CompareWithFile(pParam->filename_pef, &pParam->stVideoFrameOut);
 				if (s32Ret != CVI_SUCCESS) {
 					STITCH_UT_PRT("CompareWithFile fail.\n");
-					CVI_STITCH_ReleaseChnFrame(&pParam->stVideoFrameOut);
+					CVI_STITCH_ReleaseChnFrame(DEFAULT_GRP_ID, &pParam->stVideoFrameOut);
 					goto exit3;
 				}
 			}
@@ -3411,8 +3772,6 @@ static CVI_S32 stitch_test_auto_regression(CVI_VOID)
 		stitch_test_size_min1,
 		stitch_test_size_min2,
 		stitch_test_size_middle,
-		stitch_test_size_max,
-		stitch_test_online,
 		stitch_test_multi_thread,
 		stitch_test_pef,
 		stitch_test_no_vb,
@@ -3477,14 +3836,14 @@ static CVI_S32 stitch_test_user_config(CVI_VOID)
 		stTestParam.srcAttr.bd_attr.bd_lx[i] = 0;//left img, bd_attr from algo
 		stTestParam.srcAttr.bd_attr.bd_rx[i] = 0;//right img, bd_attr from algo
 
-		if (i == stTestParam.srcNum)
-			break;
-		printf("input[%d-%d] ovlp lx:", i, i+1);
-		scanf("%d", &tmp);
-		stTestParam.srcAttr.ovlap_attr.ovlp_lx[i] = tmp;//ovlap_attr from algo
-		printf("input[%d-%d] ovlp rx:", i, i+1);
-		scanf("%d", &tmp);
-		stTestParam.srcAttr.ovlap_attr.ovlp_rx[i] = tmp;
+		if (i < stTestParam.srcNum -1) {
+			printf("input[%d-%d] ovlp lx:", i, i+1);
+			scanf("%d", &tmp);
+			stTestParam.srcAttr.ovlap_attr.ovlp_lx[i] = tmp;//ovlap_attr from algo
+			printf("input[%d-%d] ovlp rx:", i, i+1);
+			scanf("%d", &tmp);
+			stTestParam.srcAttr.ovlap_attr.ovlp_rx[i] = tmp;
+		}
 	}
 	stTestParam.srcAttr.way_num = (stTestParam.srcNum == 4 ? STITCH_4_WAY : STITCH_2_WAY);
 	stTestParam.srcAttr.fmt_in = u32FormatIn;
@@ -3505,9 +3864,16 @@ static CVI_S32 stitch_test_user_config(CVI_VOID)
 
 	//wgt attr
 	for (int i = 0; i < stTestParam.srcNum - 1; i++) {
-		stTestParam.wgtAttr.size_wgt[i].u32Width =
-			ALIGN(stTestParam.srcAttr.ovlap_attr.ovlp_rx[i] - stTestParam.srcAttr.ovlap_attr.ovlp_lx[i] + 1, STITCH_ALIGN);
-		stTestParam.wgtAttr.size_wgt[i].u32Height = stTestParam.srcAttr.size[i].u32Height;
+		if (stTestParam.srcAttr.ovlap_attr.ovlp_rx[i]
+			&& stTestParam.srcAttr.ovlap_attr.ovlp_lx[i]
+			&& stTestParam.srcAttr.ovlap_attr.ovlp_rx[i] > stTestParam.srcAttr.ovlap_attr.ovlp_lx[i]) {
+			stTestParam.wgtAttr.size_wgt[i].u32Width =
+				ALIGN(stTestParam.srcAttr.ovlap_attr.ovlp_rx[i] - stTestParam.srcAttr.ovlap_attr.ovlp_lx[i] + 1, STITCH_ALIGN);
+			stTestParam.wgtAttr.size_wgt[i].u32Height = stTestParam.srcAttr.size[i].u32Height;
+		} else {
+			stTestParam.wgtAttr.size_wgt[i].u32Width = 0;
+			stTestParam.wgtAttr.size_wgt[i].u32Height = stTestParam.srcAttr.size[i].u32Height;
+		}
 	}
 
 	for (i = 0; i < stTestParam.srcNum; i++) {
@@ -3523,7 +3889,8 @@ static CVI_S32 stitch_test_user_config(CVI_VOID)
 			}
 
 			stTestParam.wgtAttr.phy_addr_wgt[0][i] = (__u64)u64PhyAddr[i];
-		}
+		} else
+			printf(" wgt[%d] w is zero for null ovlp\n", i);
 	}
 
 	snprintf(stTestParam.filename_out, 64, "%s_%d_%d_%s.bin.yuv", __func__,
@@ -3630,12 +3997,6 @@ static CVI_S32 _stitch_handle_op(CVI_S32 op)
 	case STITCH_TEST_SIZE_MIDDLE:
 		s32Ret = stitch_test_size_middle();
 		break;
-	case STITCH_TEST_SIZE_MAX:
-		s32Ret = stitch_test_size_max();
-		break;
-	case STITCH_TEST_ONLINE:
-		s32Ret = stitch_test_online();
-		break;
 	case STITCH_TEST_MULTI_THREAD:
 		s32Ret = stitch_test_multi_thread();
 		break;
@@ -3650,8 +4011,6 @@ static CVI_S32 _stitch_handle_op(CVI_S32 op)
 		break;
 	case STITCH_TEST_RST:
 		s32Ret = stitch_test_rst();
-		break;
-	case STITCH_TEST_PRESURE_SIZE_FOR_EACH:
 		break;
 	case STITCH_TEST_AUTO_REGRESSION:
 		s32Ret = stitch_test_auto_regression();
@@ -3714,18 +4073,16 @@ static void stitch_show_help(void)
 	STITCH_UT_PRT("%4d: stitch size min1 test\n", STITCH_TEST_SIZE_MIN1);
 	STITCH_UT_PRT("%4d: stitch size min2 test\n", STITCH_TEST_SIZE_MIN2);
 	STITCH_UT_PRT("%4d: stitch size middle test\n", STITCH_TEST_SIZE_MIDDLE);
-	STITCH_UT_PRT("%4d: stitch size max test\n", STITCH_TEST_SIZE_MAX);
 	STITCH_UT_PRT("%4d: stitch online test\n", STITCH_TEST_ONLINE);
 	STITCH_UT_PRT("%4d: stitch multi thread test\n", STITCH_TEST_MULTI_THREAD);
 	STITCH_UT_PRT("%4d: stitch pef test\n", STITCH_TEST_PEF);
 	STITCH_UT_PRT("%4d: stitch no vb test\n", STITCH_TEST_NO_VB);
+	STITCH_UT_PRT("%4d: stitch enable disable dev loop\n", STITCH_TEST_EN_DIS_DEV_LOOP);
 	STITCH_UT_PRT("%4d: stitch reset test\n", STITCH_TEST_RST);
-	STITCH_UT_PRT("%4d: stitch size presure test\n", STITCH_TEST_PRESURE_SIZE_FOR_EACH);
 	STITCH_UT_PRT("%4d: stitch auto test\n", STITCH_TEST_AUTO_REGRESSION);
 	STITCH_UT_PRT("%4d: stitch user config test\n", STITCH_TEST_USER_CONFIG);
 	STITCH_UT_PRT("%4d: stitch dup fd\n", STITCH_TEST_DUP_FD);
-	STITCH_UT_PRT("%4d: stitch dup fd\n", STITCH_TEST_RST_FD);
-	STITCH_UT_PRT("%4d: stitch enable disable dev loop\n", STITCH_TEST_EN_DIS_DEV_LOOP);
+	STITCH_UT_PRT("%4d: stitch rst fd\n", STITCH_TEST_RST_FD);
 	STITCH_UT_PRT("255: exit\n");
 }
 

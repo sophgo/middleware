@@ -86,8 +86,10 @@ extern CVI_S32 cviaud_dbg;
 #define ACODEC_ADC	"/dev/cvitekaadc"
 #define ACODEC_DAC	"/dev/cvitekadac"
 #elif defined(__CV186X__)
-#define ACODEC_ADC	"/dev/misccvitekadc_0"
-#define ACODEC_DAC	"/dev/misccvitekdac_1"
+#define ACODEC_ADC0	"/dev/misccvitekadc_0"
+#define ACODEC_ADC1	"/dev/misccvitekadc_1"
+#define ACODEC_DAC0	"/dev/misccvitekdac_0"
+#define ACODEC_DAC1	"/dev/misccvitekdac_1"
 #else
 #define ACODEC_ADC	"/dev/cv182xadc"
 #define ACODEC_DAC	"/dev/cv182xdac"

@@ -233,6 +233,7 @@ typedef enum _PIC_SIZE_E {
 	PIC_3000x3000,
 	PIC_4000x3000,
 	PIC_4032x3000,
+	PIC_4032x2288,
 	PIC_3840x8640,
 	PIC_4608x4320,
 	PIC_5120x3840,
@@ -413,6 +414,8 @@ typedef enum _SAMPLE_SNS_TYPE_E {
 	SONY_IMX335_MIPI_5M_30FPS_10BIT_WDR2TO1,
 	SONY_IMX347_MIPI_4M_30FPS_12BIT_WDR2TO1,
 	SONY_IMX385_MIPI_2M_30FPS_12BIT_WDR2TO1,
+	SONY_IMX412_MIPI_12M_30FPS_12BIT_WDR2TO1,
+	SONY_IMX412_MIPI_8M_30FPS_12BIT_WDR2TO1,
 	SONY_IMX585_MIPI_8M_25FPS_12BIT_WDR2TO1,
 	/* ------ WDR 2TO1 END ------*/
 	SAMPLE_SNS_TYPE_BUTT,
@@ -803,6 +806,8 @@ typedef struct _chnInputCfg_ {
 	CVI_S32 s32EnableIDRCount;
 	CVI_U32 u32SearchVer;
 	CVI_U32 u32SearchHor;
+	CVI_U32 u32MinBsBufSize;
+	CVI_BOOL bUseExternBuf;
 } chnInputCfg;
 
 typedef enum _CHN_STATE_ {
@@ -864,6 +869,7 @@ typedef struct _vencChnCtx_ {
 	CVI_U32 u32BlkSize;
 	frame_buffer_param frameUnusedQueue[MAX_SRC_FRAM_CNT];
 	CVI_S32 perf;
+	VENC_PHYS_BUF_S stEncBistreamBuf;
 } vencChnCtx;
 
 typedef struct _SAMPLE_INI_CFG_S {

@@ -4388,7 +4388,7 @@ static CVI_S32 _handle_op(CVI_S32 op, SAMPLE_INI_CFG_S *pstIniCfg, SAMPLE_VI_CON
 			SAMPLE_PRT("not supported mod:(%d)\n", meshDumpAttr.enModId);
 			return CVI_FAILURE;
 		}
-		CVI_GDC_DumpMesh(&meshDumpAttr);
+		// CVI_GDC_DumpMesh(&meshDumpAttr);
 		break;
 	}
 	case 208: {
@@ -4414,7 +4414,7 @@ static CVI_S32 _handle_op(CVI_S32 op, SAMPLE_INI_CFG_S *pstIniCfg, SAMPLE_VI_CON
 			SAMPLE_PRT("not supported mod:(%d)\n", meshDumpAttr.enModId);
 			return CVI_FAILURE;
 		}
-		CVI_GDC_LoadMesh(&meshDumpAttr, NULL);
+		// CVI_GDC_LoadMesh(&meshDumpAttr, NULL);
 		break;
 	}
 	default:
@@ -4458,7 +4458,10 @@ int runMw(CVI_S32 cmd)
 	CVI_LOG_SetLevelConf(&log_conf);
 
 	// Get config from ini if found.
-	if (SAMPLE_COMM_VI_ParseIni(&stIniCfg)) {
+	s32Ret = SAMPLE_COMM_VI_ParseIni(&stIniCfg);
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("Parse fail\n");
+	} else {
 		SAMPLE_PRT("Parse complete\n");
 	}
 

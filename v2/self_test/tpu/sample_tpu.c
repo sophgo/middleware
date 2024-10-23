@@ -1059,11 +1059,11 @@ static void _cnv_warp_test(bool method)
 	 * step4:  Setup GDC.
 	 ************************************************/
 	CVI_GDC_BeginJob(&hHandle);
-	if (method) {
-		CVI_GDC_AddCnvWarpTask(_pfmesh_data, hHandle, &stTask, &stAffineAttr, &_renew);
-	} else {
-		CVI_GDC_AddCorrectionTaskCNV(hHandle, &stTask, &stAffineAttr, p_tbl, p_idl, &tbl_param[0]);
-	}
+	// if (method) {
+	// 	CVI_GDC_AddCnvWarpTask(_pfmesh_data, hHandle, &stTask, &stAffineAttr, &_renew);
+	// } else {
+	// 	CVI_GDC_AddCorrectionTaskCNV(hHandle, &stTask, &stAffineAttr, p_tbl, p_idl, &tbl_param[0]);
+	// }
 	if (CVI_GDC_EndJob(hHandle) != CVI_SUCCESS) {
 		SAMPLE_PRT("GDC Job failed.\n");
 		goto GDC_FAIL;

@@ -44,8 +44,8 @@ $(SDIR)/%.o: $(SDIR)/%.c
 	@$(CC) $(DEPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
 	@echo [$(notdir $(CC))] $(notdir $@)
 
-$(TARGET):  $(COMM_OBJ) $(OBJS) $(MW_LIB)/libdpu.a $(MW_LIB)/libsys.a $(MW_LIB)/libdwa.a
-	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(MW_LIB)/libdpu.a $(MW_LIB)/libsys.a $(MW_LIB)/libdwa.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
+$(TARGET):  $(COMM_OBJ) $(OBJS) $(MW_LIB)/libdpu.a $(MW_LIB)/libsys.a $(MW_LIB)/libgdc.a
+	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(MW_LIB)/libdpu.a $(MW_LIB)/libsys.a $(MW_LIB)/libgdc.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
 
 clean:

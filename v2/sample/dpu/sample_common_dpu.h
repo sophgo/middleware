@@ -1,7 +1,7 @@
 #ifndef __SAMPLE_COMM_DPU_H__
 #define __SAMPLE_COMM_DPU_H__
 #include "cvi_dpu.h"
-#include "cvi_dwa.h"
+#include "cvi_gdc.h"
 #include <cvi_comm_dpu.h>
 #include <cvi_comm_video.h>
 #include <pthread.h>

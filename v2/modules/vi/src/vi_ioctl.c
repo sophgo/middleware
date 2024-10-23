@@ -280,6 +280,11 @@ int vi_sdk_get_dev_bind_attr(int fd, int dev, VI_DEV_BIND_PIPE_S *pstDevBindAttr
 	SDK_CTRL_SET_CFG(fd, pstDevBindAttr, VI_SDK_GET_DEV_BIND_ATTR, dev, -1, -1, -1);
 }
 
+int vi_sdk_set_dev_unbind_attr(int fd, int dev)
+{
+	SDK_CTRL_SET_CFG(fd, NULL, VI_SDK_SET_DEV_UNBIND_ATTR, dev, -1, -1, -1);
+}
+
 int vi_sdk_get_pipe_status(int fd, int pipe, VI_PIPE_STATUS_S *pstStatus)
 {
 	SDK_CTRL_SET_CFG(fd, pstStatus, VI_SDK_GET_PIPE_STATUS, -1, pipe, -1, -1);

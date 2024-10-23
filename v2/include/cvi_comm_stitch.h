@@ -25,6 +25,7 @@ extern "C" {
 #define STITCH_B_IDX 2
 
 #define STITCH_ALIGN 16
+#define STITCH_INVALID_GRP     (-1)
 
 enum stitch_src_id {
 	STITCH_SRC_ID_0 = 0,
@@ -86,6 +87,7 @@ struct stitch_src_attr {
 //size_wgt[2]: size of wgt34(alpha, beta)
 struct stitch_bld_wgt_attr {
 	__u64 phy_addr_wgt[STITCH_MAX_SRC_NUM -1][2];
+	//void *vir_addr_wgt[STITCH_MAX_SRC_NUM -1][2];
 	SIZE_S size_wgt[STITCH_MAX_SRC_NUM -1];
 };
 

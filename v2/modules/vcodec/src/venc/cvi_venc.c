@@ -85,7 +85,7 @@ CVI_S32 CVI_VENC_CreateChn(VENC_CHN VeChn, const VENC_CHN_ATTR_S *pstAttr)
 	CVI_S32 s32Ret = CVI_FAILURE;
 
     if(!pstAttr) {
-        return CVI_ERR_VENC_ILLEGAL_PARAM;
+        return CVI_ERR_VENC_NULL_PTR;
     }
 
     if((pstAttr->stVencAttr.enType == PT_MJPEG)
@@ -100,9 +100,9 @@ CVI_S32 CVI_VENC_CreateChn(VENC_CHN VeChn, const VENC_CHN_ATTR_S *pstAttr)
         return CVI_ERR_VENC_ILLEGAL_PARAM;
     }
 
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -114,7 +114,7 @@ CVI_S32 CVI_VENC_CreateChn(VENC_CHN VeChn, const VENC_CHN_ATTR_S *pstAttr)
 		u32ChannelCreatedCnt += 1;
 	} else {
 		printf("fail to open device %d\n", VeChn);
-		s32Ret = CVI_FAILURE;
+		s32Ret = CVI_ERR_VENC_INVALID_CHNID;
 	}
 	return s32Ret;
 }
@@ -122,9 +122,9 @@ CVI_S32 CVI_VENC_CreateChn(VENC_CHN VeChn, const VENC_CHN_ATTR_S *pstAttr)
 CVI_S32 CVI_VENC_DestroyChn(VENC_CHN VeChn)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
-    if (s32VencFd[VeChn] < 0 ) {
+    if (s32VencFd[VeChn] < 0 || VeChn < 0) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -148,9 +148,9 @@ CVI_S32 CVI_VENC_DestroyChn(VENC_CHN VeChn)
 
 CVI_S32 CVI_VENC_ResetChn(VENC_CHN VeChn)
 {
-    if (s32VencFd[VeChn] < 0) {
+    if (s32VencFd[VeChn] < 0 || VeChn < 0) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -161,9 +161,13 @@ CVI_S32 CVI_VENC_ResetChn(VENC_CHN VeChn)
 
 CVI_S32 CVI_VENC_StartRecvFrame(VENC_CHN VeChn, const VENC_RECV_PIC_PARAM_S *pstRecvParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
+	}
+
+	if (!pstRecvParam) {
+		return CVI_ERR_VENC_NULL_PTR;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -174,9 +178,9 @@ CVI_S32 CVI_VENC_StartRecvFrame(VENC_CHN VeChn, const VENC_RECV_PIC_PARAM_S *pst
 
 CVI_S32 CVI_VENC_StopRecvFrame(VENC_CHN VeChn)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -187,6 +191,15 @@ CVI_S32 CVI_VENC_StopRecvFrame(VENC_CHN VeChn)
 
 CVI_S32 CVI_VENC_QueryStatus(VENC_CHN VeChn, VENC_CHN_STATUS_S *pstStatus)
 {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
+		printf("openDevice fail\n");
+		return CVI_ERR_VENC_INVALID_CHNID;
+	}
+
+	if (!pstStatus) {
+		return CVI_ERR_VENC_NULL_PTR;
+	}
+
 	if (s32VencFd[VeChn] > 0) {
 		return ioctl(s32VencFd[VeChn], CVI_VC_VENC_QUERY_STATUS, pstStatus);
 	}
@@ -195,9 +208,13 @@ CVI_S32 CVI_VENC_QueryStatus(VENC_CHN VeChn, VENC_CHN_STATUS_S *pstStatus)
 
 CVI_S32 CVI_VENC_SetChnAttr(VENC_CHN VeChn, const VENC_CHN_ATTR_S *pstChnAttr)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
+	}
+
+	if (!pstChnAttr) {
+		return CVI_ERR_VENC_NULL_PTR;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -208,9 +225,13 @@ CVI_S32 CVI_VENC_SetChnAttr(VENC_CHN VeChn, const VENC_CHN_ATTR_S *pstChnAttr)
 
 CVI_S32 CVI_VENC_GetChnAttr(VENC_CHN VeChn, VENC_CHN_ATTR_S *pstChnAttr)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
+	}
+
+	if (!pstChnAttr) {
+		return CVI_ERR_VENC_NULL_PTR;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -223,9 +244,13 @@ CVI_S32 CVI_VENC_GetStream(VENC_CHN VeChn, VENC_STREAM_S *pstStream, CVI_S32 S32
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
+	}
+
+	if (!pstStream) {
+		return CVI_ERR_VENC_NULL_PTR;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -254,9 +279,13 @@ CVI_S32 CVI_VENC_GetStream(VENC_CHN VeChn, VENC_STREAM_S *pstStream, CVI_S32 S32
 
 CVI_S32 CVI_VENC_ReleaseStream(VENC_CHN VeChn, VENC_STREAM_S *pstStream)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
+	}
+
+	if (!pstStream) {
+		return CVI_ERR_VENC_NULL_PTR;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -277,9 +306,13 @@ CVI_S32 CVI_VENC_ReleaseStream(VENC_CHN VeChn, VENC_STREAM_S *pstStream)
 
 CVI_S32 CVI_VENC_InsertUserData(VENC_CHN VeChn, CVI_U8 *pu8Data, CVI_U32 u32Len)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
+	}
+
+	if (!pu8Data) {
+		return CVI_ERR_VENC_NULL_PTR;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -294,9 +327,13 @@ CVI_S32 CVI_VENC_InsertUserData(VENC_CHN VeChn, CVI_U8 *pu8Data, CVI_U32 u32Len)
 
 CVI_S32 CVI_VENC_SendFrame(VENC_CHN VeChn, const VIDEO_FRAME_INFO_S *pstFrame, CVI_S32 s32MilliSec)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
+	}
+
+	if (!pstFrame) {
+		return CVI_ERR_VENC_NULL_PTR;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -311,26 +348,28 @@ CVI_S32 CVI_VENC_SendFrame(VENC_CHN VeChn, const VIDEO_FRAME_INFO_S *pstFrame, C
 
 CVI_S32 CVI_VENC_SendFrameEx(VENC_CHN VeChn, const USER_FRAME_INFO_S *pstFrame, CVI_S32 s32MilliSec)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
-
+printf("status 1\n");
 	if (s32VencFd[VeChn] > 0) {
+		printf("status 2\n");
 		USER_FRAME_INFO_EX_S stUserFrameEx, *pstUserFrameEx = &stUserFrameEx;
 
 		pstUserFrameEx->pstUserFrame = pstFrame;
 		pstUserFrameEx->s32MilliSec = s32MilliSec;
 		return ioctl(s32VencFd[VeChn], CVI_VC_VENC_SEND_FRAMEEX, pstUserFrameEx);
 	}
+	printf("status 3\n");
 	return CVI_FAILURE;
 }
 
 CVI_S32 CVI_VENC_RequestIDR(VENC_CHN VeChn, CVI_BOOL bInstant)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -341,9 +380,9 @@ CVI_S32 CVI_VENC_RequestIDR(VENC_CHN VeChn, CVI_BOOL bInstant)
 
 CVI_S32 CVI_VENC_EnableIDR(VENC_CHN VeChn, CVI_BOOL bInstant)
 {
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -354,9 +393,9 @@ CVI_S32 CVI_VENC_EnableIDR(VENC_CHN VeChn, CVI_BOOL bInstant)
 
 CVI_S32 CVI_VENC_GetFd(VENC_CHN VeChn)
 {
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	return s32VencFd[VeChn];
@@ -371,9 +410,9 @@ CVI_S32 CVI_VENC_CloseFd(VENC_CHN VeChn)
 
 CVI_S32 CVI_VENC_SetRoiAttr(VENC_CHN VeChn, const VENC_ROI_ATTR_S *pstRoiAttr)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -384,9 +423,9 @@ CVI_S32 CVI_VENC_SetRoiAttr(VENC_CHN VeChn, const VENC_ROI_ATTR_S *pstRoiAttr)
 
 CVI_S32 CVI_VENC_GetRoiAttr(VENC_CHN VeChn, CVI_U32 u32Index, VENC_ROI_ATTR_S *pstRoiAttr)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -398,9 +437,9 @@ CVI_S32 CVI_VENC_GetRoiAttr(VENC_CHN VeChn, CVI_U32 u32Index, VENC_ROI_ATTR_S *p
 
 CVI_S32 CVI_VENC_SetH264Trans(VENC_CHN VeChn, const VENC_H264_TRANS_S *pstH264Trans)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -411,9 +450,9 @@ CVI_S32 CVI_VENC_SetH264Trans(VENC_CHN VeChn, const VENC_H264_TRANS_S *pstH264Tr
 
 CVI_S32 CVI_VENC_GetH264Trans(VENC_CHN VeChn, VENC_H264_TRANS_S *pstH264Trans)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -424,9 +463,9 @@ CVI_S32 CVI_VENC_GetH264Trans(VENC_CHN VeChn, VENC_H264_TRANS_S *pstH264Trans)
 
 CVI_S32 CVI_VENC_SetH264Entropy(VENC_CHN VeChn, const VENC_H264_ENTROPY_S *pstH264EntropyEnc)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -437,9 +476,9 @@ CVI_S32 CVI_VENC_SetH264Entropy(VENC_CHN VeChn, const VENC_H264_ENTROPY_S *pstH2
 
 CVI_S32 CVI_VENC_GetH264Entropy(VENC_CHN VeChn, VENC_H264_ENTROPY_S *pstH264EntropyEnc)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -450,9 +489,9 @@ CVI_S32 CVI_VENC_GetH264Entropy(VENC_CHN VeChn, VENC_H264_ENTROPY_S *pstH264Entr
 
 CVI_S32 CVI_VENC_SetH264Vui(VENC_CHN VeChn, const VENC_H264_VUI_S *pstH264Vui)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -463,9 +502,9 @@ CVI_S32 CVI_VENC_SetH264Vui(VENC_CHN VeChn, const VENC_H264_VUI_S *pstH264Vui)
 
 CVI_S32 CVI_VENC_GetH264Vui(VENC_CHN VeChn, VENC_H264_VUI_S *pstH264Vui)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -476,9 +515,9 @@ CVI_S32 CVI_VENC_GetH264Vui(VENC_CHN VeChn, VENC_H264_VUI_S *pstH264Vui)
 
 CVI_S32 CVI_VENC_SetH265Vui(VENC_CHN VeChn, const VENC_H265_VUI_S *pstH265Vui)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -489,9 +528,9 @@ CVI_S32 CVI_VENC_SetH265Vui(VENC_CHN VeChn, const VENC_H265_VUI_S *pstH265Vui)
 
 CVI_S32 CVI_VENC_GetH265Vui(VENC_CHN VeChn, VENC_H265_VUI_S *pstH265Vui)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -502,9 +541,9 @@ CVI_S32 CVI_VENC_GetH265Vui(VENC_CHN VeChn, VENC_H265_VUI_S *pstH265Vui)
 
 CVI_S32 CVI_VENC_SetJpegParam(VENC_CHN VeChn, const VENC_JPEG_PARAM_S *pstJpegParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -515,9 +554,9 @@ CVI_S32 CVI_VENC_SetJpegParam(VENC_CHN VeChn, const VENC_JPEG_PARAM_S *pstJpegPa
 
 CVI_S32 CVI_VENC_GetJpegParam(VENC_CHN VeChn, VENC_JPEG_PARAM_S *pstJpegParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -528,9 +567,9 @@ CVI_S32 CVI_VENC_GetJpegParam(VENC_CHN VeChn, VENC_JPEG_PARAM_S *pstJpegParam)
 
 CVI_S32 CVI_VENC_GetRcParam(VENC_CHN VeChn, VENC_RC_PARAM_S *pstRcParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -541,9 +580,9 @@ CVI_S32 CVI_VENC_GetRcParam(VENC_CHN VeChn, VENC_RC_PARAM_S *pstRcParam)
 
 CVI_S32 CVI_VENC_SetMjpegParam(VENC_CHN VeChn, const VENC_MJPEG_PARAM_S *pstMJpegParam)
 {
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -554,9 +593,9 @@ CVI_S32 CVI_VENC_SetMjpegParam(VENC_CHN VeChn, const VENC_MJPEG_PARAM_S *pstMJpe
 
 CVI_S32 CVI_VENC_GetMjpegParam(VENC_CHN VeChn, VENC_MJPEG_PARAM_S *pstMJpegParam)
 {
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -567,9 +606,9 @@ CVI_S32 CVI_VENC_GetMjpegParam(VENC_CHN VeChn, VENC_MJPEG_PARAM_S *pstMJpegParam
 
 CVI_S32 CVI_VENC_SetRcParam(VENC_CHN VeChn, const VENC_RC_PARAM_S *pstRcParam)
 {
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -580,9 +619,9 @@ CVI_S32 CVI_VENC_SetRcParam(VENC_CHN VeChn, const VENC_RC_PARAM_S *pstRcParam)
 
 CVI_S32 CVI_VENC_SetRefParam(VENC_CHN VeChn, const VENC_REF_PARAM_S *pstRefParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -593,9 +632,9 @@ CVI_S32 CVI_VENC_SetRefParam(VENC_CHN VeChn, const VENC_REF_PARAM_S *pstRefParam
 
 CVI_S32 CVI_VENC_GetRefParam(VENC_CHN VeChn, VENC_REF_PARAM_S *pstRefParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -606,9 +645,9 @@ CVI_S32 CVI_VENC_GetRefParam(VENC_CHN VeChn, VENC_REF_PARAM_S *pstRefParam)
 
 CVI_S32 CVI_VENC_SetH265PredUnit(VENC_CHN VeChn, const VENC_H265_PU_S *pstPredUnit)
 {
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -620,9 +659,9 @@ CVI_S32 CVI_VENC_SetH265PredUnit(VENC_CHN VeChn, const VENC_H265_PU_S *pstPredUn
 
 CVI_S32 CVI_VENC_GetH265PredUnit(VENC_CHN VeChn, VENC_H265_PU_S *pstPredUnit)
 {
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -634,9 +673,9 @@ CVI_S32 CVI_VENC_GetH265PredUnit(VENC_CHN VeChn, VENC_H265_PU_S *pstPredUnit)
 
 CVI_S32 CVI_VENC_SetH265Trans(VENC_CHN VeChn, const VENC_H265_TRANS_S *pstH265Trans)
 {
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -647,9 +686,9 @@ CVI_S32 CVI_VENC_SetH265Trans(VENC_CHN VeChn, const VENC_H265_TRANS_S *pstH265Tr
 
 CVI_S32 CVI_VENC_GetH265Trans(VENC_CHN VeChn, VENC_H265_TRANS_S *pstH265Trans)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -660,9 +699,9 @@ CVI_S32 CVI_VENC_GetH265Trans(VENC_CHN VeChn, VENC_H265_TRANS_S *pstH265Trans)
 
 CVI_S32 CVI_VENC_SetFrameLostStrategy(VENC_CHN VeChn, const VENC_FRAMELOST_S *pstFrmLostParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -673,9 +712,9 @@ CVI_S32 CVI_VENC_SetFrameLostStrategy(VENC_CHN VeChn, const VENC_FRAMELOST_S *ps
 
 CVI_S32 CVI_VENC_GetFrameLostStrategy(VENC_CHN VeChn, VENC_FRAMELOST_S *pstFrmLostParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -686,9 +725,9 @@ CVI_S32 CVI_VENC_GetFrameLostStrategy(VENC_CHN VeChn, VENC_FRAMELOST_S *pstFrmLo
 
 CVI_S32 CVI_VENC_SetSuperFrameStrategy(VENC_CHN VeChn, const VENC_SUPERFRAME_CFG_S *pstSuperFrmParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -699,9 +738,9 @@ CVI_S32 CVI_VENC_SetSuperFrameStrategy(VENC_CHN VeChn, const VENC_SUPERFRAME_CFG
 
 CVI_S32 CVI_VENC_GetSuperFrameStrategy(VENC_CHN VeChn, VENC_SUPERFRAME_CFG_S *pstSuperFrmParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -712,9 +751,9 @@ CVI_S32 CVI_VENC_GetSuperFrameStrategy(VENC_CHN VeChn, VENC_SUPERFRAME_CFG_S *ps
 
 CVI_S32 CVI_VENC_SetChnParam(VENC_CHN VeChn, const VENC_CHN_PARAM_S *pstChnParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -725,9 +764,9 @@ CVI_S32 CVI_VENC_SetChnParam(VENC_CHN VeChn, const VENC_CHN_PARAM_S *pstChnParam
 
 CVI_S32 CVI_VENC_GetChnParam(VENC_CHN VeChn, VENC_CHN_PARAM_S *pstChnParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -740,9 +779,9 @@ CVI_S32 CVI_VENC_SetModParam(const VENC_PARAM_MOD_S *pstModParam)
 {
 	VENC_CHN VeChn = 0;	// default hard-code
 
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -755,9 +794,9 @@ CVI_S32 CVI_VENC_GetModParam(VENC_PARAM_MOD_S *pstModParam)
 {
 	VENC_CHN VeChn = 0;	// default hard-code
 
-	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -768,9 +807,9 @@ CVI_S32 CVI_VENC_GetModParam(VENC_PARAM_MOD_S *pstModParam)
 
 CVI_S32 CVI_VENC_AttachVbPool(VENC_CHN VeChn, const VENC_CHN_POOL_S *pstPool)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -781,9 +820,9 @@ CVI_S32 CVI_VENC_AttachVbPool(VENC_CHN VeChn, const VENC_CHN_POOL_S *pstPool)
 
 CVI_S32 CVI_VENC_DetachVbPool(VENC_CHN VeChn)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -795,9 +834,9 @@ CVI_S32 CVI_VENC_DetachVbPool(VENC_CHN VeChn)
 CVI_S32 CVI_VENC_SetCuPrediction(VENC_CHN VeChn,
 		const VENC_CU_PREDICTION_S *pstCuPrediction)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -808,9 +847,9 @@ CVI_S32 CVI_VENC_SetCuPrediction(VENC_CHN VeChn,
 
 CVI_S32 CVI_VENC_GetCuPrediction(VENC_CHN VeChn, VENC_CU_PREDICTION_S *pstCuPrediction)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -821,9 +860,9 @@ CVI_S32 CVI_VENC_GetCuPrediction(VENC_CHN VeChn, VENC_CU_PREDICTION_S *pstCuPred
 
 CVI_S32 CVI_VENC_CalcFrameParam(VENC_CHN VeChn, VENC_FRAME_PARAM_S *pstFrameParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -834,9 +873,9 @@ CVI_S32 CVI_VENC_CalcFrameParam(VENC_CHN VeChn, VENC_FRAME_PARAM_S *pstFramePara
 
 CVI_S32 CVI_VENC_SetFrameParam(VENC_CHN VeChn, const VENC_FRAME_PARAM_S *pstFrameParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -847,9 +886,9 @@ CVI_S32 CVI_VENC_SetFrameParam(VENC_CHN VeChn, const VENC_FRAME_PARAM_S *pstFram
 
 CVI_S32 CVI_VENC_GetFrameParam(VENC_CHN VeChn, VENC_FRAME_PARAM_S *pstFrameParam)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -860,9 +899,9 @@ CVI_S32 CVI_VENC_GetFrameParam(VENC_CHN VeChn, VENC_FRAME_PARAM_S *pstFrameParam
 
 CVI_S32 CVI_VENC_SetH264SliceSplit(VENC_CHN VeChn, const VENC_H264_SLICE_SPLIT_S *pstSliceSplit)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -873,9 +912,9 @@ CVI_S32 CVI_VENC_SetH264SliceSplit(VENC_CHN VeChn, const VENC_H264_SLICE_SPLIT_S
 
 CVI_S32 CVI_VENC_GetH264SliceSplit(VENC_CHN VeChn, VENC_H264_SLICE_SPLIT_S *pstSliceSplit)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -886,9 +925,9 @@ CVI_S32 CVI_VENC_GetH264SliceSplit(VENC_CHN VeChn, VENC_H264_SLICE_SPLIT_S *pstS
 
 CVI_S32 CVI_VENC_SetH265SliceSplit(VENC_CHN VeChn, const VENC_H265_SLICE_SPLIT_S *pstSliceSplit)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -899,9 +938,9 @@ CVI_S32 CVI_VENC_SetH265SliceSplit(VENC_CHN VeChn, const VENC_H265_SLICE_SPLIT_S
 
 CVI_S32 CVI_VENC_GetH265SliceSplit(VENC_CHN VeChn, VENC_H265_SLICE_SPLIT_S *pstSliceSplit)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -912,9 +951,9 @@ CVI_S32 CVI_VENC_GetH265SliceSplit(VENC_CHN VeChn, VENC_H265_SLICE_SPLIT_S *pstS
 
 CVI_S32 CVI_VENC_SetH264Dblk(VENC_CHN VeChn, const VENC_H264_DBLK_S *pstH264Dblk)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -925,9 +964,9 @@ CVI_S32 CVI_VENC_SetH264Dblk(VENC_CHN VeChn, const VENC_H264_DBLK_S *pstH264Dblk
 
 CVI_S32 CVI_VENC_GetH264Dblk(VENC_CHN VeChn, VENC_H264_DBLK_S *pstH264Dblk)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -938,9 +977,9 @@ CVI_S32 CVI_VENC_GetH264Dblk(VENC_CHN VeChn, VENC_H264_DBLK_S *pstH264Dblk)
 
 CVI_S32 CVI_VENC_SetH265Dblk(VENC_CHN VeChn, const VENC_H265_DBLK_S *pstH265Dblk)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -951,9 +990,9 @@ CVI_S32 CVI_VENC_SetH265Dblk(VENC_CHN VeChn, const VENC_H265_DBLK_S *pstH265Dblk
 
 CVI_S32 CVI_VENC_GetH265Dblk(VENC_CHN VeChn, VENC_H265_DBLK_S *pstH265Dblk)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -964,9 +1003,9 @@ CVI_S32 CVI_VENC_GetH265Dblk(VENC_CHN VeChn, VENC_H265_DBLK_S *pstH265Dblk)
 
 CVI_S32 CVI_VENC_SetH264IntraPred(VENC_CHN VeChn, const VENC_H264_INTRA_PRED_S *pstH264IntraPred)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -977,9 +1016,9 @@ CVI_S32 CVI_VENC_SetH264IntraPred(VENC_CHN VeChn, const VENC_H264_INTRA_PRED_S *
 
 CVI_S32 CVI_VENC_GetH264IntraPred(VENC_CHN VeChn, VENC_H264_INTRA_PRED_S *pstH264IntraPred)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -990,9 +1029,9 @@ CVI_S32 CVI_VENC_GetH264IntraPred(VENC_CHN VeChn, VENC_H264_INTRA_PRED_S *pstH26
 
 CVI_S32 CVI_VENC_GetIntialInfo(VENC_CHN VeChn, VENC_INITIAL_INFO_S *pstVencInitialInfo)
 {
-    if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -1003,9 +1042,9 @@ CVI_S32 CVI_VENC_GetIntialInfo(VENC_CHN VeChn, VENC_INITIAL_INFO_S *pstVencIniti
 
 CVI_S32 CVI_VENC_SetH265Sao(VENC_CHN VeChn, const VENC_H265_SAO_S *pstH265Sao)
 {
-    if (s32VencFd[VeChn] <= 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -1016,9 +1055,9 @@ CVI_S32 CVI_VENC_SetH265Sao(VENC_CHN VeChn, const VENC_H265_SAO_S *pstH265Sao)
 
 CVI_S32 CVI_VENC_GetH265Sao(VENC_CHN VeChn, VENC_H265_SAO_S *pstH265Sao)
 {
-    if (s32VencFd[VeChn] <= 0 && openDevice(VeChn) != CVI_SUCCESS) {
+    if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -1029,9 +1068,9 @@ CVI_S32 CVI_VENC_GetH265Sao(VENC_CHN VeChn, VENC_H265_SAO_S *pstH265Sao)
 
 CVI_S32 CVI_VENC_SetSearchWindow(VENC_CHN VeChn, const VENC_SEARCH_WINDOW_S *pstVencSearchWindow)
 {
-	if (s32VencFd[VeChn] <= 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
-		return CVI_FAILURE;
+		return CVI_ERR_VENC_INVALID_CHNID;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
@@ -1042,13 +1081,56 @@ CVI_S32 CVI_VENC_SetSearchWindow(VENC_CHN VeChn, const VENC_SEARCH_WINDOW_S *pst
 
 CVI_S32 CVI_VENC_GetSearchWindow(VENC_CHN VeChn, VENC_SEARCH_WINDOW_S *pstVencSearchWindow)
 {
-	if (s32VencFd[VeChn] <= 0 && openDevice(VeChn) != CVI_SUCCESS) {
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
+		printf("openDevice fail\n");
+		return CVI_ERR_VENC_INVALID_CHNID;
+	}
+
+	if (s32VencFd[VeChn] > 0) {
+		return ioctl(s32VencFd[VeChn], CVI_VC_VENC_GET_SEARCH_WINDOW, pstVencSearchWindow);
+	}
+	return CVI_FAILURE;
+}
+
+CVI_S32 CVI_VENC_SetExternBuf(VENC_CHN VeChn, const VENC_EXTERN_BUF_S *pstVencExternBuf)
+{
+	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+		printf("openDevice fail, chn:%d\n", VeChn);
+		return CVI_FAILURE;
+	}
+
+	if (s32VencFd[VeChn] > 0) {
+		return ioctl(s32VencFd[VeChn], CVI_VC_VENC_SET_EXTERN_BUF, pstVencExternBuf);
+	}
+	return CVI_FAILURE;
+}
+
+CVI_S32 CVI_VENC_AllocPhysicalMemory(VENC_PHYS_BUF_S *pstPhysBuf)
+{
+	VENC_CHN VeChn = 0;	// default hard-code
+
+	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
 		printf("openDevice fail\n");
 		return CVI_FAILURE;
 	}
 
 	if (s32VencFd[VeChn] > 0) {
-		return ioctl(s32VencFd[VeChn], CVI_VC_VENC_GET_SEARCH_WINDOW, pstVencSearchWindow);
+		return ioctl(s32VencFd[VeChn], CVI_VC_VENC_ALLOC_PHYSICAL_MEMORY, pstPhysBuf);
+	}
+	return CVI_FAILURE;
+}
+
+CVI_S32 CVI_VENC_FreePhysicalMemory(const VENC_PHYS_BUF_S *pstPhysBuf)
+{
+	VENC_CHN VeChn = 0;	// default hard-code
+
+	if (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS) {
+		printf("openDevice fail\n");
+		return CVI_FAILURE;
+	}
+
+	if (s32VencFd[VeChn] > 0) {
+		return ioctl(s32VencFd[VeChn], CVI_VC_VENC_FREE_PHYSICAL_MEMORY, pstPhysBuf);
 	}
 	return CVI_FAILURE;
 }

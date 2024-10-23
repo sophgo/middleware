@@ -17,7 +17,6 @@
 #include "cvi_vpss.h"
 #include "cvi_sys.h"
 #include "gdc_mesh.h"
-#include "dwa_mesh.h"
 #include "vpss_ioctl.h"
 
 
@@ -185,10 +184,8 @@ static CVI_S32 _vpss_update_ldc_mesh(VPSS_GRP VpssGrp, VPSS_CHN VpssChn,
 	struct cvi_gdc_mesh *pmesh = &mesh[VpssGrp][VpssChn];
 
 	snprintf(mesh_name, 128, "vpss_%d_%d", VpssGrp, VpssChn);
-	if (pstLDCAttr->stAttr.bEnHWLDC)
-		ret = CVI_GDC_GenLDCMesh(u32Width, u32Height, &pstLDCAttr->stAttr, mesh_name, &paddr, &vaddr);
-	else
-		ret = CVI_DWA_GenLDCMesh(u32Width, u32Height, &pstLDCAttr->stAttr, mesh_name, &paddr, &vaddr);
+
+	ret = CVI_GDC_GenLDCMesh(u32Width, u32Height, &pstLDCAttr->stAttr, mesh_name, &paddr, &vaddr);
 	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) gen mesh fail\n",
 				VpssGrp, VpssChn);
@@ -234,7 +231,7 @@ static CVI_S32 _vpss_update_fisheye_mesh(VPSS_GRP VpssGrp, VPSS_CHN VpssChn,
 
 	snprintf(mesh_name, 128, "vpss_%d_%d", VpssGrp, VpssChn);
 	if (pstFishEyeAttr->bEnable) {
-		ret = CVI_DWA_GenFishEyeMesh(u32Width, u32Height, pstFishEyeAttr, mesh_name, &paddr, &vaddr);
+		ret = CVI_GDC_GenFishEyeMesh(u32Width, u32Height, pstFishEyeAttr, mesh_name, &paddr, &vaddr);
 		if (ret != CVI_SUCCESS) {
 			CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) gen mesh fail\n",
 					VpssGrp, VpssChn);
@@ -748,10 +745,8 @@ CVI_S32 CVI_VPSS_DisableChn(VPSS_GRP VpssGrp, VPSS_CHN VpssChn)
 
 	snprintf(mesh_name, 128, "vpss_%d_%d", VpssGrp, VpssChn);
 	vpss_get_chn_ldc(fd, &ldcCfg);
-	if (ldcCfg.stLDCAttr.stAttr.bEnHWLDC)
-		CVI_GDC_FreeCurTaskMesh(mesh_name);
-	else
-		CVI_DWA_FreeCurTaskMesh(mesh_name);
+
+	CVI_GDC_FreeCurTaskMesh(mesh_name);
 
 	mesh[VpssGrp][VpssChn].paddr = CVI_NULL;
 	mesh[VpssGrp][VpssChn].vaddr = CVI_NULL;
@@ -1450,10 +1445,7 @@ CVI_S32 CVI_VPSS_SetChnLDCAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_LD
 		return ret;
 	}
 
-	if (pstLDCAttr->stAttr.bEnHWLDC)
-		CHECK_VPSS_GDC_FMT(VpssGrp, VpssChn, attr.stChnAttr.enPixelFormat);
-	else
-		CHECK_VPSS_DWA_FMT(VpssGrp, VpssChn, attr.stChnAttr.enPixelFormat);
+	CHECK_VPSS_DWA_FMT(VpssGrp, VpssChn, attr.stChnAttr.enPixelFormat);
 
 	ret = vpss_get_chn_rotation(fd, &rot_cfg);
 	if (ret != CVI_SUCCESS) {
@@ -1465,10 +1457,10 @@ CVI_S32 CVI_VPSS_SetChnLDCAttr(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VPSS_LD
 		return CVI_ERR_VPSS_ILLEGAL_PARAM;
 	}
 
-	if (pstLDCAttr->stAttr.enRotation == ROTATION_180) {
-		CVI_TRACE_VPSS(CVI_DBG_ERR, "not support ldc rotation(%d).\n", pstLDCAttr->stAttr.enRotation);
-		return CVI_ERR_VI_NOT_SUPPORT;
-	} else if (pstLDCAttr->stAttr.enRotation >= ROTATION_MAX) {
+	// if (pstLDCAttr->stAttr.enRotation == ROTATION_180) {
+	// 	CVI_TRACE_VPSS(CVI_DBG_ERR, "not support ldc rotation(%d).\n", pstLDCAttr->stAttr.enRotation);
+	// 	return CVI_ERR_VI_NOT_SUPPORT;
+	if (pstLDCAttr->stAttr.enRotation >= ROTATION_MAX) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) invalid ldc rotation(%d).\n"
 			, VpssGrp, VpssChn, pstLDCAttr->stAttr.enRotation);
 		return CVI_ERR_VPSS_ILLEGAL_PARAM;
@@ -1540,7 +1532,7 @@ CVI_S32 CVI_VPSS_SetChnFisheye(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const FISHEYE
 
 	if (rot_cfg.enRotation != 0) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) not support rotation when fisheye\n", VpssGrp, VpssChn);
-		return CVI_ERR_DWA_ILLEGAL_PARAM;
+		return CVI_ERR_VPSS_ILLEGAL_PARAM;
 	}
 
 	ret = vpss_get_grp_attr(fd, &cfg);
@@ -1696,7 +1688,7 @@ CVI_S32 CVI_VPSS_GetRegionLuma(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VIDEO_R
 	ret = CVI_VPSS_GetChnFrame(VpssGrp, VpssChn, &video_frame, s32MilliSec);
 	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get buf fail\n", VpssGrp, VpssChn);
-		return CVI_ERR_VPSS_BUF_EMPTY;
+		return ret;
 	}
 
 	if ((start_x + size.u32Width > video_frame.stVFrame.u32Width) ||

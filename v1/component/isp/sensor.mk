@@ -103,6 +103,7 @@ sensor-$(CONFIG_SENSOR_SONY_IMX327_SLAVE)    += sony_imx327_slave
 sensor-$(CONFIG_SENSOR_SONY_IMX327_2L)       += sony_imx327_2L
 sensor-$(CONFIG_SENSOR_SONY_IMX327_FPGA)     += sony_imx327_fpga
 sensor-$(CONFIG_SENSOR_SONY_IMX327_SUBLVDS)  += sony_imx327_sublvds
+sensor-$(CONFIG_SENSOR_SONY_IMX334)          += sony_imx334
 sensor-$(CONFIG_SENSOR_SONY_IMX335)          += sony_imx335
 sensor-$(CONFIG_SENSOR_SONY_IMX412)          += sony_imx412
 sensor-$(CONFIG_SENSOR_SONY_IMX585)          += sony_imx585

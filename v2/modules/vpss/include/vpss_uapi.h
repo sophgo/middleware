@@ -12,6 +12,7 @@
 #include <cvi_comm_gdc.h>
 #include <cvi_comm_sys.h>
 #include "cvi_base.h"
+#include "base_uapi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -209,86 +210,22 @@ struct vpss_all_proc_amp_cfg {
 	int32_t proc_amp[VPSS_MAX_GRP_NUM][PROC_AMP_MAX];
 };
 
-struct vpss_cover_param {
-	RECT_S rect;
-	__u32 color;
-	__u8 enable;
-};
-
-struct vpss_cover_cfg {
-	struct vpss_cover_param cover_param[4];
-};
-
-struct _vpss_cover_cfg {
+struct vpss_coverex_cfg {
 	VPSS_GRP VpssGrp;
 	VPSS_CHN VpssChn;
-	struct vpss_cover_cfg cover_cfg;
+	struct rgn_coverex_cfg cover_cfg;
 };
 
 struct vpss_mosaic_cfg {
-	__u8 enable;
-	__u8 blk_size;	//0: 8x8   1:16x16
-	__u16 start_x;
-	__u16 start_y;
-	__u16 end_x;
-	__u16 end_y;
-	__u64 phy_addr;
-};
-
-struct _vpss_mosaic_cfg {
 	VPSS_GRP VpssGrp;
 	VPSS_CHN VpssChn;
-	struct vpss_mosaic_cfg mosaic_cfg;
+	struct rgn_mosaic_cfg mosaic_cfg;
 };
 
-enum rgn_format {
-	RGN_FMT_ARGB8888,
-	RGN_FMT_ARGB4444,
-	RGN_FMT_ARGB1555,
-	RGN_FMT_256LUT,
-	RGN_FMT_16LUT,
-	RGN_FMT_FONT,
-	RGN_FMT_MAX
-};
-struct rgn_param {
-	enum rgn_format fmt;
-	RECT_S rect;
-	__u32 stride;
-	__u64 phy_addr;
-};
-
-struct rgn_odec {
-	__u8 enable;
-	__u8 attached_ow;
-	__u8 canvas_updated;
-	__u32 bso_sz;
-	__u64 canvas_mutex_lock;
-	__u64 rgn_canvas_waitq;
-	__u64 rgn_canvas_doneq;
-};
-
-struct rgn_lut_cfg {
-	__u16 lut_length;
-	__u16 lut_addr[256];
-	__u8 lut_layer;
-	// __u8 rgnex_en;
-	__u8 is_updated;
-};
-struct vpss_rgn_cfg {
-	struct rgn_param param[8];
-	struct rgn_lut_cfg rgn_lut_cfg;
-	struct rgn_odec odec;
-	__u8 num_of_rgn;
-	__u8 hscale_x2;
-	__u8 vscale_x2;
-	__u8 colorkey_en;
-	__u32 colorkey;
-};
-
-struct _vpss_gop_cfg {
+struct vpss_gop_cfg {
 	VPSS_GRP VpssGrp;
 	VPSS_CHN VpssChn;
-	struct vpss_rgn_cfg rgn_cfg;
+	struct rgn_cfg rgn_cfg;
 	uint32_t layer;
 };
 
@@ -317,8 +254,8 @@ typedef struct _bm_vpss_cfg {
 	struct vpss_chn_coef_level_cfg chn_coef_level_cfg;
 	struct vpss_chn_draw_rect_cfg chn_draw_rect_cfg;
 	struct vpss_chn_convert_cfg chn_convert_cfg;
-	struct vpss_cover_cfg coverex_cfg;
-	struct vpss_mosaic_cfg mosaic_cfg;
+	struct vpss_coverex_cfg coverex_cfg;
+	struct rgn_mosaic_cfg mosaic_cfg;
 	struct rgn_cfg rgn_cfg[RGN_MAX_LAYER_VPSS];
 } bm_vpss_cfg;
 
@@ -368,9 +305,9 @@ typedef struct _bm_vpss_cfg {
 #define CVI_VPSS_TRIGGER_SNAP_FRAME _IOW('S', 0x41, struct vpss_snap_cfg)
 #define CVI_VPSS_SET_MOD_PARAM _IOW('S', 0x42, struct _VPSS_PARAM_MOD_S)
 #define CVI_VPSS_GET_MOD_PARAM _IOWR('S', 0x43, struct _VPSS_PARAM_MOD_S)
-#define CVI_VPSS_SET_COVEREX_CFG _IOW('S', 0x44, struct _vpss_cover_cfg)
-#define CVI_VPSS_SET_MOSAIC_CFG _IOW('S', 0x45, struct _vpss_mosaic_cfg)
-#define CVI_VPSS_SET_GOP_CFG _IOW('S', 0x46, struct _vpss_gop_cfg)
+#define CVI_VPSS_SET_COVEREX_CFG _IOW('S', 0x44, struct vpss_cover_cfg)
+#define CVI_VPSS_SET_MOSAIC_CFG _IOW('S', 0x45, struct vpss_mosaic_cfg)
+#define CVI_VPSS_SET_GOP_CFG _IOW('S', 0x46, struct vpss_gop_cfg)
 #define CVI_VPSS_STITCH _IOWR('S', 0x47, struct _vpss_stitch_cfg)
 #define CVI_VPSS_SET_CHN_FISHEYE _IOW('S', 0x48, struct vpss_chn_fisheye_cfg)
 #define CVI_VPSS_GET_CHN_FISHEYE _IOWR('S', 0x49, struct vpss_chn_fisheye_cfg)

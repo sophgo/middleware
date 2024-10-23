@@ -182,6 +182,9 @@ sony_imx327_fpga:
 sony_imx327_sublvds:
 	$(call MAKE_SENSOR, ${@})
 
+sony_imx334:
+	$(call MAKE_SENSOR, ${@})
+
 sony_imx335:
 	$(call MAKE_SENSOR, ${@})
 

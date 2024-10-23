@@ -105,6 +105,16 @@ CVI_S32 CVI_VI_SetDevBindAttr(VI_DEV ViDev, const VI_DEV_BIND_PIPE_S *pstDevBind
 CVI_S32 CVI_VI_GetDevBindAttr(VI_DEV ViDev, VI_DEV_BIND_PIPE_S *pstDevBindAttr);
 
 /**
+ * @brief Set vi device unbind attribute.
+ *
+ * @param ViDev(In), Device ID.
+ * @param pstDevBindAttr(Out), Device bind attribute
+ *
+ * @return CVI_S32 Return CVI_SUCCESS if succeed.
+ */
+CVI_S32 CVI_VI_SetDevUnbindAttr(VI_DEV ViDev);
+
+/**
  * @brief Enable vi device.
  *
  * @param ViDev(In), Device ID.

@@ -408,82 +408,82 @@ static CVI_S32 _hdmi_ut_handle_op(CVI_S32 op)
 
 		break;
 	}
-	case 15: {
-		CVI_HDMI_ATTR setAttr;
-		CVI_HDMI_INFOFRAME infoframe;
-		CVI_CHAR * filename = NULL;
-		CVI_U64 u64PhyAddr = 0;
-		CVI_VOID *pVirAddr;
-		CVI_CHAR strName[] = "hdmi_audio_8ch";
+	// case 15: {
+	// 	CVI_HDMI_ATTR setAttr;
+	// 	CVI_HDMI_INFOFRAME infoframe;
+	// 	CVI_CHAR * filename = NULL;
+	// 	CVI_U64 u64PhyAddr = 0;
+	// 	CVI_VOID *pVirAddr;
+	// 	CVI_CHAR strName[] = "hdmi_audio_8ch";
 
-		memset(&setAttr, 0, sizeof(setAttr));
-		memset(&infoframe, 0, sizeof(infoframe));
+	// 	memset(&setAttr, 0, sizeof(setAttr));
+	// 	memset(&infoframe, 0, sizeof(infoframe));
 
-		setAttr.hdmi_en = true;
-		setAttr.audio_en = true;
-		setAttr.hdcp14_en = false;
-		setAttr.video_format = MCODE_4k;
-		setAttr.pix_clk = PIXEL_CLK_4K;
-		setAttr.hdmi_force_output = CVI_HDMI_FORCE_NULL;
-		setAttr.hdmi_video_input = CSC_RGB888;
-		setAttr.hdmi_video_output = CSC_RGB888;
-		setAttr.sample_rate = CVI_HDMI_SAMPLE_RATE_192K;
-		setAttr.bit_depth = CVI_HDMI_BIT_DEPTH_24;
-		setAttr.deep_color_mode = CVI_HDMI_DEEP_COLOR_24BIT;
+	// 	setAttr.hdmi_en = true;
+	// 	setAttr.audio_en = true;
+	// 	setAttr.hdcp14_en = false;
+	// 	setAttr.video_format = MCODE_4k;
+	// 	setAttr.pix_clk = PIXEL_CLK_4K;
+	// 	setAttr.hdmi_force_output = CVI_HDMI_FORCE_NULL;
+	// 	setAttr.hdmi_video_input = CSC_RGB888;
+	// 	setAttr.hdmi_video_output = CSC_RGB888;
+	// 	setAttr.sample_rate = CVI_HDMI_SAMPLE_RATE_192K;
+	// 	setAttr.bit_depth = CVI_HDMI_BIT_DEPTH_24;
+	// 	setAttr.deep_color_mode = CVI_HDMI_DEEP_COLOR_24BIT;
 
-		infoframe.infoframe_unit.avi_infoframe.pixel_repetition = CVI_HDMI_PIXEL_REPET_NO;
-		infoframe.infoframe_unit.avi_infoframe.color_space = CSC_RGB888;
-		infoframe.infoframe_unit.avi_infoframe.timing_mode = MCODE_4k;
-		infoframe.infoframe_unit.avi_infoframe.colorimetry = 0;
-		infoframe.infoframe_unit.avi_infoframe.rgb_quant = 0;
-		/*audio*/
-		infoframe.infoframe_unit.audio_infoframe.chn_alloc = 0x1f;
-		infoframe.infoframe_unit.audio_infoframe.coding_type = PCM;
-		infoframe.infoframe_unit.audio_infoframe.sample_size = 24;
-		infoframe.infoframe_unit.audio_infoframe.sampling_freq = 192000;
+	// 	infoframe.infoframe_unit.avi_infoframe.pixel_repetition = CVI_HDMI_PIXEL_REPET_NO;
+	// 	infoframe.infoframe_unit.avi_infoframe.color_space = CSC_RGB888;
+	// 	infoframe.infoframe_unit.avi_infoframe.timing_mode = MCODE_4k;
+	// 	infoframe.infoframe_unit.avi_infoframe.colorimetry = 0;
+	// 	infoframe.infoframe_unit.avi_infoframe.rgb_quant = 0;
+	// 	/*audio*/
+	// 	infoframe.infoframe_unit.audio_infoframe.chn_alloc = 0x1f;
+	// 	infoframe.infoframe_unit.audio_infoframe.coding_type = PCM;
+	// 	infoframe.infoframe_unit.audio_infoframe.sample_size = 24;
+	// 	infoframe.infoframe_unit.audio_infoframe.sampling_freq = 192000;
 
-		filename = hdmi_audio_file[1].filename;
-		s32Ret = AUDIO_MAP(&setAttr, filename, &u64PhyAddr, &pVirAddr, strName);
-		if(s32Ret){
-			SAMPLE_PRT("HDMI AUDIO MAP error with %#x\n", s32Ret);
-			goto audio_8ch_err;
-		}
+	// 	filename = hdmi_audio_file[1].filename;
+	// 	s32Ret = AUDIO_MAP(&setAttr, filename, &u64PhyAddr, &pVirAddr, strName);
+	// 	if(s32Ret){
+	// 		SAMPLE_PRT("HDMI AUDIO MAP error with %#x\n", s32Ret);
+	// 		goto audio_8ch_err;
+	// 	}
 
-		s32Ret =  CVI_HDMI_Init();
-		if(s32Ret){
-			SAMPLE_PRT("HDMI init error with %#x\n", s32Ret);
-			goto audio_8ch_err;
-		}
+	// 	s32Ret =  CVI_HDMI_Init();
+	// 	if(s32Ret){
+	// 		SAMPLE_PRT("HDMI init error with %#x\n", s32Ret);
+	// 		goto audio_8ch_err;
+	// 	}
 
-		s32Ret = CVI_HDMI_SetAttr(&setAttr);
-		if(s32Ret){
-			SAMPLE_PRT("HDMI set attr error with %#x\n", s32Ret);
-			goto audio_8ch_err;
-		}
+	// 	s32Ret = CVI_HDMI_SetAttr(&setAttr);
+	// 	if(s32Ret){
+	// 		SAMPLE_PRT("HDMI set attr error with %#x\n", s32Ret);
+	// 		goto audio_8ch_err;
+	// 	}
 
-		s32Ret = CVI_HDMI_SetInfoFrame(&infoframe);
-		if(s32Ret){
-			SAMPLE_PRT("HDMI set infoframe error with %#x\n", s32Ret);
-			goto audio_8ch_err;
-		}
+	// 	s32Ret = CVI_HDMI_SetInfoFrame(&infoframe);
+	// 	if(s32Ret){
+	// 		SAMPLE_PRT("HDMI set infoframe error with %#x\n", s32Ret);
+	// 		goto audio_8ch_err;
+	// 	}
 
-		s32Ret =  CVI_HDMI_Start();
-		if(s32Ret){
-			SAMPLE_PRT("HDMI start error with %#x\n", s32Ret);
-			goto audio_8ch_err;
-		}
+	// 	s32Ret =  CVI_HDMI_Start();
+	// 	if(s32Ret){
+	// 		SAMPLE_PRT("HDMI start error with %#x\n", s32Ret);
+	// 		goto audio_8ch_err;
+	// 	}
 
-		CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
-		break;
+	// 	CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
+	// 	break;
 
-	audio_8ch_err:
-		if(u64PhyAddr || pVirAddr) {
-			CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
-			break;
-		}
+	// audio_8ch_err:
+	// 	if(u64PhyAddr || pVirAddr) {
+	// 		CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
+	// 		break;
+	// 	}
 
-		break;
-	}
+	// 	break;
+	// }
 
 	case 30: {
 		CVI_HDMI_EDID edid_data;
@@ -951,7 +951,7 @@ int main(int argc, char *argv[])
 			SAMPLE_PRT("10:  HDMI test CSC (RGB888 in YUV444 out)\n");
 			SAMPLE_PRT("11:  HDMI test CSC (RGB888 in YUV422 out)\n");
 			SAMPLE_PRT("12:  HDMI test audio: 1920x1080p-60 video output and 44.1Khz 24bit 2ch audio output\n");
-			SAMPLE_PRT("15:  HDMI test audio: 3840x2160p-60 video output and 192Khz 24bit 8ch audio output\n");
+			// SAMPLE_PRT("15:  HDMI test audio: 3840x2160p-60 video output and 192Khz 24bit 8ch audio output\n");
 			SAMPLE_PRT("30:  HDMI test force get edid \n");
 			SAMPLE_PRT("50:  HDMI test Set/Get attrbute\n");
 			SAMPLE_PRT("60:  HDMI test Get sink capability\n");
@@ -965,7 +965,11 @@ int main(int argc, char *argv[])
 			SAMPLE_PRT("140: HDMI test Stop\n");
 			SAMPLE_PRT("150: HDMI test DeInit\n");
 			SAMPLE_PRT("255: exit\n");
-			scanf("%d", &op);
+			if (scanf("%d", &op) == 0) {
+				printf("invalid num\n");
+				while (getchar() != '\n')
+					continue;
+			}
 			s32Ret = _hdmi_ut_handle_op(op);
 			if (s32Ret != CVI_SUCCESS) {
 				SAMPLE_PRT("op(%d) failed with %#x!\n", op, s32Ret);

@@ -75,6 +75,7 @@ typedef CVI_S32 VPSS_GRP;
 typedef CVI_S32 VPSS_CHN;
 typedef CVI_S32 DPU_GRP;
 typedef CVI_S32 DPU_CHN;
+typedef CVI_S32 STITCH_GRP;
 typedef CVI_S32 STITCH_SRC_IDX;
 
 #define CVI_INVALID_CHN (-1)
@@ -121,7 +122,6 @@ typedef CVI_S32 STITCH_SRC_IDX;
 	MOD(LOG)    \
 	MOD(H264D)  \
 	MOD(GDC)    \
-	MOD(DWA)    \
 	MOD(PHOTO)  \
 	MOD(FB)	    \
 	MOD(DPU)	\

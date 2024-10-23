@@ -15,7 +15,7 @@
 #include "cvi_debug.h"
 #include "../include/dpu_ioctl.h"
 #include "cvi_base.h"
-#include "dwa_mesh.h"
+#include "gdc_mesh.h"
 
 #define CHECK_DPU_FMT(grp, chn, fmt)									\													\
 		if (!DPU_SUPPORT_FMT(fmt)) {		\

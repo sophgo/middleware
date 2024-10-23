@@ -13,6 +13,7 @@
 #include "cvi_vpss.h"
 #include "vpss_ut_comm.h"
 #include "md5sum.h"
+#include "vpss_cmodel.h"
 
 
 CVI_CHAR * GetFmtName(PIXEL_FORMAT_E enPixFmt)
@@ -741,6 +742,361 @@ CVI_S32 CompareWithMD5(const CVI_CHAR *md5sum, VIDEO_FRAME_INFO_S *pstVideoFrame
 		VPSS_UT_PRT("md5sum error, frame md5sum:%s\n", md_str);
 		result = CVI_FAILURE;
 	}
+
+	return result;
+}
+
+CVI_S32 CompareCmodel_rgb2yuv(VIDEO_FRAME_INFO_S *pstVideoFrameIn, VIDEO_FRAME_INFO_S *pstVideoFrameOut)
+{
+	CVI_U32 i, w, h;
+	CVI_S32 result = CVI_SUCCESS;
+	CVI_U8 yuvData[3];
+	CVI_U8 *p, *y, *u, *v;
+	CVI_BOOL uv_bypass = CVI_TRUE;
+
+	//rgb packed
+	pstVideoFrameIn->stVFrame.pu8VirAddr[0]
+		= CVI_SYS_Mmap(pstVideoFrameIn->stVFrame.u64PhyAddr[0], pstVideoFrameIn->stVFrame.u32Length[0]);
+
+	for (i = 0; i < 3; ++i) {
+		if (pstVideoFrameOut->stVFrame.u32Length[i] == 0)
+			continue;
+
+		pstVideoFrameOut->stVFrame.pu8VirAddr[i]
+			= CVI_SYS_Mmap(pstVideoFrameOut->stVFrame.u64PhyAddr[i], pstVideoFrameOut->stVFrame.u32Length[i]);
+
+		CVI_SYS_IonInvalidateCache(pstVideoFrameOut->stVFrame.u64PhyAddr[i],
+			pstVideoFrameOut->stVFrame.pu8VirAddr[i], pstVideoFrameOut->stVFrame.u32Length[i]);
+		VPSS_UT_PRT("plane(%d): paddr(%#"PRIx64") vaddr(%p) stride(%d) plane_len(%d)\n",
+				i, pstVideoFrameOut->stVFrame.u64PhyAddr[i],
+				pstVideoFrameOut->stVFrame.pu8VirAddr[i],
+				pstVideoFrameOut->stVFrame.u32Stride[i],
+				pstVideoFrameOut->stVFrame.u32Length[i]);
+	}
+
+	for (h = 0; h < pstVideoFrameOut->stVFrame.u32Height; h++) {
+		p = pstVideoFrameIn->stVFrame.pu8VirAddr[0] + h * pstVideoFrameIn->stVFrame.u32Stride[0];
+
+		for (w = 0; w < pstVideoFrameOut->stVFrame.u32Width; w++) {
+			vpss_csc_rgb2yuv(p, yuvData);
+			y = pstVideoFrameOut->stVFrame.pu8VirAddr[0] +
+				pstVideoFrameOut->stVFrame.u32Stride[0] * h + w;
+			if (yuvData[0] != *y) {
+				VPSS_UT_PRT("y data error,(%d -> %d), w:%d h:%d\n", yuvData[0], *y, w, h);
+				result = CVI_FAILURE;
+				break;
+			}
+			/*u00 u01
+			  u10 u11
+			right bottom, yuv420 use u11, yuv422 use u01/u11 */
+			if (pstVideoFrameOut->stVFrame.enPixelFormat == PIXEL_FORMAT_YUV_PLANAR_420) {
+				u = pstVideoFrameOut->stVFrame.pu8VirAddr[1] +
+					pstVideoFrameOut->stVFrame.u32Stride[1] * (h / 2) + (w / 2);
+				v = pstVideoFrameOut->stVFrame.pu8VirAddr[2] +
+					pstVideoFrameOut->stVFrame.u32Stride[2] * (h / 2) + (w / 2);
+				uv_bypass = ((h % 2) && (w % 2)) ? CVI_FALSE : CVI_TRUE;
+			} else if (pstVideoFrameOut->stVFrame.enPixelFormat == PIXEL_FORMAT_YUV_PLANAR_422) {
+				u = pstVideoFrameOut->stVFrame.pu8VirAddr[1] +
+					pstVideoFrameOut->stVFrame.u32Stride[1] * h + (w / 2);
+				v = pstVideoFrameOut->stVFrame.pu8VirAddr[2] +
+					pstVideoFrameOut->stVFrame.u32Stride[2] * h + (w / 2);
+				uv_bypass = (w % 2) ? CVI_FALSE : CVI_TRUE;
+			} else if (pstVideoFrameOut->stVFrame.enPixelFormat == PIXEL_FORMAT_YUV_PLANAR_444) {
+				u = pstVideoFrameOut->stVFrame.pu8VirAddr[1] +
+					pstVideoFrameOut->stVFrame.u32Stride[1] * h + w;
+				v = pstVideoFrameOut->stVFrame.pu8VirAddr[2] +
+					pstVideoFrameOut->stVFrame.u32Stride[2] * h + w;
+				uv_bypass = CVI_FALSE;
+			}
+
+			if (!uv_bypass && (yuvData[1] != *u)) {
+				VPSS_UT_PRT("u data error,(%d -> %d), w:%d h:%d\n", yuvData[1], *u, w, h);
+				result = CVI_FAILURE;
+				break;
+			}
+			if (!uv_bypass && (yuvData[2] != *v)) {
+				VPSS_UT_PRT("v data error,(%d -> %d), w:%d h:%d\n", yuvData[2], *v, w, h);
+				result = CVI_FAILURE;
+				break;
+			}
+			p = p + 3;
+		}
+	}
+
+	for (i = 0; i < 3; ++i) {
+		if (pstVideoFrameOut->stVFrame.u32Length[i] == 0)
+			continue;
+		CVI_SYS_Munmap(pstVideoFrameOut->stVFrame.pu8VirAddr[i], pstVideoFrameOut->stVFrame.u32Length[i]);
+	}
+	CVI_SYS_Munmap(pstVideoFrameIn->stVFrame.pu8VirAddr[0], pstVideoFrameIn->stVFrame.u32Length[0]);
+
+	return result;
+}
+
+#if 0
+/*no fancy
+  u00 u01
+  u10 u11
+right bottom, yuv420 use u11, yuv422 use u01/u11 */
+CVI_VOID yuv420to444(CVI_U8 *pu8InData[3], CVI_U32 u32Width, CVI_U32 u32Height,
+			CVI_U32 u32Stride[3], CVI_U8 *pu8OutData)
+{
+	CVI_U32 i, h, w;
+	CVI_U8 *inptr, *outptr;
+
+	//copy y
+	memcpy(pu8OutData, pu8InData[0], u32Width * u32Height);
+
+	//transfer uv
+	for (i = 1; i < 3; i++) {
+		outptr = pu8OutData + u32Width * u32Height * i;
+		for (h = 0; h < u32Height; h++) {
+			inptr = pu8InData[i] + u32Stride[i] * (h / 2);
+			for (w = 0; w < u32Width; w++) {
+				*outptr++ = *inptr;
+				if (w % 2)
+					inptr++;
+			}
+		}
+	}
+	VPSS_UT_PRT("---\n");
+}
+
+CVI_VOID yuv422to444(CVI_U8 *pu8InData[3], CVI_U32 u32Width, CVI_U32 u32Height,
+			CVI_U32 u32Stride[3], CVI_U8 *pu8OutData)
+{
+	CVI_U32 i, h, w;
+	CVI_U8 *inptr, *outptr;
+
+	//copy y
+	memcpy(pu8OutData, pu8InData[0], u32Width * u32Height);
+
+	//transfer uv
+	for (i = 1; i < 3; i++) {
+		outptr = pu8OutData + u32Width * u32Height * i;
+		for (h = 0; h < u32Height; h++) {
+			inptr = pu8InData[i] + u32Stride[i] * h;
+			for (w = 0; w < u32Width; w++) {
+				*outptr++ = *inptr;
+				if (w % 2)
+					inptr++;
+			}
+		}
+	}
+	VPSS_UT_PRT("---\n");
+}
+
+#else
+/*fancy upsample*/
+CVI_VOID yuv420to444(CVI_U8 *pu8InData[3], CVI_U32 u32Width, CVI_U32 u32Height,
+		CVI_U32 u32Stride[3], CVI_U8 *pu8OutData)
+{
+	CVI_U8 v, i;
+	CVI_U32 u32Width_uv = u32Width / 2;
+	CVI_U32 u32Height_uv = u32Height / 2;
+	CVI_U32 in_h_num = 0, out_h_unm = 0;
+	CVI_U8 *inptr0, *inptr1, *outptr;
+	CVI_U8 *input_data, *output_data;
+	CVI_U32 thiscolsum, nextcolsum, lastcolsum;
+	CVI_S32 colctr;
+
+	//copy y
+	memcpy(pu8OutData, pu8InData[0], u32Width * u32Height);
+
+	//transfer uv
+	for (i = 1; i < 3; i++) {
+		input_data = pu8InData[i];
+		output_data = pu8OutData + u32Width * u32Height * i;
+		out_h_unm = in_h_num = 0;
+
+		while (out_h_unm < u32Height) {
+			for (v = 0; v < 2; v++) {	/* inptr0 points to nearest input row, inptr1 points to next nearest */
+				inptr0 = input_data + u32Stride[i] * in_h_num;
+				if (v == 0)		/* next nearest is row above */
+					inptr1 = inptr0 - (in_h_num ? u32Stride[i] : 0);
+				else			/* next nearest is row below */
+					inptr1 = inptr0 + ((in_h_num ==  u32Height_uv - 1) ? 0 : u32Stride[i]);
+
+				outptr = output_data +  u32Width * out_h_unm++;
+				thiscolsum = (*inptr0++) * 3 + (*inptr1++); /* Special case for first column */
+				nextcolsum = (*inptr0++) * 3 + (*inptr1++);
+				*outptr++ = ((thiscolsum * 4 + 8) >> 4);
+				*outptr++ = ((thiscolsum * 3 + nextcolsum + 7) >> 4);
+				lastcolsum = thiscolsum;
+				thiscolsum = nextcolsum;
+
+				for (colctr = u32Width_uv - 2; colctr > 0; colctr--) {
+					/* General case: 3/4 * nearer pixel + 1/4 * further pixel in each */
+					nextcolsum = (*inptr0++) * 3 + (*inptr1++);
+					/* dimension, thus 9/16, 3/16, 3/16, 1/16 overall */
+					*outptr++ = ((thiscolsum * 3 + lastcolsum + 8) >> 4);
+					*outptr++ = ((thiscolsum * 3 + nextcolsum + 7) >> 4);
+					lastcolsum = thiscolsum;
+					thiscolsum = nextcolsum;
+				}
+				*outptr++ = ((thiscolsum * 3 + lastcolsum + 8) >> 4); /* Special case for last column */
+				*outptr++ = ((thiscolsum * 4 + 7) >> 4);
+			}
+			in_h_num++;
+		}
+	}
+
+	VPSS_UT_PRT("---\n");
+}
+
+CVI_VOID yuv422to444(CVI_U8 *pu8InData[3], CVI_U32 u32Width, CVI_U32 u32Height,
+		CVI_U32 u32Stride[3], CVI_U8 *pu8OutData)
+{
+	CVI_U32 i, h, invalue;
+	CVI_U32 u32Width_uv = u32Width / 2;
+	CVI_U8 *inptr, *outptr;
+	CVI_U8 *input_data, *output_data;
+	CVI_S32 colctr;
+
+	//copy y
+	memcpy(pu8OutData, pu8InData[0], u32Width * u32Height);
+
+	//transfer uv
+	for (i = 1; i < 3; i++) {
+		input_data = pu8InData[i];
+		output_data = pu8OutData + u32Width * u32Height * i;
+		for (h = 0; h < u32Height; h++) {
+			inptr = input_data + u32Stride[i] * h;
+			outptr = output_data + u32Width * h;
+
+			/* Special case for first column */
+			invalue = (*inptr++);
+			*outptr++ = invalue;
+			*outptr++ = ((invalue * 3 + (*inptr) + 2) >> 2);
+
+			for (colctr = u32Width_uv - 2; colctr > 0; colctr--) {
+				/* General case: 3/4 * nearer pixel + 1/4 * further pixel */
+				invalue = (*inptr++) * 3;
+				*outptr++ = ((invalue + (inptr[-2]) + 1) >> 2);
+				*outptr++ = ((invalue + (*inptr) + 2) >> 2);
+			}
+
+			/* Special case for last column */
+			invalue = (*inptr);
+			*outptr++ = ((invalue * 3 + (inptr[-1]) + 1) >> 2);
+			*outptr++ = invalue;
+		}
+	}
+	VPSS_UT_PRT("---\n");
+}
+#endif
+
+CVI_S32 CompareCmodel_yuv2rgb(VIDEO_FRAME_INFO_S *pstVideoFrameIn, VIDEO_FRAME_INFO_S *pstVideoFrameOut)
+{
+	CVI_U32 i, w, h;
+	CVI_S32 result = CVI_SUCCESS;
+	CVI_U8 yuvData[3], rgbData[3];
+	CVI_U8 *p, *y, *u = NULL, *v = NULL;
+	CVI_U8 *yuv444_data = NULL;
+	CVI_S32 yuv444_data_len = pstVideoFrameIn->stVFrame.u32Height * pstVideoFrameIn->stVFrame.u32Width * 3;
+
+	//rgb packed
+	pstVideoFrameOut->stVFrame.pu8VirAddr[0]
+		= CVI_SYS_Mmap(pstVideoFrameOut->stVFrame.u64PhyAddr[0], pstVideoFrameOut->stVFrame.u32Length[0]);
+
+	for (i = 0; i < 3; ++i) {
+		if (pstVideoFrameIn->stVFrame.u32Length[i] == 0)
+			continue;
+
+		pstVideoFrameIn->stVFrame.pu8VirAddr[i]
+			= CVI_SYS_Mmap(pstVideoFrameIn->stVFrame.u64PhyAddr[i], pstVideoFrameIn->stVFrame.u32Length[i]);
+
+		VPSS_UT_PRT("plane(%d): paddr(%#"PRIx64") vaddr(%p) stride(%d) plane_len(%d)\n",
+				i, pstVideoFrameIn->stVFrame.u64PhyAddr[i],
+				pstVideoFrameIn->stVFrame.pu8VirAddr[i],
+				pstVideoFrameIn->stVFrame.u32Stride[i],
+				pstVideoFrameIn->stVFrame.u32Length[i]);
+	}
+
+	if (pstVideoFrameIn->stVFrame.enPixelFormat == PIXEL_FORMAT_YUV_PLANAR_420) {
+		yuv444_data = malloc(yuv444_data_len);
+		if (!yuv444_data) {
+			VPSS_UT_PRT("malloc fail\n");
+			result = CVI_FAILURE;
+			goto exit;
+		}
+		yuv420to444(pstVideoFrameIn->stVFrame.pu8VirAddr,
+					pstVideoFrameIn->stVFrame.u32Width,
+					pstVideoFrameIn->stVFrame.u32Height,
+					pstVideoFrameIn->stVFrame.u32Stride,
+					yuv444_data);
+	} else if(pstVideoFrameIn->stVFrame.enPixelFormat == PIXEL_FORMAT_YUV_PLANAR_422) {
+		yuv444_data = malloc(yuv444_data_len);
+		if (!yuv444_data) {
+			VPSS_UT_PRT("malloc fail\n");
+			result = CVI_FAILURE;
+			goto exit;
+		}
+		yuv422to444(pstVideoFrameIn->stVFrame.pu8VirAddr,
+					pstVideoFrameIn->stVFrame.u32Width,
+					pstVideoFrameIn->stVFrame.u32Height,
+					pstVideoFrameIn->stVFrame.u32Stride,
+					yuv444_data);
+	}
+
+	for (h = 0; h < pstVideoFrameOut->stVFrame.u32Height; h++) {
+		p = pstVideoFrameOut->stVFrame.pu8VirAddr[0] + h * pstVideoFrameOut->stVFrame.u32Stride[0];
+
+		if ((pstVideoFrameIn->stVFrame.enPixelFormat == PIXEL_FORMAT_YUV_PLANAR_420)
+			|| (pstVideoFrameIn->stVFrame.enPixelFormat == PIXEL_FORMAT_YUV_PLANAR_422)) {
+			y = yuv444_data + pstVideoFrameIn->stVFrame.u32Width * h;
+			u = yuv444_data + pstVideoFrameIn->stVFrame.u32Height * pstVideoFrameIn->stVFrame.u32Width
+				+ pstVideoFrameIn->stVFrame.u32Width * h;
+			v = yuv444_data + pstVideoFrameIn->stVFrame.u32Height * pstVideoFrameIn->stVFrame.u32Width * 2
+				+ pstVideoFrameIn->stVFrame.u32Width * h;
+
+		} else {
+			y = pstVideoFrameIn->stVFrame.pu8VirAddr[0] + pstVideoFrameIn->stVFrame.u32Stride[0] * h;
+			u = pstVideoFrameIn->stVFrame.pu8VirAddr[1] + pstVideoFrameIn->stVFrame.u32Stride[1] * h;
+			v = pstVideoFrameIn->stVFrame.pu8VirAddr[2] + pstVideoFrameIn->stVFrame.u32Stride[2] * h;
+		}
+
+		for (w = 0; w < pstVideoFrameOut->stVFrame.u32Width; w++) {
+			yuvData[0] = *y++;
+			yuvData[1] = *u++;
+			yuvData[2] = *v++;
+
+			vpss_csc_yuv2rgb(yuvData, rgbData);
+
+			if (rgbData[0] != *p) {
+				VPSS_UT_PRT("R data error, yuv(%d %d %d), rgb(sw:%d hw:%d), w:%d h:%d\n",
+					yuvData[0], yuvData[1], yuvData[2], rgbData[0], *p, w, h);
+				result = CVI_FAILURE;
+				break;
+			}
+			p++;
+			if (rgbData[1] != *p) {
+				VPSS_UT_PRT("G data error, yuv(%d %d %d), rgb(sw:%d hw:%d), w:%d h:%d\n",
+					yuvData[0], yuvData[1], yuvData[2], rgbData[1], *p, w, h);
+				result = CVI_FAILURE;
+				break;
+			}
+			p++;
+			if (rgbData[2] != *p) {
+				VPSS_UT_PRT("B data error, yuv(%d %d %d), rgb(sw:%d hw:%d), w:%d h:%d\n",
+					yuvData[0], yuvData[1], yuvData[2], rgbData[2], *p, w, h);
+				result = CVI_FAILURE;
+				break;
+			}
+			p++;
+		}
+	}
+
+exit:
+	if (yuv444_data)
+		free(yuv444_data);
+	for (i = 0; i < 3; ++i) {
+		if (pstVideoFrameIn->stVFrame.u32Length[i] == 0)
+			continue;
+		CVI_SYS_Munmap(pstVideoFrameIn->stVFrame.pu8VirAddr[i], pstVideoFrameIn->stVFrame.u32Length[i]);
+	}
+
+	CVI_SYS_Munmap(pstVideoFrameOut->stVFrame.pu8VirAddr[0], pstVideoFrameOut->stVFrame.u32Length[0]);
 
 	return result;
 }

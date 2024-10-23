@@ -2188,7 +2188,7 @@ CVI_S32 SAMPLE_AUDIO_AiAo(CVI_VOID)
 	}
 
 	/* resample and anr should be user get mode */
-	gs_bUserGetMode = (gs_bAioReSample == CVI_TRUE) ? CVI_TRUE : CVI_FALSE;
+	gs_bUserGetMode = CVI_TRUE;
 
 	/* config internal audio codec */
 	s32Ret = SAMPLE_COMM_AUDIO_CfgAcodec(&stAioAttr);
@@ -3713,7 +3713,7 @@ CVI_S32 main(int argc, char *argv[])
 	}
 	case 16: {
 		printf("[cviaudio] IOCTL Test!\n");
-		SAMPLE_AUDIO_DEBUG_IOCTL_TEST();
+		printf("IOCTL Test is no longer supported\n");
 		printf("[cviaudio]IOCTL Test!...end\n");
 		break;
 	}

@@ -21,6 +21,8 @@ DEPS = $(SRCS:.c=.d)
 TARGET = dpu_ut
 LIBS = -ldpu -lsys
 
+CFLAGS +=-Wno-sizeof-pointer-memaccess
+CFLAGS += -Wno-stringop-truncation
 EXTRA_CFLAGS += $(DEFS) $(INCS)
 EXTRA_CFLAGS += -ffunction-sections -fdata-sections
 

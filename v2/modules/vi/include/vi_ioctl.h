@@ -47,6 +47,7 @@ int vi_sdk_set_dev_attr(int fd, int dev, VI_DEV_ATTR_S *pstDevAttr);
 int vi_sdk_get_dev_attr(int fd, int dev, VI_DEV_ATTR_S *pstDevAttr);
 int vi_sdk_set_dev_bind_attr(int fd, int dev, VI_DEV_BIND_PIPE_S *pstDevBindAttr);
 int vi_sdk_get_dev_bind_attr(int fd, int dev, VI_DEV_BIND_PIPE_S *pstDevBindAttr);
+int vi_sdk_set_dev_unbind_attr(int fd, int dev);
 int vi_sdk_get_pipe_status(int fd, int pipe, VI_PIPE_STATUS_S *pstStatus);
 int vi_sdk_get_chn_status(int fd, int pipe, int chn, VI_CHN_STATUS_S *pstStatus);
 int vi_sdk_enable_dev(int fd, int dev);

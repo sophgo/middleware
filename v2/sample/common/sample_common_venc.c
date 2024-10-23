@@ -255,6 +255,9 @@ CVI_VOID SAMPLE_COMM_VENC_InitChnInputCfg(chnInputCfg *pIc)
 
 	pIc->s32DisableIDRCount = -1;
 	pIc->s32EnableIDRCount = -1;
+
+	pIc->u32MinBsBufSize = 0;
+	pIc->bUseExternBuf = 0;
 }
 
 // Map command line input pixel format to PIXEL_FORMAT_E.
@@ -2361,6 +2364,7 @@ CVI_S32 SAMPLE_COMM_VENC_Start(
 	VENC_RECV_PIC_PARAM_S stRecvParam;
 	VENC_INITIAL_INFO_S stEncInitialInfo;
 
+
 	s32Ret = SAMPLE_COMM_VENC_Create(
 			pIc, VencChn, enType, enSize, enRcMode,
 			u32Profile, bRcnRefShareBuf, pstGopAttr);
@@ -2396,10 +2400,12 @@ CVI_S32 SAMPLE_COMM_VENC_Start(
 			return CVI_FAILURE;
 		}
 		pIc->u32MinSrcCount = stEncInitialInfo.min_num_src_fb;
+		pIc->u32MinBsBufSize = stEncInitialInfo.min_bs_buf_size;
 
-		printf("get enc recon frame cnt:%d, src frame cnt:%d\n"
-			, stEncInitialInfo.min_num_rec_fb, stEncInitialInfo.min_num_src_fb);
+		printf("get enc recon frame cnt:%d, src frame cnt:%d, bs buf size:%d\n"
+			, stEncInitialInfo.min_num_rec_fb, stEncInitialInfo.min_num_src_fb, pIc->u32MinBsBufSize);
 	}
+
 
 	return CVI_SUCCESS;
 }

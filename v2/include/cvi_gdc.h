@@ -67,7 +67,7 @@ CVI_S32 CVI_GDC_SetJobIdentity(GDC_HANDLE hHandle, GDC_IDENTITY_ATTR_S *identity
  * @param pstFisheyeAttr(In): for further settings
  * @return Error code (0 if successful)
  */
-CVI_S32 CVI_GDC_AddCorrectionTask(GDC_HANDLE hHandle, const GDC_TASK_ATTR_S *pstTask,
+CVI_S32 CVI_GDC_AddCorrectionTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask,
 				  const FISHEYE_ATTR_S *pstFisheyeAttr);
 
 /* Add a rotation task to a gdc job.
@@ -86,7 +86,7 @@ CVI_S32 CVI_GDC_AddRotationTask(GDC_HANDLE hHandle, const GDC_TASK_ATTR_S *pstTa
  * @param pstAffineAttr(In): for further settings
  * @return Error code (0 if successful)
  */
-CVI_S32 CVI_GDC_AddAffineTask(GDC_HANDLE hHandle, const GDC_TASK_ATTR_S *pstTask, const AFFINE_ATTR_S *pstAffineAttr);
+CVI_S32 CVI_GDC_AddAffineTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask, const AFFINE_ATTR_S *pstAffineAttr);
 
 /* Add a ldc task to a gdc job.
  *
@@ -96,59 +96,18 @@ CVI_S32 CVI_GDC_AddAffineTask(GDC_HANDLE hHandle, const GDC_TASK_ATTR_S *pstTask
  * @param enRotation(In): for further settings
  * @return Error code (0 if successful)
  */
-CVI_S32 CVI_GDC_AddLDCTask(GDC_HANDLE hHandle, const GDC_TASK_ATTR_S *pstTask,
+CVI_S32 CVI_GDC_AddLDCTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask,
 	const LDC_ATTR_S *pstLDCAttr, ROTATION_E enRotation);
 
-// color night vision (NA)
-CVI_S32 CVI_GDC_AddCnvWarpTask(const float *pfmesh_data, GDC_HANDLE hHandle, const GDC_TASK_ATTR_S *pstTask,
-			       const FISHEYE_ATTR_S *pstAffineAttr, bool *bReNew);
-
-// color night vision (NA)
-CVI_S32 CVI_GDC_AddCorrectionTaskCNV(GDC_HANDLE hHandle, const GDC_TASK_ATTR_S *pstTask,
-		const FISHEYE_ATTR_S *pstFishEyeAttr, uint8_t *p_tbl, uint8_t *p_idl, uint32_t *tbl_param);
-
-/* set meshsize for gdc task(NA)
+/* Add a dewarp task to a gdc job.
  *
- * @param nMeshHor(In): mesh counts horizontal
- * @param nMeshVer(In): mesh counts vertical
+ * @param hHandle(In): GDC_HANDLE hHandle
+ * @param pstTask(In): to describe what to do
+ * @param pstWarpAttr(In): for further settings
  * @return Error code (0 if successful)
  */
-CVI_S32 CVI_GDC_SetMeshSize(int nMeshHor, int nMeshVer);
-
-/* set slice buffer attribution for gdc task(NA)
- *
- * @param hHandle(In): GDC_HANDLE *phHandlel
- * @param pstTask(In): GDC_TASK_ATTR_S *pstTask
- * @param pstBufWrap(In): LDC_BUF_WRAP_S *pstBufWrap
- * @return Error code (0 if successful)
- */
-CVI_S32 CVI_GDC_SetBufWrapAttr(GDC_HANDLE hHandle, const GDC_TASK_ATTR_S *pstTask, const LDC_BUF_WRAP_S *pstBufWrap);
-
-/* get slice buffer attribution for gdc task(NA)
- *
- * @param hHandle(In): GDC_HANDLE *phHandlel
- * @param pstTask(In): GDC_TASK_ATTR_S *pstTask
- * @param pstBufWrap(Out): LDC_BUF_WRAP_S *pstBufWrap
- * @return Error code (0 if successful)
- */
-CVI_S32 CVI_GDC_GetBufWrapAttr(GDC_HANDLE hHandle, const GDC_TASK_ATTR_S *pstTask, LDC_BUF_WRAP_S *pstBufWrap);
-
-/* dump mesh data for gdc task, mesh specific that
- * coordinate mapping relationship between the original image and the target image.
- *
- * @param pMeshDumpAttr(In): MESH_DUMP_ATTR_S *pMeshDumpAttr
- * @return Error code (0 if successful)
- */
-CVI_S32 CVI_GDC_DumpMesh(MESH_DUMP_ATTR_S *pMeshDumpAttr);
-
-/* load mesh data for gdc task, mesh specific that
- * coordinate mapping relationship between the original image and the target image.
- *
- * @param pMeshDumpAttr(In): MESH_DUMP_ATTR_S *pMeshDumpAttr
- * @param LDC_ATTR_S(In): LDC_ATTR_S *pstLDCAttr
- * @return Error code (0 if successful)
- */
-CVI_S32 CVI_GDC_LoadMesh(MESH_DUMP_ATTR_S *pMeshDumpAttr, const LDC_ATTR_S *pstLDCAttr);
+CVI_S32 CVI_GDC_AddDewarpTask(GDC_HANDLE hHandle, GDC_TASK_ATTR_S *pstTask,
+				const WARP_ATTR_S *pstWarpAttr);
 
 /* get the job currently being used by gdc dev.
  *
@@ -183,6 +142,19 @@ CVI_S32 CVI_GDC_Suspend(void);
  * @return Error code (0 if successful)
  */
 CVI_S32 CVI_GDC_Resume(void);
+
+/* Update dwa mesh.
+ *
+ * @param bindName(In): bind name, compatible GRID_INFO_ATTR_S gridBindName
+ * @param src_x_mesh(In): src mesh x coordinate
+ * @param src_y_mesh(In): src mesh y coordinate
+ * @param dst_x_mesh(In): dst mesh x coordinate
+ * @param dst_y_mesh(In): dst mesh x coordinate
+ * @param len(nbr_mesh): mesh coordinate grid num
+ * @return Error code (0 if successful)
+ */
+CVI_S32 CVI_GDC_UpdateMeshCoordinate(char *bindName,
+	int src_x_mesh[][4], int src_y_mesh[][4], int dst_x_mesh[][4], int dst_y_mesh[][4], int nbr_mesh);
 
 #ifdef __cplusplus
 #if __cplusplus

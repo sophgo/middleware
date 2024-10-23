@@ -20,6 +20,7 @@
 #include "base_uapi.h"
 #include "sys_uapi.h"
 
+
 #define MMF_VERSION  (CVI_CHIP_NAME MMF_VER_PRIX MK_VERSION(VER_X, VER_Y, VER_Z) VER_D)
 
 
@@ -200,6 +201,9 @@ CVI_S32 _CVI_SYS_BindIOCtl(const MMF_CHN_S *pstSrcChn, const MMF_CHN_S *pstDestC
 	CVI_S32 ret = 0;
 	struct sys_bind_cfg bind_cfg;
 
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstSrcChn);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstDestChn);
+
 	if ((fd = get_base_fd()) == -1)
 		return CVI_ERR_SYS_NOTREADY;
 
@@ -211,30 +215,28 @@ CVI_S32 _CVI_SYS_BindIOCtl(const MMF_CHN_S *pstSrcChn, const MMF_CHN_S *pstDestC
 	ret = ioctl(fd, BASE_SET_BINDCFG, &bind_cfg);
 
 	if (ret)
-		CVI_TRACE_SYS(CVI_DBG_ERR, "_CVI_SYS_BindIOCtl()failed\n");
+		CVI_TRACE_SYS(CVI_DBG_ERR, "%s pstSrcChn(%s,%d,%d) & pstDestChn(%s,%d,%d) failed with %d\n",
+			is_bind ? "CVI_SYS_Bind" : "CVI_SYS_UnBind",
+			CVI_SYS_GetModName(pstSrcChn->enModId), pstSrcChn->s32DevId, pstSrcChn->s32ChnId,
+			CVI_SYS_GetModName(pstDestChn->enModId), pstDestChn->s32DevId, pstDestChn->s32ChnId,
+			ret);
 
 	return ret;
 }
 
 CVI_S32 CVI_SYS_Bind(const MMF_CHN_S *pstSrcChn, const MMF_CHN_S *pstDestChn)
 {
-#ifdef __CV180X__
-	if (pstDestChn && (pstDestChn->enModId == CVI_ID_VO)) {
-		CVI_TRACE_SYS(CVI_DBG_ERR, "No vo device, vo cannot be bind!\n");
-		return CVI_ERR_SYS_ILLEGAL_PARAM;
-	}
-#endif
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstSrcChn);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstDestChn);
+
 	return _CVI_SYS_BindIOCtl(pstSrcChn, pstDestChn, 1);
 }
 
 CVI_S32 CVI_SYS_UnBind(const MMF_CHN_S *pstSrcChn, const MMF_CHN_S *pstDestChn)
 {
-#ifdef __CV180X__
-	if (pstDestChn && (pstDestChn->enModId == CVI_ID_VO)) {
-		CVI_TRACE_SYS(CVI_DBG_ERR, "No vo device, cannot unbind vo!\n");
-		return CVI_ERR_SYS_ILLEGAL_PARAM;
-	}
-#endif
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstSrcChn);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstDestChn);
+
 	return _CVI_SYS_BindIOCtl(pstSrcChn, pstDestChn, 0);
 }
 
@@ -243,6 +245,9 @@ CVI_S32 CVI_SYS_GetBindbyDest(const MMF_CHN_S *pstDestChn, MMF_CHN_S *pstSrcChn)
 	CVI_S32 fd = 0;
 	CVI_S32 ret = 0;
 	struct sys_bind_cfg bind_cfg;
+
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstDestChn);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstSrcChn);
 
 	if ((fd = get_base_fd()) == -1)
 		return CVI_ERR_SYS_NOTREADY;
@@ -259,6 +264,7 @@ CVI_S32 CVI_SYS_GetBindbyDest(const MMF_CHN_S *pstDestChn, MMF_CHN_S *pstSrcChn)
 	}
 
 	memcpy(pstSrcChn, &bind_cfg.mmf_chn_src, sizeof(MMF_CHN_S));
+
 	return CVI_SUCCESS;
 
 }
@@ -268,6 +274,9 @@ CVI_S32 CVI_SYS_GetBindbySrc(const MMF_CHN_S *pstSrcChn, MMF_BIND_DEST_S *pstBin
 	CVI_S32 fd = 0;
 	CVI_S32 ret = 0;
 	struct sys_bind_cfg bind_cfg;
+
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstBindDest);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstSrcChn);
 
 	if ((fd = get_base_fd()) == -1)
 		return CVI_ERR_SYS_NOTREADY;
@@ -300,6 +309,8 @@ CVI_S32 CVI_SYS_GetChipId(CVI_U32 *pu32ChipId)
 	static CVI_U32 id = 0xffffffff;
 	int fd;
 
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pu32ChipId);
+
 	if (id == 0xffffffff) {
 		CVI_U32 tmp = 0;
 
@@ -326,6 +337,8 @@ CVI_S32 CVI_SYS_GetPowerOnReason(CVI_U32 *pu32PowerOnReason)
 	int fd;
 	CVI_U32 ret_val = 0x0;
 	CVI_U32 reason = 0x0;
+
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pu32PowerOnReason);
 
 	fd = get_sys_fd();
 	if (fd == -1) {
@@ -366,6 +379,8 @@ CVI_S32 CVI_SYS_GetChipVersion(CVI_U32 *pu32ChipVersion)
 	static CVI_U32 version = 0xffffffff;
 	int fd;
 
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pu32ChipVersion);
+
 	if (version == 0xffffffff) {
 		CVI_U32 tmp = 0;
 
@@ -400,6 +415,11 @@ CVI_S32 CVI_SYS_GetChipVersion(CVI_U32 *pu32ChipVersion)
 
 void *CVI_SYS_Mmap(CVI_U64 u64PhyAddr, CVI_U32 u32Size)
 {
+	if (u32Size == 0 || u64PhyAddr <= 0) {
+		CVI_TRACE_SYS(CVI_DBG_ERR, "only u64PhyAddr > 0 and u32Size > 0 alloed!\n");
+		return NULL;
+	}
+
 	CVI_SYS_DevMem_Open();
 
 	return devm_map(devm_fd, u64PhyAddr, u32Size);
@@ -413,6 +433,11 @@ void *CVI_SYS_Mmap(CVI_U64 u64PhyAddr, CVI_U32 u32Size)
  */
 void *CVI_SYS_MmapCache(CVI_U64 u64PhyAddr, CVI_U32 u32Size)
 {
+	if (u32Size == 0 || u64PhyAddr <= 0) {
+		CVI_TRACE_SYS(CVI_DBG_ERR, "only u64PhyAddr > 0 and u32Size > 0 alloed!\n");
+		return NULL;
+	}
+
 	CVI_SYS_DevMem_Open();
 
 	void *addr = devm_map(devm_cached_fd, u64PhyAddr, u32Size);
@@ -424,6 +449,9 @@ void *CVI_SYS_MmapCache(CVI_U64 u64PhyAddr, CVI_U32 u32Size)
 
 CVI_S32 CVI_SYS_Munmap(void *pVirAddr, CVI_U32 u32Size)
 {
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pVirAddr);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, u32Size);
+
 	devm_unmap(pVirAddr, u32Size);
 	return CVI_SUCCESS;
 }
@@ -432,6 +460,8 @@ CVI_S32 ionMalloc(struct sys_ion_data *para)
 {
 	CVI_S32 fd = -1;
 	CVI_S32 ret;
+
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, para);
 
 	if ((fd = get_base_fd()) == -1)
 		return CVI_ERR_SYS_NOTREADY;
@@ -451,6 +481,8 @@ CVI_S32 ionFree(struct sys_ion_data *para)
 	CVI_S32 fd = -1;
 	CVI_S32 ret;
 
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, para);
+
 	if ((fd = get_base_fd()) == -1)
 		return CVI_ERR_SYS_NOTREADY;
 
@@ -468,13 +500,19 @@ static CVI_S32 _SYS_IonAlloc(CVI_U64 *pu64PhyAddr, CVI_VOID **ppVirAddr,
 {
 	struct sys_ion_data ion_data;
 
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pu64PhyAddr);
+	if (u32Len == 0) {
+		return CVI_ERR_SYS_ILLEGAL_PARAM;
+	}
+
 	ion_data.size = u32Len;
 	ion_data.cached = cached;
 	// Set buffer as "anonymous" when user is passing null pointer.
 	if (name)
-		strncpy((char *)(ion_data.name), name, MAX_ION_BUFFER_NAME);
+		snprintf((char *)(ion_data.name), MAX_ION_BUFFER_NAME, "%s", name);
+
 	else
-		strncpy((char *)(ion_data.name), "anonymous", MAX_ION_BUFFER_NAME);
+		snprintf((char *)(ion_data.name), MAX_ION_BUFFER_NAME, "%s", "anonymous");
 
 	if (ionMalloc(&ion_data) != CVI_SUCCESS) {
 		CVI_TRACE_SYS(CVI_DBG_ERR, "alloc failed.\n");
@@ -525,6 +563,8 @@ CVI_S32 CVI_SYS_IonFree(CVI_U64 u64PhyAddr, CVI_VOID *pVirAddr)
 	struct sys_ion_data ion_data;
 	int ret;
 
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, u64PhyAddr);
+
 	ion_data.addr_p = u64PhyAddr;
 	ret = ionFree(&ion_data);
 	if (ret) {
@@ -543,13 +583,12 @@ CVI_S32 CVI_SYS_IonFlushCache(CVI_U64 u64PhyAddr, CVI_VOID *pVirAddr, CVI_U32 u3
 	CVI_S32 ret = CVI_SUCCESS;
 	struct sys_cache_op cache_cfg;
 
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, u64PhyAddr);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pVirAddr);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, u32Len);
+
 	if ((fd = get_base_fd()) == -1)
 		return CVI_ERR_SYS_NOTREADY;
-
-	if (pVirAddr == NULL) {
-		CVI_TRACE_SYS(CVI_DBG_ERR, "pVirAddr Null.\n");
-		return CVI_ERR_SYS_NULL_PTR;
-	}
 
 	cache_cfg.addr_p = u64PhyAddr;
 	cache_cfg.addr_v = pVirAddr;
@@ -569,13 +608,12 @@ CVI_S32 CVI_SYS_IonInvalidateCache(CVI_U64 u64PhyAddr, CVI_VOID *pVirAddr, CVI_U
 	CVI_S32 ret = CVI_SUCCESS;
 	struct sys_cache_op cache_cfg;
 
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, u64PhyAddr);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pVirAddr);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, u32Len);
+
 	if ((fd = get_base_fd()) == -1)
 		return CVI_ERR_SYS_NOTREADY;
-
-	if (pVirAddr == NULL) {
-		CVI_TRACE_SYS(CVI_DBG_ERR, "pVirAddr Null.\n");
-		return CVI_ERR_SYS_NULL_PTR;
-	}
 
 	cache_cfg.addr_p = u64PhyAddr;
 	cache_cfg.addr_v = pVirAddr;
@@ -592,17 +630,32 @@ CVI_S32 CVI_SYS_IonInvalidateCache(CVI_U64 u64PhyAddr, CVI_VOID *pVirAddr, CVI_U
 CVI_S32 CVI_SYS_SetVIVPSSMode(const VI_VPSS_MODE_S *pstVIVPSSMode)
 {
 	CVI_S32 fd = 0;
+	CVI_U8 i = 0;
+	CVI_S32 s32Ret = 0;
+
 	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstVIVPSSMode);
+
+	for (i = 0; i < VI_MAX_PIPE_NUM; ++i)
+		if (pstVIVPSSMode->aenMode[i] < 0 || pstVIVPSSMode->aenMode[i] >= VI_VPSS_MODE_BUTT) {
+			CVI_TRACE_SYS(CVI_DBG_ERR, "CVI_ERR_SYS_ILLEGAL_PARAM\n");
+			return CVI_ERR_SYS_ILLEGAL_PARAM;
+		}
 
 	if ((fd = get_sys_fd()) == -1)
 		return CVI_ERR_SYS_NOTREADY;
 
-	return ioctl(fd, SYS_IOC_SET_VIVPSSMODE, pstVIVPSSMode);
+	s32Ret = ioctl(fd, SYS_IOC_SET_VIVPSSMODE, pstVIVPSSMode);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_SYS(CVI_DBG_ERR, "SYS_IOC_SET_VIVPSSMODE failed with %d\n", s32Ret);
+	}
+
+	return s32Ret;
 }
 
 CVI_S32 CVI_SYS_GetVIVPSSMode(VI_VPSS_MODE_S *pstVIVPSSMode)
 {
 	CVI_S32 fd = 0;
+
 	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstVIVPSSMode);
 
 	if ((fd = get_sys_fd()) == -1)
@@ -620,8 +673,13 @@ CVI_S32 CVI_LOG_SetLevelConf(LOG_LEVEL_CONF_S *pstConf)
 {
 	MOD_CHECK_NULL_PTR(CVI_ID_SYS, pstConf);
 
-	if (pstConf->enModId >= CVI_ID_BUTT) {
+	if (pstConf->enModId >= CVI_ID_BUTT || pstConf->enModId < 0) {
 		CVI_TRACE_SYS(CVI_DBG_ERR, "Invalid ModId(%d)\n", pstConf->enModId);
+		return CVI_ERR_SYS_ILLEGAL_PARAM;
+	}
+
+	if (pstConf->s32Level < 0 || pstConf->s32Level > 7) {
+		CVI_TRACE_SYS(CVI_DBG_ERR, "Invalid s32Level(%d)\n", pstConf->s32Level);
 		return CVI_ERR_SYS_ILLEGAL_PARAM;
 	}
 
@@ -670,8 +728,9 @@ CVI_S32 CVI_SYS_CDMACopy(CVI_U64 u64PhyDst, CVI_U64 u64PhySrc, CVI_U32 u32Len)
 	CVI_S32 fd = 0;
 	struct sys_cdma_copy cfg;
 
-	if (u32Len == 0)
-		return CVI_SUCCESS;
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, u32Len);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, u64PhyDst);
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, u64PhySrc);
 
 	fd = get_sys_fd();
 	if (fd == -1) {
@@ -688,6 +747,8 @@ CVI_S32 CVI_SYS_CDMACopy(CVI_U64 u64PhyDst, CVI_U64 u64PhySrc, CVI_U32 u32Len)
 CVI_S32 CVI_SYS_CDMACopy2D(const CVI_CDMA_2D_S *param)
 {
 	CVI_S32 fd = 0;
+
+	MOD_CHECK_NULL_PTR(CVI_ID_SYS, param);
 
 	fd = get_sys_fd();
 	if (fd == -1) {

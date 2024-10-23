@@ -199,7 +199,7 @@ CVI_S32 CVI_RGN_DetachFromChn(RGN_HANDLE Handle, const MMF_CHN_S *pstChn)
 	s32Ret = rgn_detach_from_chn(fd, Handle, pstChn);
 	if (s32Ret != CVI_SUCCESS) {
 		CVI_TRACE_RGN(CVI_DBG_ERR, "Detach RGN from channel fail.\n");
-		return CVI_FAILURE;
+		return s32Ret;
 	}
 
 	return CVI_SUCCESS;
@@ -235,7 +235,7 @@ CVI_S32 CVI_RGN_GetDisplayAttr(RGN_HANDLE Handle, const MMF_CHN_S *pstChn, RGN_C
 	s32Ret = rgn_get_display_attr(fd, Handle, pstChn, pstChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		CVI_TRACE_RGN(CVI_DBG_ERR, "Get display RGN attributes fail.\n");
-		return CVI_FAILURE;
+		return s32Ret;
 	}
 
 	return CVI_SUCCESS;
@@ -539,6 +539,9 @@ CVI_S32 CVI_RGN_Invert_Color(RGN_HANDLE Handle, MMF_CHN_S *pstChn, CVI_U32 *pu32
 CVI_S32 CVI_RGN_SetChnPalette(RGN_HANDLE Handle, const MMF_CHN_S *pstChn, RGN_PALETTE_S *pstPalette)
 {
 	CVI_S32 fd = -1, s32Ret;
+
+	MOD_CHECK_NULL_PTR(CVI_ID_RGN, pstChn);
+	MOD_CHECK_NULL_PTR(CVI_ID_RGN, pstPalette);
 
 	// Driver control
 	fd = get_rgn_fd();

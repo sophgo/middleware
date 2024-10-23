@@ -179,8 +179,6 @@ typedef enum _VPSS_TEST_OP {
 	VPSS_TEST_HIDE,
 	VPSS_TEST_ROT,
 	VPSS_TEST_LDC,
-	VPSS_TEST_LDC_LOAD_MESH,
-	VPSS_TEST_DWA,
 	VPSS_TEST_FISHEYE,
 	VPSS_TEST_FBD,
 	VPSS_TEST_PRESSURE,
@@ -190,6 +188,7 @@ typedef enum _VPSS_TEST_OP {
 	VPSS_TEST_STITCH_PIP,
 	VPSS_TEST_STITCH_FOUR_GRID,
 	VPSS_TEST_TILE_1_to_2,
+	VPSS_TEST_C_MODEL,
 	VPSS_TEST_USER_CONFIG = 100,
 	VPSS_TEST_AUTO = 200,
 } VPSS_TEST_OP;
@@ -236,7 +235,7 @@ static CVI_S32 basic(const VPSS_BASIC_TEST_PARAM *pTestParam)
 
 	stVbConf.u32MaxPoolCnt              = 2;
 	stVbConf.astCommPool[0].u32BlkSize	= u32BlkSizeIn;
-	stVbConf.astCommPool[0].u32BlkCnt	= 1 + (((pTestParam->stLDCAttr.bEnable && !pTestParam->stLDCAttr.stAttr.bEnHWLDC) || pTestParam->stFishEyeAttr.bEnable) ? 1 : 0);
+	stVbConf.astCommPool[0].u32BlkCnt	= 1 + (((pTestParam->stLDCAttr.bEnable) || pTestParam->stFishEyeAttr.bEnable) ? 1 : 0);
 	stVbConf.astCommPool[0].enRemapMode	= VB_REMAP_MODE_CACHED;
 	stVbConf.astCommPool[1].u32BlkSize	= u32BlkSizeOut;
 	stVbConf.astCommPool[1].u32BlkCnt	= 1 + (pTestParam->stLDCAttr.bEnable || pTestParam->stFishEyeAttr.bEnable || pTestParam->enRotation ? 1 : 0);
@@ -371,26 +370,26 @@ static CVI_S32 basic(const VPSS_BASIC_TEST_PARAM *pTestParam)
 
 	//chn LDC
 	if (pTestParam->stLDCAttr.bEnable) {
-		if (pTestParam->bUseLoadMesh) {
-			MESH_DUMP_ATTR_S MeshDumpAttr;
+		// if (pTestParam->bUseLoadMesh) {
+		// 	MESH_DUMP_ATTR_S MeshDumpAttr;
 
-			strcpy(MeshDumpAttr.binFileName , GDC_FILE_IN_LDC_BARREL_0P3_MESH_0);
-			MeshDumpAttr.enModId = CVI_ID_VPSS;
-			MeshDumpAttr.vpssMeshAttr.grp = 0;
-			MeshDumpAttr.vpssMeshAttr.chn = 0;
+		// 	strcpy(MeshDumpAttr.binFileName , GDC_FILE_IN_LDC_BARREL_0P3_MESH_0);
+		// 	MeshDumpAttr.enModId = CVI_ID_VPSS;
+		// 	MeshDumpAttr.vpssMeshAttr.grp = 0;
+		// 	MeshDumpAttr.vpssMeshAttr.chn = 0;
 
-			s32Ret = CVI_GDC_LoadMesh(&MeshDumpAttr, &pTestParam->stLDCAttr.stAttr);
-			if (s32Ret != CVI_SUCCESS) {
-				VPSS_UT_PRT("CVI_GDC_LoadMesh failed with %#x\n", s32Ret);
-				goto exit4;
-			}
-		} else {
-			s32Ret = CVI_VPSS_SetChnLDCAttr(VpssGrp, VpssChn, &pTestParam->stLDCAttr);
-			if (s32Ret != CVI_SUCCESS) {
-				VPSS_UT_PRT("CVI_VPSS_SetChnLDCAttr failed with %#x\n", s32Ret);
-				goto exit4;
-			}
+		// 	s32Ret = CVI_GDC_LoadMesh(&MeshDumpAttr, &pTestParam->stLDCAttr.stAttr);
+		// 	if (s32Ret != CVI_SUCCESS) {
+		// 		VPSS_UT_PRT("CVI_GDC_LoadMesh failed with %#x\n", s32Ret);
+		// 		goto exit4;
+		// 	}
+		// } else {
+		s32Ret = CVI_VPSS_SetChnLDCAttr(VpssGrp, VpssChn, &pTestParam->stLDCAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			VPSS_UT_PRT("CVI_VPSS_SetChnLDCAttr failed with %#x\n", s32Ret);
+			goto exit4;
 		}
+		// }
 	}
 
 	//chn rotation
@@ -2374,13 +2373,14 @@ static CVI_S32 vpss_test_format(CVI_VOID)
 	SIZE_S stSize = {1920, 1080};
 	PIXEL_FORMAT_E enPixelFormat = PIXEL_FORMAT_YUV_PLANAR_420;
 	CVI_CHAR *pstFileNameIn = VPSS_DEFAULT_FILE_IN;
+	CVI_U32 randomIndex = 0;
 	PIXEL_FORMAT_E fmt_in[] = {
 		PIXEL_FORMAT_RGB_888,
 		PIXEL_FORMAT_BGR_888,
-		PIXEL_FORMAT_RGB_888_PLANAR,
-		PIXEL_FORMAT_BGR_888_PLANAR,
 		PIXEL_FORMAT_NV12,
+		PIXEL_FORMAT_RGB_888_PLANAR,
 		PIXEL_FORMAT_NV21,
+		PIXEL_FORMAT_BGR_888_PLANAR,
 		PIXEL_FORMAT_NV16,
 		PIXEL_FORMAT_NV61,
 		PIXEL_FORMAT_YUYV,
@@ -2396,10 +2396,10 @@ static CVI_S32 vpss_test_format(CVI_VOID)
 	PIXEL_FORMAT_E fmt_out[] = {
 		PIXEL_FORMAT_RGB_888,
 		PIXEL_FORMAT_BGR_888,
-		PIXEL_FORMAT_RGB_888_PLANAR,
-		PIXEL_FORMAT_BGR_888_PLANAR,
 		PIXEL_FORMAT_NV12,
+		PIXEL_FORMAT_RGB_888_PLANAR,
 		PIXEL_FORMAT_NV21,
+		PIXEL_FORMAT_BGR_888_PLANAR,
 		PIXEL_FORMAT_NV16,
 		PIXEL_FORMAT_NV61,
 		PIXEL_FORMAT_YUYV,
@@ -2551,6 +2551,78 @@ static CVI_S32 vpss_test_format(CVI_VOID)
 		}
 		for (j = 0; j < ARRAY_SIZE(fmt_out); j++) {
 			stVpssChnAttr.enPixelFormat = fmt_out[j];
+			s32Ret = CVI_VPSS_SetChnAttr(VpssGrp, VpssChn, &stVpssChnAttr);
+			if (s32Ret != CVI_SUCCESS) {
+				VPSS_UT_PRT("CVI_VPSS_SetChnAttr failed with %#x\n", s32Ret);
+				CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut0);
+				goto exit5;
+			}
+			s32Ret = CVI_VPSS_SendFrame(VpssGrp, &stVideoFrameOut0, 1000);
+			if (s32Ret != CVI_SUCCESS) {
+				VPSS_UT_PRT("CVI_VPSS_SendFrame fail.\n");
+				CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut0);
+				goto exit5;
+			}
+			s32Ret = CVI_VPSS_GetChnFrame(VpssGrp, VpssChn, &stVideoFrameOut1, UT_TIMEOUT_MS);
+			if (s32Ret != CVI_SUCCESS) {
+				VPSS_UT_PRT("CVI_VPSS_GetChnFrame fail. s32Ret: 0x%x !\n", s32Ret);
+				VPSS_UT_PRT("output fmt: %d\n", i);
+				CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut0);
+				goto exit5;
+			}
+			s32Ret = CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut1);
+			if (s32Ret != CVI_SUCCESS) {
+				VPSS_UT_PRT("CVI_VPSS_ReleaseChnFrame for grp0 chn0. s32Ret: 0x%x !\n", s32Ret);
+				CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut0);
+				goto exit5;
+			}
+		}
+
+		s32Ret = CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut0);
+		if (s32Ret != CVI_SUCCESS) {
+			VPSS_UT_PRT("CVI_VPSS_ReleaseChnFrame for grp0 chn0. s32Ret: 0x%x !\n", s32Ret);
+			goto exit5;
+		}
+	}
+
+	srand(time(NULL));
+	for (i = 0; i < 100; ++i) {
+		stVpssGrpAttr.enPixelFormat = enPixelFormat;
+		s32Ret = CVI_VPSS_SetGrpAttr(VpssGrp, &stVpssGrpAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			VPSS_UT_PRT("CVI_VPSS_SetGrpAttr failed with %#x\n", s32Ret);
+			goto exit5;
+		}
+		randomIndex = rand() % ARRAY_SIZE(fmt_in);
+		stVpssChnAttr.enPixelFormat = fmt_in[randomIndex];
+		s32Ret = CVI_VPSS_SetChnAttr(VpssGrp, VpssChn, &stVpssChnAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			VPSS_UT_PRT("CVI_VPSS_SetChnAttr failed with %#x\n", s32Ret);
+			goto exit5;
+		}
+		s32Ret = CVI_VPSS_SendFrame(VpssGrp, &stVideoFrameIn, 1000);
+		if (s32Ret != CVI_SUCCESS) {
+			VPSS_UT_PRT("CVI_VPSS_SendFrame fail.\n");
+			goto exit5;
+		}
+		s32Ret = CVI_VPSS_GetChnFrame(VpssGrp, VpssChn, &stVideoFrameOut0, UT_TIMEOUT_MS);
+		if (s32Ret != CVI_SUCCESS) {
+			VPSS_UT_PRT("CVI_VPSS_GetChnFrame fail. s32Ret: 0x%x !\n", s32Ret);
+			VPSS_UT_PRT("output fmt: %d\n", i);
+			goto exit5;
+		}
+
+		stVpssGrpAttr.enPixelFormat = fmt_in[randomIndex];
+		s32Ret = CVI_VPSS_SetGrpAttr(VpssGrp, &stVpssGrpAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			VPSS_UT_PRT("CVI_VPSS_SetGrpAttr failed with %#x\n", s32Ret);
+			CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut0);
+			goto exit5;
+		}
+
+		for (j = 0; j < 100; j++) {
+			randomIndex = rand() % ARRAY_SIZE(fmt_out);
+			stVpssChnAttr.enPixelFormat = fmt_out[randomIndex];
 			s32Ret = CVI_VPSS_SetChnAttr(VpssGrp, VpssChn, &stVpssChnAttr);
 			if (s32Ret != CVI_SUCCESS) {
 				VPSS_UT_PRT("CVI_VPSS_SetChnAttr failed with %#x\n", s32Ret);
@@ -3221,81 +3293,7 @@ static CVI_S32 vpss_test_ldc(CVI_VOID)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	VPSS_BASIC_TEST_PARAM stTestParam;
-	VPSS_LDC_ATTR_S stLDCAttr= {CVI_TRUE, {CVI_TRUE, 0, 0, 0, 0, 0, -200, {0}, 1, 1}};
-
-	memset(&stTestParam, 0, sizeof(stTestParam));
-	stTestParam.VpssGrp = 0;
-	stTestParam.stSizeIn.u32Width = DEFAULT_W;
-	stTestParam.stSizeIn.u32Height = DEFAULT_H;
-	stTestParam.bMirror = CVI_FALSE;
-	stTestParam.bFlip = CVI_FALSE;
-	stTestParam.enFormatIn = PIXEL_FORMAT_NV21;
-	stTestParam.enFormatOut = PIXEL_FORMAT_NV21;
-	stTestParam.stAspectRatio.enMode = ASPECT_RATIO_NONE;
-	stTestParam.stNormalize.bEnable = CVI_FALSE;
-	stTestParam.enRotation = 0;
-	if (stTestParam.enRotation == 1 || stTestParam.enRotation == 3) {
-		stTestParam.stSizeOut.u32Width = ALIGN(DEFAULT_H, DEFAULT_ALIGN);
-		stTestParam.stSizeOut.u32Height = ALIGN(DEFAULT_W, DEFAULT_ALIGN);
-	} else {
-		stTestParam.stSizeOut.u32Width = ALIGN(DEFAULT_W, DEFAULT_ALIGN);
-		stTestParam.stSizeOut.u32Height = ALIGN(DEFAULT_H, DEFAULT_ALIGN);
-	}
-
-	memcpy(&stTestParam.stLDCAttr, &stLDCAttr, sizeof(stLDCAttr));
-	strncpy(stTestParam.aszFileNameIn, VPSS_LDC_FILE_IN, sizeof(stTestParam.aszFileNameIn));
-	snprintf(stTestParam.aszFileNameOut, 64, "%s/%s_%d_%d_%s.bin",
-		OUT_FILE_PREFIX, __func__,
-		stTestParam.stSizeOut.u32Width,
-		stTestParam.stSizeOut.u32Height,
-		GetFmtName(stTestParam.enFormatOut));
-
-	s32Ret = basic(&stTestParam);
-	TEST_CHECK_RET(s32Ret);
-
-	return s32Ret;
-}
-
-static CVI_S32 vpss_test_ldc_load_mesh(CVI_VOID)
-{
-	CVI_S32 s32Ret = CVI_SUCCESS;
-	VPSS_BASIC_TEST_PARAM stTestParam;
-
-	memset(&stTestParam, 0, sizeof(stTestParam));
-	stTestParam.VpssGrp = 0;
-	stTestParam.stSizeIn.u32Width = DEFAULT_W;
-	stTestParam.stSizeIn.u32Height = DEFAULT_H;
-	stTestParam.stSizeOut.u32Width = ALIGN(DEFAULT_W, DEFAULT_ALIGN);
-	stTestParam.stSizeOut.u32Height = ALIGN(DEFAULT_H, DEFAULT_ALIGN);
-	stTestParam.bMirror = CVI_FALSE;
-	stTestParam.bFlip = CVI_FALSE;
-	stTestParam.enFormatIn = PIXEL_FORMAT_NV21;
-	stTestParam.enFormatOut = PIXEL_FORMAT_NV21;
-	stTestParam.stAspectRatio.enMode = ASPECT_RATIO_NONE;
-	stTestParam.stNormalize.bEnable = CVI_FALSE;
-
-	stTestParam.stLDCAttr.bEnable = CVI_TRUE;
-	stTestParam.stLDCAttr.stAttr.bEnHWLDC = CVI_TRUE;
-	stTestParam.bUseLoadMesh = CVI_TRUE;
-
-	strncpy(stTestParam.aszFileNameIn, VPSS_LDC_FILE_IN, sizeof(stTestParam.aszFileNameIn));
-	snprintf(stTestParam.aszFileNameOut, 64, "%s/%s_%d_%d_%s.bin",
-		OUT_FILE_PREFIX, __func__,
-		stTestParam.stSizeOut.u32Width,
-		stTestParam.stSizeOut.u32Height,
-		GetFmtName(stTestParam.enFormatOut));
-
-	s32Ret = basic(&stTestParam);
-	TEST_CHECK_RET(s32Ret);
-
-	return s32Ret;
-}
-
-static CVI_S32 vpss_test_dwa(CVI_VOID)
-{
-	CVI_S32 s32Ret = CVI_SUCCESS;
-	VPSS_BASIC_TEST_PARAM stTestParam;
-	VPSS_LDC_ATTR_S stLDCAttr= {CVI_TRUE, {CVI_TRUE, 0, 0, 0, 0, 0, -200, {0}, 0, 0}};
+	VPSS_LDC_ATTR_S stLDCAttr= {CVI_TRUE, {CVI_TRUE, 0, 0, 0, 0, 0, -200, {0}, 0}};
 
 	memset(&stTestParam, 0, sizeof(stTestParam));
 	stTestParam.VpssGrp = 0;
@@ -4259,6 +4257,292 @@ static CVI_S32 vpss_test_tile_1_to_2(CVI_VOID)
 	return s32Ret;
 }
 
+static CVI_S32 vpss_test_csc_rgb2yuv(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	VPSS_GRP VpssGrp = 0;
+	VPSS_CHN VpssChn = VPSS_CHN0;
+	VPSS_GRP_ATTR_S stVpssGrpAttr = {0};
+	VPSS_CHN_ATTR_S stVpssChnAttr = {0};
+	VB_CONFIG_S stVbConf;
+	CVI_U32 u32BlkSize;
+	SIZE_S stSize = {1920, 1080};
+	PIXEL_FORMAT_E enPixelFormatIn = PIXEL_FORMAT_RGB_888;
+	PIXEL_FORMAT_E enPixelFormatOut = PIXEL_FORMAT_YUV_PLANAR_420;
+	CVI_CHAR *pstFileNameIn = VPSS_RGB_FILE_IN;
+	VIDEO_FRAME_INFO_S stVideoFrameIn, stVideoFrameOut;
+
+	/************************************************
+	 * step1:  Init SYS and common VB
+	 ************************************************/
+	memset(&stVbConf, 0, sizeof(VB_CONFIG_S));
+
+	u32BlkSize = COMMON_GetPicBufferSize(stSize.u32Width, stSize.u32Height,
+				PIXEL_FORMAT_RGB_888_PLANAR, DATA_BITWIDTH_8,
+				COMPRESS_MODE_NONE, DEFAULT_ALIGN);
+
+	stVbConf.u32MaxPoolCnt              = 1;
+	stVbConf.astCommPool[0].u32BlkSize	= u32BlkSize;
+	stVbConf.astCommPool[0].u32BlkCnt	= 2;
+	stVbConf.astCommPool[0].enRemapMode	= VB_REMAP_MODE_CACHED;
+
+	s32Ret = CVI_VB_SetConfig(&stVbConf);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VB_SetConf failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_VB_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VB_Init failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_SYS_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_SYS_Init failed!\n");
+		goto exit0;
+	}
+
+	/************************************************
+	 * step2:  Init VPSS
+	 ************************************************/
+	stVpssGrpAttr.stFrameRate.s32SrcFrameRate    = -1;
+	stVpssGrpAttr.stFrameRate.s32DstFrameRate    = -1;
+	stVpssGrpAttr.enPixelFormat		     = enPixelFormatIn;
+	stVpssGrpAttr.u32MaxW			     = stSize.u32Width;
+	stVpssGrpAttr.u32MaxH			     = stSize.u32Height;
+
+	stVpssChnAttr.u32Width		    = stSize.u32Width;
+	stVpssChnAttr.u32Height		    = stSize.u32Height;
+	stVpssChnAttr.enVideoFormat		    = VIDEO_FORMAT_LINEAR;
+	stVpssChnAttr.enPixelFormat		    = enPixelFormatOut;
+	stVpssChnAttr.stFrameRate.s32SrcFrameRate = -1;
+	stVpssChnAttr.stFrameRate.s32DstFrameRate = -1;
+	stVpssChnAttr.u32Depth			= 1;
+	stVpssChnAttr.bMirror			= CVI_FALSE;
+	stVpssChnAttr.bFlip				= CVI_FALSE;
+	stVpssChnAttr.stAspectRatio.enMode		= ASPECT_RATIO_NONE;
+	stVpssChnAttr.stNormalize.bEnable		= CVI_FALSE;
+
+	s32Ret = CVI_VPSS_CreateGrp(VpssGrp, &stVpssGrpAttr);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_CreateGrp(grp:%d) failed with %#x!\n", VpssGrp, s32Ret);
+		goto exit1;
+	}
+
+	s32Ret = CVI_VPSS_SetChnAttr(VpssGrp, VpssChn, &stVpssChnAttr);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_SetChnAttr failed with %#x\n", s32Ret);
+		goto exit2;
+	}
+
+	s32Ret = CVI_VPSS_EnableChn(VpssGrp, VpssChn);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_EnableChn failed with %#x\n", s32Ret);
+		goto exit2;
+	}
+
+	/*start vpss*/
+	s32Ret = CVI_VPSS_StartGrp(VpssGrp);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_StartGrp failed with %#x\n", s32Ret);
+		goto exit3;
+	}
+
+	//RGB2YUV
+	s32Ret = FileToFrame(&stSize, enPixelFormatIn, pstFileNameIn, &stVideoFrameIn);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("FileToFrame fail, s32Ret: 0x%x !\n", s32Ret);
+		goto exit4;
+	}
+
+	s32Ret = CVI_VPSS_SendFrame(VpssGrp, &stVideoFrameIn, 1000);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_SendFrame fail.\n");
+		goto exit5;
+	}
+
+	s32Ret = CVI_VPSS_GetChnFrame(VpssGrp, VpssChn, &stVideoFrameOut, 1000);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_GetChnFrame for grp0 chn0. s32Ret: 0x%x !\n", s32Ret);
+		goto exit5;
+	}
+
+	s32Ret = CompareCmodel_rgb2yuv(&stVideoFrameIn, &stVideoFrameOut);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CompareCmodel_rgb2yuv fail!\n");
+	} else {
+		VPSS_UT_PRT("RGB2YUV OK!\n");
+	}
+
+	CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut);
+
+
+exit5:
+	CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(stVideoFrameIn.stVFrame.u64PhyAddr[0]));
+exit4:
+	CVI_VPSS_StopGrp(VpssGrp);
+exit3:
+	CVI_VPSS_DisableChn(VpssGrp, VpssChn);
+exit2:
+	CVI_VPSS_DestroyGrp(VpssGrp);
+exit1:
+	CVI_SYS_Exit();
+exit0:
+	CVI_VB_Exit();
+
+	return s32Ret;
+}
+
+static CVI_S32 vpss_test_csc_yuv2rgb(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	VPSS_GRP VpssGrp = 0;
+	VPSS_CHN VpssChn = VPSS_CHN0;
+	VPSS_GRP_ATTR_S stVpssGrpAttr = {0};
+	VPSS_CHN_ATTR_S stVpssChnAttr = {0};
+	VB_CONFIG_S stVbConf;
+	CVI_U32 u32BlkSize;
+	SIZE_S stSize = {1920, 1080};
+	PIXEL_FORMAT_E enPixelFormatIn = PIXEL_FORMAT_YUV_PLANAR_420;
+	PIXEL_FORMAT_E enPixelFormatOut = PIXEL_FORMAT_RGB_888;
+	CVI_CHAR *pstFileNameIn = VPSS_DEFAULT_FILE_IN;
+	VIDEO_FRAME_INFO_S stVideoFrameIn, stVideoFrameOut;
+
+	/************************************************
+	 * step1:  Init SYS and common VB
+	 ************************************************/
+	memset(&stVbConf, 0, sizeof(VB_CONFIG_S));
+
+	u32BlkSize = COMMON_GetPicBufferSize(stSize.u32Width, stSize.u32Height,
+				PIXEL_FORMAT_RGB_888_PLANAR, DATA_BITWIDTH_8,
+				COMPRESS_MODE_NONE, DEFAULT_ALIGN);
+
+	stVbConf.u32MaxPoolCnt              = 1;
+	stVbConf.astCommPool[0].u32BlkSize	= u32BlkSize;
+	stVbConf.astCommPool[0].u32BlkCnt	= 2;
+	stVbConf.astCommPool[0].enRemapMode	= VB_REMAP_MODE_CACHED;
+
+	s32Ret = CVI_VB_SetConfig(&stVbConf);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VB_SetConf failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_VB_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VB_Init failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_SYS_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_SYS_Init failed!\n");
+		goto exit0;
+	}
+
+	/************************************************
+	 * step2:  Init VPSS
+	 ************************************************/
+	stVpssGrpAttr.stFrameRate.s32SrcFrameRate    = -1;
+	stVpssGrpAttr.stFrameRate.s32DstFrameRate    = -1;
+	stVpssGrpAttr.enPixelFormat		     = enPixelFormatIn;
+	stVpssGrpAttr.u32MaxW			     = stSize.u32Width;
+	stVpssGrpAttr.u32MaxH			     = stSize.u32Height;
+
+	stVpssChnAttr.u32Width		    = stSize.u32Width;
+	stVpssChnAttr.u32Height		    = stSize.u32Height;
+	stVpssChnAttr.enVideoFormat		    = VIDEO_FORMAT_LINEAR;
+	stVpssChnAttr.enPixelFormat		    = enPixelFormatOut;
+	stVpssChnAttr.stFrameRate.s32SrcFrameRate = -1;
+	stVpssChnAttr.stFrameRate.s32DstFrameRate = -1;
+	stVpssChnAttr.u32Depth			= 1;
+	stVpssChnAttr.bMirror			= CVI_FALSE;
+	stVpssChnAttr.bFlip				= CVI_FALSE;
+	stVpssChnAttr.stAspectRatio.enMode		= ASPECT_RATIO_NONE;
+	stVpssChnAttr.stNormalize.bEnable		= CVI_FALSE;
+
+	s32Ret = CVI_VPSS_CreateGrp(VpssGrp, &stVpssGrpAttr);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_CreateGrp(grp:%d) failed with %#x!\n", VpssGrp, s32Ret);
+		goto exit1;
+	}
+
+	s32Ret = CVI_VPSS_SetChnAttr(VpssGrp, VpssChn, &stVpssChnAttr);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_SetChnAttr failed with %#x\n", s32Ret);
+		goto exit2;
+	}
+
+	s32Ret = CVI_VPSS_EnableChn(VpssGrp, VpssChn);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_EnableChn failed with %#x\n", s32Ret);
+		goto exit2;
+	}
+
+	/*start vpss*/
+	s32Ret = CVI_VPSS_StartGrp(VpssGrp);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_StartGrp failed with %#x\n", s32Ret);
+		goto exit3;
+	}
+
+	//YUV2RGB
+	s32Ret = FileToFrame(&stSize, enPixelFormatIn, pstFileNameIn, &stVideoFrameIn);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("FileToFrame fail, s32Ret: 0x%x !\n", s32Ret);
+		goto exit4;
+	}
+
+	s32Ret = CVI_VPSS_SendFrame(VpssGrp, &stVideoFrameIn, 1000);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_SendFrame fail.\n");
+		goto exit5;
+	}
+
+	s32Ret = CVI_VPSS_GetChnFrame(VpssGrp, VpssChn, &stVideoFrameOut, 1000);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_GetChnFrame for grp0 chn0. s32Ret: 0x%x !\n", s32Ret);
+		goto exit5;
+	}
+
+	s32Ret = CompareCmodel_yuv2rgb(&stVideoFrameIn, &stVideoFrameOut);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CompareCmodel_yuv2rgb fail!\n");
+	} else {
+		VPSS_UT_PRT("YUV2RGB OK!\n");
+	}
+
+	CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrameOut);
+
+
+exit5:
+	CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(stVideoFrameIn.stVFrame.u64PhyAddr[0]));
+exit4:
+	CVI_VPSS_StopGrp(VpssGrp);
+exit3:
+	CVI_VPSS_DisableChn(VpssGrp, VpssChn);
+exit2:
+	CVI_VPSS_DestroyGrp(VpssGrp);
+exit1:
+	CVI_SYS_Exit();
+exit0:
+	CVI_VB_Exit();
+
+	return s32Ret;
+}
+
+static CVI_S32 vpss_test_c_model(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	s32Ret = vpss_test_csc_rgb2yuv();
+	s32Ret |= vpss_test_csc_yuv2rgb();
+
+	return s32Ret;
+}
+
 static CVI_S32 vpss_test_user_config(CVI_VOID)
 {
 	CVI_S32 i, s32Ret = CVI_SUCCESS;
@@ -4359,8 +4643,6 @@ static CVI_S32 vpss_test_auto(CVI_VOID)
 	s32Ret |= vpss_test_hide();
 	s32Ret |= vpss_test_rotation();
 	s32Ret |= vpss_test_ldc();
-	s32Ret |= vpss_test_ldc_load_mesh();
-	s32Ret |= vpss_test_dwa();
 	s32Ret |= vpss_test_fisheye();
 	s32Ret |= vpss_test_fbd_basic();
 	s32Ret |= vpss_test_pressure();
@@ -4462,12 +4744,6 @@ static CVI_S32 _vpss_handle_op(CVI_S32 op)
 	case VPSS_TEST_LDC:
 		s32Ret = vpss_test_ldc();
 		break;
-	case VPSS_TEST_LDC_LOAD_MESH:
-		s32Ret = vpss_test_ldc_load_mesh();
-		break;
-	case VPSS_TEST_DWA:
-		s32Ret = vpss_test_dwa();
-		break;
 	case VPSS_TEST_FISHEYE:
 		s32Ret = vpss_test_fisheye();
 		break;
@@ -4497,6 +4773,9 @@ static CVI_S32 _vpss_handle_op(CVI_S32 op)
 		break;
 	case VPSS_TEST_TILE_1_to_2:
 		s32Ret = vpss_test_tile_1_to_2();
+		break;
+	case VPSS_TEST_C_MODEL:
+		s32Ret = vpss_test_c_model();
 		break;
 	case VPSS_TEST_AUTO:
 		s32Ret = vpss_test_auto();
@@ -4539,8 +4818,6 @@ static void vpss_show_help(void)
 	VPSS_UT_PRT("%4d: hide\n", VPSS_TEST_HIDE);
 	VPSS_UT_PRT("%4d: rotation\n", VPSS_TEST_ROT);
 	VPSS_UT_PRT("%4d: ldc\n", VPSS_TEST_LDC);
-	VPSS_UT_PRT("%4d: ldc load mesh\n", VPSS_TEST_LDC_LOAD_MESH);
-	VPSS_UT_PRT("%4d: dwa\n", VPSS_TEST_DWA);
 	VPSS_UT_PRT("%4d: fisheye\n", VPSS_TEST_FISHEYE);
 	VPSS_UT_PRT("%4d: fbd\n", VPSS_TEST_FBD);
 	VPSS_UT_PRT("%4d: pressure test\n", VPSS_TEST_PRESSURE);
@@ -4550,6 +4827,7 @@ static void vpss_show_help(void)
 	VPSS_UT_PRT("%4d: stitch picture in picture\n", VPSS_TEST_STITCH_PIP);
 	VPSS_UT_PRT("%4d: stitch four-square grid\n", VPSS_TEST_STITCH_FOUR_GRID);
 	VPSS_UT_PRT("%4d: tile mode 2 chn\n", VPSS_TEST_TILE_1_to_2);
+	VPSS_UT_PRT("%4d: c-model test\n", VPSS_TEST_C_MODEL);
 	VPSS_UT_PRT("%4d: user config\n", VPSS_TEST_USER_CONFIG);
 	VPSS_UT_PRT("%4d: auto test\n", VPSS_TEST_AUTO);
 

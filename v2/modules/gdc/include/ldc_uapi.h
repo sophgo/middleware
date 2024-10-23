@@ -76,7 +76,8 @@ struct gdc_task_attr {
 	union {
 		FISHEYE_ATTR_S stFishEyeAttr;
 		AFFINE_ATTR_S stAffineAttr;
-		LDC_ATTR_S stLDCAttr;
+		LDC_ATTR_S stLdcAttr;
+		WARP_ATTR_S stWarpAttr;
 	};
 
 	CVI_U64 meshHandle;
@@ -118,12 +119,15 @@ struct ldc_vb_pool_cfg {
 #define CVI_LDC_GET_WORK_JOB _IOR('L', 0x08, struct gdc_handle_data)
 #define CVI_LDC_GET_CHN_FRM _IOWR('L', 0x09, struct gdc_chn_frm_cfg)
 
-#define CVI_LDC_SET_BUF_WRAP _IOW('L', 0x0a, struct ldc_buf_wrap_cfg)
-#define CVI_LDC_GET_BUF_WRAP _IOWR('L', 0x0b, struct ldc_buf_wrap_cfg)
+// #define CVI_LDC_SET_BUF_WRAP _IOW('L', 0x0a, struct ldc_buf_wrap_cfg)
+// #define CVI_LDC_GET_BUF_WRAP _IOWR('L', 0x0b, struct ldc_buf_wrap_cfg)
 #define CVI_LDC_ATTACH_VB_POOL _IOW('L', 0x0c, struct ldc_vb_pool_cfg)
 #define CVI_LDC_DETACH_VB_POOL _IO('L', 0x0d)
 #define CVI_LDC_SUSPEND _IO('L',0x0e)
 #define CVI_LDC_RESUME _IO('L',0x0f)
+#define CVI_LDC_ADD_COR_TASK _IOW('D', 0x10, struct gdc_task_attr)
+#define CVI_LDC_ADD_AFF_TASK _IOW('D', 0x11, struct gdc_task_attr)
+#define CVI_LDC_ADD_WAR_TASK _IOW('D', 0x12, struct gdc_task_attr)
 
 #ifdef __cplusplus
 }

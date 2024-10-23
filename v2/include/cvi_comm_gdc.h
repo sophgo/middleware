@@ -20,14 +20,14 @@ extern "C" {
 #include <cvi_comm_video.h>
 
 
-#define FISHEYE_MAX_REGION_NUM 4
-#define AFFINE_MAX_REGION_NUM 32
+#define FISHEYE_MAX_REGION_NUM 4 /*fisheye max region num*/
+#define AFFINE_MAX_REGION_NUM 32 /*affine max region num*/
 
 
 #ifdef __arm__
-typedef CVI_S32 GDC_HANDLE;
+typedef CVI_S32 GDC_HANDLE; /*gdc handle*/
 #else
-typedef CVI_S64 GDC_HANDLE;
+typedef CVI_S64 GDC_HANDLE; /*gdc handle*/
 #endif
 
 /*
@@ -35,6 +35,7 @@ typedef CVI_S64 GDC_HANDLE;
  * stImgOut: Output picture
  * au64privateData[4]: RW; Private data of task
  * reserved: RW; Debug information,state of current picture
+ * name: task name
  */
 typedef struct _GDC_TASK_ATTR_S {
 	VIDEO_FRAME_INFO_S stImgIn;
@@ -83,6 +84,7 @@ typedef struct _FISHEYE_REGION_ATTR_S {
 	RECT_S stOutRect;
 } FISHEYE_REGION_ATTR_S;
 
+/* fish eye usage mode*/
 typedef enum _USAGE_MODE {
 	MODE_PANORAMA_360 = 1,
 	MODE_PANORAMA_180 = 2,
@@ -113,6 +115,7 @@ typedef enum _USAGE_MODE {
  * enUseMode: easy scenario. If this isn't MODE_MAX, then reference this parameter and ignore following region attrs.
  * u32RegionNum: RW; Range: [1, FISHEYE_MAX_REGION_NUM], gdc correction region number
  * astFishEyeRegionAttr: RW; attribute of gdc correction region
+ * stGridInfoAttr: grid info attr
  */
 typedef struct _FISHEYE_ATTR_S {
 	CVI_BOOL bEnable;
@@ -129,6 +132,11 @@ typedef struct _FISHEYE_ATTR_S {
 	GRID_INFO_ATTR_S stGridInfoAttr;
 } FISHEYE_ATTR_S;
 
+/* Warp attribute
+ *
+ * bEnable: RW; Range: [0, 1], whether enable fisheye correction or not
+ * stGridInfoAttr: grid info attr
+ */
 typedef struct _WARP_ATTR_S {
 	CVI_BOOL bEnable;
 	GRID_INFO_ATTR_S stGridInfoAttr;
@@ -146,6 +154,7 @@ typedef struct _SPREAD_ATTR_S {
 	SIZE_S stDestSize;
 } SPREAD_ATTR_S;
 
+/* Point coordinates*/
 typedef struct _POINT2F_S {
 	CVI_FLOAT x;
 	CVI_FLOAT y;
@@ -176,15 +185,31 @@ typedef struct _LDC_BUF_WRAP_S {
 	CVI_U32 u32WrapBufferSize;
 } LDC_BUF_WRAP_S;
 
+/* Vi gdc attribute
+ *
+ * chn: vi chnnel
+ */
 typedef struct _VI_MESH_ATTR_S {
 	VI_CHN chn;
 } VI_MESH_ATTR_S;
 
+/* Vpss gdc attribute
+ *
+ * grp: vpss group
+ * chn: vpss chnnel
+ */
 typedef struct _VPSS_MESH_ATTR_S {
 	VPSS_GRP grp;
 	VPSS_CHN chn;
 } VPSS_MESH_ATTR_S;
 
+/* Mesh dump attribute
+ *
+ * binFileName: mesh file name
+ * enModId: module id
+ * viMeshAttr: vi gdc attribute
+ * vpssMeshAttr:  vpss gdc attribute
+ */
 typedef struct _MESH_DUMP_ATTR_S {
 	CVI_CHAR binFileName[128];
 	MOD_ID_E enModId;
@@ -194,6 +219,13 @@ typedef struct _MESH_DUMP_ATTR_S {
 	};
 } MESH_DUMP_ATTR_S;
 
+/* Gdc identity attribute
+ *
+ * Name: identity name
+ * enModId: module id
+ * u32ID: identity id
+ * syncIo: gdc job sync
+ */
 typedef struct _GDC_IDENTITY_ATTR_S {
 	CVI_CHAR Name[32];
 	MOD_ID_E enModId;

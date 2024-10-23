@@ -1,7 +1,7 @@
 ive_1st_ut
 ive_2nd_ut
 ive_bg_ut
-ldc_ut
+gdc_ut
 rgn_ut
 sys_ut
 vb_ut
@@ -9,7 +9,6 @@ vo_ut
 vpss_ut
 vpss_ut_client
 stitch_ut
-dwa_ut
 dpu_ut
 vi_ut
 vi_ut_client

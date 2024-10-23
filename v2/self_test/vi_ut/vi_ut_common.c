@@ -191,10 +191,12 @@ CVI_S32 vi_ut_plat_sys_init(void)
 	VI_UT_PRT("vi_ut_ctx.enCompressMode (%d)\n", vi_ut_ctx.enCompressMode);
 
 	// Get config from ini if found.
-	if (SAMPLE_COMM_VI_ParseIni(&stIniCfg)) {
+	s32Ret = SAMPLE_COMM_VI_ParseIni(&stIniCfg);
+	if (s32Ret != CVI_SUCCESS) {
+		VI_UT_PRT("Parse fail\n");
+	} else {
 		VI_UT_PRT("Parse complete\n");
 	}
-
 	/************************************************
 	 * step1:  Config VI
 	 ************************************************/
@@ -321,11 +323,14 @@ CVI_S32 vi_ut_sys_config_online_mode(void)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	VI_VPSS_MODE_S	stVIVPSSMode;
+	int i = 0;
 
 	/************************************************
 	 * Config vpss online mode
 	 ************************************************/
-	stVIVPSSMode.aenMode[0] = stVIVPSSMode.aenMode[1] = VI_OFFLINE_VPSS_ONLINE;
+	for (i = 0; i < VI_MAX_PIPE_NUM; ++i) {
+		stVIVPSSMode.aenMode[i] = VI_OFFLINE_VPSS_ONLINE;
+	}
 
 	s32Ret = CVI_SYS_SetVIVPSSMode(&stVIVPSSMode);
 	if (s32Ret != CVI_SUCCESS) {

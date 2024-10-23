@@ -29,10 +29,12 @@
 #define MAX(a, b) (((a) > (b))?(a):(b))
 #endif
 
+#define DEFAULT_GRP_ID 0
+
 CVI_CHAR * GetFmtName(PIXEL_FORMAT_E enPixFmt);
 CVI_S32 FileSendToStitch(STITCH_SRC_IDX src_id, SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, CVI_CHAR *filename);
 CVI_S32 FileSendToStitch2(STITCH_SRC_IDX src_id, SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, CVI_CHAR *filename);
-CVI_S32 FileSendToStitchNoVb(STITCH_SRC_IDX src_id, SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, CVI_CHAR *filename, CVI_U64 *pu64PhyAddr, CVI_VOID **ppVirAddr);
+CVI_S32 FileSendToStitchNoVb(STITCH_SRC_IDX src_id, SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, CVI_CHAR *filename, CVI_U64 *pu64PhyAddr, CVI_VOID **ppVirAddr, int grp_id);
 CVI_S32 FileToFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat,
 	CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVideoFrame);
 

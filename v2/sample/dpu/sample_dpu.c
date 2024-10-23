@@ -651,8 +651,8 @@ CVI_S32 SAMPLE_DPU_DWA_TEST(SIZE_S stSizeIn , SIZE_S stSizeOut, CVI_CHAR *filena
 	SAMPLE_PRT("111 \n");
 	gParam.dwaParam[0].stTask.reserved = 0;
 	gParam.dwaParam[1].stTask.reserved = 0;
-	memcpy(gParam.dwaParam[0].stTask.name,"dpu_L_dwa_tsk",128);
-	memcpy(gParam.dwaParam[1].stTask.name,"dpu_R_dwa_tsk",128);
+	strcpy(gParam.dwaParam[0].stTask.name, "dpu_L_dwa_tsk");
+	strcpy(gParam.dwaParam[1].stTask.name, "dpu_R_dwa_tsk");
 
 	gParam.dwaParam[0].LDCAttr.stGridInfoAttr.Enable = CVI_TRUE;
 	strcpy(gParam.dwaParam[0].LDCAttr.stGridInfoAttr.gridFileName, fileGridInfoL);
@@ -817,7 +817,7 @@ CVI_S32 SAMPLE_DPU_DWA_TEST(SIZE_S stSizeIn , SIZE_S stSizeOut, CVI_CHAR *filena
 			goto EXIT5;
 	}
 	SAMPLE_PRT("13 \n");
-	s32Ret = CVI_DWA_Init();
+	s32Ret = CVI_GDC_Init();
 	if (s32Ret != CVI_SUCCESS) {
 			SAMPLE_PRT("DWA INIT failed!\n");
 			goto EXIT4;
@@ -942,7 +942,7 @@ EXIT3:
 	CVI_VB_ReleaseBlock(blk_left_in);
 
 EXIT4:
-	CVI_DWA_DeInit();
+	CVI_GDC_DeInit();
 EXIT5:
     SAMPLE_DPU_SYS_Exit();
 	SAMPLE_PRT("SAMPLE_DPU_DWA_TEST -------------- \n");

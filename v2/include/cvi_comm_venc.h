@@ -1117,6 +1117,9 @@ typedef struct _VENC_INITIAL_INFO_S {
 
     /* Caller must register at least this many framebuffers for source(GOP) */
     CVI_U32 min_num_src_fb;
+
+    /* (option) Caller can alloc extern buf as bitstream buffer */
+     unsigned int min_bs_buf_size;
 } VENC_INITIAL_INFO_S;
 
 typedef struct _VENC_ENCODE_HEADER_S {
@@ -1136,6 +1139,15 @@ typedef struct _VENC_SEARCH_WINDOW_S {
     CVI_U32 u32Ver;
 } VENC_SEARCH_WINDOW_S;
 
+typedef struct _VENC_EXTERN_BUF_S {
+    unsigned int bs_buf_size;
+    uint64_t bs_phys_addr;
+} VENC_EXTERN_BUF_S;
+
+typedef struct _VENC_PHYS_BUF_S {
+    unsigned int size;
+    unsigned long phys_addr;
+} VENC_PHYS_BUF_S;
 
 #ifdef __cplusplus
 #if __cplusplus

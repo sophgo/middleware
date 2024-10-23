@@ -170,7 +170,7 @@ void printHelp(char **argv)
 	printf("\n.for mipi/lvds panel you can cfg lane seq or pnswap");
 	printf("\nEX.\n");
 	printf(" %s --device=1 --panel=HX8394_EVB --laneid=1,2,0,3,4 --pnswap=0,0,0,0,0 --control_pins=399,304,400\n",
-		   argv[0]);
+		    argv[0]);
 	printf("\n.for mipi panel You can also manually set the dsi by -d");
 	printf("\nEX.\n");
 	printf(" %s -d\n\n", argv[0]);

@@ -356,6 +356,8 @@ static optionExt venc_long_option_ext[] = {
 		"set vertical search window, default = 0"},
 	{{"SearchHor", optional_argument, NULL, 0}, ARG_UINT, 4, 16,
 		"set horizontal search window, default = 0"},
+	{{"useExternbuf", optional_argument, NULL, 0}, ARG_UINT, 0, 1,
+		"use extern physical buffer [0, 1], default = 0"},
 	{{NULL, 0, NULL, 0}, ARG_INT, 0, 0, ""}
 };
 
@@ -395,7 +397,6 @@ static CVI_VOID exitSysAndVb(CVI_VOID);
 static VIDEO_FRAME_INFO_S *allocate_frame(SIZE_S stSize, PIXEL_FORMAT_E pixel_format, vencChnCtx *pvecc);
 static CVI_S32 free_frame(VIDEO_FRAME_INFO_S *pstVideoFrame);
 static CVI_S32 _SAMPLE_VENC_SendOneFrame(vencChnCtx *pvecc);
-static CVI_S32 SAMPLE_COMM_VENC_SetUserFrameLevelRc(chnInputCfg *pIc, VENC_CHN VencChn);
 static CVI_VOID SAMPLE_VENC_InsertUserData(VENC_CHN chn, chnInputCfg *pIc);
 
 static PIC_SIZE_E getEnSize(CVI_U32 u32Width, CVI_U32 u32Height)
@@ -458,6 +459,7 @@ static CVI_U32 getSrcFrameSizeByPixelFormat(CVI_U32 width, CVI_U32 height, PIXEL
 		break;
 	case PIXEL_FORMAT_YUV_400:
 		size = width * height;
+		break;
 	default:
 		printf("Unknown pixel format. Assume YUV420P.\n");
 		size = width * height * 3 / 2;
@@ -649,8 +651,8 @@ CVI_S32 venc_main(int argc, char **argv)
 			psv->chnCtx[0].chnIc.getstream_timeout = -1;
 			psv->chnCtx[0].chnIc.sendframe_timeout = 20000;
 			snprintf(yuvFilename, MAX_STRING_LEN, "%s", psv->chnCtx[0].chnIc.input_path);
-			snprintf(psv->chnCtx[0].chnIc.input_path, MAX_STRING_LEN, "%s%s",
-				 pcic->yuvFolder, yuvFilename);
+			//TODO:fix string_len overflow bug
+			snprintf(psv->chnCtx[0].chnIc.input_path, 512, "%s%s", pcic->yuvFolder, yuvFilename);
 			psv->chnCtx[0].chnIc.bCreateChn = bCreateChn;
 
 			s32Ret = checkInputCfg(&psv->chnCtx[0].chnIc);
@@ -1055,6 +1057,8 @@ CVI_S32 parseEncArgv(sampleVenc *psv, chnInputCfg *pIc, CVI_S32 argc, char **arg
 				pIc->u32SearchVer = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "SearchHor")) {
 				pIc->u32SearchHor = arg.uval;
+			} else if (!strcmp(long_options[idx].name, "useExternbuf")) {
+				pIc->bUseExternBuf = arg.uval;
 			} else {
 				printf("not exist name = %s\n", long_options[idx].name);
 				print_help(argv);
@@ -1139,7 +1143,10 @@ CVI_S32 vi_ut_plat_sys_init(void)
 	vi_ut_ctx.u32Align		 = DEFAULT_ALIGN;
 
 	// Get config from ini if found.
-	if (SAMPLE_COMM_VI_ParseIni(&stIniCfg)) {
+	s32Ret = SAMPLE_COMM_VI_ParseIni(&stIniCfg);
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("Parse fail\n");
+	} else {
 		SAMPLE_PRT("Parse complete\n");
 	}
 
@@ -2016,6 +2023,7 @@ CVI_S32 SAMPLE_VENC_STOP(sampleVenc *psv)
 	vencChnCtx *pvecc;
 	CVI_S32 s32ChnIdx;
 	VB_BLK blk;
+    CVI_S32 s32Ret;
 
 	if (!strcmp(pIc->codec, "265") ||
 		!strcmp(pIc->codec, "264") ||
@@ -2031,8 +2039,6 @@ CVI_S32 SAMPLE_VENC_STOP(sampleVenc *psv)
 			_venc_unbind_source(pIc, s32ChnIdx);
 			#endif
 			if (pcic->testMode == JPEG_CONTI_ENCODE_MODE) {
-				CVI_S32 s32Ret;
-
 				s32Ret = CVI_VENC_StopRecvFrame(s32ChnIdx);
 				if (s32Ret != CVI_SUCCESS) {
 					printf("CVI_VENC_StopRecvPic vechn[%d] failed with %#x!\n",
@@ -2055,6 +2061,13 @@ CVI_S32 SAMPLE_VENC_STOP(sampleVenc *psv)
 				}
 			} else {
 				SAMPLE_COMM_VENC_Stop(s32ChnIdx);
+
+                if (pIc->bUseExternBuf) {
+                    s32Ret = CVI_VENC_FreePhysicalMemory(&pvecc->stEncBistreamBuf);
+
+                    printf("free phys buf ret:%d, addr:0x%lx, size:%u\n"
+                            , s32Ret, pvecc->stEncBistreamBuf.phys_addr, pvecc->stEncBistreamBuf.size);
+                }
 			}
 		}
 
@@ -2262,6 +2275,7 @@ static CVI_U32 _SAMPLE_VENC_INIT_CHANNEL(sampleVenc *psv, CVI_U32 chnNum)
 	CVI_S32 s32Ret = CVI_SUCCESS;
 //	SIZE_S inFrmSize;
 	char file_ext[16];
+	VENC_EXTERN_BUF_S stEncExternBuf;
 
 	pvecc->enPixelFormat = vencMapPixelFormat(pIc->pixel_format);
 	pvecc->VencChn = chnNum;
@@ -2337,6 +2351,23 @@ static CVI_U32 _SAMPLE_VENC_INIT_CHANNEL(sampleVenc *psv, CVI_U32 chnNum)
 	if (s32Ret != CVI_SUCCESS) {
 		printf("Venc Start failed for %#x!\n", s32Ret);
 		return CVI_FAILURE;
+	}
+
+	if (pIc->bUseExternBuf) {
+		// use extern physcal buffer
+		memset(&pvecc->stEncBistreamBuf, 0, sizeof(pvecc->stEncBistreamBuf));
+		pvecc->stEncBistreamBuf.size = pIc->u32MinBsBufSize;
+		s32Ret = CVI_VENC_AllocPhysicalMemory(&pvecc->stEncBistreamBuf);
+
+		printf("alloc phys buf ret:%d, addr:0x%lx, size:%u\n"
+				, s32Ret, pvecc->stEncBistreamBuf.phys_addr, pvecc->stEncBistreamBuf.size);
+
+		memset(&stEncExternBuf, 0, sizeof(stEncExternBuf));
+		stEncExternBuf.bs_buf_size = pvecc->stEncBistreamBuf.size;
+		stEncExternBuf.bs_phys_addr = pvecc->stEncBistreamBuf.phys_addr;
+		s32Ret = CVI_VENC_SetExternBuf(pvecc->VencChn, &stEncExternBuf);
+		printf("set extern buf ret:%d, addr:0x%lx, size:%d\n"
+				, s32Ret, stEncExternBuf.bs_phys_addr, stEncExternBuf.bs_buf_size);
 	}
 
 	s32Ret = _SAMPLE_VENC_LoadCfgFile(pvecc);
@@ -2762,6 +2793,9 @@ RETRY_GET_STREAM:
 
 		if (s32SendRet == CVI_ERR_VENC_FRC_NO_ENC) {
 			// do nothing
+			pvecc->frameUnusedQueue[pvecc->pstFrameInfo->stVFrame.s32FrameIdx].iUseFlag = 0;
+			free_frame(pvecc->pstFrameInfo);
+			continue;
 		} else if (s32SendRet == CVI_ERR_VENC_BUSY) {
 			if (pvecc->chnStat == CHN_STAT_STOP)
 				break;
@@ -3164,14 +3198,6 @@ static CVI_S32 _SAMPLE_VENC_SendOneFrame(vencChnCtx *pvecc)
 		(pvecc->enPayLoad == PT_H265 && pvecc->enRcMode == SAMPLE_RC_QPMAP);
 	CVI_S32 s32Ret = CVI_SUCCESS;
 
-	if (pIc->rcMode == SAMPLE_RC_UBR) {
-		s32Ret = SAMPLE_COMM_VENC_SetUserFrameLevelRc(pIc, VencChn);
-		if (s32Ret != CVI_SUCCESS) {
-			printf("(chn %d) SAMPLE_COMM_VENC_SetUserFrameLevelRc\n", VencChn);
-			return s32Ret;
-		}
-	}
-
 	SAMPLE_VENC_InsertUserData(VencChn, pIc);
 
 	if (enableQpMap) {
@@ -3191,42 +3217,6 @@ static CVI_S32 _SAMPLE_VENC_SendOneFrame(vencChnCtx *pvecc)
 	} else {
 		s32Ret = CVI_VENC_SendFrame(VencChn, pvecc->pstFrameInfo,
 				pIc->sendframe_timeout);
-	}
-
-	return s32Ret;
-}
-
-static CVI_S32 SAMPLE_COMM_VENC_SetUserFrameLevelRc(chnInputCfg *pIc, VENC_CHN VencChn)
-{
-	VENC_FRAME_PARAM_S stFrameParam, *pstFrameParam = &stFrameParam;
-	CVI_S32 s32Ret = CVI_SUCCESS;
-
-	s32Ret = CVI_VENC_GetFrameParam(VencChn, pstFrameParam);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("CVI_VENC_GetFrameParam\n");
-		return s32Ret;
-	}
-
-	if (pIc->bTestUbrEn == 1) {
-		// use CVI CBR
-		s32Ret = CVI_VENC_CalcFrameParam(VencChn, pstFrameParam);
-		if (s32Ret != CVI_SUCCESS) {
-			printf("CVI_VENC_CalcFrameParam\n");
-			return s32Ret;
-		}
-	} else {
-		// use User-defined RC
-		pstFrameParam->u32FrameQp = pIc->u32FrameQp;
-		pstFrameParam->u32FrameBits = pIc->bitrate * 1000 / pIc->framerate;
-	}
-
-	printf("u32FrameQp = %d, u32FrameBits = %d\n",
-			pstFrameParam->u32FrameQp, pstFrameParam->u32FrameBits);
-
-	s32Ret = CVI_VENC_SetFrameParam(VencChn, pstFrameParam);
-	if (s32Ret != CVI_SUCCESS) {
-		printf("CVI_VENC_SetFrameParam fail\n");
-		return s32Ret;
 	}
 
 	return s32Ret;

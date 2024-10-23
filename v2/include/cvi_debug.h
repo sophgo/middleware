@@ -93,6 +93,9 @@ static const char *const MOD_STRING[] = FOREACH_MOD(_GENERATE_STRING);
 	#define CVI_TRACE(level, enModId, fmt...)
 #endif
 
+#define CVI_TRACE2(level, enModId, fmt, ...) \
+	printf(fmt, ##__VA_ARGS__)
+
 #define CVI_TRACE_ID(level, id, fmt, ...)                                           \
 		CVI_TRACE(level, id, "%s:%d:%s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__)
 
@@ -125,9 +128,6 @@ static const char *const MOD_STRING[] = FOREACH_MOD(_GENERATE_STRING);
 
 #define CVI_TRACE_MISC(level, fmt, ...)  \
 		CVI_TRACE(level, CVI_ID_SYS, "%s:%d:%s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__)
-
-#define CVI_TRACE_DWA(level, fmt, ...)  \
-		CVI_TRACE(level, CVI_ID_DWA, "%s:%d:%s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__)
 
 #define CVI_TRACE_DPU(level, fmt, ...)  \
 		CVI_TRACE(level, CVI_ID_DPU, "%s:%d:%s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__)

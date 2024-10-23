@@ -38,6 +38,7 @@ DEFS += -DRPC_MULTI_PROCESS
 endif
 
 EXTRA_CFLAGS = $(DEFS) $(INCS)
+CFLAGS += -Wno-format-truncation
 EXTRA_LDFLAGS = $(LIBS) -lini -lm -lpthread
 
 

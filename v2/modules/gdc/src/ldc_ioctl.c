@@ -40,15 +40,30 @@ CVI_S32 gdc_add_ldc_task(CVI_S32 fd, struct gdc_task_attr *attr)
 	return ioctl(fd, CVI_LDC_ADD_LDC_TASK, attr);
 }
 
-CVI_S32 gdc_set_chn_buf_wrap(CVI_S32 fd, const struct ldc_buf_wrap_cfg *cfg)
+CVI_S32 gdc_add_correction_task(CVI_S32 fd, struct gdc_task_attr *attr)
 {
-	return ioctl(fd, CVI_LDC_SET_BUF_WRAP, cfg);
+	return ioctl(fd, CVI_LDC_ADD_COR_TASK, attr);
 }
 
-CVI_S32 gdc_get_chn_buf_wrap(CVI_S32 fd, struct ldc_buf_wrap_cfg *cfg)
+CVI_S32 gdc_add_warp_task(CVI_S32 fd, struct gdc_task_attr *attr)
 {
-	return ioctl(fd, CVI_LDC_GET_BUF_WRAP, cfg);
+	return ioctl(fd, CVI_LDC_ADD_WAR_TASK, attr);
 }
+
+CVI_S32 gdc_add_affine_task(CVI_S32 fd, struct gdc_task_attr *attr)
+{
+	return ioctl(fd, CVI_LDC_ADD_AFF_TASK, attr);
+}
+
+// CVI_S32 gdc_set_chn_buf_wrap(CVI_S32 fd, const struct ldc_buf_wrap_cfg *cfg)
+// {
+// 	return ioctl(fd, CVI_LDC_SET_BUF_WRAP, cfg);
+// }
+
+// CVI_S32 gdc_get_chn_buf_wrap(CVI_S32 fd, struct ldc_buf_wrap_cfg *cfg)
+// {
+// 	return ioctl(fd, CVI_LDC_GET_BUF_WRAP, cfg);
+// }
 
 CVI_S32 gdc_set_job_identity(CVI_S32 fd, struct gdc_identity_attr *indentity)
 {

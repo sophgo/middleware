@@ -470,7 +470,7 @@ static void initVdecThreadParam(vdecChnCtx *pvdchnCtx, VDEC_THREAD_PARAM_S *pvtp
 	pvtp->bCircleSend = pvdcic->u32CircleSend;
 	pvtp->s32MilliSec_in = pvdcic->s32sendstream_timeout; // block mode
 	pvtp->s32MilliSec_out = pvdcic->s32getframe_timeout;
-	pvtp->s32MinBufSize = (psvdattr->u32Width * psvdattr->u32Height * 3) >> 3;
+	pvtp->s32MinBufSize = (psvdattr->u32Width * psvdattr->u32Height * 3) >> 2;
 	pvtp->bFileEnd = CVI_FALSE;
 }
 

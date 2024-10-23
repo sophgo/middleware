@@ -47,7 +47,6 @@ COMM_OBJ :=
 
 LIBS =
 
-
 EXTRA_CFLAGS += $(DEFS) $(INCS) -Wno-error=unused-variable -Wno-error=sign-compare -Wno-error=unused-parameter
 EXTRA_CFLAGS += -ffunction-sections -fdata-sections
 
@@ -106,7 +105,7 @@ $(MULTI_PROCESS_CHANNELS_DEC_TEST) : $(MULTI_PROCESS_CHANNELS_DEC_TEST_OBJS)
 
 .PHONY : clean
 clean:
-	@rm -f $(OBJS) $(DEPS) $(COMM_OBJ) $(COMM_DEPS) 
+	@rm -f $(OBJS) $(DEPS) $(COMM_OBJ) $(COMM_DEPS)
 	@rm -f $(MULTI_PROCESS_ENC_TEST) $(H264_DRV_TEST) $(H265_DRV_TEST) $(JPG_DRV_ENC_TEST) $(JPG_DRV_DEC_TEST) $(CVI_API_TEST)
 	@rm -f $(MULTI_PROCESS_DEC_TEST) $(MULTI_PROCESS_CHANNELS_ENC_TEST) $(MULTI_PROCESS_CHANNELS_DEC_TEST)
 

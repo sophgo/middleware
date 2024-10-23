@@ -695,7 +695,7 @@ int ParentProcessSendDecodeStream(chnInputCfg *pIc)
 
 void init_cfg(chnInputCfg *pIc)
 {
-    strncpy(pIc->codec , "264",3);
+    strcpy(pIc->codec, "264");
     pIc->chn = 0;
     pIc->width = 4096;
     pIc->height = 4096;

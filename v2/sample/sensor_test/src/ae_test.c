@@ -20,7 +20,17 @@
 #include "cvi_awb.h"
 #include "cvi_isp.h"
 #include "cvi_sns_ctrl.h"
+
+#ifdef V4L2_ISP_ENABLE
+#include "cvi_isp_v4l2.h"
+#define SAMPLE_PRT(fmt...)                                      \
+	do {                                                        \
+		printf("[%s]-%d: ", __func__, __LINE__);                \
+		printf(fmt);                                            \
+	} while (0)
+#else
 #include "sample_comm.h"
+#endif
 
 #define DELAY_500MS() (usleep(500 * 1000))
 #define AAA_LIMIT(var, min, max) ((var) = ((var) < (min)) ? (min) : (((var) > (max)) ? (max) : (var)))
@@ -188,7 +198,11 @@ static void apply_sensor_default_blc(CVI_U8 sID)
 static void init_sensor_info(void)
 {
 	for (int i = 0; i < MAX_SENSOR_NUM; i++) {
+#ifdef V4L2_ISP_ENABLE
+		pstSnsObj[i] = get_sensor_obj(i);
+#else
 		pstSnsObj[i] = SAMPLE_COMM_ISP_GetSnsObj(i);
+#endif
 		if (pstSnsObj[i] != CVI_NULL) {
 			pstSnsObj[i]->pfnExpSensorCb(&stSensorExpFunc[i]);
 			apply_sensor_default_blc(i);

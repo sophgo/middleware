@@ -776,15 +776,31 @@ CVI_S32 CVI_AO_SetVolume(AUDIO_DEV AoDevId, CVI_S32 s32VolumeDb)
 	ACODEC_VOL_CTRL vol_ctrl;
 #ifdef ARCH_CV183X
 	printf("range 0~15 (each step 1.5db)[15-0, 0:mute], enter[%d]\n", s32VolumeDb);
+	if (s32VolumeDb < 0 || s32VolumeDb > 15) {
+		log_error("Invalid usage\n");
+		log_error("s32VolumeDb  0(low)~15(max) integer number\n");
+		return CVI_FAILURE;
+	}
 #else
 	printf("range 0~32[32-0, 0:mute], enter[%d]\n", s32VolumeDb);
+	if (s32VolumeDb < 0 || s32VolumeDb > 32) {
+		log_error("Invalid usage\n");
+		log_error("s32VolumeDb  0(low)~32(max) integer number\n");
+		return CVI_FAILURE;
+	}
 #endif
 
-	UNUSED_REF(AoDevId);
-	fdAcodec_dac = open(ACODEC_DAC, O_RDWR);
+	if (AoDevId == 0) {
+		fdAcodec_dac = open(ACODEC_DAC0, O_RDWR);
+	} else if (AoDevId == 1) {
+		fdAcodec_dac = open(ACODEC_DAC1, O_RDWR);
+	} else {
+		log_error("Invalid AoDevId:%d\n", AoDevId);
+		return CVI_FAILURE;
+	}
 
 	if (fdAcodec_dac < 0) {
-		log_error("%s: can't open Acodec,%s\n", __func__, ACODEC_DAC);
+		log_error("%s: can't open Acodec,%s\n", __func__, AoDevId == 0 ? ACODEC_DAC0 : ACODEC_DAC1);
 
 		if (fdAcodec_dac != -1)
 			close(fdAcodec_dac);
@@ -851,16 +867,22 @@ CVI_S32 CVI_AO_GetVolume(AUDIO_DEV AoDevId, CVI_S32 *ps32VolumeDb)
 	ACODEC_VOL_CTRL vol_ctrl_R;
 	CVI_S32 fdAcodec_dac = -1;
 
-	UNUSED_REF(AoDevId);
 #ifdef ARCH_CV183X
 	printf("range 0~15, each step 1.5db\n");
 #else
 	printf("range 0~32\n");
 #endif
-	fdAcodec_dac = open(ACODEC_DAC, O_RDWR);
+	if (AoDevId == 0) {
+		fdAcodec_dac = open(ACODEC_DAC0, O_RDWR);
+	} else if (AoDevId == 1) {
+		fdAcodec_dac = open(ACODEC_DAC1, O_RDWR);
+	} else {
+		log_error("Invalid AoDevId:%d\n", AoDevId);
+		return CVI_FAILURE;
+	}
 
 	if (fdAcodec_dac < 0) {
-		log_error("%s: can't open Acodec,%s\n", __func__, ACODEC_DAC);
+		log_error("%s: can't open Acodec,%s\n", __func__, AoDevId == 0 ? ACODEC_DAC0 : ACODEC_DAC1);
 		return CVI_FAILURE;
 	}
 
@@ -972,10 +994,17 @@ CVI_S32 CVI_AO_SetTrackMode(AUDIO_DEV AoDevId,
 	gstAoInstance[AoDevId].enTrackMode = enTrackMode;
 
 	/* Step 2 set the track mode through ioctl */
-	fdAcodec_dac = open(ACODEC_DAC, O_RDWR);
+	if (AoDevId == 0) {
+		fdAcodec_dac = open(ACODEC_DAC0, O_RDWR);
+	} else if (AoDevId == 1) {
+		fdAcodec_dac = open(ACODEC_DAC1, O_RDWR);
+	} else {
+		log_error("Invalid AoDevId:%d\n", AoDevId);
+		return CVI_FAILURE;
+	}
 
 	if (fdAcodec_dac < 0) {
-		printf("%s: can't open Acodec,%s\n", __func__, ACODEC_DAC);
+		printf("%s: can't open Acodec,%s\n", __func__, AoDevId == 0 ? ACODEC_DAC0 : ACODEC_DAC1);
 		return CVI_FAILURE;
 	}
 
@@ -1117,18 +1146,31 @@ CVI_S32 CVI_AO_SetMute(AUDIO_DEV AoDevId, CVI_BOOL bEnable,
 		//set the default fade to false
 	}
 
-
-	fdAcodec_adc = open(ACODEC_ADC, O_RDWR);
+	if (AoDevId == 0) {
+		fdAcodec_adc = open(ACODEC_ADC0, O_RDWR);
+	} else if (AoDevId == 1) {
+		fdAcodec_adc = open(ACODEC_ADC1, O_RDWR);
+	} else {
+		log_error("Invalid AoDevId:%d\n", AoDevId);
+		return CVI_FAILURE;
+	}
 
 	if (fdAcodec_adc < 0) {
-		log_error("%s: can't open Acodec,%s\n", __func__, ACODEC_ADC);
+		log_error("%s: can't open Acodec,%s\n", __func__, AoDevId == 0 ? ACODEC_ADC0 : ACODEC_ADC1);
 		return CVI_ERR_AIO_NOT_PERM;
 	}
 
-	fdAcodec_dac = open(ACODEC_DAC, O_RDWR);
+	if (AoDevId == 0) {
+		fdAcodec_dac = open(ACODEC_DAC0, O_RDWR);
+	} else if (AoDevId == 1) {
+		fdAcodec_dac = open(ACODEC_DAC1, O_RDWR);
+	} else {
+		log_error("Invalid AoDevId:%d\n", AoDevId);
+		return CVI_FAILURE;
+	}
 
 	if (fdAcodec_dac < 0) {
-		log_error("%s: can't open Acodec,%s\n", __func__, ACODEC_DAC);
+		log_error("%s: can't open Acodec,%s\n", __func__, AoDevId == 0 ? ACODEC_DAC0 : ACODEC_DAC1);
 		return CVI_ERR_AIO_NOT_PERM;
 	}
 

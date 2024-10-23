@@ -61,6 +61,139 @@ static const IMX412_MODE_S g_astImx412_mode[IMX412_MODE_NUM] = {
 				.u32Step = 1,
 			},
 		},
+	[IMX412_MODE_12M30_WDR] = {
+		.name = "IMX412_12M30_WDR",
+		/* sef */
+		.astImg[0] = {
+			.stSnsSize = {
+				.u32Width = 4056,
+				.u32Height = 3040,
+			},
+			.stWndRect = {
+				.s32X = 12,
+				.s32Y = 20,
+				.u32Width = 4032,
+				.u32Height = 3000,
+			},
+			.stMaxSize = {
+				.u32Width = 4056,
+				.u32Height = 3040,
+			},
+		},
+		/* lef */
+		.astImg[1] = {
+			.stSnsSize = {
+				.u32Width = 4056,
+				.u32Height = 3040,
+			},
+			.stWndRect = {
+				.s32X = 12,
+				.s32Y = 20,
+				.u32Width = 4032,
+				.u32Height = 3000,
+			},
+			.stMaxSize = {
+				.u32Width = 4056,
+				.u32Height = 3040,
+			},
+		},
+		.f32MaxFps = 30,
+		.f32MinFps = 0.07, /* 0x8CA * 30 / 0xFFFFF */
+		.u32HtsDef = 0x11A0,	// reg 0x0342 0x0343	LINE_LENGTH_PCK
+		.u32VtsDef = 0xC1F,	// reg 0x0340 0x0341	FRM_LENGTH_LINES
+		.stAgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 62416,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.stAgain[1] = {
+			.u32Min = 1024,
+			.u32Max = 62416,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.stDgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 38485,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.stDgain[1] = {
+			.u32Min = 1024,
+			.u32Max = 38485,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.u16BRL = 3079,
+	},
+	[IMX412_MODE_8M30_WDR] = {
+		.name = "IMX412_8M30_WDR",
+		/* sef */
+		.astImg[0] = {
+			.stSnsSize = {
+				.u32Width = 4060,
+				.u32Height = 2288,
+			},
+			.stWndRect = {
+				.s32X = 14,
+				.s32Y = 0,
+				.u32Width = 4032,
+				.u32Height = 2288,
+			},
+			.stMaxSize = {
+				.u32Width = 4060,
+				.u32Height = 2288,
+			},
+		},
+		/* lef */
+		.astImg[1] = {
+			.stSnsSize = {
+				.u32Width = 4060,
+				.u32Height = 2288,
+			},
+			.stWndRect = {
+				.s32X = 14,
+				.s32Y = 0,
+				.u32Width = 4032,
+				.u32Height = 2288,
+			},
+			.stMaxSize = {
+				.u32Width = 4060,
+				.u32Height = 2288,
+			},
+		},
+		.f32MaxFps = 30,
+		.f32MinFps = 0.07,
+		.u32HtsDef = 0x11A0,	// reg 0x0342 0x0343	LINE_LENGTH_PCK
+		.u32VtsDef = 0xC1D,	// reg 0x0340 0x0341	FRM_LENGTH_LINES
+		.stAgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 62416,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.stAgain[1] = {
+			.u32Min = 1024,
+			.u32Max = 62416,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.stDgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 38485,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.stDgain[1] = {
+			.u32Min = 1024,
+			.u32Max = 38485,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.u16BRL = 2325,
+	},
+
 };
 
 static ISP_CMOS_NOISE_CALIBRATION_S g_stIspNoiseCalibratio = {.CalibrationCoef = {

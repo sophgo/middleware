@@ -99,7 +99,6 @@
 #define VI_DEV_NAME   "/dev/soph-vi"
 #define VPSS_DEV_NAME "/dev/soph-vpss"
 #define LDC_DEV_NAME  "/dev/soph-ldc"
-#define DWA_DEV_NAME  "/dev/soph-dwa"
 #define VO_DEV_NAME   "/dev/soph-vo"
 #define RGN_DEV_NAME  "/dev/soph-rgn"
 #define DPU_DEV_NAME  "/dev/soph-dpu"
@@ -130,7 +129,7 @@ enum vdev_type {
 	VDEV_TYPE_DISP,
 	VDEV_TYPE_LDC,
 	VDEV_TYPE_RGN,
-	VDEV_TYPE_DWA,
+	// VDEV_TYPE_DWA,
 	VDEV_TYPE_DPU,
 	VDEV_TYPE_HDMI,
 	VDEV_TYPE_MAX,
@@ -203,58 +202,6 @@ struct vdev {
 #endif
 // -------- If you want to change these interfaces, please contact the isp team. --------
 
-enum cvi_rgn_format {
-	CVI_RGN_FMT_ARGB8888,
-	CVI_RGN_FMT_ARGB4444,
-	CVI_RGN_FMT_ARGB1555,
-	CVI_RGN_FMT_256LUT,
-	CVI_RGN_FMT_16LUT,
-	CVI_RGN_FMT_FONT,
-	CVI_RGN_FMT_MAX
-};
-
-struct cvi_rect {
-	CVI_S32 left;
-	CVI_S32 top;
-	CVI_U32 width;
-	CVI_U32 height;
-};
-
-struct cvi_rgn_param {
-	enum cvi_rgn_format fmt;
-	struct cvi_rect rect;
-	CVI_U32 stride;
-	CVI_U64 phy_addr;
-};
-
-struct cvi_rgn_lut_cfg {
-	CVI_U16 lut_length;
-	CVI_U16 lut_addr[256];
-	CVI_U8 lut_layer;
-	// CVI_U8 rgnex_en;
-	CVI_U8 is_updated;
-};
-
-struct cvi_rgn_odec {
-	CVI_U8 enable;
-	CVI_U8 attached_ow;
-	CVI_U8 canvas_updated;
-	CVI_U32 bso_sz;
-	CVI_U64 canvas_mutex_lock;
-	CVI_U64 rgn_canvas_waitq;
-	CVI_U64 rgn_canvas_doneq;
-};
-
-struct rgn_cfg {
-	struct cvi_rgn_param param[8];
-	struct cvi_rgn_lut_cfg rgn_lut_cfg;
-	struct cvi_rgn_odec odec;
-	CVI_U8 num_of_rgn;
-	CVI_U8 hscale_x2;
-	CVI_U8 vscale_x2;
-	CVI_U8 colorkey_en;
-	CVI_U32 colorkey;
-};
 typedef struct {
 	CVI_S32 proc_amp[PROC_AMP_MAX];
 } VPSS_BIN_DATA;

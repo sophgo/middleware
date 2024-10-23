@@ -10,12 +10,13 @@
 #include "cvi_buffer.h"
 #include "cvi_sys.h"
 #include "cvi_vb.h"
-#include "cvi_dwa.h"
+#include "cvi_gdc.h"
 #include "sample_fisheye_comm.h"
 
-#define DWA_EXT_OP_CLR_VB (1)
+#define LDC_EXT_OP_CLR_VB (1)
+#define LDC_DBG_VERPOSE (0)
 
-CVI_CHAR * DWAGetFmtName(PIXEL_FORMAT_E enPixFmt)
+CVI_CHAR * GDCGetFmtName(PIXEL_FORMAT_E enPixFmt)
 {
 	switch (enPixFmt)
 	{
@@ -71,18 +72,174 @@ CVI_CHAR * DWAGetFmtName(PIXEL_FORMAT_E enPixFmt)
 	}
 }
 
-CVI_S32 DWA_COMM_PrepareFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, VIDEO_FRAME_INFO_S *pstVideoFrame)
+CVI_S32 GDC_COMM_PrepareFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_BOOL bEnHwLDC)
 {
 	VB_BLK blk;
 	VB_CAL_CONFIG_S stVbCalConfig;
 
 	if (pstVideoFrame == CVI_NULL) {
-		DWA_UT_PRT("Null pointer!\n");
+		GDC_UT_PRT("Null pointer!\n");
+		return CVI_FAILURE;
+	}
+
+	if (bEnHwLDC)
+		COMMON_GetPicBufferConfig(stSize->u32Width, stSize->u32Height, enPixelFormat, DATA_BITWIDTH_8
+			, COMPRESS_MODE_NONE, GDC_STRIDE_ALIGN, &stVbCalConfig);
+	else
+		COMMON_GetPicBufferConfig(stSize->u32Width, stSize->u32Height, enPixelFormat, DATA_BITWIDTH_8
+			, COMPRESS_MODE_NONE, DWA_STRIDE_ALIGN, &stVbCalConfig);
+
+	memset(pstVideoFrame, 0, sizeof(*pstVideoFrame));
+	pstVideoFrame->stVFrame.enCompressMode = COMPRESS_MODE_NONE;
+	pstVideoFrame->stVFrame.enPixelFormat = enPixelFormat;
+	pstVideoFrame->stVFrame.enVideoFormat = VIDEO_FORMAT_LINEAR;
+	pstVideoFrame->stVFrame.enColorGamut = COLOR_GAMUT_BT601;
+	pstVideoFrame->stVFrame.u32Width = stSize->u32Width;
+	pstVideoFrame->stVFrame.u32Height = stSize->u32Height;
+	pstVideoFrame->stVFrame.u32Stride[0] = stVbCalConfig.u32MainStride;
+	pstVideoFrame->stVFrame.u32Stride[1] = stVbCalConfig.u32CStride;
+	pstVideoFrame->stVFrame.u32TimeRef = 0;
+	pstVideoFrame->stVFrame.u64PTS = 0;
+	pstVideoFrame->stVFrame.enDynamicRange = DYNAMIC_RANGE_SDR8;
+
+	blk = CVI_VB_GetBlock(VB_INVALID_POOLID, stVbCalConfig.u32VBSize);
+	if (blk == VB_INVALID_HANDLE) {
+		GDC_UT_PRT("Can't acquire vb block\n");
+		return CVI_FAILURE;
+	}
+
+	pstVideoFrame->u32PoolId = CVI_VB_Handle2PoolId(blk);
+	pstVideoFrame->stVFrame.u32Length[0] = stVbCalConfig.u32MainYSize;
+	pstVideoFrame->stVFrame.u32Length[1] = stVbCalConfig.u32MainCSize;
+	pstVideoFrame->stVFrame.u64PhyAddr[0] = CVI_VB_Handle2PhysAddr(blk);
+	pstVideoFrame->stVFrame.u64PhyAddr[1] = pstVideoFrame->stVFrame.u64PhyAddr[0]
+		+ ALIGN(stVbCalConfig.u32MainYSize, stVbCalConfig.u16AddrAlign);
+	if (stVbCalConfig.plane_num == 3) {
+		pstVideoFrame->stVFrame.u32Stride[2] = stVbCalConfig.u32CStride;
+		pstVideoFrame->stVFrame.u32Length[2] = stVbCalConfig.u32MainCSize;
+		pstVideoFrame->stVFrame.u64PhyAddr[2] = pstVideoFrame->stVFrame.u64PhyAddr[1]
+			+ ALIGN(stVbCalConfig.u32MainCSize, stVbCalConfig.u16AddrAlign);
+	}
+
+#if LDC_EXT_OP_CLR_VB
+		for (int i = 0; i < stVbCalConfig.plane_num; ++i) {
+			if (pstVideoFrame->stVFrame.u32Length[i] == 0)
+				continue;
+			pstVideoFrame->stVFrame.pu8VirAddr[i] = CVI_SYS_Mmap(pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
+
+#if LDC_DBG_VERPOSE
+			GDC_UT_PRT("plane(%d): paddr(%#"PRIx64") vaddr(%p) stride(%d) plane_len(%d)\n", i
+				, pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.pu8VirAddr[i]
+				, pstVideoFrame->stVFrame.u32Stride[i], pstVideoFrame->stVFrame.u32Length[i]);
+#endif
+			memset(pstVideoFrame->stVFrame.pu8VirAddr[i], 0, pstVideoFrame->stVFrame.u32Length[i]);
+			CVI_SYS_IonFlushCache(pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.pu8VirAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
+			CVI_SYS_Munmap(pstVideoFrame->stVFrame.pu8VirAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
+		}
+#endif
+
+	return CVI_SUCCESS;
+}
+
+
+CVI_S32 GDCFileToFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat,
+		CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_BOOL bEnHwLDC)
+{
+	VB_BLK blk;
+	CVI_U32 u32len;
+	CVI_S32 Ret;
+	int i;
+	FILE *fp;
+	SIZE_S CfgSize;
+	VB_CAL_CONFIG_S stVbCalConfig;
+	CVI_U32 u32Length[3] = {0};
+
+	if (!pstVideoFrame) {
+		GDC_UT_PRT("pstVideoFrame is null\n");
+		return CVI_FAILURE_ILLEGAL_PARAM;
+	}
+
+	if (!filename) {
+		GDC_UT_PRT("filename is null\n");
+		return CVI_FAILURE_ILLEGAL_PARAM;
+	}
+
+	if (bEnHwLDC) {
+		CfgSize.u32Width = ALIGN(stSize->u32Width, GDC_STRIDE_ALIGN);
+		CfgSize.u32Height = ALIGN(stSize->u32Height, GDC_STRIDE_ALIGN);
+	} else {
+		CfgSize.u32Width = stSize->u32Width;
+		CfgSize.u32Height = stSize->u32Height;
+	}
+
+
+	Ret = GDC_COMM_PrepareFrame(&CfgSize, enPixelFormat, pstVideoFrame, bEnHwLDC);
+	if (Ret != CVI_SUCCESS) {
+		GDC_UT_PRT("GDC_COMM_PrepareFrame FAIL,get VB fail\n");
+		return CVI_FAILURE;
+	}
+
+	blk = CVI_VB_PhysAddr2Handle(pstVideoFrame->stVFrame.u64PhyAddr[0]);
+
+	//open data file & fread into the mmap address
+	fp = fopen(filename, "r");
+	if (fp == CVI_NULL) {
+		GDC_UT_PRT("open data file[%s] error\n", filename);
+		CVI_VB_ReleaseBlock(blk);
+		return CVI_FAILURE;
+	}
+
+	COMMON_GetPicBufferConfig(stSize->u32Width, stSize->u32Height, enPixelFormat, DATA_BITWIDTH_8
+		, COMPRESS_MODE_NONE, 1, &stVbCalConfig);
+	u32Length[0] = stVbCalConfig.u32MainYSize;
+	u32Length[1] = stVbCalConfig.u32MainCSize;
+	if (stVbCalConfig.plane_num == 3)
+		u32Length[2] = stVbCalConfig.u32MainCSize;
+
+	for (i = 0; i < 3; ++i) {
+		if (pstVideoFrame->stVFrame.u32Length[i] == 0)
+			continue;
+		pstVideoFrame->stVFrame.pu8VirAddr[i]
+			= CVI_SYS_Mmap(pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
+
+#if LDC_DBG_VERPOSE
+		GDC_UT_PRT("plane(%d): paddr(%#"PRIx64") vaddr(%p) stride(%d) plane_len(%d)\n",
+			   i, pstVideoFrame->stVFrame.u64PhyAddr[i],
+			   pstVideoFrame->stVFrame.pu8VirAddr[i],
+			   pstVideoFrame->stVFrame.u32Stride[i],
+			   pstVideoFrame->stVFrame.u32Length[i]);
+#endif
+		//u32len = fread(pstVideoFrame->stVFrame.pu8VirAddr[i], pstVideoFrame->stVFrame.u32Length[i], 1, fp);
+		u32len = fread(pstVideoFrame->stVFrame.pu8VirAddr[i], u32Length[i], 1, fp);
+		if (u32len <= 0) {
+			GDC_UT_PRT("file to frame: fread plane%d error\n", i);
+			CVI_VB_ReleaseBlock(blk);
+			Ret = CVI_FAILURE;
+			break;
+		}
+		CVI_SYS_Munmap(pstVideoFrame->stVFrame.pu8VirAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
+	}
+
+	if (Ret)
+		CVI_SYS_Munmap(pstVideoFrame->stVFrame.pu8VirAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
+
+	fclose(fp);
+
+	return Ret;
+}
+
+CVI_S32 GDC_COMM_PrepareFrame2(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, VIDEO_FRAME_INFO_S *pstVideoFrame)
+{
+	VB_BLK blk;
+	VB_CAL_CONFIG_S stVbCalConfig;
+
+	if (pstVideoFrame == CVI_NULL) {
+		GDC_UT_PRT("Null pointer!\n");
 		return CVI_FAILURE;
 	}
 
 	//COMMON_GetPicBufferConfig(stSize->u32Width, stSize->u32Height, enPixelFormat, DATA_BITWIDTH_8
-		//, COMPRESS_MODE_NONE, DWA_STRIDE_ALIGN, &stVbCalConfig);
+		//, COMPRESS_MODE_NONE, GDC_STRIDE_ALIGN, &stVbCalConfig);
 	COMMON_GetPicBufferConfig(stSize->u32Width, stSize->u32Height, enPixelFormat, DATA_BITWIDTH_8
 		, COMPRESS_MODE_NONE, 1, &stVbCalConfig);
 
@@ -101,7 +258,7 @@ CVI_S32 DWA_COMM_PrepareFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, VIDE
 
 	blk = CVI_VB_GetBlock(VB_INVALID_POOLID, stVbCalConfig.u32VBSize);
 	if (blk == VB_INVALID_HANDLE) {
-		DWA_UT_PRT("Can't acquire vb block\n");
+		GDC_UT_PRT("Can't acquire vb block\n");
 		return CVI_FAILURE;
 	}
 
@@ -118,26 +275,29 @@ CVI_S32 DWA_COMM_PrepareFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, VIDE
 			+ ALIGN(stVbCalConfig.u32MainCSize, stVbCalConfig.u16AddrAlign);
 	}
 
-#if DWA_EXT_OP_CLR_VB
-	for (int i = 0; i < 3; ++i) {
-		if (pstVideoFrame->stVFrame.u32Length[i] == 0)
-			continue;
-		pstVideoFrame->stVFrame.pu8VirAddr[i] = CVI_SYS_Mmap(pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
-		DWA_UT_PRT("plane(%d): paddr(%#"PRIx64") vaddr(%p) stride(%d) plane_len(%d)\n", i
-			, pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.pu8VirAddr[i]
-			, pstVideoFrame->stVFrame.u32Stride[i], pstVideoFrame->stVFrame.u32Length[i]);
+#if LDC_EXT_OP_CLR_VB
+		for (int i = 0; i < 3; ++i) {
+			if (pstVideoFrame->stVFrame.u32Length[i] == 0)
+				continue;
+			pstVideoFrame->stVFrame.pu8VirAddr[i] = CVI_SYS_Mmap(pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
 
-		memset(pstVideoFrame->stVFrame.pu8VirAddr[i], 0, pstVideoFrame->stVFrame.u32Length[i]);
-		CVI_SYS_IonFlushCache(pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.pu8VirAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
-		CVI_SYS_Munmap(pstVideoFrame->stVFrame.pu8VirAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
-	}
+#if LDC_DBG_VERPOSE
+			GDC_UT_PRT("plane(%d): paddr(%#"PRIx64") vaddr(%p) stride(%d) plane_len(%d)\n",
+				   i, pstVideoFrame->stVFrame.u64PhyAddr[i],
+				   pstVideoFrame->stVFrame.pu8VirAddr[i],
+				   pstVideoFrame->stVFrame.u32Stride[i],
+				   pstVideoFrame->stVFrame.u32Length[i]);
+#endif
+			memset(pstVideoFrame->stVFrame.pu8VirAddr[i], 0, pstVideoFrame->stVFrame.u32Length[i]);
+			CVI_SYS_IonFlushCache(pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.pu8VirAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
+			CVI_SYS_Munmap(pstVideoFrame->stVFrame.pu8VirAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
+		}
 #endif
 
 	return CVI_SUCCESS;
 }
 
-
-CVI_S32 DWAFileToFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat,
+CVI_S32 GDCFileToFrame2(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat,
 		CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVideoFrame)
 {
 	VB_BLK blk;
@@ -147,18 +307,18 @@ CVI_S32 DWAFileToFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat,
 	FILE *fp;
 
 	if (!pstVideoFrame) {
-		DWA_UT_PRT("pstVideoFrame is null\n");
+		GDC_UT_PRT("pstVideoFrame is null\n");
 		return CVI_FAILURE_ILLEGAL_PARAM;
 	}
 
 	if (!filename) {
-		DWA_UT_PRT("filename is null\n");
+		GDC_UT_PRT("filename is null\n");
 		return CVI_FAILURE_ILLEGAL_PARAM;
 	}
 
-	Ret = DWA_COMM_PrepareFrame(stSize, enPixelFormat, pstVideoFrame);
+	Ret = GDC_COMM_PrepareFrame2(stSize, enPixelFormat, pstVideoFrame);
 	if (Ret != CVI_SUCCESS) {
-		DWA_UT_PRT("DWA_COMM_PrepareFrame FAIL,get VB fail\n");
+		GDC_UT_PRT("GDC_COMM_PrepareFrame FAIL,get VB fail\n");
 		return CVI_FAILURE;
 	}
 
@@ -167,7 +327,7 @@ CVI_S32 DWAFileToFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat,
 	//open data file & fread into the mmap address
 	fp = fopen(filename, "r");
 	if (fp == CVI_NULL) {
-		DWA_UT_PRT("open data file[%s] error\n", filename);
+		GDC_UT_PRT("open data file[%s] error\n", filename);
 		CVI_VB_ReleaseBlock(blk);
 		return CVI_FAILURE;
 	}
@@ -177,8 +337,9 @@ CVI_S32 DWAFileToFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat,
 			continue;
 		pstVideoFrame->stVFrame.pu8VirAddr[i]
 			= CVI_SYS_Mmap(pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
-#if 0
-		DWA_UT_PRT("plane(%d): paddr(%#"PRIx64") vaddr(%p) stride(%d) plane_len(%d)\n",
+
+#if LDC_DBG_VERPOSE
+		GDC_UT_PRT("plane(%d): paddr(%#"PRIx64") vaddr(%p) stride(%d) plane_len(%d)\n",
 			   i, pstVideoFrame->stVFrame.u64PhyAddr[i],
 			   pstVideoFrame->stVFrame.pu8VirAddr[i],
 			   pstVideoFrame->stVFrame.u32Stride[i],
@@ -186,7 +347,7 @@ CVI_S32 DWAFileToFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat,
 #endif
 		u32len = fread(pstVideoFrame->stVFrame.pu8VirAddr[i], pstVideoFrame->stVFrame.u32Length[i], 1, fp);
 		if (u32len <= 0) {
-			DWA_UT_PRT("file to frame: fread plane%d error\n", i);
+			GDC_UT_PRT("file to frame: fread plane%d error\n", i);
 			CVI_VB_ReleaseBlock(blk);
 			Ret = CVI_FAILURE;
 			break;
@@ -202,7 +363,7 @@ CVI_S32 DWAFileToFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat,
 	return Ret;
 }
 
-CVI_S32 DWAFrameSaveToFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVideoFrame)
+CVI_S32 GDCFrameSaveToFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVideoFrame)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	FILE *fp;
@@ -210,18 +371,18 @@ CVI_S32 DWAFrameSaveToFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVide
 	int i;
 
 	if (!pstVideoFrame) {
-		DWA_UT_PRT("pstVideoFrame is null\n");
+		GDC_UT_PRT("pstVideoFrame is null\n");
 		return CVI_FAILURE_ILLEGAL_PARAM;
 	}
 
 	if (!filename) {
-		DWA_UT_PRT("filename is null\n");
+		GDC_UT_PRT("filename is null\n");
 		return CVI_FAILURE_ILLEGAL_PARAM;
 	}
 
 	fp = fopen(filename, "w");
 	if (fp == CVI_NULL) {
-		DWA_UT_PRT("open data file(%s) error\n", filename);
+		GDC_UT_PRT("open data file(%s) error\n", filename);
 		return CVI_FAILURE;
 	}
 
@@ -237,17 +398,17 @@ CVI_S32 DWAFrameSaveToFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVide
 		pstVideoFrame->stVFrame.pu8VirAddr[i]
 			= CVI_SYS_Mmap(pstVideoFrame->stVFrame.u64PhyAddr[i], pstVideoFrame->stVFrame.u32Length[i]);
 
-#if 0
-		DWA_UT_PRT("plane(%d): paddr(%#"PRIx64") vaddr(%p) stride(%d)\n",
+#if LDC_DBG_VERPOSE
+		GDC_UT_PRT("plane(%d): paddr(%#"PRIx64") vaddr(%p) stride(%d)\n",
 			   i, pstVideoFrame->stVFrame.u64PhyAddr[i],
 			   pstVideoFrame->stVFrame.pu8VirAddr[i],
 			   pstVideoFrame->stVFrame.u32Stride[i]);
-		DWA_UT_PRT(" data_len(%d) plane_len(%d)\n",
+		GDC_UT_PRT(" data_len(%d) plane_len(%d)\n",
 			      u32DataLen, pstVideoFrame->stVFrame.u32Length[i]);
 #endif
 		u32len = fwrite(pstVideoFrame->stVFrame.pu8VirAddr[i], u32DataLen, 1, fp);
 		if (u32len <= 0) {
-			DWA_UT_PRT("fwrite data(%d) error\n", i);
+			GDC_UT_PRT("fwrite data(%d) error\n", i);
 			s32Ret = CVI_FAILURE;
 			break;
 		}
@@ -261,7 +422,7 @@ CVI_S32 DWAFrameSaveToFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVide
 	return s32Ret;
 }
 
-CVI_S32 DWACompareWithFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVideoFrame)
+CVI_S32 GDCCompareWithFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVideoFrame)
 {
 	FILE *fp;
 	CVI_U32 u32len, plane_len, data_len;
@@ -275,7 +436,7 @@ CVI_S32 DWACompareWithFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVide
 
 	COMMON_GetPicBufferConfig(pstVideoFrame->stVFrame.u32Width, pstVideoFrame->stVFrame.u32Height,
 		pstVideoFrame->stVFrame.enPixelFormat, DATA_BITWIDTH_8,
-		COMPRESS_MODE_NONE, DWA_STRIDE_ALIGN, &stVbCalConfig);
+		COMPRESS_MODE_NONE, GDC_STRIDE_ALIGN, &stVbCalConfig);
 
 	if (pstVideoFrame->stVFrame.enPixelFormat == PIXEL_FORMAT_RGB_888_PLANAR ||
 	    pstVideoFrame->stVFrame.enPixelFormat == PIXEL_FORMAT_BGR_888_PLANAR ||
@@ -303,12 +464,14 @@ CVI_S32 DWACompareWithFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVide
 		u32ChromaData = 0;
 	}
 
-	DWA_UT_PRT("u32LumaSize(%d): u32ChromaSize(%d)\n",
+#if LDC_DBG_VERPOSE
+	GDC_UT_PRT("u32LumaSize(%d): u32ChromaSize(%d)\n",
 		stVbCalConfig.u32MainYSize, stVbCalConfig.u32MainCSize);
-	DWA_UT_PRT("u32LumaData(%d): u32ChromaData(%d)\n", u32LumaData, u32ChromaData);
+	GDC_UT_PRT("u32LumaData(%d): u32ChromaData(%d)\n", u32LumaData, u32ChromaData);
+#endif
 	fp = fopen(filename, "r");
 	if (fp == CVI_NULL) {
-		DWA_UT_PRT("open data file, %s, error\n", filename);
+		GDC_UT_PRT("open data file, %s, error\n", filename);
 		return CVI_FAILURE;
 	}
 
@@ -327,7 +490,7 @@ CVI_S32 DWACompareWithFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVide
 
 		u32len = fread(buffer, plane_len, 1, fp);
 		if (u32len <= 0) {
-			DWA_UT_PRT("fread data(%d) error\n", i);
+			GDC_UT_PRT("fread data(%d) error\n", i);
 			result = CVI_FAILURE;
 			unmapflag = 1;
 			break;
@@ -335,9 +498,9 @@ CVI_S32 DWACompareWithFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVide
 		// line by line check to avoid padding data mismatch problem.
 		for (CVI_U32 line = 0; line < data_height; ++line) {
 			if (memcmp(buffer + offset, pstVideoFrame->stVFrame.pu8VirAddr[i] + offset, data_len) != 0) {
-				DWA_UT_PRT("plane(%d) line(%d) offset(%d) data mismatch:\n",
+				GDC_UT_PRT("plane(%d) line(%d) offset(%d) data mismatch:\n",
 					      i, line, offset);
-				DWA_UT_PRT(" paddr(%#"PRIx64") vaddr(%p) stride(%d)\n",
+				GDC_UT_PRT(" paddr(%#"PRIx64") vaddr(%p) stride(%d)\n",
 					      pstVideoFrame->stVFrame.u64PhyAddr[i],
 					      pstVideoFrame->stVFrame.pu8VirAddr[i],
 					      pstVideoFrame->stVFrame.u32Stride[i]);
@@ -357,5 +520,54 @@ CVI_S32 DWACompareWithFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVide
 	free(buffer);
 
 	return result;
+}
+
+CVI_S32 gdc_load_src_mesh_coordinate(const CVI_CHAR *filename, int src_x_mesh_buf[][4], int src_y_mesh_buf[][4])
+{
+	FILE *fp;
+	int nbr_mesh, point, file_len;
+	int *isrc_x_mesh_tbl2, *isrc_y_mesh_tbl2;
+
+	if (!filename) {
+		GDC_UT_PRT("filename is null\n");
+		return -1;
+	}
+	if (!src_x_mesh_buf || !src_y_mesh_buf) {
+		GDC_UT_PRT("src_mesh_buf is null\n");
+		return -1;
+	}
+
+	fp = fopen(filename, "rb");
+	if (!fp) {
+		GDC_UT_PRT("fopen %s fail\n", filename);
+		return -1;
+	}
+
+	fseek(fp, 0, SEEK_END);
+	file_len = ftell(fp);
+	rewind(fp);
+
+	point = file_len >> 3;
+	nbr_mesh = point >> 2;
+
+	GDC_UT_PRT("point nbr_mesh: %d %d\n", point, nbr_mesh);
+
+	isrc_x_mesh_tbl2 = (int *)malloc(nbr_mesh * 4 * sizeof(int));
+	isrc_y_mesh_tbl2 = (int *)malloc(nbr_mesh * 4 * sizeof(int));
+
+	fread(isrc_x_mesh_tbl2, sizeof(int), nbr_mesh * 4, fp);
+	fread(isrc_y_mesh_tbl2, sizeof(int), nbr_mesh * 4, fp);
+	fclose(fp);
+
+	for (int i = 0; i < nbr_mesh; i++) {
+		for (int j = 0; j < 4; j++) {
+			src_x_mesh_buf[i][j] = isrc_x_mesh_tbl2[4 * i + j];
+			src_y_mesh_buf[i][j] = isrc_y_mesh_tbl2[4 * i + j];
+		}
+	}
+
+	free(isrc_x_mesh_tbl2);
+	free(isrc_y_mesh_tbl2);
+	return 0;
 }
 

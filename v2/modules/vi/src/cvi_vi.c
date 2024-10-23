@@ -14,7 +14,6 @@
 #include "cvi_vb.h"
 #include "cvi_sys.h"
 #include "gdc_mesh.h"
-#include "dwa_mesh.h"
 #include "vi_ioctl.h"
 #include "cvi_sns_ctrl.h"
 #include "dump_register.h"
@@ -276,49 +275,49 @@ CVI_S32 _vi_update_rotation_mesh(VI_PIPE ViPipe, VI_CHN ViChn, ROTATION_E enRota
 	return CVI_SUCCESS;
 }
 
-static CVI_S32 _vi_update_ldc_mesh(VI_PIPE ViPipe, VI_CHN ViChn,
-	const VI_LDC_ATTR_S *pstLDCAttr, CVI_U32 u32Width, CVI_U32 u32Height)
-{
-	CVI_U64 paddr;
-	CVI_VOID *vaddr;
-	CVI_S32 fd = get_vi_fd();
-	struct vi_chn_ldc_cfg cfg;
-	char mesh_name[128];
-	CVI_S32 s32Ret = CVI_SUCCESS;
-	struct cvi_gdc_mesh *pmesh = &g_vi_mesh[ViChn];
+// static CVI_S32 _vi_update_ldc_mesh(VI_PIPE ViPipe, VI_CHN ViChn,
+// 	const VI_LDC_ATTR_S *pstLDCAttr, CVI_U32 u32Width, CVI_U32 u32Height)
+// {
+// 	CVI_U64 paddr;
+// 	CVI_VOID *vaddr;
+// 	CVI_S32 fd = get_vi_fd();
+// 	struct vi_chn_ldc_cfg cfg;
+// 	char mesh_name[128];
+// 	CVI_S32 s32Ret = CVI_SUCCESS;
+// 	struct cvi_gdc_mesh *pmesh = &g_vi_mesh[ViChn];
 
-	cfg.ViPipe = ViPipe;
-	cfg.ViChn = ViChn;
-	cfg.stLDCAttr = *pstLDCAttr;
+// 	cfg.ViPipe = ViPipe;
+// 	cfg.ViChn = ViChn;
+// 	cfg.stLDCAttr = *pstLDCAttr;
 
-	snprintf(mesh_name, 128, "vi_%d_%d", ViPipe, ViChn);
-	s32Ret = CVI_GDC_GenLDCMesh(u32Width, u32Height, &pstLDCAttr->stAttr,
-			mesh_name, &paddr, &vaddr);
-	if (s32Ret != CVI_SUCCESS) {
-		CVI_TRACE_VI(CVI_DBG_ERR, "Chn(%d) gen mesh fail\n", ViChn);
-		return s32Ret;
-	}
+// 	snprintf(mesh_name, 128, "vi_%d_%d", ViPipe, ViChn);
+// 	s32Ret = CVI_GDC_GenLDCMesh(u32Width, u32Height, &pstLDCAttr->stAttr,
+// 			mesh_name, &paddr, &vaddr);
+// 	if (s32Ret != CVI_SUCCESS) {
+// 		CVI_TRACE_VI(CVI_DBG_ERR, "Chn(%d) gen mesh fail\n", ViChn);
+// 		return s32Ret;
+// 	}
 
-	CVI_TRACE_VI(CVI_DBG_DEBUG, "ViPipe(%d) ViChn(%d) mesh base(%#"PRIx64") vaddr(%p)\n"
-		, ViPipe, ViChn, paddr, vaddr);
+// 	CVI_TRACE_VI(CVI_DBG_DEBUG, "ViPipe(%d) ViChn(%d) mesh base(%#"PRIx64") vaddr(%p)\n"
+// 		, ViPipe, ViChn, paddr, vaddr);
 
-	if (pmesh->paddr && pmesh->vaddr) {
-		CVI_SYS_IonFree(pmesh->paddr, pmesh->vaddr);
-		pmesh->paddr = 0;
-		pmesh->vaddr = CVI_NULL;
-	}
+// 	if (pmesh->paddr && pmesh->vaddr) {
+// 		CVI_SYS_IonFree(pmesh->paddr, pmesh->vaddr);
+// 		pmesh->paddr = 0;
+// 		pmesh->vaddr = CVI_NULL;
+// 	}
 
-	pmesh->paddr = paddr;
-	pmesh->vaddr = vaddr;
+// 	pmesh->paddr = paddr;
+// 	pmesh->vaddr = vaddr;
 
-	cfg.meshHandle = paddr;
-	if (vi_sdk_set_chn_ldc(fd, &cfg) != CVI_SUCCESS) {
-		CVI_TRACE_VI(CVI_DBG_ERR, "VI Set Chn(%d) LDC fail\n", ViChn);
-		return CVI_FAILURE;
-	}
+// 	cfg.meshHandle = paddr;
+// 	if (vi_sdk_set_chn_ldc(fd, &cfg) != CVI_SUCCESS) {
+// 		CVI_TRACE_VI(CVI_DBG_ERR, "VI Set Chn(%d) LDC fail\n", ViChn);
+// 		return CVI_FAILURE;
+// 	}
 
-	return CVI_SUCCESS;
-}
+// 	return CVI_SUCCESS;
+// }
 
 CVI_S32 _cvi_vi_freeIonBuf(void)
 {
@@ -719,6 +718,28 @@ CVI_S32 CVI_VI_GetDevBindAttr(VI_DEV ViDev, VI_DEV_BIND_PIPE_S *pstDevBindAttr)
 	s32Ret = vi_sdk_get_dev_bind_attr(fd, ViDev, pstDevBindAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		CVI_TRACE_VI(CVI_DBG_ERR, "vi_sdk_get_dev_bind_attr ioctl failed 0x%x\n", s32Ret);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VI_SetDevUnbindAttr(VI_DEV ViDev)
+{
+	CVI_S32 fd = -1;
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	CHECK_VI_DEVID_VALID(ViDev);
+
+	fd = get_vi_fd();
+	if (fd < 0) {
+		CVI_TRACE_VI(CVI_DBG_ERR, "get_vi_fd open failed\n");
+		return CVI_ERR_VI_BUSY;
+	}
+
+	s32Ret = vi_sdk_set_dev_unbind_attr(fd, ViDev);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VI(CVI_DBG_ERR, "vi_sdk_set_dev_unbind_attr ioctl failed 0x%x\n", s32Ret);
 		return s32Ret;
 	}
 
@@ -1519,10 +1540,7 @@ CVI_S32 CVI_VI_DisableChn(VI_PIPE ViPipe, VI_CHN ViChn)
 
 		snprintf(mesh_name, 128, "vi_%d", ViChn);
 		vi_sdk_get_chn_ldc(fd, ViPipe, ViChn, &ldc_cfg);
-		if (ldc_cfg.stLDCAttr.stAttr.bEnHWLDC)
-			CVI_GDC_FreeCurTaskMesh(mesh_name);
-		else
-			CVI_DWA_FreeCurTaskMesh(mesh_name);
+		CVI_GDC_FreeCurTaskMesh(mesh_name);
 
 		g_vi_mesh[ViChn].paddr = CVI_NULL;
 		g_vi_mesh[ViChn].vaddr = CVI_NULL;
@@ -1738,82 +1756,94 @@ CVI_S32 CVI_VI_GetChnRotation(VI_PIPE ViPipe, VI_CHN ViChn, ROTATION_E *penRotat
 
 CVI_S32 CVI_VI_SetChnLDCAttr(VI_PIPE ViPipe, VI_CHN ViChn, const VI_LDC_ATTR_S *pstLDCAttr)
 {
-	CVI_S32 fd = -1;
-	CVI_S32 s32Ret = CVI_SUCCESS;
-	struct cvi_isp_sc_online online;
-	VI_CHN_ATTR_S stChnAttr;
-	struct vi_chn_rot_cfg rotCfg;
+	// CVI_S32 fd = -1;
+	// CVI_S32 s32Ret = CVI_SUCCESS;
+	// struct cvi_isp_sc_online online;
+	// VI_CHN_ATTR_S stChnAttr;
+	// struct vi_chn_rot_cfg rotCfg;
 
-	CHECK_VI_NULL_PTR(pstLDCAttr);
-	CHECK_VI_PIPEID_VALID(ViPipe);
-	CHECK_VI_CHNID_VALID(ViChn);
+	// CHECK_VI_NULL_PTR(pstLDCAttr);
+	// CHECK_VI_PIPEID_VALID(ViPipe);
+	// CHECK_VI_CHNID_VALID(ViChn);
 
-	fd = get_vi_fd();
+	// fd = get_vi_fd();
 
-	s32Ret = vi_sdk_get_chn_attr(fd, ViPipe, ViChn, &stChnAttr);
-	if (s32Ret != CVI_SUCCESS) {
-		CVI_TRACE_VI(CVI_DBG_ERR, "vi_sdk_get_chn_attr ioctl failed. errno 0x%x\n", s32Ret);
-		return s32Ret;
-	}
+	// s32Ret = vi_sdk_get_chn_attr(fd, ViPipe, ViChn, &stChnAttr);
+	// if (s32Ret != CVI_SUCCESS) {
+	// 	CVI_TRACE_VI(CVI_DBG_ERR, "vi_sdk_get_chn_attr ioctl failed. errno 0x%x\n", s32Ret);
+	// 	return s32Ret;
+	// }
 
-	CHECK_VI_GDC_FMT(stChnAttr.enPixelFormat);
+	// CHECK_VI_GDC_FMT(stChnAttr.enPixelFormat);
 
-	online.raw_num = ViPipe;
-	s32Ret = vi_get_online2sc(fd, &online);
-	if (s32Ret != CVI_SUCCESS) {
-		CVI_TRACE_VI(CVI_DBG_ERR, "sys busy.\n");
-		return CVI_ERR_VI_BUSY;
-	}
+	// online.raw_num = ViPipe;
+	// s32Ret = vi_get_online2sc(fd, &online);
+	// if (s32Ret != CVI_SUCCESS) {
+	// 	CVI_TRACE_VI(CVI_DBG_ERR, "sys busy.\n");
+	// 	return CVI_ERR_VI_BUSY;
+	// }
 
-	if (online.is_sc_online) {
-		CVI_TRACE_VI(CVI_DBG_ERR, "VI Rotation not support online2sc.\n");
-		return CVI_ERR_VI_NOT_SUPPORT;
-	}
+	// if (online.is_sc_online) {
+	// 	CVI_TRACE_VI(CVI_DBG_ERR, "VI Rotation not support online2sc.\n");
+	// 	return CVI_ERR_VI_NOT_SUPPORT;
+	// }
 
-	rotCfg.ViPipe = ViPipe;
-	rotCfg.ViChn = ViChn;
-	s32Ret = vi_sdk_get_chn_rotation(fd, &rotCfg);
-	if (s32Ret != CVI_SUCCESS) {
-		CVI_TRACE_VI(CVI_DBG_ERR, "vi_sdk_get_chn_rotation ioctl failed. errno 0x%x\n", s32Ret);
-		return s32Ret;
-	}
-	if (rotCfg.enRotation > 0) {
-		CVI_TRACE_VI(CVI_DBG_ERR, "set ldc fail, please add rotation to ldc.\n");
-		return CVI_ERR_VPSS_ILLEGAL_PARAM;
-	}
+	// rotCfg.ViPipe = ViPipe;
+	// rotCfg.ViChn = ViChn;
+	// s32Ret = vi_sdk_get_chn_rotation(fd, &rotCfg);
+	// if (s32Ret != CVI_SUCCESS) {
+	// 	CVI_TRACE_VI(CVI_DBG_ERR, "vi_sdk_get_chn_rotation ioctl failed. errno 0x%x\n", s32Ret);
+	// 	return s32Ret;
+	// }
+	// if (rotCfg.enRotation > 0) {
+	// 	CVI_TRACE_VI(CVI_DBG_ERR, "set ldc fail, please add rotation to ldc.\n");
+	// 	return CVI_ERR_VPSS_ILLEGAL_PARAM;
+	// }
 
-	if (pstLDCAttr->stAttr.enRotation == ROTATION_180) {
-		CVI_TRACE_VI(CVI_DBG_ERR, "not support ldc rotation(%d).\n", pstLDCAttr->stAttr.enRotation);
-		return CVI_ERR_VI_NOT_SUPPORT;
-	} else if (pstLDCAttr->stAttr.enRotation >= ROTATION_MAX) {
-		CVI_TRACE_VI(CVI_DBG_ERR, "Pipe(%d) Chn(%d) invalid ldc rotation(%d).\n"
-			, ViPipe, ViChn, pstLDCAttr->stAttr.enRotation);
-		return CVI_ERR_VPSS_ILLEGAL_PARAM;
-	}
+	// if (pstLDCAttr->stAttr.enRotation == ROTATION_180) {
+	// 	CVI_TRACE_VI(CVI_DBG_ERR, "not support ldc rotation(%d).\n", pstLDCAttr->stAttr.enRotation);
+	// 	return CVI_ERR_VI_NOT_SUPPORT;
+	// } else if (pstLDCAttr->stAttr.enRotation >= ROTATION_MAX) {
+	// 	CVI_TRACE_VI(CVI_DBG_ERR, "Pipe(%d) Chn(%d) invalid ldc rotation(%d).\n"
+	// 		, ViPipe, ViChn, pstLDCAttr->stAttr.enRotation);
+	// 	return CVI_ERR_VPSS_ILLEGAL_PARAM;
+	// }
 
-	return _vi_update_ldc_mesh(ViPipe, ViChn, pstLDCAttr,
-			stChnAttr.stSize.u32Width, stChnAttr.stSize.u32Height);
+	// return _vi_update_ldc_mesh(ViPipe, ViChn, pstLDCAttr,
+	// 		stChnAttr.stSize.u32Width, stChnAttr.stSize.u32Height);
+	UNUSED(ViPipe);
+	UNUSED(ViChn);
+	UNUSED(pstLDCAttr);
+
+	CVI_TRACE_VI(CVI_DBG_ERR, "vi not support ldc \n");
+
+	return CVI_ERR_VI_NOT_SUPPORT;
 }
 
 CVI_S32 CVI_VI_GetChnLDCAttr(VI_PIPE ViPipe, VI_CHN ViChn, VI_LDC_ATTR_S *pstLDCAttr)
 {
-	CVI_S32 fd = -1;
-	CVI_S32 s32Ret = CVI_SUCCESS;
-	struct vi_chn_ldc_cfg ldc_cfg;
+	// CVI_S32 fd = -1;
+	// CVI_S32 s32Ret = CVI_SUCCESS;
+	// struct vi_chn_ldc_cfg ldc_cfg;
 
-	CHECK_VI_NULL_PTR(pstLDCAttr);
-	CHECK_VI_PIPEID_VALID(ViPipe);
-	CHECK_VI_CHNID_VALID(ViChn);
+	// CHECK_VI_NULL_PTR(pstLDCAttr);
+	// CHECK_VI_PIPEID_VALID(ViPipe);
+	// CHECK_VI_CHNID_VALID(ViChn);
 
-	fd = get_vi_fd();
+	// fd = get_vi_fd();
 
-	s32Ret = vi_sdk_get_chn_ldc(fd, ViPipe, ViChn, &ldc_cfg);
-	if (s32Ret != CVI_SUCCESS) {
-		CVI_TRACE_VI(CVI_DBG_ERR, "vi_sdk_get_chn_ldc ioctl failed. errno 0x%x\n", s32Ret);
-		return s32Ret;
-	}
+	// s32Ret = vi_sdk_get_chn_ldc(fd, ViPipe, ViChn, &ldc_cfg);
+	// if (s32Ret != CVI_SUCCESS) {
+	// 	CVI_TRACE_VI(CVI_DBG_ERR, "vi_sdk_get_chn_ldc ioctl failed. errno 0x%x\n", s32Ret);
+	// 	return s32Ret;
+	// }
+	UNUSED(ViPipe);
+	UNUSED(ViChn);
+	UNUSED(pstLDCAttr);
 
-	return CVI_SUCCESS;
+	CVI_TRACE_VI(CVI_DBG_ERR, "vi not support ldc \n");
+
+	return CVI_ERR_VI_NOT_SUPPORT;
 }
 
 CVI_S32 CVI_VI_RegChnFlipMirrorCallBack(VI_PIPE ViPipe, VI_DEV ViDev, void *pvData)

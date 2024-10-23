@@ -159,7 +159,6 @@ typedef enum _DPU_TEST_OP {
 	DPU_MODE_FGS_MUX0_TEST,
 	DPU_MODE_FGS_MUX1_TEST,
 	DPU_MODE_SGBM_COSTMAP_TEST,
-	DPU_MODE_BTCOST_TEST,
 	DPU_MODE_AUTO_TEST = 100,
 	DPU_MODE_PRESS_TEST1 = 151,
 	DPU_MODE_PRESS_TEST2,
@@ -2661,6 +2660,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 			DPU_UT_PRT("sgbm_mux1 case fail\n");
 			return CVI_FAILURE;
 		}
+		size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height*2;
 		s32Ret = CompareWithFile(fileNameOut,fileNameResult,size);
 		if(s32Ret != CVI_SUCCESS){
 			DPU_UT_PRT("sgbm_mux1 CompareWithFile fail\n");
@@ -2721,6 +2721,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 			DPU_UT_PRT("online_mux1 case fail\n");
 			return CVI_FAILURE;
 		}
+		size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height*2;
 		s32Ret = CompareWithFile(fileNameOut,fileNameResult,size);
 		if(s32Ret != CVI_SUCCESS){
 			DPU_UT_PRT("online_mux1 CompareWithFile fail\n");
@@ -2741,6 +2742,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 			DPU_UT_PRT("online_mux2 case fail\n");
 			return CVI_FAILURE;
 		}
+		size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height*2;
 		s32Ret = CompareWithFile(fileNameOut,fileNameResult,size);
 		if(s32Ret != CVI_SUCCESS){
 			DPU_UT_PRT("online_mux2 CompareWithFile fail\n");
@@ -2781,6 +2783,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 			DPU_UT_PRT("fgs_mux1 case fail\n");
 			return CVI_FAILURE;
 		}
+		size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height*2;
 		s32Ret = CompareWithFile(fileNameOut,fileNameResult,size);
 		if(s32Ret != CVI_SUCCESS){
 			DPU_UT_PRT("fgs_mux1 CompareWithFile fail\n");
@@ -2788,7 +2791,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 		}
 		DPU_UT_PRT("fgs_mux1 case PASS!\n");
 		break;
-	case DPU_MODE_BTCOST_TEST:
+	case DPU_MODE_SGBM_COSTMAP_TEST:
 		set_attr_default();
 		grp_attr.enDpuMode =DPU_MODE_SGBM_MUX2;
 		grp_attr.bIsBtcostOut = 1;
@@ -2808,6 +2811,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 			DPU_UT_PRT("sgbm_costmap case fail\n");
 			return CVI_FAILURE;
 		}
+		size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height*128;
 		s32Ret = CompareWithFile(fileNameOutBtcost,fileNameResult,size);
 		if(s32Ret != CVI_SUCCESS){
 			DPU_UT_PRT("sgbm_costmap CompareWithFile fail\n");
@@ -2832,6 +2836,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 					DPU_UT_PRT("sgbm_mux0 case fail\n");
 					return CVI_FAILURE;
 				}
+				size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height;
 				break;
 
 			case 2:
@@ -2844,6 +2849,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 					DPU_UT_PRT("sgbm_mux1 case fail\n");
 					return CVI_FAILURE;
 				}
+				size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height*2;
 				break;
 
 			case 3:
@@ -2856,6 +2862,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 					DPU_UT_PRT("sgbm_mux2 case fail\n");
 					return CVI_FAILURE;
 				}
+				size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height;
 				break;
 			case 4:
 				strcat(fileNameOut,"online_mux0.bin");
@@ -2867,6 +2874,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 					DPU_UT_PRT("online_mux0 case fail\n");
 					return CVI_FAILURE;
 				}
+				size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height;
 				break;
 			case 5:
 				strcat(fileNameOut,"online_mux1.bin");
@@ -2878,6 +2886,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 					DPU_UT_PRT("online_mux1 case fail\n");
 					return CVI_FAILURE;
 				}
+				size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height*2;
 				break;
 			case 6:
 				strcat(fileNameOut,"online_mux2.bin");
@@ -2889,6 +2898,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 					DPU_UT_PRT("online_mux2 case fail\n");
 					return CVI_FAILURE;
 				}
+				size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height*2;
 				break;
 			case 7:
 				strcat(fileNameOut,"fgs_mux0.bin");
@@ -2900,9 +2910,10 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 					DPU_UT_PRT("fgs_mux0 case fail\n");
 					return CVI_FAILURE;
 				}
+				size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height;
 				break;
 			case 8:
-				strcat(fileNameOut,"fgs_mux2.bin");
+				strcat(fileNameOut,"fgs_mux1.bin");
 				strcpy(fileNameResult,FILE_RESULT_FGS_MUX1);
 				strcpy(fileNameInLeft,FILE_IN_LEFT);
 				strcpy(fileNameInRight,FILE_IN_SGBM_RESULT);
@@ -2911,6 +2922,7 @@ static CVI_S32 _dpu_handle_op(CVI_S32 op)
 					DPU_UT_PRT("fgs_mux1 case fail\n");
 					return CVI_FAILURE;
 				}
+				size =chn_attr.stImgSize.u32Width*chn_attr.stImgSize.u32Height*2;
 				break;
 
 			default:

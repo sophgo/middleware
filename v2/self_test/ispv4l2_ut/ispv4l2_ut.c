@@ -12,7 +12,7 @@
 #include <linux/videodev2.h>
 #include <vi_v4l2_uapi.h>
 #include <cvi_buffer.h>
-
+#include "ae_test.h"
 #include "devmem.h"
 #include "cvi_isp_v4l2.h"
 
@@ -22,7 +22,7 @@
 
 #define VIDEO_DEV_NUM 6
 #define REQ_BUFFER_NUM 6
-#define THREAD_LOOP_CNT 200
+#define THREAD_LOOP_CNT 1000
 
 static int v4l2_fd[VIDEO_DEV_NUM];
 static int test_dev_num;
@@ -30,8 +30,8 @@ static int is_wdr_mode = 0;
 static int is_dump_yuv = 1;
 static int is_run_isp_mw = 1;
 static int is_ispmw_init[VIDEO_DEV_NUM];
+static int is_init[VIDEO_DEV_NUM];
 static pthread_t g_video_thid[VIDEO_DEV_NUM];
-
 extern int test_sensor_ctrl(int dev);
 typedef struct VideoBuffer {
     void *start;
@@ -372,13 +372,13 @@ static void set_patgen(int is_patgen)
 			if (i == 0)
 				sprintf(param, "1");
 			else
-				sprintf(param, "%s,1", param);
+				strcat(param, ",1");
 		}
 		else {
 			if (i == 0)
 				sprintf(param, "0");
 			else
-				sprintf(param, "%s,0", param);
+				strcat(param, ",0");
 		}
 	}
 	sprintf(cmdstr, "echo %s > /sys/module/soph_ispv4l2/parameters/csi_patgen_en", param);
@@ -386,18 +386,12 @@ static void set_patgen(int is_patgen)
 	system(cmdstr);
 }
 
-static void *streamimg_thread(void *arg)
+static int stream_on(int dev)
 {
-	int dev = *(int *)arg;
 	int fd = v4l2_fd[dev];
 	struct v4l2_buffer buf;
 	enum v4l2_buf_type type;
-	int loop_cnt = 30;
 	int i = 0;
-
-	if (!is_dump_yuv) {
-		loop_cnt = THREAD_LOOP_CNT; //for stream test
-	}
 
 	if (!is_run_isp_mw) {
 		set_bypass_frm(fd, 20);
@@ -406,7 +400,7 @@ static void *streamimg_thread(void *arg)
 	if(!framebuf[dev][0].start) {
 		if (request_buffer(fd, dev) < 0) {
 			printf("request buffer fail\n");
-			return NULL;
+			return -1;
 		}
 	}
 
@@ -418,11 +412,11 @@ static void *streamimg_thread(void *arg)
 
 		if (ioctl (fd, VIDIOC_QUERYBUF, &buf) < 0) {
 			printf("query buffer fail\n");
-			return NULL;
+			return -1;
 		}
 		if(ioctl(fd, VIDIOC_QBUF, &buf) < 0) {
 			printf("dev0 fd(%d) qbuf_%d fail !\n", fd, i);
-			return NULL;
+			return -1;
 		}
 	}
 
@@ -430,7 +424,37 @@ static void *streamimg_thread(void *arg)
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if(ioctl(fd, VIDIOC_STREAMON, &type) < 0) {
 		printf("fd(%d) stream on fail !\n", fd);
-		return NULL;
+		return -1;
+	}
+	return 0;
+}
+
+static int stream_off(int dev)
+{
+	enum v4l2_buf_type type;
+	int fd = v4l2_fd[dev];
+	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+	if (ioctl(fd, VIDIOC_STREAMOFF, &type) < 0) {
+		printf("stream off fd(%d) fail !\n", fd);
+	}
+
+	free_buffer(fd, dev);
+
+	return 0;
+
+}
+
+static void *streamimg_thread(void *arg)
+{
+	int dev = *(int *)arg;
+	int fd = v4l2_fd[dev];
+	struct v4l2_buffer buf;
+	int loop_cnt = 30;
+	int i = 0;
+
+	if (!is_dump_yuv) {
+		loop_cnt = THREAD_LOOP_CNT; //for stream test
 	}
 
 	for (i = 0; i < loop_cnt; i++) {
@@ -467,12 +491,6 @@ static void *streamimg_thread(void *arg)
 			return NULL;
 		}
 	}
-
-	if(ioctl(fd, VIDIOC_STREAMOFF, &type) < 0) {
-		printf("stream off fd(%d) fail !\n", fd);
-	}
-
-	free_buffer(fd, dev);
 
 	return arg;
 }
@@ -564,8 +582,7 @@ static int _v4l2_ut_handle_op(int fd, int dev, int op)
 		int *arg = malloc(sizeof(int));
 		*arg = dev;
 		pthread_create(&g_video_thid[dev], NULL, streamimg_thread, arg);
-
-		ret = 1;
+		ret = 0;
 		break;
 	}
 	case 9:
@@ -579,6 +596,11 @@ static int _v4l2_ut_handle_op(int fd, int dev, int op)
 		break;
 	}
 	case 10:
+	{
+		ret = sensor_ae_test();
+		break;
+	}
+	case 11:
 	{
 		ret = test_get_raw_dump(fd, dev);
 		ret = test_get_yuv_dump(fd, dev);
@@ -625,6 +647,17 @@ static int handle_op(int op)
 	case 8:
 		test_dev_num = 6;
 		break;
+	case 9:
+		test_dev_num = 1;
+		is_dump_yuv = 0;
+		break;
+	case 10:
+		test_dev_num = 1;
+		is_dump_yuv = 0;
+		break;
+	case 11:
+		test_dev_num = 1;
+		break;
 	default:
 		return ret;
 	}
@@ -666,22 +699,33 @@ static int handle_op(int op)
 
 	// execute operation one by one
 	for (i = first_dev; i < test_dev_num; i++) {
-		if (v4l2_fd[i] <= 0)
+		if (v4l2_fd[i] <= 0 || is_init[i])
 			continue;
+		printf("stream on %d\n", i);
+		ret = stream_on(i);
+		if (ret)
+			return ret;
+		is_init[i] = 1;
+	}
 
+	for (i = first_dev; i < test_dev_num; i++) {
 		ret = _v4l2_ut_handle_op(v4l2_fd[i], i, op);
-		if (!ret) {
+		if (ret) {
 			return ret;
 		}
 	}
 
 	for (i = first_dev; i < test_dev_num; i++) {
 		void *thd_ret = NULL;
-		pthread_join(g_video_thid[i], &thd_ret);
-		if (!thd_ret) {
-			ret = -1;
-		} else {
+		if (!g_video_thid[i]) {
 			ret = 0;
+		} else {
+			pthread_join(g_video_thid[i], &thd_ret);
+			if (!thd_ret) {
+				ret = -1;
+			} else {
+				ret = 0;
+			}
 		}
 
 		printf("ispv4l2 ut dev[%d] op[%d] %s\n", i, op, ret == 0 ? "pass" : "fail");
@@ -714,10 +758,19 @@ int main(int argc, char **argv)
 			printf("7 : test 4 video output\n");
 			printf("8 : test 6 video output\n");
 			printf("9 : test ioctl\n");
+			printf("10 : AE debug\n");
+			printf("11 : dump test\n");
 			printf("255: exit\n");
 			scanf("%d", &op);
 			handle_op(op);
 		} while (op != 255);
+	}
+
+	for (n = 0; n < VIDEO_DEV_NUM; n++) {
+		if (v4l2_fd[n] > 0) {
+			stream_off(n);
+			is_init[n] = 0;
+		}
 	}
 
 	for(n = 0; n < VIDEO_DEV_NUM; n++) {

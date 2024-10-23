@@ -586,9 +586,9 @@ CVI_S32 SAMPLE_COMM_DPU_DwaInit(VB_CONFIG_S *stVbConf)
 	/************************************************
 	 * step2:  Init DWA
 	 ************************************************/
-	s32Ret = CVI_DWA_Init();
+	s32Ret = CVI_GDC_Init();
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_DWA_Init failed!\n");
+		SAMPLE_PRT("CVI_GDC_Init failed!\n");
 		s32Ret |= CVI_SYS_Exit();
 		s32Ret |= CVI_VB_Exit();
 		return s32Ret;
@@ -602,29 +602,29 @@ CVI_S32 SAMPLE_COMM_DPU_DwaStart(DWA_BASIC_PARAM *param)
 	CVI_S32 s32Ret;
 	LDC_ATTR_S LDCAttr;
 	ROTATION_E enRotation;
-	s32Ret = CVI_DWA_BeginJob(&param->hHandle);
+	s32Ret = CVI_GDC_BeginJob(&param->hHandle);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_DWA_BeginJob failed!\n");
+		SAMPLE_PRT("CVI_GDC_BeginJob failed!\n");
 		goto exit2;
 	}
 
-	s32Ret = CVI_DWA_SetJobIdentity(param->hHandle, &param->identity);
+	s32Ret = CVI_GDC_SetJobIdentity(param->hHandle, &param->identity);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_DWA_SetJobIdentity failed!\n");
+		SAMPLE_PRT("CVI_GDC_SetJobIdentity failed!\n");
 		goto exit2;
 	}
 
 	memcpy(&LDCAttr,&param->LDCAttr,sizeof(LDCAttr));
 	enRotation = 0;
-	s32Ret = CVI_DWA_AddLDCTask(param->hHandle, &param->stTask, &LDCAttr, enRotation);
+	s32Ret = CVI_GDC_AddLDCTask(param->hHandle, &param->stTask, &LDCAttr, enRotation);
 	if (s32Ret != CVI_SUCCESS) {
 		SAMPLE_PRT("dwa_basic_add_tsk. s32Ret: 0x%x !\n", s32Ret);
 		goto exit2;
 	}
 
-	s32Ret = CVI_DWA_EndJob(param->hHandle);
+	s32Ret = CVI_GDC_EndJob(param->hHandle);
 	if (s32Ret != CVI_SUCCESS) {
-		SAMPLE_PRT("CVI_DWA_EndJob failed!\n");
+		SAMPLE_PRT("CVI_GDC_EndJob failed!\n");
 		goto exit2;
 	}
 
@@ -638,10 +638,10 @@ CVI_S32 SAMPLE_COMM_DPU_DwaStart(DWA_BASIC_PARAM *param)
 exit2:
 	if (s32Ret != CVI_SUCCESS)
 		if (param->hHandle)
-			s32Ret |= CVI_DWA_CancelJob(param->hHandle);
-	s32Ret |= CVI_DWA_DeInit();
+			s32Ret |= CVI_GDC_CancelJob(param->hHandle);
+	s32Ret |= CVI_GDC_DeInit();
 
-	SAMPLE_PRT("CVI_DWA_DeInit fail.\n");
+	SAMPLE_PRT("CVI_GDC_DeInit fail.\n");
 
 
 	// param->inBlk = CVI_VB_PhysAddr2Handle(param->stTask.stImgIn.stVFrame.u64PhyAddr[0]);

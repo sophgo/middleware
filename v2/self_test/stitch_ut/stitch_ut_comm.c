@@ -152,7 +152,7 @@ CVI_S32 FileSendToStitch(STITCH_SRC_IDX src_id, SIZE_S *stSize, PIXEL_FORMAT_E e
 	fclose(fp);
 
 	STITCH_UT_PRT("read file done and send stitch frame.\n");
-	s32Ret = CVI_STITCH_SendFrame(src_id, &stVideoFrame, 1000);
+	s32Ret = CVI_STITCH_SendFrame(DEFAULT_GRP_ID, src_id, &stVideoFrame, 1000);
 	if (s32Ret != CVI_SUCCESS)
 		STITCH_UT_PRT("CVI_STITCH_SendFrame fail.\n");
 	STITCH_UT_PRT("send stitch frame done\n");
@@ -248,7 +248,7 @@ CVI_S32 FileSendToStitch2(STITCH_SRC_IDX src_id, SIZE_S *stSize, PIXEL_FORMAT_E 
 	fclose(fp);
 
 	STITCH_UT_PRT("read file done and send stitch frame[%d].\n", src_id);
-	s32Ret = CVI_STITCH_SendFrame(src_id, &stVideoFrame, 1000);
+	s32Ret = CVI_STITCH_SendFrame(DEFAULT_GRP_ID, src_id, &stVideoFrame, 1000);
 	if (s32Ret != CVI_SUCCESS)
 		STITCH_UT_PRT("CVI_STITCH_SendFrame fail.\n");
 	CVI_VB_ReleaseBlock(blk);
@@ -262,7 +262,7 @@ CVI_S32 FileSendToStitch2(STITCH_SRC_IDX src_id, SIZE_S *stSize, PIXEL_FORMAT_E 
 }
 
 
-CVI_S32 FileSendToStitchNoVb(STITCH_SRC_IDX src_id, SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, CVI_CHAR *filename, CVI_U64 *pu64PhyAddr, CVI_VOID **ppVirAddr)
+CVI_S32 FileSendToStitchNoVb(STITCH_SRC_IDX src_id, SIZE_S *stSize, PIXEL_FORMAT_E enPixelFormat, CVI_CHAR *filename, CVI_U64 *pu64PhyAddr, CVI_VOID **ppVirAddr, int grp_id)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	VIDEO_FRAME_INFO_S stVideoFrame;
@@ -341,7 +341,7 @@ CVI_S32 FileSendToStitchNoVb(STITCH_SRC_IDX src_id, SIZE_S *stSize, PIXEL_FORMAT
 	fclose(fp);
 
 	STITCH_UT_PRT("read file done and send stitch frame[%d].\n", src_id);
-	s32Ret = CVI_STITCH_SendFrame(src_id, &stVideoFrame, 1000);
+	s32Ret = CVI_STITCH_SendFrame(grp_id, src_id, &stVideoFrame, 1000);
 	if (s32Ret != CVI_SUCCESS)
 		STITCH_UT_PRT("CVI_STITCH_SendFrame fail.\n");
 

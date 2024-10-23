@@ -375,7 +375,7 @@ void pr2020_set_cvbs_ntsc_60(VI_PIPE ViPipe)
 
 	//Page1 vdec
 	pr2020_write_register(ViPipe, 0xff, 0x01);
-	pr2020_write_register(ViPipe, 0x00, 0xe4);
+	pr2020_write_register(ViPipe, 0x00, 0xe4);//no-video data, 0xe4: black, 0xe5: blue
 	pr2020_write_register(ViPipe, 0x01, 0x61);
 	pr2020_write_register(ViPipe, 0x02, 0x00);
 	pr2020_write_register(ViPipe, 0x03, 0x57);
@@ -607,7 +607,7 @@ void pr2020_set_cvbs_pal_50(VI_PIPE ViPipe)
 
 	//Page1 vdec
 	pr2020_write_register(ViPipe, 0xff, 0x01);
-	pr2020_write_register(ViPipe, 0x00, 0xe4);
+	pr2020_write_register(ViPipe, 0x00, 0xe4);//no-video data, 0xe4: black, 0xe5: blue
 	pr2020_write_register(ViPipe, 0x01, 0x61);
 	pr2020_write_register(ViPipe, 0x02, 0x00);
 	pr2020_write_register(ViPipe, 0x03, 0x57);
@@ -839,7 +839,7 @@ void pr2020_set_720p_25(VI_PIPE ViPipe)
 
 	//Page1 vdec
 	pr2020_write_register(ViPipe, 0xff, 0x01);
-	pr2020_write_register(ViPipe, 0x00, 0xe4);
+	pr2020_write_register(ViPipe, 0x00, 0xe4);//no-video data, 0xe4: black, 0xe5: blue
 	pr2020_write_register(ViPipe, 0x01, 0x61);
 	pr2020_write_register(ViPipe, 0x02, 0x00);
 	pr2020_write_register(ViPipe, 0x03, 0x57);
@@ -1071,7 +1071,7 @@ void pr2020_set_720p_30(VI_PIPE ViPipe)
 
 	//Page1 vdec
 	pr2020_write_register(ViPipe, 0xff, 0x01);
-	pr2020_write_register(ViPipe, 0x00, 0xe4);
+	pr2020_write_register(ViPipe, 0x00, 0xe4);//no-video data, 0xe4: black, 0xe5: blue
 	pr2020_write_register(ViPipe, 0x01, 0x61);
 	pr2020_write_register(ViPipe, 0x02, 0x00);
 	pr2020_write_register(ViPipe, 0x03, 0x57);
@@ -1304,7 +1304,7 @@ void pr2020_set_1080p_25(VI_PIPE ViPipe)
 
 	//Page1 vdec
 	pr2020_write_register(ViPipe, 0xff, 0x01);
-	pr2020_write_register(ViPipe, 0x00, 0xe4);
+	pr2020_write_register(ViPipe, 0x00, 0xe4);//no-video data, 0xe4: black, 0xe5: blue
 	pr2020_write_register(ViPipe, 0x01, 0x61);
 	pr2020_write_register(ViPipe, 0x02, 0x00);
 	pr2020_write_register(ViPipe, 0x03, 0x57);
@@ -1536,7 +1536,7 @@ void pr2020_set_1080p_30(VI_PIPE ViPipe)
 
 	//Page1 vdec
 	pr2020_write_register(ViPipe, 0xff, 0x01);
-	pr2020_write_register(ViPipe, 0x00, 0xe4);
+	pr2020_write_register(ViPipe, 0x00, 0xe4);//no-video data, 0xe4: black, 0xe5: blue
 	pr2020_write_register(ViPipe, 0x01, 0x61);
 	pr2020_write_register(ViPipe, 0x02, 0x00);
 	pr2020_write_register(ViPipe, 0x03, 0x57);

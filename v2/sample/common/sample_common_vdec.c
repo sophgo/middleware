@@ -852,8 +852,8 @@ CVI_S32 SAMPLE_COMM_VDEC_Start(vdecChnCtx *pvdchnCtx)
 	memset(&stChnAttr, 0, sizeof(VDEC_CHN_ATTR_S));
 	pstChnAttr->enType = psvdattr->enType;
 	pstChnAttr->enMode = psvdattr->enMode;
-	pstChnAttr->u32PicWidth = psvdattr->u32Width;
-	pstChnAttr->u32PicHeight = psvdattr->u32Height;
+	pstChnAttr->u32PicWidth = 0;
+	pstChnAttr->u32PicHeight = 0;
 	pstChnAttr->u32StreamBufSize = ALIGN(psvdattr->u32Width * psvdattr->u32Height, 0x4000);
 	printf("u32StreamBufSize = 0x%X\n", pstChnAttr->u32StreamBufSize);
 	pstChnAttr->u32FrameBufCnt = psvdattr->u32FrameBufCnt;
