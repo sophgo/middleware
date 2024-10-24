@@ -11,15 +11,13 @@ result=$TEST_PASS
 check_ret=0
 
 function verify() {
-    grep_result=$(grep "] pass" $OUT_FILE)
-
-    if [ -z "$grep_result" ]; then
+    if [ $1 != 0 ]; then
         check_ret=-1
     fi
 }
 
 function clean_tmp_files() {
-    rm -rf $OUT_FILE $INPUT_FILE
+    rm -rf $INPUT_FILE
 }
 
 env_check
@@ -31,8 +29,8 @@ do
     for i in $(seq 1 26)
     do
         echo "========== test $i =========="
-        $UT_BIN_DIR/$UT_BIN_NAME $i < $INPUT_FILE | tee $OUT_FILE
-        verify
+        $UT_BIN_DIR/$UT_BIN_NAME $i < $INPUT_FILE
+        verify $?
 
         if [ $check_ret != 0 ]; then
             result=$TEST_FAIL
