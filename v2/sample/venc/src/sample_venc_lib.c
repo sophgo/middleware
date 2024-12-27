@@ -380,7 +380,7 @@ static CVI_S32 _SAMPLE_VENC_SBM_deInitVenc(sampleVenc *psv);
 static CVI_S32 _SAMPLE_VENC_initViVpss(sampleVenc *psv);
 static VB_POOL vpssVB[VENC_MAX_CHN_NUM] = {[0 ...(VENC_MAX_CHN_NUM - 1)] = VB_INVALID_POOLID};
 static CVI_S32 checkArg(CVI_S32 entryIdx, SAMPLE_ARG *pArg);
-static CVI_S32 checkInputCfg(chnInputCfg *pIc);
+CVI_S32 checkInputCfg(chnInputCfg *pIc);
 static CVI_U32 _SAMPLE_VENC_INIT_CHANNEL(sampleVenc *psv, CVI_U32 chnNum);
 static CVI_S32 initSysAndVb(sampleVenc *psv);
 static CVI_S32 _SAMPLE_VENC_LoadCfgFile(vencChnCtx *pvecc);
@@ -390,6 +390,7 @@ static CVI_S32 _getNonBindModeSrcFrame(vencChnCtx *pvecc,
 static CVI_VOID _venc_unbind_source(chnInputCfg *pIc, VENC_CHN VencChn);
 static CVI_S32 _releaseNonBindModeSrcFrame(vencChnCtx *pvecc);
 static CVI_VOID *SAMPLE_VENC_SendVencFrameProc(CVI_VOID *pArgs);
+static CVI_VOID *_SAMPLE_VENC_BindGetStreamProc(CVI_VOID *pArgs);
 static CVI_S32 _SAMPLE_VENC_SendFrame(vencChnCtx *pvecc, CVI_U32 i);
 static CVI_S32 _SAMPLE_VENC_GetStream(vencChnCtx *pvecc);
 static CVI_S32 cviReadSrcFrame(VIDEO_FRAME_S *pstVFrame, FILE *fp, CVI_BOOL circle_send);
@@ -650,7 +651,8 @@ CVI_S32 venc_main(int argc, char **argv)
 			memcpy(&psv->chnCtx[0].chnIc, &pTestIc[idx], sizeof(chnInputCfg));
 			psv->chnCtx[0].chnIc.getstream_timeout = -1;
 			psv->chnCtx[0].chnIc.sendframe_timeout = 20000;
-			snprintf(yuvFilename, MAX_STRING_LEN, "%s", psv->chnCtx[0].chnIc.input_path);
+			strncpy(yuvFilename, psv->chnCtx[0].chnIc.input_path, MAX_FILENAME_LEN - 1);
+			yuvFilename[MAX_FILENAME_LEN - 1] = '\0';
 			//TODO:fix string_len overflow bug
 			snprintf(psv->chnCtx[0].chnIc.input_path, 512, "%s%s", pcic->yuvFolder, yuvFilename);
 			psv->chnCtx[0].chnIc.bCreateChn = bCreateChn;
@@ -809,7 +811,6 @@ CVI_S32 parseEncArgv(sampleVenc *psv, chnInputCfg *pIc, CVI_S32 argc, char **arg
 			ret = checkArg(idx, &arg);
 			if (ret != CVI_SUCCESS) {
 				printf("checkArg, %d\n", ret);
-				print_help(argv);
 				return ret;
 			}
 
@@ -2135,6 +2136,11 @@ static CVI_S32 checkArg(CVI_S32 entryIdx, SAMPLE_ARG *pArg)
 {
 	printf("entryIdx = %d\n", entryIdx);
 
+	if (!optarg) {
+		printf("invliad parameter name:%s\n", venc_long_option_ext[entryIdx].opt.name);
+		return CVI_FAILURE;
+	}
+
 	if (venc_long_option_ext[entryIdx].type == ARG_INT) {
 		pArg->ival = strtoimax(optarg, NULL, 10);
 		if ((int64_t)(pArg->ival) < venc_long_option_ext[entryIdx].min ||
@@ -2167,7 +2173,7 @@ static CVI_S32 checkArg(CVI_S32 entryIdx, SAMPLE_ARG *pArg)
 	return CVI_SUCCESS;
 }
 
-static CVI_S32 checkInputCfg(chnInputCfg *pIc)
+CVI_S32 checkInputCfg(chnInputCfg *pIc)
 {
 	if (!strcmp(pIc->codec, "264") || !strcmp(pIc->codec, "265")) {
 
@@ -2608,11 +2614,14 @@ static CVI_S32 SAMPLE_VENC_StartGetStream(vencChnCtx *pvecc, CVI_S32 s32ChnIdx)
 	pvecc->chnStat = CHN_STAT_START;
 	pvecc->nextChnStat = CHN_STAT_START;
 
-	pthread_create(
-		&gs_VencSendTask[s32ChnIdx],
-		&attr,
-		SAMPLE_VENC_SendVencFrameProc,
-		(CVI_VOID *)pvecc);
+	if (pvecc->chnIc.bind_mode == VENC_BIND_DISABLE) {
+		pthread_create(&gs_VencSendTask[s32ChnIdx], &attr,
+						SAMPLE_VENC_SendVencFrameProc, (CVI_VOID *)pvecc);
+	}
+	else {
+		pthread_create(&gs_VencSendTask[s32ChnIdx], &attr,
+						_SAMPLE_VENC_BindGetStreamProc, (CVI_VOID *)pvecc);
+	}
 
 	return CVI_SUCCESS;
 }
@@ -2852,6 +2861,79 @@ RETRY_GET_STREAM:
 		// 	break;
 		// }
 	}
+	printf("venc send task%d end\n", pvecc->VencChn);
+
+	if (pvecc->s32VencFd >= 0) {
+		CVI_VENC_CloseFd(VencChn);
+	}
+
+	_venc_unbind_source(pIc, VencChn);
+	pvecc->chnStat = CHN_STAT_STOP;
+
+	return (CVI_VOID *) CVI_SUCCESS;
+}
+
+static CVI_VOID *_SAMPLE_VENC_BindGetStreamProc(CVI_VOID *pArgs)
+{
+	vencChnCtx *pvecc = (vencChnCtx *)pArgs;
+	VENC_CHN VencChn = pvecc->VencChn;
+	chnInputCfg *pIc = &pvecc->chnIc;
+	CVI_CHAR TaskName[64];
+	CVI_S32 s32GetRet = 0;
+	CVI_U32 i = 0;
+
+	sprintf(TaskName, "chn%dVencSendFrame", VencChn);
+	prctl(PR_SET_NAME, TaskName, 0, 0, 0);
+	printf("venc send task%d start\n", VencChn);
+	usleep(1000);
+
+	pvecc->s32VencFd = -1;
+
+	if (pIc->bsMode == BS_MODE_SELECT) {
+		pvecc->s32VencFd = CVI_VENC_GetFd(VencChn);
+		if (pvecc->s32VencFd < 0) {
+			SAMPLE_PRT("CVI_VENC_GetFd failed with%#x!\n", pvecc->s32VencFd);
+		}
+	}
+
+	while (pvecc->chnStat == CHN_STAT_START) {
+		if (i >= pvecc->num_frames) {
+			break;
+		}
+
+		i++;
+		printf("[Chn%d] frame %d (%d)\n", VencChn, i, pvecc->num_frames);
+
+RETRY_GET_STREAM:
+		s32GetRet = _SAMPLE_VENC_GetStream(pvecc);
+		if (s32GetRet == CVI_ERR_VENC_GET_STREAM_END) {
+			printf("_SAMPLE_VENC_GetStream end!\n");
+			break;
+		}
+
+
+		if (s32GetRet == CVI_ERR_VENC_BUSY) {
+			usleep(5000);
+			if (_check_if_free_yuv(pvecc) > 0) {
+				continue;
+			} else {
+				goto RETRY_GET_STREAM;
+			}
+		}
+
+		if (s32GetRet != CVI_SUCCESS) {
+			printf("_SAMPLE_VENC_GetStream, %d\n", s32GetRet);
+			break;
+		}
+
+		if (_check_if_free_yuv(pvecc) == 0) {
+			usleep(5000);
+			goto RETRY_GET_STREAM;
+		}
+
+		usleep(1000);
+	}
+
 	printf("venc send task%d end\n", pvecc->VencChn);
 
 	if (pvecc->s32VencFd >= 0) {

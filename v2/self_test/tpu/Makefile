@@ -35,7 +35,7 @@ LIBS += -lvpu -lvenc -lvdec -lcvi_jpeg -lcvi_vcodec -lsys $(ISP_LIB) $(SNS_LIB) 
 EXTRA_CFLAGS = $(DEFS) $(INCS)
 EXTRA_CPPFLAGS = -fno-use-cxa-atexit
 EXTRA_LDFLAGS = $(LIBS) -lini -lpthread
-EXTRA_LDFLAGS += -lcvi_bin -lcvi_bin_isp
+EXTRA_LDFLAGS += -lcvi_bin
 
 ifneq ($(SDK_VER),uclibc)
 all : $(TARGET)

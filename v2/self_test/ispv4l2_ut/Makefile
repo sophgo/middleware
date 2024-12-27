@@ -16,7 +16,7 @@ ifeq ($(V4L2_ISP_ENABLE),1)
 INCS += -I$(TOP_DIR)/middleware/$(MW_VER)/modules/isp/cv186x/v4l2_adapter/inc
 INCS += -I$(TOP_DIR)/middleware/$(MW_VER)/modules/isp/include/cv186x/
 LIBS += -L$(TOP_DIR)/middleware/$(MW_VER)/lib
-LIBS += -lispv4l2_adapter -lcvi_bin -lcvi_bin_isp -lsns_full
+LIBS += -lispv4l2_adapter -lcvi_bin -lsns_full
 LIBS += -lisp -lawb -lae -laf -lisp_algo
 LIBS += -lispv4l2_helper
 #end

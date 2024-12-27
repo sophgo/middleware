@@ -35,7 +35,7 @@ char* error_type[] =
     }
 
 static int   fb_width = 128, fb_height = 128;
-static float fb_scale = 1.0f;
+//static float fb_scale = 1.0f;
 
 static vg_lite_buffer_t buffer1, src_buffer, image;
 static vg_lite_buffer_t* fb1;
@@ -107,7 +107,7 @@ void cleanup(void)
 
 int main(int argc, const char* argv[])
 {
-    uint32_t feature_check = 0;
+    //uint32_t feature_check = 0;
     vg_lite_matrix_t matrix, matPath;
     vg_lite_filter_t filter;
     char fname[64];

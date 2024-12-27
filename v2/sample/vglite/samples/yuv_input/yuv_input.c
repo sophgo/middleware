@@ -44,11 +44,11 @@ char* error_type[] =
     }
 
 static int fb_width = DEFAULT_WIDTH, fb_height = DEFAULT_HEIGHT;
-static float fb_scale = 1.0f;
+//static float fb_scale = 1.0f;
 static vg_lite_buffer_t srcbuffer[5];
 static vg_lite_buffer_t dstbuffer;
-static vg_lite_buffer_t image;
-static vg_lite_buffer_t* fb;
+//static vg_lite_buffer_t image;
+//static vg_lite_buffer_t* fb;
 static vg_lite_buffer_format_t formats[] = {
     VG_LITE_NV12,
     VG_LITE_NV16,

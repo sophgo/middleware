@@ -3935,101 +3935,6 @@ static CVI_S32 _handle_op(CVI_S32 op, SAMPLE_INI_CFG_S *pstIniCfg, SAMPLE_VI_CON
 		}
 		break;
 	}
-	case 115: {
-		ISP_PUB_ATTR_S stPubAttr = {}, stPubAttrOrig = {};
-		ISP_EXPOSURE_ATTR_S stExpAttr = {}, stExpAttrOrig = {};
-		CVI_U32 u32InputCommand;
-		//AE_SETTING
-		if (CVI_ISP_GetPubAttr(0, &stPubAttrOrig) != CVI_SUCCESS) {
-			printf("CVI_ISP_GetPubAttr Pipe: %d fail\n", 0);
-		}
-
-		stPubAttr = stPubAttrOrig;
-		stPubAttr.f32FrameRate = 5;
-
-		if (CVI_ISP_SetPubAttr(0, &stPubAttr) != CVI_SUCCESS) {
-			printf("CVI_ISP_SetPubAttr Pipe: %d for DPC fail\n", 0);
-		}
-
-		if (CVI_ISP_GetExposureAttr(0, &stExpAttrOrig) != CVI_SUCCESS) {
-			printf("CVI_ISP_GetExposureAttr Pipe: %d fail\n", 0);
-		}
-		stExpAttr = stExpAttrOrig;
-		stExpAttr.enOpType = OP_TYPE_MANUAL;
-		stExpAttr.stManual.enExpTimeOpType = OP_TYPE_MANUAL;
-		stExpAttr.stManual.enAGainOpType = OP_TYPE_MANUAL;
-		stExpAttr.stManual.enDGainOpType = OP_TYPE_MANUAL;
-		stExpAttr.stManual.enISPDGainOpType = OP_TYPE_MANUAL;
-		stExpAttr.stManual.u32ExpTime = 200000;         // 200ms
-		stExpAttr.stManual.u32AGain = 0x400;            // 1x
-		stExpAttr.stManual.u32DGain = 0x400;            // 1x
-		stExpAttr.stManual.u32ISPDGain = 0x400;         // 1x
-
-		if (CVI_ISP_SetExposureAttr(0, &stExpAttr) != CVI_SUCCESS) {
-			printf("CVI_ISP_SetExposureAttr Pipe: %d for DPC fail\n", 0);
-		}
-		sleep(2);
-		//Detect
-		printf("Input Command (0:bright DPC, 1:dark DPC, 255: Exit)\n");
-		scanf("%d", &u32InputCommand);
-		printf("DPC : %s Pixel Detect\n", (u32InputCommand == 0) ? "Bright" : "Dark");
-
-		CVI_S32 ret = 0;
-		ISP_DP_CALIB_ATTR_S stDPCalibrate;
-
-		memset(&stDPCalibrate, 0, sizeof(stDPCalibrate));
-
-		ret = CVI_ISP_GetDPCalibrate(0, &stDPCalibrate);
-
-		stDPCalibrate.EnableDetect = 1;
-		// stDPCalibrate.StaticDPType = ISP_STATIC_DP_BRIGHT;	// detect bright point
-		stDPCalibrate.StaticDPType =
-			(u32InputCommand == 0) ? ISP_STATIC_DP_BRIGHT : ISP_STATIC_DP_DARK;
-		stDPCalibrate.StartThresh = 4;
-		stDPCalibrate.CountMax = 0xfff;		// STATIC_DP_COUNT_NORMAL
-		stDPCalibrate.CountMin = 0x0;
-		stDPCalibrate.FinishThresh = 0xff;
-		stDPCalibrate.saveFileEn = 1;
-		stDPCalibrate.TimeLimit = 5;		// 5sec
-		ret = CVI_ISP_SetDPCalibrate(0, &stDPCalibrate);
-		if (ret != CVI_SUCCESS) {
-			printf("CVI_ISP_SetDPCalibrate fail\n");
-		}
-
-		stDPCalibrate.Status = ISP_STATUS_INIT;
-		sleep(3);
-
-		CVI_U8 u8CheckCounter = 0;
-
-		while ((u8CheckCounter < 5) && (stDPCalibrate.Status != ISP_STATUS_SUCCESS)) {
-			if (CVI_ISP_GetDPCalibrate(0, &stDPCalibrate) != CVI_SUCCESS) {
-				printf("CVI_ISP_GetDPCalibrate fail\n");
-			}
-
-			printf("DPCalibrate: (%3d)\n", u8CheckCounter);
-			printf("FinishThresh: %d\n", stDPCalibrate.FinishThresh);
-			printf("Count: %d\n", stDPCalibrate.Count);
-			printf("Status: %d (0:init, 1:success, 2:timeout)\n",
-				stDPCalibrate.Status);
-
-			u8CheckCounter++;
-			sleep(1);
-		}
-
-		CVI_ISP_GetDPCalibrate(0, &stDPCalibrate);
-		printf("Final => Status: %d (0:init, 1:success, 2:timeout)\n",
-			stDPCalibrate.Status);
-		printf("\tCount: %d\n", stDPCalibrate.Count);
-		//AE_SETTING restore
-		if (CVI_ISP_SetPubAttr(0, &stPubAttrOrig) != CVI_SUCCESS) {
-			printf("CVI_ISP_SetPubAttr Pipe: %d fail\n", 0);
-		}
-
-		if (CVI_ISP_SetExposureAttr(0, &stExpAttrOrig) != CVI_SUCCESS) {
-			printf("CVI_ISP_SetExposureAttr Pipe: %d fail\n", 0);
-		}
-		break;
-	}
 
 	case 116: {
 		CVI_S32 s32Ret = 0;
@@ -4171,7 +4076,6 @@ static CVI_S32 _handle_op(CVI_S32 op, SAMPLE_INI_CFG_S *pstIniCfg, SAMPLE_VI_CON
 		TEST_ISP_API(CVI_ISP_GetCCMAttr, CVI_ISP_SetCCMAttr, ISP_CCM_ATTR_S);
 		TEST_ISP_API(CVI_ISP_GetDPDynamicAttr, CVI_ISP_SetDPDynamicAttr, ISP_DP_DYNAMIC_ATTR_S);
 		TEST_ISP_API(CVI_ISP_GetDPStaticAttr, CVI_ISP_SetDPStaticAttr, ISP_DP_STATIC_ATTR_S);
-		TEST_ISP_API(CVI_ISP_GetDPCalibrate, CVI_ISP_SetDPCalibrate, ISP_DP_CALIB_ATTR_S);
 		TEST_ISP_API(CVI_ISP_GetCrosstalkAttr, CVI_ISP_SetCrosstalkAttr, ISP_CROSSTALK_ATTR_S);
 		TEST_ISP_API(CVI_ISP_GetFSWDRAttr, CVI_ISP_SetFSWDRAttr, ISP_FSWDR_ATTR_S);
 		TEST_ISP_API(CVI_ISP_GetDRCAttr, CVI_ISP_SetDRCAttr, ISP_DRC_ATTR_S);

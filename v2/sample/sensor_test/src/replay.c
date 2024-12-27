@@ -341,7 +341,7 @@ CVI_S32 replay_startIsp(VIDEO_FRAME_INFO_S *stVideoFrame)
 	stPubAttr.stWndRect.s32Y = 0;
 	stPubAttr.enWDRMode = stVideoFrame->stVFrame.enDynamicRange ? WDR_MODE_2To1_LINE : WDR_MODE_NONE;
 	stPubAttr.f32FrameRate = 25;
-	stPubAttr.enBayer = stVideoFrame->stVFrame.enBayerFormat;
+	stPubAttr.enBayer = (ISP_BAYER_FORMAT_E)stVideoFrame->stVFrame.enBayerFormat;
 	s32Ret = CVI_ISP_SetPubAttr(ViPipe, &stPubAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		SAMPLE_PRT("SetPubAttr failed with %#x!\n", s32Ret);

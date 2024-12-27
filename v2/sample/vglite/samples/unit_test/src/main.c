@@ -50,7 +50,7 @@ int init()
         return -1;
     }
     g_fb = &g_buffer;
-    
+
     g_fb_rect.x = 0;
     g_fb_rect.y = 0;
     g_fb_rect.width = Run_Width;
@@ -98,7 +98,7 @@ int main (int argc, char** argv)
     destroy();
 
 ErrorHandler:
-    return;
+    return error;
 }
 
 

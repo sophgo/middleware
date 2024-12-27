@@ -72,10 +72,10 @@ vg_lite_error_t API_Run(api_t api,uint32_t rect[])
         dst_height = WINDSIZEY;
         CHECK_ERROR(Allocate_Buffer(&dst_buf,VG_LITE_RGBA8888,dst_width,dst_height));
         vg_lite_identity(&matrix);
-        
+
         CHECK_ERROR(vg_lite_clear(&dst_buf, NULL, 0xffffffff));
         if(api == blit_rect) {
-            error = (vg_lite_blit_rect(&dst_buf, &buffer, rect, &matrix,VG_LITE_BLEND_NONE, 0, VG_LITE_FILTER_POINT));
+            error = (vg_lite_blit_rect(&dst_buf, &buffer, (vg_lite_rectangle_t *)rect, &matrix,VG_LITE_BLEND_NONE, 0, VG_LITE_FILTER_POINT));
             if (error != VG_LITE_SUCCESS)
             {
                 if(error == VG_LITE_INVALID_ARGUMENT) {
@@ -170,12 +170,12 @@ vg_lite_error_t API_Test()
     output_string("\nCase: Test_Upload_Buffer:::::::::Started\n");
     CHECK_ERROR(API_Test_Upload_Buffer());
     output_string("\nCase: Test_Upload_Buffer:::::::::Ended\n");
-    
+
     output_string("\nCase: Test_Get_Info:::::::::Started\n");
     CHECK_ERROR(API_Test_Get_Info());
 
     output_string("\nCase: Test_Get_Info:::::::::Ended\n");
-    
+
     output_string("\nCase: Test_Get_Productinfo:::::::::Started\n");
     CHECK_ERROR(API_Test_Get_Productinfo());
 

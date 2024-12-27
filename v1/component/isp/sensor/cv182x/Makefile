@@ -59,6 +59,9 @@ nextchip_n5:
 nextchip_n6:
 	$(call MAKE_SENSOR, ${@})
 
+nuc_nc021:
+	$(call MAKE_SENSOR, ${@})
+
 onsemi_ar2020:
 	$(call MAKE_SENSOR, ${@})
 
@@ -198,6 +201,9 @@ techpoint_tp2860:
 	$(call MAKE_SENSOR, ${@})
 
 lontium_lt6911:
+	$(call MAKE_SENSOR, ${@})
+
+gcore_gc8613:
 	$(call MAKE_SENSOR, ${@})
 
 all_sensor:

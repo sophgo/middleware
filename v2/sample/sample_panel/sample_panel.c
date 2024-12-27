@@ -176,8 +176,8 @@ void printHelp(char **argv)
 	printf(" %s -d\n\n", argv[0]);
 	printf("\n.After initializing panel, to show specific pattern by --show-pattern");
 	printf("\nEX.\n");
-	printf(" %s --panel=HX8394_EVB --show-pattern=6 (To show colorbar)\n", argv[0]);
-	printf(" %s --panel=HX8394_EVB --show-pattern=0 (To turn off colorbar)\n", argv[0]);
+	printf(" %s --device=1 --panel=HX8394_EVB --show-pattern=6 (To show colorbar)\n", argv[0]);
+	printf(" %s --device=1 --panel=HX8394_EVB --show-pattern=0 (To turn off colorbar)\n", argv[0]);
 	printf("\n.After initializing panel, to show any kind of pattern by -s");
 	printf("\nEX.\n");
 	printf(" %s --panel=HX8394_EVB -s\n\n", argv[0]);
@@ -910,9 +910,6 @@ int main(int argc, char *argv[])
 	SAMPLE_SET_PANEL_DESC();
 	SAMPLE_PANEL_ENABLE();
 
-	if (g_panel_desc.panel_type == PANEL_MODE_BT)
-		SAMPLE_PANEL_I2C_SEND();
-
 	if (is_pattern) {
 		ret = SAMPLE_PANEL_ShowPattern(g_input_para.dev_no, patern_cmd);
 		if (ret == CVI_SUCCESS)
@@ -920,6 +917,9 @@ int main(int argc, char *argv[])
 		else
 			SAMPLE_PRT("sample_panel exit abnormally!\n");
 	}
+
+	if (g_panel_desc.panel_type == PANEL_MODE_BT)
+		SAMPLE_PANEL_I2C_SEND();
 
 	return CVI_SUCCESS;
 }

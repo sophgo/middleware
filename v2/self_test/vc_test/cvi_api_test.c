@@ -358,7 +358,7 @@ RETRY_GET_FRAME:
 	return (CVI_VOID *)CVI_SUCCESS;
 }
 
-int video_decode(int argc, char *argv[])
+int video_decode(int argc __attribute__((unused)), char *argv[])
 {
 	VDEC_CHN VdChn = 0;
 	VDEC_CHN_ATTR_S stAttr = {0};
@@ -555,7 +555,7 @@ CVI_VOID *enc_proc_get(CVI_VOID *pArgs)
 	FILE *fpOutput = NULL;
 	CVI_S32 s32MilliSec = 100;
 	CVI_S32 ret;
-	int i;
+	CVI_U32 i;
 
 	fpOutput = fopen(pGetThreadParam->cFileName, "wb");
 	if (fpOutput == NULL) {
@@ -600,7 +600,7 @@ CVI_VOID *enc_proc_get(CVI_VOID *pArgs)
 	return NULL;
 }
 
-int video_encode(int argc, char *argv[])
+int video_encode(int argc __attribute__((unused)), char *argv[])
 {
 	VENC_CHN VeChn = 0;
 	VENC_CHN_ATTR_S stAttr = {0};

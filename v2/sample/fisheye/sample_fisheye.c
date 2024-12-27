@@ -224,7 +224,7 @@ static CVI_S32 gdc_basic_add_tsk(GDC_BASIC_TEST_PARAM *param, void *ptr)
 static CVI_S32 gdc_basic(GDC_BASIC_TEST_PARAM *param, void *ptr)
 {
 	int times = GDC_REPEAT_TIMES;
-	VB_CONFIG_S stVbConf;
+	VB_CONFIG_S stVbConf = {0};
 	CVI_S32 s32Ret;
 	CVI_U32 BlkSize;
 	CVI_BOOL bEnHwLDC = 0;
@@ -518,7 +518,7 @@ static CVI_S32 gdc_test_ldc(CVI_VOID)
 static CVI_S32 gdc_test_fisheye(CVI_VOID)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
-	FISHEYE_ATTR_S stFisheyeAttr;
+	FISHEYE_ATTR_S stFisheyeAttr = {0};
 	GDC_BASIC_TEST_PARAM param = {0};
 	int cnt = 8;
 	char *filename_in[8] = {GDC_FILE_IN_FISHEYE, GDC_FILE_IN_FISHEYE, GDC_FILE_IN_FISHEYE, GDC_FILE_IN_FISHEYE, \
@@ -759,7 +759,7 @@ static CVI_S32 gdc_test_reset(CVI_VOID)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	GDC_BASIC_TEST_PARAM param = {0};
-	VB_CONFIG_S stVbConf;
+	VB_CONFIG_S stVbConf = {0};
 	CVI_U32 BlkSize;
 	int times = 4, err_times = 4;
 
@@ -920,7 +920,7 @@ static CVI_S32 gdc_test_cmdq(CVI_VOID)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	GDC_BASIC_TEST_PARAM param = {0};
-	VB_CONFIG_S stVbConf;
+	VB_CONFIG_S stVbConf = {0};
 	char *filename_in[1] = {GDC_FILE_IN_CMDQ};
 	char *filename_out[1] = {GDC_FILE_OUT_CMDQ};
 	GDC_TASK_ATTR_S stTask_1st;
@@ -1139,7 +1139,7 @@ static CVI_S32 gdc_test_cmdq_1to2(CVI_VOID)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	GDC_BASIC_TEST_PARAM param = {0};
-	VB_CONFIG_S stVbConf;
+	VB_CONFIG_S stVbConf = {0};
 	char *filename_in[1] = {GDC_FILE_IN_CMDQ_1TO2};
 	char *filename_out[1] = {GDC_FILE_OUT_CMDQ_1TO2_0};
 	GDC_TASK_ATTR_S stTask_tmp;
@@ -1344,7 +1344,7 @@ static CVI_S32 gdc_test_async(void)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 
-	VB_CONFIG_S stVbConf;
+	VB_CONFIG_S stVbConf = {0};
 	GDC_BASIC_TEST_PARAM param = {0};
 	char *filename_in[2] = {GDC_FILE_IN_ROT, GDC_FILE_IN_FISHEYE};
 	char *filename_out[2] = {GDC_FILE_OUT_ROT0, GDC_FILE_OUT_FISHEYE_PANORAMA};
@@ -1357,7 +1357,7 @@ static CVI_S32 gdc_test_async(void)
 	void *ptr;
 	CVI_U32 BlkSize;
 
-	FISHEYE_ATTR_S stFisheyeAttr;
+	FISHEYE_ATTR_S stFisheyeAttr = {0};
 
 	param.size_in.u32Width = 1920;
 	param.size_in.u32Height = 1080;
@@ -1746,7 +1746,7 @@ void *gdc_basic_thread_func3(void *data)
 	GDC_BASIC_TEST_PARAM *param = (GDC_BASIC_TEST_PARAM *)(data);
 	int times = GDC_REPEAT_TIMES * 10;
 	void *ptr;
-	FISHEYE_ATTR_S stFisheyeAttr;
+	FISHEYE_ATTR_S stFisheyeAttr = {0};
 
 	stFisheyeAttr.bEnable = CVI_TRUE;
 	stFisheyeAttr.bBgColor = CVI_TRUE;
@@ -1775,7 +1775,7 @@ void *gdc_basic_thread_func3(void *data)
 static CVI_S32 gdc_test_multi_thread(void)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
-	VB_CONFIG_S stVbConf;
+	VB_CONFIG_S stVbConf = {0};
 	GDC_BASIC_TEST_PARAM param[4] = {0};
 	char *filename_in[4] = {GDC_FILE_IN_ROT_2, DWA_FILE_IN_LDC_BARREL_0P3, GDC_FILE_IN_AFFINE, GDC_FILE_IN_FISHEYE};
 	char *filename_out[4] = {GDC_FILE_OUT_ROT0_2, DWA_FILE_OUT_LDC_BARREL_0P3_0, GDC_FILE_OUT_AFFINE, GDC_FILE_OUT_FISHEYE_PANORAMA};
@@ -1926,7 +1926,7 @@ static CVI_S32 gdc_test_ldc_grid_info(CVI_VOID)
 static CVI_S32 gdc_test_dis(CVI_VOID)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
-	VB_CONFIG_S stVbConf;
+	VB_CONFIG_S stVbConf = {0};
 	LDC_ATTR_S stLdcAttr[3] = {0};
 	GDC_BASIC_TEST_PARAM param[3] = {0};
 	char *filename_in[3] = {DWA_FILE_IN_DIS0, DWA_FILE_IN_DIS1, DWA_FILE_IN_DIS2};

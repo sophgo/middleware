@@ -504,10 +504,10 @@ int process_get_decode_data(VDEC_PARAM_S *pArgs)
     fd_set read_fds;
     int fd;
     CVI_S32 s32Ret, s32Cnt = 0;
-    VDEC_CHN_ATTR_S stAttr;
+    //VDEC_CHN_ATTR_S stAttr;
     VIDEO_FRAME_INFO_S stVFrame;
     struct timeval TimeoutVal;
-    VIDEO_FRAME_S *pstVFrame = &stVFrame.stVFrame;
+    //VIDEO_FRAME_S *pstVFrame = &stVFrame.stVFrame;
     CVI_CHAR cSaveFile[256];
     int retry_cnt = 20;
 
@@ -589,12 +589,12 @@ RETRY_GET_FRAME:
 
 int ChildProcessGetDecodedFrame(chnInputCfg *pIc)
 {
-    VDEC_CHN VdChn = 0;
+    //VDEC_CHN VdChn = 0;
     VDEC_CHN_ATTR_S stAttr = {0};
-    VDEC_STREAM_S stStream = {0};
-    VIDEO_FRAME_INFO_S stFrameInfo = {0};
+    //VDEC_STREAM_S stStream = {0};
+    //VIDEO_FRAME_INFO_S stFrameInfo = {0};
     VDEC_PARAM_S getParam = {0};
-    int ret;
+    //int ret;
 
     if (strncmp(pIc->codec, "264", 3) == 0)
         stAttr.enType = PT_H264;
@@ -626,9 +626,9 @@ int ParentProcessSendDecodeStream(chnInputCfg *pIc)
 {
     VDEC_CHN VdChn = 0;
     VDEC_CHN_ATTR_S stAttr = {0};
-    VDEC_STREAM_S stStream = {0};
+    //VDEC_STREAM_S stStream = {0};
     VDEC_PARAM_S sendParam = {0};
-    VDEC_PARAM_S getThreadParam = {0};
+    //VDEC_PARAM_S getThreadParam = {0};
     int ret;
     int status;
 

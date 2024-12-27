@@ -5,12 +5,12 @@
 #include "tiger_paths.h"
 
 #define __func__ __FUNCTION__
-char *error_type[] = 
+char *error_type[] =
 {
     "VG_LITE_SUCCESS",
     "VG_LITE_INVALID_ARGUMENT",
     "VG_LITE_OUT_OF_MEMORY",
-    "VG_LITE_NO_CONTEXT",      
+    "VG_LITE_NO_CONTEXT",
     "VG_LITE_TIMEOUT",
     "VG_LITE_OUT_OF_RESOURCES",
     "VG_LITE_GENERIC_IO",
@@ -41,21 +41,21 @@ void cleanup(void)
     {
         vg_lite_clear_path(&path[i]);
     }
-    
+
     vg_lite_close();
 }
 
 int main(int argc, const char * argv[])
 {
     int i;
-    vg_lite_filter_t filter;
+    //vg_lite_filter_t filter;
     vg_lite_matrix_t matrix;
 
     /* Initialize vglite. */
     vg_lite_error_t error = VG_LITE_SUCCESS;
     CHECK_ERROR(vg_lite_init(fb_width, fb_height));
 
-    filter = VG_LITE_FILTER_POINT;
+    //filter = VG_LITE_FILTER_POINT;
 
     printf("Framebuffer size: %d x %d\n", fb_width, fb_height);
 

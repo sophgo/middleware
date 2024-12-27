@@ -60,6 +60,7 @@ static void initVdecThreadParam(
 		vdecChnInputCfg *pvdcic);
 static CVI_S32 checkArg(CVI_S32 entryIdx, SAMPLE_ARG *pArg);
 static void outputMD5Sum(VDEC_THREAD_PARAM_S *pvdtpg);
+extern CVI_S32 checkInputCfg(chnInputCfg *pIc);
 
 static optionExt long_option_ext[] = {
 	{{"numChn",    optional_argument, NULL, 0},   ARG_UINT,    1,   VDEC_MAX_CHN_NUM,
@@ -92,6 +93,10 @@ static optionExt long_option_ext[] = {
 		"samele_vdec sendstream-timeout   -1:block mode, 0:try_once, >0 timeout in ms"},
 	{{"bindmode", optional_argument, NULL, 0},	ARG_UINT,	  0,   2,
 		"bind mode"},
+	{{"venc_num_frames", optional_argument, NULL, 0}, ARG_UINT, 0, ((int64_t)(~0UL >> 1)),
+		"encode frame number when vd_vpss_ve bind mode"},
+	{{"venc_rc_mode", optional_argument, NULL, 0}, ARG_UINT, 0, SAMPLE_RC_MAX - 1,
+		"venc RC strategy when vd_vpss_ve bind mode"},
 	{{"pixel_format", optional_argument, NULL, 0},	ARG_INT,	  0,   2,
 		"output pixel format. 0: do not specify, 1: NV12, 2: NV21"},
 	{{"circle_send", optional_argument, NULL, 0},	ARG_INT,	  0,   1,
@@ -105,6 +110,33 @@ static optionExt long_option_ext[] = {
 
 sampleVenc psv = {0};
 
+static void recfg_vencparam_for_bindmode(chnInputCfg *pIc)
+{
+	pIc->firstFrmstartQp = 32;
+	pIc->minIqp = 16;
+	pIc->maxIqp = 42;
+	pIc->minQp = 16;
+	pIc->maxQp = 42;
+	pIc->s32IPQpDelta = 0;
+	pIc->u32ThrdLv = 2;
+
+	switch (pIc->rcMode)
+	{
+	case SAMPLE_RC_FIXQP:
+		pIc->iqp = 20;
+		pIc->pqp = 20;
+		break;
+
+	case SAMPLE_RC_CBR:
+		pIc->bitrate = 2048;
+		break;
+
+	default:
+		printf("Error: other RC mode unsupported now!\n");
+		break;
+	}
+}
+
 CVI_S32 vencStartBindVpss(sampleVdec *psvdec)
 {
 	commonInputCfg *pcic = &psv.commonIc;
@@ -115,7 +147,6 @@ CVI_S32 vencStartBindVpss(sampleVdec *psvdec)
 	vdecChnInputCfg *pvdcic = NULL;
 	vdecInputCfg *pic = &psvdec->inputCfg;
 
-	pcic->numChn = psvdec->u32VdecNumAllChns;
 	psv.commonIc.ifInitVb = 0;
 
 	for (idx = 0; idx < psvdec->u32VdecNumAllChns; idx++) {
@@ -126,7 +157,8 @@ CVI_S32 vencStartBindVpss(sampleVdec *psvdec)
 		initInputCfg(pcic, pIc);
 
 		pIc->bsMode = 0;
-		pIc->bind_mode = VENC_BIND_VPSS;
+		pIc->bind_mode = VENC_BIND_VPSS;     // set bind mode for venc module
+		pIc->bIsoSendFrmEn = 0;   // disable "isolate send frame" when bind mode
 		pIc->vpssGrp = idx;
 		pIc->vpssChn = 0;
 
@@ -141,11 +173,19 @@ CVI_S32 vencStartBindVpss(sampleVdec *psvdec)
 		sprintf(pIc->output_path, "chn%d_%s_720p", idx, pvdcic->output_path);
 		SAMPLE_PRT("output_path = %s\n", pIc->output_path);
 
-		sprintf(pIc->codec, "%s", "mjp"); // now only support mjp
-		pIc->rcMode = 4;
-		pIc->num_frames = 10;  //decoder stream must be 10 frames
+		sprintf(pIc->codec, "%s", "264");
+		pIc->rcMode     = pic->venc_rc_mode;
+		pIc->num_frames = pic->venc_num_frames;
+
+		recfg_vencparam_for_bindmode(pIc);
+
+		if (checkInputCfg(pIc) < 0) {
+			printf("checkInput (chn %d) failure\n", idx);
+			return -1;
+		}
 	}
 
+	pcic->numChn = psvdec->u32VdecNumAllChns;
 	pcic->ifInitVb = 0;
 
 	ret = SAMPLE_VENC_START(&psv);
@@ -666,7 +706,6 @@ CVI_S32 parseDecArgv(vdecInputCfg *pic, CVI_S32 argc, char **argv)
 			ret = checkArg(idx, &arg);
 			if (ret != CVI_SUCCESS) {
 				printf("checkArg, %d\n", ret);
-				printVdecHelp(argv);
 				return ret;
 			}
 
@@ -694,6 +733,10 @@ CVI_S32 parseDecArgv(vdecInputCfg *pic, CVI_S32 argc, char **argv)
 				pvdcic->s32sendstream_timeout = arg.ival;
 			} else if (!strcmp(long_options[idx].name, "bindmode")) {
 				pic->u32BindMode = arg.uval;
+			} else if (!strcmp(long_options[idx].name, "venc_num_frames")) {
+				pic->venc_num_frames = arg.uval;
+			} else if(!strcmp(long_options[idx].name, "venc_rc_mode")) {
+				pic->venc_rc_mode = arg.uval;
 			} else if (!strcmp(long_options[idx].name, "pixel_format")) {
 				pvdcic->s32PixelFormat = arg.ival;
 			} else if (!strcmp(long_options[idx].name, "circle_send")) {
@@ -752,6 +795,10 @@ void printVdecHelp(char **argv)
 static CVI_S32 checkArg(CVI_S32 entryIdx, SAMPLE_ARG *pArg)
 {
 	printf("entryIdx = %d\n", entryIdx);
+	if (!optarg) {
+		printf("invliad parameter name:%s\n", long_option_ext[entryIdx].opt.name);
+		return CVI_FAILURE;
+	}
 
 	if (long_option_ext[entryIdx].type == ARG_INT) {
 		pArg->ival = strtoimax(optarg, NULL, 10);

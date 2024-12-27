@@ -35,7 +35,7 @@ void build_path(float* dst, float *src, size_t size)
     uint32_t iter = 0;
     uint8_t *operation;
     uint8_t op;
-    for(iter; iter < count;)
+    for(iter = 0; iter < count;)
     {
         op = (uint8_t) *src_path;
         *dst_path = *src_path++;
@@ -126,9 +126,9 @@ int main(int argc, const char * argv[])
     /* Scale up matrix with fb_scale times.*/
     vg_lite_scale(fb_scale, fb_scale, &matrix);
 
-    for(iter; string[iter] != '\0'; iter ++)
+    for(iter = 0; string[iter] != '\0'; iter ++)
     {
-        fontData = fontHeader[string[iter]];
+        fontData = fontHeader[(unsigned char)string[iter]];
         if(string[iter] == '\n')
         {
             vg_lite_translate(-offsetX, lineHeight, &matrix);
@@ -172,7 +172,7 @@ int main(int argc, const char * argv[])
     vg_lite_identity(&matrix);
     vg_lite_translate( startX, startY, &matrix);
     vg_lite_scale(8.0, 8.0, &matrix);
-    fontData = fontHeader[character];
+    fontData = fontHeader[(unsigned char)character];
     memset(&path,0,sizeof(path));
     path.format = (vg_lite_format_t)fontData.format;
     path_data = malloc(fontData.pathSize);

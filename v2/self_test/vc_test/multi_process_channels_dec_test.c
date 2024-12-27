@@ -589,10 +589,10 @@ int get_decode_data(VDEC_PARAM_S *pArgs)
     fd_set read_fds;
     int fd;
     CVI_S32 s32Ret, s32Cnt = 0;
-    VDEC_CHN_ATTR_S stAttr;
+    //VDEC_CHN_ATTR_S stAttr;
     VIDEO_FRAME_INFO_S stVFrame;
     struct timeval TimeoutVal;
-    CVI_CHAR cSaveFile[256];
+    //CVI_CHAR cSaveFile[256];
     int retry_cnt = 3;
 
 #if 0
@@ -677,7 +677,7 @@ void *SubThreadGetDecodedFrame(void *args)
     VDEC_CHN_ATTR_S stAttr = {0};
     chnInputCfg *pIc = (chnInputCfg *)(args);
     VDEC_PARAM_S getParam = {0};
-    int ret;
+    //int ret;
 
     if (strncmp(pIc->codec, "264", 3) == 0)
         stAttr.enType = PT_H264;

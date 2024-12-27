@@ -209,7 +209,7 @@ static CVI_U32 _vo_reset_hdmi_param(){
 static CVI_S32 _hdmi_ut_handle_op(CVI_S32 op)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
-	CVI_HDMI_CALLBACK_FUNC callback_func;
+	CVI_HDMI_CALLBACK_FUNC callback_func = {0};
 
 	switch (op) {
 	case 1:

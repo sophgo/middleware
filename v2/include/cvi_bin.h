@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "stdio.h"
+#include "stdlib.h"
 #include <cvi_type.h>
 #include <cvi_comm_video.h>
 
@@ -38,6 +39,7 @@ extern "C" {
 #define CVI_BIN_SENSORNUM_ERROR  0xCB000016 /*Sensor number exceeds specified sensor number in the current bin file.*/
 #define CVI_BIN_MODULE_NOT_REGISTER_ERROR  0xCB000017 /*Sensor isn't registered in the current board.*/
 #define CVI_BIN_MODULE_IS_EMPTY_ERROR  0xCB000018 /*Current module id is empty in the bin file.*/
+#define CVI_BIN_INDEX_HEADER_INIT_ERROR  0xCB000019 /*index header init fail*/
 
 enum CVI_BIN_SECTION_ID { /*module id*/
 	CVI_BIN_ID_MIN = 0,
@@ -53,8 +55,10 @@ enum CVI_BIN_SECTION_ID { /*module id*/
 	CVI_BIN_ID_VPSS,           /*VPSS*/
 	CVI_BIN_ID_VDEC,           /*VDEC*/
 	CVI_BIN_ID_VENC,           /*VENC*/
-	CVI_BIN_ID_VO,             /* VO */
-	CVI_BIN_ID_MAX             /* ALL*/
+	CVI_BIN_ID_VO0,            /* VO0*/
+	CVI_BIN_ID_VO1,            /* VO1*/
+	CVI_BIN_ID_MAX,            /* MAX*/
+	CVI_BIN_ID_ALL = CVI_BIN_ID_MAX     /*for handle all modules*/
 };
 
 enum CVI_BIN_CREATMODE { /*CREATE MODE*/
@@ -68,16 +72,6 @@ typedef struct {          /*EXTRA INFO*/
 	CVI_UCHAR Desc[1024];       /*Desc*/
 	CVI_UCHAR Time[32];         /*Time*/
 } CVI_BIN_EXTRA_S;
-
-typedef struct {      /*JSON FILE INFO*/
-	CVI_U32 u32InitSize;   /*Init Size*/
-	CVI_U32 u32CompreSize; /*Size after compress*/
-} CVI_JSON_INFO;
-
-/*JSON FILE SIZE INFO for every modules*/
-typedef struct _CVI_JSON_HEADER {
-	CVI_JSON_INFO size[CVI_BIN_ID_MAX];
-} CVI_JSON_HEADER;
 
 typedef struct _CVI_BIN_HEADER { /*header info*/
 	CVI_U32 chipId;               /* chip Id  */
@@ -244,8 +238,8 @@ CVI_S32 CVI_BIN_ImportBinData(CVI_U8 *pu8Buffer, CVI_U32 u32DataLength);
 
 /* CVI_ISP_BIN_SetBypassParams:
  * set the params of ispBinBypass, indicatting which param to be bypassed.
- * [in]	id: module id whose params selecetd to be bypassed.
- *    ispBinBypass: the params indicatting which param to be bypassed in module of id.
+ * [in]	id: sensor id whose params selecetd to be bypassed.
+ *    ispBinBypass: the params indicatting which param to be bypassed in sensor of id.
  * [Out]void
  * return: 0: Success;
  *      error codes:
@@ -256,8 +250,8 @@ CVI_S32 CVI_ISP_BIN_SetBypassParams(enum CVI_BIN_SECTION_ID id, ISP_BIN_BYPASS_U
 
 /* CVI_ISP_BIN_GetBypassParams:
  * get the params of ispBinBypass, indicatting which param to be bypassed
- * [in]	id: module id whose params selecetd to be bypassed.
- * [Out]ispBinBypass: the params indicatting which param to be bypassed in module of id.
+ * [in]	id: sensor id whose params selecetd to be bypassed.
+ * [Out]ispBinBypass: the params indicatting which param to be bypassed in sensor of id.
  * return: 0: Success;
  *      error codes:
  *      -1: FAILURE.

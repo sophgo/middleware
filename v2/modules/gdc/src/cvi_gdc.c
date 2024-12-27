@@ -194,6 +194,8 @@ CVI_S32 CVI_GDC_DeInit(void)
 
 CVI_S32 CVI_GDC_BeginJob(GDC_HANDLE *phHandle)
 {
+	CVI_S32 s32Ret = CVI_SUCCESS;
+
 	MOD_CHECK_NULL_PTR(CVI_ID_GDC, phHandle);
 
 	CVI_S32 fd = get_ldc_fd();
@@ -201,12 +203,15 @@ CVI_S32 CVI_GDC_BeginJob(GDC_HANDLE *phHandle)
 	struct gdc_handle_data cfg;
 
 	memset(&cfg, 0, sizeof(cfg));
-	if (gdc_begin_job(fd, &cfg))
-		return CVI_FAILURE;
+	s32Ret = gdc_begin_job(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_GDC(CVI_DBG_ERR, "gdc_begin_job fail\n");
+		return s32Ret;
+	}
 
 	*phHandle = cfg.handle;
 
-	return CVI_SUCCESS;
+	return s32Ret;
 }
 
 CVI_S32 CVI_GDC_SetJobIdentity(GDC_HANDLE hHandle, GDC_IDENTITY_ATTR_S *identity_attr)

@@ -75,7 +75,7 @@ static void output_string(char *str)
     printf("%s", str);
 }
 //-----------------------------------------------------------------------------
-// init the source buffer 
+// init the source buffer
 //-----------------------------------------------------------------------------
 static vg_lite_error_t Init()
 {
@@ -615,7 +615,7 @@ vg_lite_error_t SFT_Blit_007()
 {
     int i, k;
     vg_lite_error_t error = VG_LITE_SUCCESS;
-    vg_lite_color_t cc = 0xffffffff;    //Clear with BLACK.
+    //vg_lite_color_t cc = 0xffffffff;    //Clear with BLACK.
     vg_lite_buffer_t srcbuffer;
     vg_lite_buffer_t dstbuffer;
     int32_t width, height;
@@ -674,7 +674,7 @@ vg_lite_error_t SFT_Blit_008()
 {
     int i, j, k;
     vg_lite_error_t error = VG_LITE_SUCCESS;
-    vg_lite_color_t cc = 0xffffffff;    //Clear with BLACK.
+    //vg_lite_color_t cc = 0xffffffff;    //Clear with BLACK.
     vg_lite_buffer_t srcbuffer;
     vg_lite_buffer_t dstbuffer;
     vg_lite_buffer_t tempBuffer;
@@ -757,7 +757,7 @@ vg_lite_error_t SFT_Blit_009()
     vg_lite_buffer_t dst_buf;
     int i, j, nformats;
     vg_lite_error_t error = VG_LITE_SUCCESS;
-    vg_lite_color_t cc = 0xffffffff;    //Clear with BLACK.
+    //vg_lite_color_t cc = 0xffffffff;    //Clear with BLACK.
     vg_lite_buffer_t tempBuffer;
     int32_t width, height;
     vg_lite_uint32_t chip_id;
@@ -830,7 +830,7 @@ vg_lite_error_t SFT_Blit_010()
     vg_lite_buffer_t dst_buf;
     int i, j, k;
     vg_lite_error_t error = VG_LITE_SUCCESS;
-    vg_lite_color_t cc = 0xffffffff;    //Clear with BLACK.
+    //vg_lite_color_t cc = 0xffffffff;    //Clear with BLACK.
     vg_lite_buffer_t    tempBuffer;
     int32_t width, height;
     vg_lite_uint32_t chip_id;
@@ -937,7 +937,7 @@ vg_lite_error_t SFT_Blit()
         output_string("\nCase: SFT_Blit_007:::::::::::::::::::::Started\n");
         CHECK_ERROR(SFT_Blit_007());
         output_string("\nCase: SFT_Blit_007:::::::::::::::::::::Ended\n");
-        
+
         output_string("\nCase: SFT_Blit_008:::::::::::::::::::::Started\n");
         CHECK_ERROR(SFT_Blit_006());
         output_string("\nCase: SFT_Blit_008:::::::::::::::::::::Ended\n");

@@ -287,8 +287,7 @@ VB_POOL CVI_VB_CreatePool(VB_POOL_CONFIG_S *pstVbPoolCfg)
 	cfg.blk_size = pstVbPoolCfg->u32BlkSize;
 	cfg.blk_cnt = pstVbPoolCfg->u32BlkCnt;
 	cfg.remap_mode = pstVbPoolCfg->enRemapMode;
-	strncpy((char *)cfg.pool_name, pstVbPoolCfg->acName, VB_POOL_NAME_LEN - 1);
-	cfg.pool_name[VB_POOL_NAME_LEN - 1] = '\0';
+	snprintf((char *)cfg.pool_name, VB_POOL_NAME_LEN, "%s", pstVbPoolCfg->acName);
 
 	s32Ret = vb_ioctl_create_pool(fd, &cfg);
 	if (s32Ret != CVI_SUCCESS) {

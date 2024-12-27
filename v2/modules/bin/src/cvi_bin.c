@@ -4,9 +4,9 @@
 #include "cvi_vi.h"
 #include <cvi_comm_sys.h>
 #include <cvi_comm_vi.h>
-#include "rw_json.h"
 #include "isp_bin.h"
 #include "vpss_bin.h"
+#include "vo_bin.h"
 #include "md5.h"
 
 #define MAGIC_NUMBER 0x1835 /*the macro is used as magic number and can't be modified!*/
@@ -20,9 +20,9 @@
 //[tool version 40] + [isp commitId 10] + [sensorNum 9] + [sensorName1 27] + [sensorName2 27]
 //[sensorName3 27]  + [sensorName4 27] + [sensorName5 27]  + [sensorName6 27]  + [sensorName7 27]  + [sensorName8 27]
 //[isp branch 20] + [version 4] + [generate mode - A:auto M:Manual 1]
-#define PQBIN_VERSION_V10 "V1.0"
-#define PQBIN_VERSION_V11 "V1.1"
 
+#define PQBIN_VERSION_CHECK_V13 "V1.3"	// The lowest version used for verification
+										// v1.3 newly added index of pqbin
 #define DESC_SIZE 624
 #define BIN_MD5_SIZE 50
 #define PQBIN_RESERVE_SIZE 50
@@ -38,27 +38,24 @@
 struct BIN_BUF_INFO {
 	CVI_U32 u32BlkSize[CVI_BIN_ID_MAX];
 	CVI_U32 u32BinParaSize;
-	CVI_U32 u32JsonParaSize;
+	CVI_U32 u32IndexParaSize;
 	CVI_U32 u32ParaTotalSize;
 	CVI_U32 u32SensorNumber;
 	CVI_CHAR achBinVersion[PQBINVERSION_SIZE + 1];
 	CVI_CHAR achBinMode[PQBINCREATE_MODE_SIZE + 1];
 	CVI_CHAR achBinMD5Code[BIN_MD5_SIZE + 1];
 	CVI_CHAR achTotalParaMD5Value[MD5_STRING_LEN];
-	CVI_BOOL bNewVerisonMatch; /*it's not match new version*/
 };
 
 enum INFO_MODE {
 	BLOCK_SIZE_ERR,
-	PARSE_SUCCESS_FROM_JSON,
+	PARSE_SUCCESS_FROM_BIN_INDEX,
 	IMPORT_FAIL
 };
 
 static struct BIN_BUF_INFO g_stBinBufInfo = {0};
 static CVI_BOOL g_bUseOldLoadAPI = CVI_TRUE;
 static CVI_U32 g_u32CurIspBinSize;
-static CVI_U32 g_u32CurIspJsonInitSize;
-static CVI_U32 g_u32CurIspJsonCompreSize;
 
 static char userBinName[WDR_MODE_MAX][BIN_FILE_LENGTH] = {
 	"/mnt/cfg/param/cvi_sdr_bin", "/mnt/cfg/param/cvi_sdr_bin",
@@ -70,9 +67,8 @@ static char userBinName[WDR_MODE_MAX][BIN_FILE_LENGTH] = {
 static CVI_S32 _setBinNameImp(WDR_MODE_E wdrMode, const CVI_CHAR *binName);
 static CVI_S32 _getBinNameImp(CVI_CHAR *binName);
 static CVI_S32 check_is_register_id(enum CVI_BIN_SECTION_ID id);
-static CVI_S32 get_file_size(FILE *fp, CVI_U32 *size);
 static CVI_S32 id_is_valid_IspID(enum CVI_BIN_SECTION_ID id);
-static CVI_S32 get_json_para_from_buffer(enum CVI_BIN_SECTION_ID id, CVI_U8 *buf);
+static CVI_S32 get_index_para_from_buffer(enum CVI_BIN_SECTION_ID id, CVI_U8 *buf, CVI_U32 binSize);
 static CVI_BOOL check_bin_file_is_new_version(CVI_CHAR *pchVersion);
 static CVI_S32 write_md5_value_to_buf(CVI_U8 *buf, CVI_U32 u32BufSize);
 static void print_import_info(enum CVI_BIN_SECTION_ID id, enum INFO_MODE mode);
@@ -90,7 +86,8 @@ static pfn_cvi_bin_getbinsize getBinSizeFunc[CVI_BIN_ID_MAX] = {
 	vpss_bin_getbinsize,	/*CVI_BIN_ID_VPSS*/
 	NULL, /*CVI_BIN_ID_VDEC*/
 	NULL, /*CVI_BIN_ID_VENC*/
-	NULL, /*CVI_BIN_ID_VO*/
+	vo_bin_getbinsize, /*CVI_BIN_ID_VO0*/
+	vo_bin_getbinsize, /*CVI_BIN_ID_VO1*/
 };
 static pfn_cvi_bin_getparamfrombin getParamFromBinFunc[CVI_BIN_ID_MAX] = {
 	header_bin_getBinParam, /*CVI_BIN_ID_HEADER*/
@@ -105,22 +102,8 @@ static pfn_cvi_bin_getparamfrombin getParamFromBinFunc[CVI_BIN_ID_MAX] = {
 	vpss_bin_getparamfrombin, /*CVI_BIN_ID_VPSS*/
 	NULL, /*CVI_BIN_ID_VDEC*/
 	NULL, /*CVI_BIN_ID_VENC*/
-	NULL, /*CVI_BIN_ID_VO*/
-};
-static pfn_cvi_bin_setparamtobin setParamToBinFunc[CVI_BIN_ID_MAX] = {
-	header_bin_setBinParam, /*CVI_BIN_ID_HEADER*/
-	isp_bin_setBinParam, /*CVI_BIN_ID_ISP0*/
-	isp_bin_setBinParam, /*CVI_BIN_ID_ISP1*/
-	isp_bin_setBinParam, /*CVI_BIN_ID_ISP2*/
-	isp_bin_setBinParam, /*CVI_BIN_ID_ISP3*/
-	isp_bin_setBinParam, /*CVI_BIN_ID_ISP4*/
-	isp_bin_setBinParam, /*CVI_BIN_ID_ISP5*/
-	isp_bin_setBinParam, /*CVI_BIN_ID_ISP6*/
-	isp_bin_setBinParam, /*CVI_BIN_ID_ISP7*/
-	vpss_bin_setparamtobin,	/*CVI_BIN_ID_VPSS*/
-	NULL, /*CVI_BIN_ID_VDEC*/
-	NULL, /*CVI_BIN_ID_VENC*/
-	NULL, /*CVI_BIN_ID_VO*/
+	vo_bin_getparamfrombin, /*CVI_BIN_ID_VO0*/
+	vo_bin_getparamfrombin, /*CVI_BIN_ID_VO1*/
 };
 static pfn_cvi_bin_setparamtobuf setParamToBufFunc[CVI_BIN_ID_MAX] = {
 	header_bin_setBinParambuf, /*CVI_BIN_ID_HEADER*/
@@ -135,38 +118,25 @@ static pfn_cvi_bin_setparamtobuf setParamToBufFunc[CVI_BIN_ID_MAX] = {
 	vpss_bin_setparamtobuf,	/*CVI_BIN_ID_VPSS*/
 	NULL, /*CVI_BIN_ID_VDEC*/
 	NULL, /*CVI_BIN_ID_VENC*/
-	NULL, /*CVI_BIN_ID_VO*/
+	vo_bin_setparamtobuf, /*CVI_BIN_ID_VO0*/
+	vo_bin_setparamtobuf, /*CVI_BIN_ID_VO1*/
 };
 
-static pfn_cvi_json_getparamfrombuf getParamFromJsonBuf[CVI_BIN_ID_MAX] = {
-	NULL, /*CVI_BIN_ID_HEADER*/
-	isp_json_getParamFromJsonbuffer, /*CVI_BIN_ID_ISP0*/
-	isp_json_getParamFromJsonbuffer, /*CVI_BIN_ID_ISP1*/
-	isp_json_getParamFromJsonbuffer, /*CVI_BIN_ID_ISP2*/
-	isp_json_getParamFromJsonbuffer, /*CVI_BIN_ID_ISP3*/
-	isp_json_getParamFromJsonbuffer, /*CVI_BIN_ID_ISP4*/
-	isp_json_getParamFromJsonbuffer, /*CVI_BIN_ID_ISP5*/
-	isp_json_getParamFromJsonbuffer, /*CVI_BIN_ID_ISP6*/
-	isp_json_getParamFromJsonbuffer, /*CVI_BIN_ID_ISP7*/
-	vpss_json_getParamFromJsonbuffer, /*CVI_BIN_ID_VPSS*/
+static pfn_cvi_indexbin_getparamfrombin getIndexBinParamFromBinFunc[CVI_BIN_ID_MAX] = {
+	NULL, /*CVI_INDEX_BIN_ID_HEADER*/
+	isp_index_bin_getparamfrombin,  /*CVI_BIN_ID_ISP0*/
+	isp_index_bin_getparamfrombin,  /*CVI_BIN_ID_ISP1*/
+	isp_index_bin_getparamfrombin,  /*CVI_BIN_ID_ISP2*/
+	isp_index_bin_getparamfrombin,  /*CVI_BIN_ID_ISP3*/
+	isp_index_bin_getparamfrombin,  /*CVI_BIN_ID_ISP4*/
+	isp_index_bin_getparamfrombin,  /*CVI_BIN_ID_ISP5*/
+	isp_index_bin_getparamfrombin,  /*CVI_BIN_ID_ISP6*/
+	isp_index_bin_getparamfrombin,  /*CVI_BIN_ID_ISP7*/
+	vpss_index_bin_getparamfrombin, /*CVI_BIN_ID_VPSS*/
 	NULL, /*CVI_BIN_ID_VDEC*/
 	NULL, /*CVI_BIN_ID_VENC*/
-	NULL, /*CVI_BIN_ID_VO*/
-};
-static pfn_cvi_json_setparamtobuf setParamToJsonBuf[CVI_BIN_ID_MAX] = {
-	NULL, /*CVI_BIN_ID_HEADER*/
-	isp_json_setParamToJsonbuffer, /*CVI_BIN_ID_ISP0*/
-	isp_json_setParamToJsonbuffer, /*CVI_BIN_ID_ISP1*/
-	isp_json_setParamToJsonbuffer, /*CVI_BIN_ID_ISP2*/
-	isp_json_setParamToJsonbuffer, /*CVI_BIN_ID_ISP3*/
-	isp_json_setParamToJsonbuffer, /*CVI_BIN_ID_ISP4*/
-	isp_json_setParamToJsonbuffer, /*CVI_BIN_ID_ISP5*/
-	isp_json_setParamToJsonbuffer, /*CVI_BIN_ID_ISP6*/
-	isp_json_setParamToJsonbuffer, /*CVI_BIN_ID_ISP7*/
-	vpss_json_setParamToJsonbuffer, /*CVI_BIN_ID_VPSS*/
-	NULL, /*CVI_BIN_ID_VDEC*/
-	NULL, /*CVI_BIN_ID_VENC*/
-	NULL, /*CVI_BIN_ID_VO*/
+	vo_index_bin_getparamfrombin,   /*CVI_BIN_ID_VO0*/
+	vo_index_bin_getparamfrombin,   /*CVI_BIN_ID_VO1*/
 };
 
 static CVI_S32 _isSectionIdValid(enum CVI_BIN_SECTION_ID id)
@@ -180,31 +150,19 @@ static CVI_S32 _isSectionIdValid(enum CVI_BIN_SECTION_ID id)
 	return ret;
 }
 
-static CVI_S32 get_file_size(FILE *fp, CVI_U32 *size)
-{
-	CVI_S32 ret = CVI_SUCCESS;
-
-	fseek(fp, 0L, SEEK_END);
-	*size = ftell(fp);
-	rewind(fp);
-
-	return ret;
-}
-
 static struct BIN_BUF_INFO *get_current_buf_info(void)
 {
 	return &g_stBinBufInfo;
 }
 
-static CVI_S32 get_bin_Info_from_buf(CVI_U8 *buf, struct BIN_BUF_INFO *pstBufInfo)
+static CVI_S32 get_bin_Info_from_buf(CVI_U8 *buf, struct BIN_BUF_INFO *pstBufInfo, CVI_U32 u32DataLen)
 {
 	CVI_S32 ret = CVI_SUCCESS;
 	CVI_BIN_HEADER *pstHeader = (CVI_BIN_HEADER *)buf;
-	CVI_JSON_HEADER *pstJsonHeader = NULL;
+	CVI_BIN_INDEX_HEADER *pstIdxHeader = NULL;
 	CVI_CHAR *pchDesc = (CVI_CHAR *)pstHeader->extraInfo.Desc;
-	CVI_U32 u32BinSize = 0, u32JsonSize = 0;
-	CVI_U32 u32SensorNum = 0;
-	CVI_BOOL bBlkSizeValid = CVI_TRUE;
+	CVI_U32 u32BinSize = 0;
+	CVI_U32 u32IndexSize = 0;
 	CVI_CHAR achSensorNum[SENSORNUM_SIZE];
 
 	/*get sensor number,version and mode from buffer.*/
@@ -226,20 +184,6 @@ static CVI_S32 get_bin_Info_from_buf(CVI_U8 *buf, struct BIN_BUF_INFO *pstBufInf
 	strncpy(pstBufInfo->achBinVersion, pchDesc, PQBINVERSION_SIZE);
 	pchDesc += PQBINVERSION_SIZE;
 	strncpy(pstBufInfo->achBinMode, pchDesc, PQBINCREATE_MODE_SIZE);
-	if (check_bin_file_is_new_version(pstBufInfo->achBinVersion)) {
-		pstBufInfo->bNewVerisonMatch = CVI_TRUE;
-	} else {
-		pstBufInfo->bNewVerisonMatch = CVI_FALSE;
-		for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
-			if (id_is_valid_IspID(idx) == CVI_SUCCESS) {
-				bBlkSizeValid = pstHeader->size[idx] > 0 ? CVI_TRUE : CVI_FALSE;
-				if (bBlkSizeValid) {
-					u32SensorNum++;
-				}
-			}
-		}
-		pstBufInfo->u32SensorNumber = u32SensorNum;
-	}
 
 	/*get bin size total size.*/
 	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
@@ -249,23 +193,19 @@ static CVI_S32 get_bin_Info_from_buf(CVI_U8 *buf, struct BIN_BUF_INFO *pstBufInf
 		}
 	}
 
-	/*get json size total size.*/
+	/*get index size total size.*/
 	if (check_bin_file_is_new_version(pstBufInfo->achBinVersion)) {
-		pstJsonHeader = (CVI_JSON_HEADER *)(buf + u32BinSize);
-		for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
-			if (getBinSizeFunc[idx] != NULL) {
-				u32JsonSize += pstJsonHeader->size[idx].u32CompreSize;
-			}
-		}
+		pstIdxHeader = (CVI_BIN_INDEX_HEADER *)(buf + u32BinSize);
+		u32IndexSize = pstIdxHeader->size[0];
 	}
 
 	/*set bufinfo struct.*/
 	pstBufInfo->u32BinParaSize = u32BinSize;
-	pstBufInfo->u32JsonParaSize = u32JsonSize;
-	pstBufInfo->u32ParaTotalSize = u32BinSize + u32JsonSize;
-	if (strncmp(pstBufInfo->achBinVersion, PQBIN_VERSION_V11, PQBINVERSION_SIZE) >= 0) {
-		snprintf(pstBufInfo->achTotalParaMD5Value, MD5_STRING_LEN + 1, "%s",
-				(CVI_CHAR *)buf + pstBufInfo->u32ParaTotalSize);
+	pstBufInfo->u32IndexParaSize = u32IndexSize;
+	pstBufInfo->u32ParaTotalSize = u32BinSize + u32IndexSize;
+	if (strncmp(pstBufInfo->achBinVersion, PQBIN_VERSION_CHECK_V13, PQBINVERSION_SIZE) >= 0) {
+		snprintf(pstBufInfo->achTotalParaMD5Value, MD5_STRING_LEN, "%s",
+					(CVI_CHAR *)(buf + u32DataLen - MD5_STRING_LEN));
 
 		pstBufInfo->u32ParaTotalSize += MD5_STRING_LEN;
 	}
@@ -299,34 +239,65 @@ static CVI_S32 check_is_register_id(enum CVI_BIN_SECTION_ID id)
 
 static void print_import_info(enum CVI_BIN_SECTION_ID idx, enum INFO_MODE mode)
 {
-	if (mode == BLOCK_SIZE_ERR) {
-		if (idx == CVI_BIN_ID_HEADER) {
+	switch (idx) {
+	case CVI_BIN_ID_HEADER: {
+		if (mode == BLOCK_SIZE_ERR) {
 			CVI_TRACE_SYS(CVI_DBG_WARN, "The size of header is 0, import failed for header!\n");
-		} else if (idx == CVI_BIN_ID_VPSS) {
-			CVI_TRACE_SYS(CVI_DBG_WARN, "The size of VPSS is 0, import failed for VPSS!\n");
-		} else {
-			CVI_TRACE_SYS(
-				CVI_DBG_WARN,
-				"The size of sensor_%d is 0, import failed for sensor_%d!\n",
-				idx - CVI_BIN_ID_ISP0, idx - CVI_BIN_ID_ISP0
-			);
-		}
-	} else if (mode == PARSE_SUCCESS_FROM_JSON) {
-		if (idx == CVI_BIN_ID_HEADER) {
-			CVI_TRACE_LOG(CVI_DBG_WARN, "Get para of header from json!\n");
-		} else if (idx == CVI_BIN_ID_VPSS) {
-			CVI_TRACE_LOG(CVI_DBG_WARN, "Get para of VPSS from json!\n");
-		} else {
-			CVI_TRACE_LOG(CVI_DBG_WARN, "Get para of sensor_%d from json!\n", idx - CVI_BIN_ID_ISP0);
-		}
-	} else if (mode == IMPORT_FAIL) {
-		if (idx == CVI_BIN_ID_HEADER) {
+		} else if (mode == IMPORT_FAIL) {
 			CVI_TRACE_SYS(CVI_DBG_WARN, "Import failed for header!\n");
-		} else if (idx == CVI_BIN_ID_VPSS) {
-			CVI_TRACE_SYS(CVI_DBG_WARN, "Import failed for VPSS!\n");
-		} else {
+		}
+		break;
+	}
+	case CVI_BIN_ID_ISP0:
+	case CVI_BIN_ID_ISP1:
+	case CVI_BIN_ID_ISP2:
+	case CVI_BIN_ID_ISP3:
+	case CVI_BIN_ID_ISP4:
+	case CVI_BIN_ID_ISP5:
+	case CVI_BIN_ID_ISP6:
+	case CVI_BIN_ID_ISP7: {
+		if (mode == BLOCK_SIZE_ERR) {
+			CVI_TRACE_SYS(
+			CVI_DBG_WARN,
+			"The size of sensor_%d is 0, import failed for sensor_%d!\n",
+			idx - CVI_BIN_ID_ISP0, idx - CVI_BIN_ID_ISP0
+			);
+		} else if (mode == PARSE_SUCCESS_FROM_BIN_INDEX) {
+			CVI_TRACE_LOG(CVI_DBG_WARN, "Get para of sensor_%d by bin index table!\n", idx - CVI_BIN_ID_ISP0);
+		} else if (mode == IMPORT_FAIL) {
 			CVI_TRACE_SYS(CVI_DBG_WARN, "Import failed for sensor_%d!\n", idx - CVI_BIN_ID_ISP0);
 		}
+		break;
+	}
+	case CVI_BIN_ID_VPSS: {
+		if (mode == BLOCK_SIZE_ERR) {
+			CVI_TRACE_SYS(CVI_DBG_WARN, "The size of VPSS is 0, import failed for VPSS!\n");
+		} else if (mode == PARSE_SUCCESS_FROM_BIN_INDEX) {
+			CVI_TRACE_LOG(CVI_DBG_WARN, "Get para of VPSS by bin index table!\n");
+		} else if (mode == IMPORT_FAIL) {
+			CVI_TRACE_SYS(CVI_DBG_WARN, "Import failed for VPSS!\n");
+		}
+		break;
+	}
+	case CVI_BIN_ID_VO0:
+	case CVI_BIN_ID_VO1: {
+		if (mode == BLOCK_SIZE_ERR) {
+			CVI_TRACE_SYS(
+			CVI_DBG_WARN,
+			"The size of vo_%d is 0, import failed for vo_%d!\n",
+			idx - CVI_BIN_ID_VO0, idx - CVI_BIN_ID_VO0
+			);
+		} else if (mode == PARSE_SUCCESS_FROM_BIN_INDEX) {
+			CVI_TRACE_LOG(CVI_DBG_WARN, "Get para of vo_%d by bin index table!\n", idx - CVI_BIN_ID_VO0);
+		} else if (mode == IMPORT_FAIL) {
+			CVI_TRACE_SYS(CVI_DBG_WARN, "Import failed for vo_%d!\n", idx - CVI_BIN_ID_VO0);
+		}
+		break;
+	}
+	case CVI_BIN_ID_VDEC:
+	case CVI_BIN_ID_VENC:
+	default:
+		break;
 	}
 }
 
@@ -370,7 +341,7 @@ static CVI_S32 _getBinNameImp(CVI_CHAR *binName)
 
 static CVI_BOOL check_bin_file_is_new_version(CVI_CHAR *pchVersion)
 {
-	if (strncmp(pchVersion, PQBIN_VERSION_V10, strlen(PQBIN_VERSION_V10)) >= 0) {
+	if (strncmp(pchVersion, PQBIN_VERSION_CHECK_V13, strlen(PQBIN_VERSION_CHECK_V13)) >= 0) {
 		return CVI_TRUE;
 	} else {
 		return CVI_FALSE;
@@ -389,95 +360,68 @@ static CVI_S32 check_bin_file_validity(CVI_U8 *buf, CVI_U32 u32DataLen)
 		CVI_TRACE_SYS(CVI_DBG_ERR, "PQbin file isn't valid!\n");
 		goto FINISH_HANDLER;
 	}
-	/*Get PQbin information from buf.*/
-	get_bin_Info_from_buf(buf, pstBufInfo);
 
-	/*calcute md5 of buf. if u32DataLen is 0, it's old loading param API. */
-	if (u32DataLen != 0) {
-		if (strncmp(pstBufInfo->achBinVersion, PQBIN_VERSION_V11, PQBINVERSION_SIZE) >= 0) {
-			calcute_md5_value(buf, u32DataLen - MD5_STRING_LEN, au8Md5Value);
-			if (strncmp((char *)au8Md5Value, (char *)pstBufInfo->achTotalParaMD5Value,
-				MD5_STRING_LEN) != 0) {
-				ret = CVI_BIN_DATA_ERR;
-				CVI_TRACE_SYS(CVI_DBG_ERR, "Data of PQbin file isn't normal!\n");
-			}
+	/*Get PQbin information from buf.*/
+	get_bin_Info_from_buf(buf, pstBufInfo, u32DataLen);
+
+	/*calcute md5 of buf.*/
+	if (strncmp(pstBufInfo->achBinVersion, PQBIN_VERSION_CHECK_V13, PQBINVERSION_SIZE) >= 0) {
+		calcute_md5_value(buf, u32DataLen - MD5_STRING_LEN, au8Md5Value);
+		if (strncmp((char *)au8Md5Value, (char *)pstBufInfo->achTotalParaMD5Value,
+			MD5_STRING_LEN) != 0) {
+			ret = CVI_BIN_DATA_ERR;
+			CVI_TRACE_SYS(CVI_DBG_ERR, "Data of PQbin file isn't normal!\n");
 		}
+	} else {
+		ret = CVI_BIN_FILE_ERROR;
+		CVI_TRACE_SYS(LOG_ERR,
+			"The version of bin file is %s, cannot meet the minimum version %s!\n",
+			pstBufInfo->achBinVersion, PQBIN_VERSION_CHECK_V13);
+		goto FINISH_HANDLER;
 	}
 
 FINISH_HANDLER:
 	return ret;
 }
 
-static CVI_S32 get_json_para_from_buffer(enum CVI_BIN_SECTION_ID id, CVI_U8 *buf)
+static CVI_S32 get_index_para_from_buffer(enum CVI_BIN_SECTION_ID id, CVI_U8 *buf, CVI_U32 binSize)
 {
 	CVI_S32 ret = CVI_SUCCESS;
-	struct BIN_BUF_INFO *pstBufInfo = get_current_buf_info();
+	CVI_U32 indexOffset = 0;
+
+	ret = _isSectionIdValid(id);
+	if (ret != CVI_SUCCESS) {
+		ret = CVI_BIN_ID_ERROR;
+		CVI_TRACE_SYS(LOG_ERR, "Invalid id(%d)\n", id);
+		goto ERROR_HANDLER;
+	}
+
+	if (id == CVI_BIN_ID_HEADER) {
+		goto ERROR_HANDLER;
+	}
 
 	if (buf == NULL) {
 		ret = CVI_BIN_NULL_POINT;
-		return ret;
-	}
-
-	/*check that json is valid or not in cur file.*/
-	if (pstBufInfo->bNewVerisonMatch != CVI_TRUE) {
-		ret = CVI_BIN_NOJSON_ERROR;
-		CVI_TRACE_SYS(CVI_DBG_WARN, "Json is invalid in current PQBin file!\n");
-		goto FINISH_HANDLER;
-	}
-
-	/*load para from json.*/
-	ret = CVI_JSON_LoadParamFromBuffer(id, buf, getParamFromJsonBuf[id]);
-	if (ret != CVI_SUCCESS) {
-		CVI_TRACE_SYS(CVI_DBG_ERR, "Load Json failed!\n");
-		goto FINISH_HANDLER;
-	}
-
-FINISH_HANDLER:
-	return ret;
-}
-
-static CVI_S32 get_file_md5_value(FILE *fp, CVI_U8 *md5_value)
-{
-	CVI_U32 u32FileSize = 0;
-	CVI_U8 *buf = NULL;
-	CVI_U32 u32TempLen = 0;
-	CVI_S32 ret = CVI_SUCCESS;
-
-	get_file_size(fp, &u32FileSize);
-	buf = (CVI_U8 *)malloc(u32FileSize);
-	if (buf == NULL) {
-		ret = CVI_BIN_MALLOC_ERR;
-		CVI_TRACE_SYS(CVI_DBG_WARN, "calcute md5: Allocate memory fail\n");
+		CVI_TRACE_SYS(LOG_ERR, "input buffer pointer is null!");
 		goto ERROR_HANDLER;
 	}
-	u32TempLen = fread(buf, u32FileSize, 1, fp);
-	if (u32TempLen <= 0) {
-		CVI_TRACE_SYS(CVI_DBG_WARN, "calcute md5: read data to buff fail!\n");
-		ret = CVI_BIN_READ_ERROR;
+	if (getIndexBinParamFromBinFunc[id] == NULL) {
+		ret = CVI_BIN_NULL_POINT;
+		CVI_TRACE_SYS(LOG_ERR, "get index callback isn't registered!");
 		goto ERROR_HANDLER;
 	}
-	calcute_md5_value(buf, u32FileSize, md5_value);
+
+	/*get addr of bin header*/
+	CVI_BIN_HEADER *header = (CVI_BIN_HEADER *)buf;
+
+	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
+		indexOffset += header->size[idx];
+	}
+
+	/*load bin para to struct by index*/
+	ret = getIndexBinParamFromBinFunc[id](buf, id, binSize, indexOffset);
 
 ERROR_HANDLER:
-	if (buf != NULL) {
-		free(buf);
-	}
-	return ret;
-}
-
-static CVI_S32 write_md5_value_to_file(FILE *fp)
-{
-	CVI_S32 ret = CVI_SUCCESS;
-	CVI_U32 u32TempLen = 0;
-	CVI_U8 au8Md5Value[MD5_STRING_LEN] = { 0 };
-
-	ret = get_file_md5_value(fp, au8Md5Value);
-	fseek(fp, 0L, SEEK_END);
-	u32TempLen = fwrite(au8Md5Value, MD5_STRING_LEN, 1, fp);
-	if (u32TempLen != 1) {
-		ret = CVI_BIN_UPDATE_ERROR;
-		CVI_TRACE_SYS(CVI_DBG_WARN, "Write md5 to end of file fail!\n");
-	}
 
 	return ret;
 }
@@ -522,15 +466,6 @@ static CVI_S32 reset_id_size_in_bin(enum CVI_BIN_SECTION_ID src_id, enum CVI_BIN
 		addr += pstHeader->size[idx];
 	}
 
-	CVI_JSON_HEADER *pJsonHeader = (CVI_JSON_HEADER *)addr;
-
-	g_u32CurIspJsonInitSize = pJsonHeader->size[src_id].u32InitSize;
-	g_u32CurIspJsonCompreSize = pJsonHeader->size[src_id].u32CompreSize;
-	pJsonHeader->size[src_id].u32InitSize = 0;
-	pJsonHeader->size[src_id].u32CompreSize = 0;
-	pJsonHeader->size[dst_id].u32InitSize = g_u32CurIspJsonInitSize;
-	pJsonHeader->size[dst_id].u32CompreSize = g_u32CurIspJsonCompreSize;
-
 	return CVI_SUCCESS;
 }
 
@@ -546,13 +481,6 @@ static CVI_S32 restore_init_id_size_in_bin(enum CVI_BIN_SECTION_ID src_id, enum 
 	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
 		addr += pstHeader->size[idx];
 	}
-
-	CVI_JSON_HEADER *pJsonHeader = (CVI_JSON_HEADER *)addr;
-
-	pJsonHeader->size[dst_id].u32InitSize = 0;
-	pJsonHeader->size[dst_id].u32CompreSize = 0;
-	pJsonHeader->size[src_id].u32InitSize = g_u32CurIspJsonInitSize;
-	pJsonHeader->size[src_id].u32CompreSize = g_u32CurIspJsonCompreSize;
 
 	return CVI_SUCCESS;
 }
@@ -572,92 +500,12 @@ static CVI_BOOL is_target_id(enum CVI_BIN_SECTION_ID src_id, enum CVI_BIN_SECTIO
 
 CVI_U32 CVI_BIN_GetBinTotalLen(void)
 {
-	CVI_BIN_HEADER stHeader = { 0 };
-	CVI_U32 u32ParaTotalSize = 0;
-	CVI_JSON_HEADER stJsonHeader = { 0 };
-
-	/*get size of json and bin content.*/
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
-		if (idx == CVI_BIN_ID_HEADER) {
-			stJsonHeader.size[CVI_BIN_ID_HEADER].u32InitSize = sizeof(CVI_JSON_HEADER);
-			stJsonHeader.size[CVI_BIN_ID_HEADER].u32CompreSize = sizeof(CVI_JSON_HEADER);
-		} else {
-			if ((getBinSizeFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
-				CVI_JSON_SaveParamToBuffer(NULL, idx, &stJsonHeader.size[idx], setParamToJsonBuf[idx],
-				0);
-			}
-		}
-	}
-
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
-		if ((getBinSizeFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
-			getBinSizeFunc[idx](idx, (CVI_U32 *)&(stHeader.size[idx]));
-		}
-		u32ParaTotalSize += stJsonHeader.size[idx].u32CompreSize + stHeader.size[idx];
-	}
-
-	/*plus length of Md5.*/
-	u32ParaTotalSize += MD5_STRING_LEN;
-
-	return u32ParaTotalSize;
+	return CVI_BIN_GetSingleISPBinLen(CVI_BIN_ID_ALL);
 }
 
 CVI_S32 CVI_BIN_ExportBinData(CVI_U8 *pu8Buffer, CVI_U32 u32DataLength)
 {
-	if (pu8Buffer == NULL) {
-		return CVI_BIN_NULL_POINT;
-	}
-
-	CVI_S32 ret = CVI_SUCCESS;
-	CVI_BIN_HEADER *pstHeader = (CVI_BIN_HEADER *)pu8Buffer;
-	CVI_U8 *pu8JsonAddr = NULL;
-	CVI_U8 *pu8BufStartAddr = pu8Buffer;
-	CVI_U32 u32BufSize = u32DataLength;
-	CVI_JSON_HEADER stJsonHeader = { 0 };
-
-	/*remove md5 length.*/
-	u32DataLength -= MD5_STRING_LEN;
-	pstHeader->chipId = MAGIC_NUMBER;
-
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
-		if ((getBinSizeFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
-			getBinSizeFunc[idx](idx, (CVI_U32 *)&(pstHeader->size[idx]));
-		}
-		u32DataLength -= pstHeader->size[idx];
-	}
-
-	/*get bin param to buf*/
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
-		if ((setParamToBufFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
-			ret = setParamToBufFunc[idx](idx, pu8Buffer);
-		}
-		pu8Buffer += pstHeader->size[idx];
-	}
-
-	/*set json param to buf*/
-	pu8JsonAddr = pu8Buffer;
-
-	/*save compress json para to cvi_sdr_bin*/
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
-		if (idx == CVI_BIN_ID_HEADER) {
-			stJsonHeader.size[CVI_BIN_ID_HEADER].u32InitSize = sizeof(CVI_JSON_HEADER);
-			stJsonHeader.size[CVI_BIN_ID_HEADER].u32CompreSize = sizeof(CVI_JSON_HEADER);
-		} else {
-			if ((setParamToBufFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
-				ret = CVI_JSON_SaveParamToBuffer(pu8Buffer, idx, &stJsonHeader.size[idx],
-				setParamToJsonBuf[idx], u32DataLength);
-				if (ret != CVI_SUCCESS) {
-					break;
-				}
-			}
-		}
-		u32DataLength -= stJsonHeader.size[idx].u32CompreSize;
-		pu8Buffer += stJsonHeader.size[idx].u32CompreSize;
-	}
-	memcpy(pu8JsonAddr, &stJsonHeader, sizeof(CVI_JSON_HEADER));
-	write_md5_value_to_buf(pu8BufStartAddr, u32BufSize);
-
-	return ret;
+	return CVI_BIN_ExportSingleISPBinData(CVI_BIN_ID_ALL, pu8Buffer, u32DataLength);
 }
 
 CVI_S32 CVI_BIN_ImportBinData(CVI_U8 *pu8Buffer, CVI_U32 u32DataLength)
@@ -711,9 +559,9 @@ CVI_S32 CVI_BIN_ImportBinData(CVI_U8 *pu8Buffer, CVI_U32 u32DataLength)
 				if (tmpRet == CVI_SUCCESS) {
 					ret = CVI_SUCCESS;
 				} else {
-					tmpRet = get_json_para_from_buffer(idx, pu8Buffer);
+					tmpRet = get_index_para_from_buffer(idx, pu8Buffer, pstHeader->size[idx]);
 					if (tmpRet == CVI_SUCCESS) {
-						print_import_info(idx, PARSE_SUCCESS_FROM_JSON);
+						print_import_info(idx, PARSE_SUCCESS_FROM_BIN_INDEX);
 						ret = CVI_SUCCESS;
 					} else {
 						print_import_info(idx, IMPORT_FAIL);
@@ -736,61 +584,24 @@ CVI_S32 CVI_BIN_SaveParamToBin(FILE *fp, CVI_BIN_EXTRA_S *extraInfo)
 
 	CVI_S32 ret = CVI_SUCCESS;
 	CVI_BIN_HEADER header = { 0 };
-	CVI_U32 u32BinParaSize = 0, u32TempLen = 0;
-	CVI_JSON_HEADER stJsonHeader = { 0 };
+	CVI_U32 u32TempLen = 0;
+	CVI_U32 u32DataLength = CVI_BIN_GetBinTotalLen();
+
+	CVI_U8 *pu8Buffer = (CVI_U8 *)malloc(sizeof(CVI_U8) * u32DataLength);
 
 	header.chipId = MAGIC_NUMBER;
 	header.extraInfo = *extraInfo;
 	header.size[CVI_BIN_ID_HEADER] = sizeof(CVI_BIN_HEADER);
 
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
-		if ((getBinSizeFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
-			getBinSizeFunc[idx](idx, (CVI_U32 *)&(header.size[idx]));
-		}
-	}
+	memcpy(pu8Buffer, &header, sizeof(CVI_BIN_HEADER));
 
-	u32TempLen = fwrite(&header, sizeof(CVI_BIN_HEADER), 1, fp);
+	CVI_BIN_ExportBinData(pu8Buffer, u32DataLength);
+
+	u32TempLen = fwrite(pu8Buffer, sizeof(CVI_U8) * u32DataLength, 1, fp);
 	if (u32TempLen != 1) {
-		ret = CVI_BIN_UPDATE_ERROR;
-		CVI_TRACE_SYS(CVI_DBG_WARN, "Write bin header infor to file fail!\n");
+		ret = CVI_FAILURE;
+		CVI_TRACE_SYS(CVI_DBG_WARN, "Write bin data to file fail!\n");
 	}
-
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
-		CVI_U32 addr = ftell(fp);
-
-		u32BinParaSize += header.size[idx];
-		if ((setParamToBinFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
-			ret = setParamToBinFunc[idx](idx, fp);
-			if (header.size[idx] != (ftell(fp) - addr) && idx != CVI_BIN_ID_MIN) {
-				CVI_TRACE_SYS(CVI_DBG_WARN, "Write data length mismatch (%ld > %d)\n",
-					      (ftell(fp) - addr), header.size[idx]);
-				ret = CVI_FAILURE;
-			}
-		}
-	}
-
-	/*save json para to bin file.*/
-	fseek(fp, u32BinParaSize + sizeof(CVI_JSON_HEADER), SEEK_SET);
-	/*save compress jsonfile para to cvi_sdr_bin*/
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
-		if (idx == CVI_BIN_ID_HEADER) {
-			stJsonHeader.size[idx].u32InitSize = sizeof(CVI_JSON_HEADER);
-			stJsonHeader.size[idx].u32CompreSize = sizeof(CVI_JSON_HEADER);
-		} else {
-			if ((setParamToBinFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
-				CVI_JSON_SaveParamToFile(fp, idx, &stJsonHeader.size[idx], setParamToJsonBuf[idx]);
-			}
-		}
-	}
-	fseek(fp, u32BinParaSize, SEEK_SET);
-	u32TempLen = fwrite(&stJsonHeader, sizeof(CVI_JSON_HEADER), 1, fp);
-	if (u32TempLen != 1) {
-		ret = CVI_BIN_UPDATE_ERROR;
-		CVI_TRACE_SYS(CVI_DBG_WARN, "Write json header infor to file fail!\n");
-	}
-
-	/*calcute md5 value and write md5 to end of file.*/
-	ret = write_md5_value_to_file(fp);
 
 	return ret;
 }
@@ -856,8 +667,8 @@ CVI_S32 CVI_BIN_LoadParamFromBin(enum CVI_BIN_SECTION_ID id, CVI_U8 *buf)
 			if (bBlkSizeValid) {
 				ret = getParamFromBinFunc[id](id, addr, pstHeader->size[id]);
 				if (ret != CVI_SUCCESS) {
-					CVI_TRACE_SYS(CVI_DBG_WARN, "Get cur block(%d) para from json!\n", id);
-					ret = get_json_para_from_buffer(id, buf);
+					CVI_TRACE_SYS(CVI_DBG_WARN, "Get cur block(%d) para from index bin!\n", id);
+					ret = get_index_para_from_buffer(id, buf, pstHeader->size[id]);
 				}
 			} else {
 				CVI_TRACE_SYS(CVI_DBG_WARN, "The block(%d) data in PQbin file is empty!\n", id);
@@ -897,30 +708,14 @@ ERROR_HANDLER:
 CVI_S32 CVI_BIN_GetSingleISPBinLen(enum CVI_BIN_SECTION_ID id)
 {
 	CVI_BIN_HEADER stHeader = { 0 };
+	CVI_BIN_INDEX_HEADER idxHeader = { 0 };
 	CVI_U32 u32ParaTotalSize = 0;
-	CVI_JSON_HEADER stJsonHeader = { 0 };
-	CVI_S32 s32IdRegisterRet = CVI_SUCCESS;
 
-	s32IdRegisterRet = check_is_register_id(id);
-	if (s32IdRegisterRet != CVI_SUCCESS) {
+	if (check_is_register_id(id) != CVI_SUCCESS) {
 		return 0;
 	}
 
-	/*get size of json and bin content.*/
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx <= id && idx != CVI_BIN_ID_MAX; idx++) {
-		if (idx == CVI_BIN_ID_HEADER) {
-			stJsonHeader.size[CVI_BIN_ID_HEADER].u32InitSize = sizeof(CVI_JSON_HEADER);
-			stJsonHeader.size[CVI_BIN_ID_HEADER].u32CompreSize = sizeof(CVI_JSON_HEADER);
-		} else {
-			if (is_target_id(idx, id) != CVI_TRUE) {
-				continue;
-			}
-			if ((getBinSizeFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
-				CVI_JSON_SaveParamToBuffer(NULL, idx, &stJsonHeader.size[idx], setParamToJsonBuf[idx],
-				0);
-			}
-		}
-	}
+	cvi_bin_getIndexInitHeader(&idxHeader);
 
 	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx <= id && idx != CVI_BIN_ID_MAX; idx++) {
 		if (is_target_id(idx, id) != CVI_TRUE) {
@@ -929,8 +724,11 @@ CVI_S32 CVI_BIN_GetSingleISPBinLen(enum CVI_BIN_SECTION_ID id)
 		if ((getBinSizeFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
 			getBinSizeFunc[idx](idx, (CVI_U32 *)&(stHeader.size[idx]));
 		}
-		u32ParaTotalSize += stJsonHeader.size[idx].u32CompreSize + stHeader.size[idx];
+		u32ParaTotalSize += stHeader.size[idx];
 	}
+
+	/*plus size of index_header index_table.*/
+	u32ParaTotalSize += idxHeader.size[0];
 
 	/*plus length of Md5.*/
 	u32ParaTotalSize += MD5_STRING_LEN;
@@ -949,14 +747,20 @@ CVI_S32 CVI_BIN_ExportSingleISPBinData(enum CVI_BIN_SECTION_ID id, CVI_U8 *pu8Bu
 
 	CVI_S32 ret = CVI_SUCCESS;
 	CVI_BIN_HEADER *pstHeader = (CVI_BIN_HEADER *)pu8Buffer;
-	CVI_U8 *pu8JsonAddr = NULL;
+	CVI_BIN_INDEX_HEADER idxHeader = { 0 };
 	CVI_U8 *pu8BufStartAddr = pu8Buffer;
-	CVI_U32 u32BufSize = u32DataLength;
-	CVI_JSON_HEADER stJsonHeader = { 0 };
+	CVI_S32 u32CheckBufSize = u32DataLength;
 
-	/*remove md5 length.*/
-	u32DataLength -= MD5_STRING_LEN;
+	if (u32CheckBufSize <= 0) {
+		CVI_TRACE_SYS(CVI_DBG_ERR, "Data of PQbin file isn't normal!\n");
+		return CVI_BIN_DATA_ERR;
+	}
+
 	pstHeader->chipId = MAGIC_NUMBER;
+
+	if (cvi_bin_getIndexInitHeader(&idxHeader) != CVI_SUCCESS) {
+		return CVI_BIN_INDEX_HEADER_INIT_ERROR;
+	}
 
 	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx <= id && idx != CVI_BIN_ID_MAX; idx++) {
 		if (is_target_id(idx, id) != CVI_TRUE) {
@@ -964,8 +768,23 @@ CVI_S32 CVI_BIN_ExportSingleISPBinData(enum CVI_BIN_SECTION_ID id, CVI_U8 *pu8Bu
 		}
 		if ((getBinSizeFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
 			getBinSizeFunc[idx](idx, (CVI_U32 *)&(pstHeader->size[idx]));
+
+			if (idx != 0) {
+				idxHeader.size[idx] = pstHeader->size[idx];
+			}
 		}
-		u32DataLength -= pstHeader->size[idx];
+		u32CheckBufSize -= pstHeader->size[idx];
+
+		if (u32CheckBufSize <= 0) break;
+	}
+
+	if (u32CheckBufSize <= 0) {
+		CVI_TRACE_SYS(CVI_DBG_ERR, "no more buffer space for PQbin!\n");
+		return CVI_BIN_SAPCE_ERR;
+	}
+
+	if (cvi_bin_computeIndexHeaderOffset(&idxHeader, sizeof(CVI_BIN_HEADER)) != CVI_SUCCESS) {
+		return CVI_BIN_INDEX_HEADER_INIT_ERROR;
 	}
 
 	/*get bin param to buf*/
@@ -979,32 +798,33 @@ CVI_S32 CVI_BIN_ExportSingleISPBinData(enum CVI_BIN_SECTION_ID id, CVI_U8 *pu8Bu
 		pu8Buffer += pstHeader->size[idx];
 	}
 
-	/*set json param to buf*/
-	pu8JsonAddr = pu8Buffer;
+	Entry *entrys = (Entry *)malloc(idxHeader.size[0] - sizeof(CVI_BIN_INDEX_HEADER));
 
-	/*save compress json para to cvi_sdr_bin*/
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx <= id && idx != CVI_BIN_ID_MAX; idx++) {
-		if (idx == CVI_BIN_ID_HEADER) {
-			stJsonHeader.size[CVI_BIN_ID_HEADER].u32InitSize = sizeof(CVI_JSON_HEADER);
-			stJsonHeader.size[CVI_BIN_ID_HEADER].u32CompreSize = sizeof(CVI_JSON_HEADER);
-		} else {
-			if (is_target_id(idx, id) != CVI_TRUE) {
-				continue;
-			}
-			if ((setParamToBufFunc[idx] != NULL) && (check_is_register_id(idx) == CVI_SUCCESS)) {
-				ret = CVI_JSON_SaveParamToBuffer(pu8Buffer, idx, &stJsonHeader.size[idx],
-				setParamToJsonBuf[idx], u32DataLength);
-				if (ret != CVI_SUCCESS) {
-					break;
-				}
-			}
-		}
-		u32DataLength -= stJsonHeader.size[idx].u32CompreSize;
-		pu8Buffer += stJsonHeader.size[idx].u32CompreSize;
+	ret = cvi_bin_getIndexTable(entrys);
+
+	/*get bin index to buf*/
+	u32CheckBufSize -= idxHeader.size[0];
+
+	if (u32CheckBufSize <= 0) {
+		CVI_TRACE_SYS(CVI_DBG_ERR, "no more buffer space for PQbin!\n");
+		return CVI_BIN_SAPCE_ERR;
 	}
 
-	memcpy(pu8JsonAddr, &stJsonHeader, sizeof(CVI_JSON_HEADER));
-	write_md5_value_to_buf(pu8BufStartAddr, u32BufSize);
+	memcpy(pu8Buffer, &idxHeader, sizeof(CVI_BIN_INDEX_HEADER));
+	pu8Buffer += sizeof(CVI_BIN_INDEX_HEADER);
+	memcpy(pu8Buffer, entrys, idxHeader.size[0] - sizeof(CVI_BIN_INDEX_HEADER));
+
+	/*remove md5 length.*/
+	u32CheckBufSize -= MD5_STRING_LEN;
+
+	if (u32CheckBufSize < 0) {
+		CVI_TRACE_SYS(CVI_DBG_ERR, "no more buffer space for PQbin!\n");
+		return CVI_BIN_SAPCE_ERR;
+	}
+
+	write_md5_value_to_buf(pu8BufStartAddr, u32DataLength);
+
+	free(entrys);
 
 	return ret;
 }

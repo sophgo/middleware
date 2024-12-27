@@ -1297,7 +1297,7 @@ void dpu_Usage()
 	DPU_UT_PRT("\t 100)DPU_AUTO_TEST.\n");
 	DPU_UT_PRT("\t 255)exit.\n");
 }
-static CVI_S32 dpu_mode_test(CVI_CHAR stFileName[128],CVI_CHAR reFileName[128],DPU_MODE_E dpu_mode){
+static CVI_S32 dpu_mode_test(CVI_CHAR *stFileName,CVI_CHAR *reFileName,DPU_MODE_E dpu_mode){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1337,7 +1337,7 @@ static CVI_S32 dpu_mode_test(CVI_CHAR stFileName[128],CVI_CHAR reFileName[128],D
 	return s32Ret;
 }
 
-static CVI_S32 dpu_fgs_mode_test(CVI_CHAR stFileName[128],CVI_CHAR reFileName[128], DPU_MODE_E dpu_mode){
+static CVI_S32 dpu_fgs_mode_test(CVI_CHAR *stFileName,CVI_CHAR *reFileName, DPU_MODE_E dpu_mode){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1380,10 +1380,10 @@ static CVI_S32 dpu_fgs_mode_test(CVI_CHAR stFileName[128],CVI_CHAR reFileName[12
 	return s32Ret;
 }
 
-static CVI_S32 dpu_size_test(CVI_CHAR fileNameInL[128],
-								CVI_CHAR fileNameInR[128],
-								CVI_CHAR stFileName[128],
-								CVI_CHAR reFileName[128],
+static CVI_S32 dpu_size_test(CVI_CHAR *fileNameInL,
+								CVI_CHAR *fileNameInR,
+								CVI_CHAR *stFileName,
+								CVI_CHAR *reFileName,
 								CVI_S32 width,CVI_S32 height,
 								DPU_MODE_E dpu_mode)
 {
@@ -1426,8 +1426,8 @@ static CVI_S32 dpu_size_test(CVI_CHAR fileNameInL[128],
 	return s32Ret;
 }
 
-static CVI_S32 dpu_press_test(CVI_CHAR fileNameInL[128],
-								CVI_CHAR fileNameInR[128],
+static CVI_S32 dpu_press_test(CVI_CHAR *fileNameInL,
+								CVI_CHAR *fileNameInR,
 								CVI_S32 width,CVI_S32 height,
 								DPU_MODE_E dpu_mode)
 {
@@ -1446,10 +1446,10 @@ static CVI_S32 dpu_press_test(CVI_CHAR fileNameInL[128],
 	return s32Ret;
 }
 
-static CVI_S32 dpu_golden_test(CVI_CHAR fileNameInL[128],
-								CVI_CHAR fileNameInR[128],
-								CVI_CHAR stFileName[128],
-								CVI_CHAR reFileName[128],
+static CVI_S32 dpu_golden_test(CVI_CHAR *fileNameInL,
+								CVI_CHAR *fileNameInR,
+								CVI_CHAR *stFileName,
+								CVI_CHAR *reFileName,
 								CVI_S32 width,
 								CVI_S32 height,
 								DPU_GOLDEN_MODE_E enDpuGolden)
@@ -1502,10 +1502,10 @@ static CVI_S32 dpu_golden_test(CVI_CHAR fileNameInL[128],
 	return s32Ret;
 }
 
-static CVI_S32 dpu_disp_range_test(CVI_CHAR fileNameInL[128],
-								   CVI_CHAR fileNameInR[128],
-								   CVI_CHAR stFileName[128],
-								   CVI_CHAR reFileName[128],
+static CVI_S32 dpu_disp_range_test(CVI_CHAR *fileNameInL,
+								   CVI_CHAR *fileNameInR,
+								   CVI_CHAR *stFileName,
+								   CVI_CHAR *reFileName,
 								   CVI_U32 width,
 								   CVI_U32 height,
 								   CVI_U16 dispStartPos,
@@ -1537,7 +1537,7 @@ static CVI_S32 dpu_disp_range_test(CVI_CHAR fileNameInL[128],
 	return s32Ret;
 }
 
-static CVI_S32 dpu_census_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], CVI_U32 censusShift){
+static CVI_S32 dpu_census_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName, CVI_U32 censusShift){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1564,7 +1564,7 @@ static CVI_S32 dpu_census_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128
 	return s32Ret;
 }
 
-static CVI_S32 dpu_add_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], CVI_U32 rshift1, CVI_U32 rshift2){
+static CVI_S32 dpu_add_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName, CVI_U32 rshift1, CVI_U32 rshift2){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1592,7 +1592,7 @@ static CVI_S32 dpu_add_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], 
 	return s32Ret;
 }
 
-static CVI_S32 dpu_bfw_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], DPU_MASK_MODE_E maskMode){
+static CVI_S32 dpu_bfw_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName, DPU_MASK_MODE_E maskMode){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1619,7 +1619,7 @@ static CVI_S32 dpu_bfw_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], 
 	return s32Ret;
 }
 
-static CVI_S32 dpu_dcc_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], CVI_U32 caP1, CVI_U32 caP2, DPU_DCC_DIR_E dccDir){
+static CVI_S32 dpu_dcc_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName, CVI_U32 caP1, CVI_U32 caP2, DPU_DCC_DIR_E dccDir){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1648,7 +1648,7 @@ static CVI_S32 dpu_dcc_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], 
 	return s32Ret;
 }
 
-static CVI_S32 dpu_uniq_check_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128],CVI_U32 uniqRatio){
+static CVI_S32 dpu_uniq_check_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName,CVI_U32 uniqRatio){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1675,7 +1675,7 @@ static CVI_S32 dpu_uniq_check_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName
 	return s32Ret;
 }
 
-static CVI_S32 dpu_dispShift_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], CVI_U32 dispShift){
+static CVI_S32 dpu_dispShift_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName, CVI_U32 dispShift){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1702,7 +1702,7 @@ static CVI_S32 dpu_dispShift_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[
 	return s32Ret;
 }
 
-static CVI_S32 dpu_u16tou8_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], CVI_U32 dispShift, DPU_DISP_RANGE_E enDispRange){
+static CVI_S32 dpu_u16tou8_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName, CVI_U32 dispShift, DPU_DISP_RANGE_E enDispRange){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1730,7 +1730,7 @@ static CVI_S32 dpu_u16tou8_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[12
 	return s32Ret;
 }
 
-static CVI_S32 dpu_fgsMaxCount_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], CVI_U32 maxCount){
+static CVI_S32 dpu_fgsMaxCount_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName, CVI_U32 maxCount){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1757,7 +1757,7 @@ static CVI_S32 dpu_fgsMaxCount_test(CVI_CHAR stFileName[128], CVI_CHAR reFileNam
 	return s32Ret;
 }
 
-static CVI_S32 dpu_fgsMaxT_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], CVI_U32 maxT){
+static CVI_S32 dpu_fgsMaxT_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName, CVI_U32 maxT){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1784,7 +1784,7 @@ static CVI_S32 dpu_fgsMaxT_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[12
 	return s32Ret;
 }
 
-static CVI_S32 dpu_depth_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], DPU_DISP_RANGE_E enDispRange, CVI_U32 fxBaseline){
+static CVI_S32 dpu_depth_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName, DPU_DISP_RANGE_E enDispRange, CVI_U32 fxBaseline){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1812,7 +1812,7 @@ static CVI_S32 dpu_depth_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128]
 	return s32Ret;
 }
 
-static CVI_S32 dpu_unitChoose_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName[128], CVI_U32 depthUnit){
+static CVI_S32 dpu_unitChoose_test(CVI_CHAR *stFileName, CVI_CHAR *reFileName, CVI_U32 depthUnit){
 	CVI_S32 s32Ret;
 	CVI_S32 size;
 	strncpy(fileNameInLeft, DPU_SOFA_L, sizeof(DPU_SOFA_L));
@@ -1839,7 +1839,7 @@ static CVI_S32 dpu_unitChoose_test(CVI_CHAR stFileName[128], CVI_CHAR reFileName
 	return s32Ret;
 }
 
-static CVI_S32 dpu_btcost_test(CVI_CHAR stFileName[128],CVI_CHAR reFileName[128])
+static CVI_S32 dpu_btcost_test(CVI_CHAR *stFileName,CVI_CHAR *reFileName)
 {
 	CVI_S32 s32Ret;
 	CVI_S32 size;

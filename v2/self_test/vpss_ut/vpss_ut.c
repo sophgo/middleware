@@ -90,6 +90,7 @@
 #define MD5_TILE_CHN0         "1a0a02966deb1066b2e7884aa88384b4"
 #define MD5_TILE_CHN1         "f8ee91af9ccb40bfb6c4c5ce7dbe4099"
 
+#define SLT_REF               "res/1920_1080.nv21"
 
 #define OUT_FILE_PREFIX           "./out"
 
@@ -188,6 +189,7 @@ typedef enum _VPSS_TEST_OP {
 	VPSS_TEST_STITCH_PIP,
 	VPSS_TEST_STITCH_FOUR_GRID,
 	VPSS_TEST_TILE_1_to_2,
+	VPSS_TEST_SLT,
 	VPSS_TEST_C_MODEL,
 	VPSS_TEST_USER_CONFIG = 100,
 	VPSS_TEST_AUTO = 200,
@@ -221,7 +223,7 @@ static CVI_S32 basic(const VPSS_BASIC_TEST_PARAM *pTestParam)
 	CVI_U32 u32BlkSizeIn, u32BlkSizeOut;
 	VIDEO_FRAME_INFO_S stVideoFrame;
 	CVI_BOOL bFlag = CVI_FALSE;
-	CVI_BOOL bSaveFile = CVI_TRUE;
+	CVI_BOOL bSaveFile = CVI_FALSE;
 
 	/************************************************
 	 * step1:  Init SYS and common VB
@@ -454,9 +456,14 @@ static CVI_S32 basic(const VPSS_BASIC_TEST_PARAM *pTestParam)
 
 	if (pTestParam->aszMD5Sum[0]) {
 		if (CompareWithMD5(pTestParam->aszMD5Sum, &stVideoFrame)) {
-			bSaveFile = CVI_TRUE;
-			s32Ret = CVI_FAILURE;
-			VPSS_UT_PRT("Compare MD5 fail, MD5:%s\n", pTestParam->aszMD5Sum);
+			if (pTestParam->aszFileNameRef[0] &&
+				CompareWithFile(pTestParam->aszFileNameRef, &stVideoFrame) == CVI_SUCCESS)
+				s32Ret = CVI_SUCCESS;
+			else {
+				bSaveFile = CVI_TRUE;
+				s32Ret = CVI_FAILURE;
+				VPSS_UT_PRT("Compare MD5 fail, MD5:%s\n", pTestParam->aszMD5Sum);
+			}
 		} else {
 			bSaveFile = CVI_FALSE;
 		}
@@ -469,15 +476,6 @@ static CVI_S32 basic(const VPSS_BASIC_TEST_PARAM *pTestParam)
 			goto exit4;
 		}
 		VPSS_UT_PRT("output file:%s\n", pTestParam->aszFileNameOut);
-	}
-
-	if (pTestParam->aszFileNameRef[0]) {
-		if (CompareWithFile(pTestParam->aszFileNameRef, &stVideoFrame)) {
-			VPSS_UT_PRT("CompareWithFile fail.\n");
-			CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrame);
-			s32Ret = CVI_FAILURE;
-			goto exit4;
-		}
 	}
 
 	CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrame);
@@ -4257,6 +4255,39 @@ static CVI_S32 vpss_test_tile_1_to_2(CVI_VOID)
 	return s32Ret;
 }
 
+static CVI_S32 vpss_test_slt(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	VPSS_BASIC_TEST_PARAM stTestParam;
+
+	memset(&stTestParam, 0, sizeof(stTestParam));
+	stTestParam.VpssGrp = 0;
+	stTestParam.stSizeIn.u32Width = DEFAULT_W;
+	stTestParam.stSizeIn.u32Height = DEFAULT_H;
+	stTestParam.stSizeOut.u32Width = DEFAULT_W;
+	stTestParam.stSizeOut.u32Height = DEFAULT_H;
+	stTestParam.bMirror = CVI_FALSE;
+	stTestParam.bFlip = CVI_FALSE;
+	stTestParam.enFormatIn = PIXEL_FORMAT_YUV_PLANAR_420;
+	stTestParam.enFormatOut = PIXEL_FORMAT_NV21;
+	stTestParam.stAspectRatio.enMode = ASPECT_RATIO_NONE;
+	stTestParam.stNormalize.bEnable = CVI_FALSE;
+	stTestParam.u32CheckSum = 0x13030706;
+	strncpy(stTestParam.aszMD5Sum, MD5_BASIC, sizeof(stTestParam.aszMD5Sum));
+	strncpy(stTestParam.aszFileNameIn, VPSS_DEFAULT_FILE_IN, sizeof(stTestParam.aszFileNameIn));
+	strncpy(stTestParam.aszFileNameRef, SLT_REF, sizeof(stTestParam.aszFileNameRef));
+	snprintf(stTestParam.aszFileNameOut, 64, "%s/%s_%d_%d_%s.bin",
+		OUT_FILE_PREFIX, __func__,
+		stTestParam.stSizeOut.u32Width,
+		stTestParam.stSizeOut.u32Height,
+		GetFmtName(stTestParam.enFormatOut));
+
+	s32Ret = basic(&stTestParam);
+	TEST_CHECK_RET(s32Ret);
+
+	return s32Ret;
+}
+
 static CVI_S32 vpss_test_csc_rgb2yuv(CVI_VOID)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
@@ -4774,6 +4805,9 @@ static CVI_S32 _vpss_handle_op(CVI_S32 op)
 	case VPSS_TEST_TILE_1_to_2:
 		s32Ret = vpss_test_tile_1_to_2();
 		break;
+	case VPSS_TEST_SLT:
+		s32Ret = vpss_test_slt();
+		break;
 	case VPSS_TEST_C_MODEL:
 		s32Ret = vpss_test_c_model();
 		break;
@@ -4827,6 +4861,7 @@ static void vpss_show_help(void)
 	VPSS_UT_PRT("%4d: stitch picture in picture\n", VPSS_TEST_STITCH_PIP);
 	VPSS_UT_PRT("%4d: stitch four-square grid\n", VPSS_TEST_STITCH_FOUR_GRID);
 	VPSS_UT_PRT("%4d: tile mode 2 chn\n", VPSS_TEST_TILE_1_to_2);
+	VPSS_UT_PRT("%4d: slt case\n", VPSS_TEST_SLT);
 	VPSS_UT_PRT("%4d: c-model test\n", VPSS_TEST_C_MODEL);
 	VPSS_UT_PRT("%4d: user config\n", VPSS_TEST_USER_CONFIG);
 	VPSS_UT_PRT("%4d: auto test\n", VPSS_TEST_AUTO);

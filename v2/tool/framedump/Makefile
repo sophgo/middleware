@@ -22,7 +22,7 @@ ELFFLAGS := -Wl,--gc-sections
 ELFFLAGS += -static
 
 EXTRA_LDFLAGS = -L../../lib
-EXTRA_LDFLAGS += -lvi -lvpss -lisp -lisp_algo -lawb -lae -laf -lcvi_bin -lcvi_bin_isp -lsys
+EXTRA_LDFLAGS += -lvi -lvpss -lisp -lisp_algo -lawb -lae -laf -lcvi_bin -lsys
 EXTRA_LDFLAGS += -lm -lpthread -latomic
 
 CFLAGS := $(INC)

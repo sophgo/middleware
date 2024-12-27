@@ -75,7 +75,8 @@ typedef enum _MIRROR_TYPE_E {
     MIRDIR_TYPE_NONE,   /**< No mirroring */
     MIRDIR_TYPE_VER,    /**< Vertical mirroring */
     MIRDIR_TYPE_HOR,    /**< Horizontal mirroring */
-    MIRDIR_TYPE_HOR_VER /**< Horizontal and vertical mirroring */
+    MIRDIR_TYPE_HOR_VER, /**< Horizontal and vertical mirroring */
+	MIRDIR_TYPE_BUTT
 } MIRROR_TYPE_E;
 
 typedef enum _VB_SOURCE_E {

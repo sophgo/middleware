@@ -305,7 +305,7 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_BGRA8888:
         pixel = b | (g << 8) | (r << 16) | (a << 24);
         break;
-    
+
     case VG_LITE_ARGB8888:
         pixel = a | (r << 8) | (g << 16) | (b << 24);
         break;
@@ -337,7 +337,7 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_ABGR4444:
         pixel = ((a & 0xf0) >> 4) | (b & 0xf0) | ((g & 0xf0) << 4) | ((r & 0xf0) << 8);
         break;
-    
+
     case VG_LITE_RGBA2222:
         pixel = ((r & 0xc0) >> 6) | (g & 0xc0) >> 4 | ((b & 0xc0) >> 2) | (a & 0xc0);
         break;
@@ -368,7 +368,7 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_RGBX8888:
         pixel = r | (g << 8) | (b << 16);
         break;
-        
+
     case VG_LITE_BGRX8888:
         pixel = b | (g << 8) | (r << 16);
         break;
@@ -376,7 +376,7 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_XRGB8888:
         pixel = r | (g << 8) | (b << 16);
         break;
-        
+
     case VG_LITE_XBGR8888:
         pixel = b | (g << 8) | (r << 16);
         break;
@@ -388,7 +388,7 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_RGBA5551:
         pixel = ((r & 0xf8) >> 3) | ((g & 0xf8) << 2) | ((b & 0xf8) << 7) | ((a & 0x80) << 8);
         break;
-    
+
     case VG_LITE_ABGR1555:
         pixel = ((a & 0x80) >> 7) | ((b & 0xf8) << 1) | ((g & 0xf8) << 6) | ((r & 0xf8) << 11);
         break;
@@ -505,7 +505,7 @@ int InitBMP(int width, int height)
     if(image_data == NULL)
         return 1;
 
-    readpixel_data = (unsigned char *)(((unsigned int)image_data + sizeof(BITMAPINFOHEADER) + sizeof(BITMAPFILEHEADER) + 3) & (~0x3));
+    readpixel_data = (unsigned char *)(((uintptr_t)image_data + sizeof(BITMAPINFOHEADER) + sizeof(BITMAPFILEHEADER) + 3) & (~0x3));
 
     return 0;
 }
@@ -736,7 +736,7 @@ int SaveBMP(char *image_name, unsigned char* p, int width, int height,
                     surf[2] += 1;
                 }
             }else{
-                surf[3] += 1; 
+                surf[3] += 1;
             }
         }
 
@@ -878,7 +878,7 @@ int SaveBMP(char *image_name, unsigned char* p, int width, int height,
 
         {
             FILE* fd;
-            fd = fopen(full_file_name, "wb");            
+            fd = fopen(full_file_name, "wb");
             /* assert (fd != NULL); */
             if(fd != NULL)
             {
@@ -897,31 +897,31 @@ int SaveBMP(char *image_name, unsigned char* p, int width, int height,
 static int read_long(FILE *fp)
 {
     unsigned char b0, b1, b2, b3; /* Bytes from file */
-    
+
     b0 = getc(fp);
     b1 = getc(fp);
     b2 = getc(fp);
     b3 = getc(fp);
-    
+
     return ((int)(((((b3 << 8) | b2) << 8) | b1) << 8) | b0);
 }
 int vg_lite_load_raw_to_point(uint8_t ** data, uint32_t *stride,const char * name)
 {
     FILE * fp;
-    
+
     /* Set status. */
     int status = 1;
-    int width,height,format,str;
+    int height,str = 0;
     /* Check the result with golden. */
     fp = fopen(name, "rb");
     if (fp != NULL) {
         int flag;
-        
+
         /* Get width, height, stride and format info. */
-        width  = read_long(fp);
+        //width  = read_long(fp);
         height = read_long(fp);
         str = read_long(fp);
-        format = read_long(fp);
+        //format = read_long(fp);
 
         *data = (uint8_t*)malloc(height * str);
 
@@ -932,7 +932,7 @@ int vg_lite_load_raw_to_point(uint8_t ** data, uint32_t *stride,const char * nam
             fclose(fp);
             return -1;
         }
-        
+
         fclose(fp);
         fp = NULL;
         status = 0;
@@ -944,15 +944,15 @@ int vg_lite_load_raw_to_point(uint8_t ** data, uint32_t *stride,const char * nam
 int vg_lite_load_raw(vg_lite_buffer_t * buffer, const char * name)
 {
     FILE * fp;
-    
+
     /* Set status. */
     int status = 1;
-    
+
     /* Check the result with golden. */
     fp = fopen(name, "rb");
     if (fp != NULL) {
         int flag;
-        
+
         /* Get width, height, stride and format info. */
         buffer->width  = read_long(fp);
         buffer->height = read_long(fp);
@@ -976,12 +976,12 @@ int vg_lite_load_raw(vg_lite_buffer_t * buffer, const char * name)
             fclose(fp);
             return -1;
         }
-        
+
         fclose(fp);
         fp = NULL;
         status = 0;
     }
-    
+
     /* Return the status. */
     return status;
 }

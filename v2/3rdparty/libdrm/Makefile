@@ -16,6 +16,9 @@ ifeq ($(SDK_VER),64bit)
 ifeq ($(CONFIG_TOOLCHAIN_GLIBC_ARM64_V930),y)
 	@cp $(PWD)/$(PREBUILT_LIB)/libdrm.9.3.0 $(PWD)/$(PREBUILT_LIB)/libdrm.a
 	@cp $(PWD)/$(PREBUILT_LIB)/libkms.9.3.0 $(PWD)/$(PREBUILT_LIB)/libkms.a
+else ifeq ($(CONFIG_TOOLCHAIN_GLIBC_ARM64_V1131),y)
+	@cp $(PWD)/$(PREBUILT_LIB)/libdrm.11.3.1 $(PWD)/$(PREBUILT_LIB)/libdrm.a
+	@cp $(PWD)/$(PREBUILT_LIB)/libkms.11.3.1 $(PWD)/$(PREBUILT_LIB)/libkms.a
 else
 	@cp $(PWD)/$(PREBUILT_LIB)/libdrm.6.3.1 $(PWD)/$(PREBUILT_LIB)/libdrm.a
 	@cp $(PWD)/$(PREBUILT_LIB)/libkms.6.3.1 $(PWD)/$(PREBUILT_LIB)/libkms.a

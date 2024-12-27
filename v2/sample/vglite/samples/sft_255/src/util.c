@@ -332,11 +332,11 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_RGBX8888:
         pixel = r | (g << 8) | (b << 16);
         break;
-        
+
     case VG_LITE_BGRX8888:
         pixel = b | (g << 8) | (r << 16);
         break;
-            
+
     default:
         assert(FALSE);
         break;
@@ -450,7 +450,7 @@ int InitBMP()
     if(image_data == NULL)
         return 1;
 
-    readpixel_data = (unsigned char *)(((unsigned int)image_data + sizeof(BITMAPINFOHEADER) + sizeof(BITMAPFILEHEADER) + 3) & (~0x3));
+    readpixel_data = (unsigned char *)(((uintptr_t)image_data + sizeof(BITMAPINFOHEADER) + sizeof(BITMAPFILEHEADER) + 3) & (~0x3));
 
     return 0;
 }
@@ -600,7 +600,7 @@ int SaveBMP(char *image_name, unsigned char* p, int width, int height,
                     surf[2] += 1;
                 }
             }else{
-                surf[3] += 1; 
+                surf[3] += 1;
             }
         }
 
@@ -629,7 +629,7 @@ int SaveBMP(char *image_name, unsigned char* p, int width, int height,
     //        width: The width of required bitmap
     //Return Value: Pointer point to the data of bitmap image
     //Description: Call ReadBMPFile() function to read the 24Bpp RGB bitmap data
-    //                to a buffer, then read data from this buffer and change the 
+    //                to a buffer, then read data from this buffer and change the
     //                24Bpp RGB data to 32Bpp RGBA data(A = 0xFF), then return it.
     //-----------------------------------------------------------------
     unsigned char* Load_BMP(char *file_name, int *height, int *width)
@@ -676,7 +676,7 @@ int SaveBMP(char *image_name, unsigned char* p, int width, int height,
     //Returned Value: Pointer point to the data of bitmap
     //Description: For Nucleus, read from cache srcfile to pbuf;
     //               For Win32/WM/Linux, read form file to pbuf.
-    //               First read BMP file header BITMAPFILEHEADER and info header 
+    //               First read BMP file header BITMAPFILEHEADER and info header
     //               BITMAPINFOHEADER,get the width and height of the BMP,
     //             then read the RGB data from BITMAPFILEHEADER.bfOffBits of the file.
     //------------------------------------------------------------------------------

@@ -46,6 +46,10 @@ typedef struct _vdecInputCfg_ {
 	int InitedVb;
 	CVI_U32 u32TestMode;
 	CVI_CHAR bitStreamFolder[MAX_STRING_LEN];
+
+	/* for vd_vpss_ve bind mode */
+	CVI_U64 venc_num_frames;
+	SAMPLE_RC_E venc_rc_mode;
 } vdecInputCfg;
 
 typedef struct _sampleVdec_ {

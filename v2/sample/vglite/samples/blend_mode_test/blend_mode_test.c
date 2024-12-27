@@ -35,7 +35,7 @@ char* error_type[] =
     }
 
 static int   fb_width = 128, fb_height = 128;
-static float fb_scale = 1.0f;
+//static float fb_scale = 1.0f;
 
 static vg_lite_buffer_t buffer1, src_buffer, image;
 static vg_lite_buffer_t* fb1;
@@ -156,12 +156,12 @@ void checkresultpixel(vg_lite_buffer_t *fb, uint32_t i)
     uint32_t y = 10;
     uint32_t addr = y * fb->stride + x * 4;
     vg_lite_uint8_t *fbmem = (vg_lite_uint8_t *)fb->memory;
-    vg_lite_uint8_t  r, g, b, a;
+    vg_lite_uint8_t  r, g, b;
 
     r = fbmem[addr];
     g = fbmem[addr+1];
     b = fbmem[addr+2];
-    a = fbmem[addr+3];
+    //a = fbmem[addr+3];
 
     if (abs(blend_result[i][0]-r) > 1 || abs(blend_result[i][1]-g) > 1 || abs(blend_result[i][2]-b) > 1) {
         printf("###### Blend mode %s pixel result is NOT correct! ######\n", blend_name[i]);
@@ -188,7 +188,7 @@ void cleanup(void)
 
 int main(int argc, const char* argv[])
 {
-    uint32_t feature_check = 0;
+    //uint32_t feature_check = 0;
     vg_lite_matrix_t matrix, matPath;
     vg_lite_filter_t filter;
     char fname[64];

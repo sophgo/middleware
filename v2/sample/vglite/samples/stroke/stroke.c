@@ -87,8 +87,8 @@ void cleanup(void)
 
 int main(int argc, const char * argv[])
 {
-    uint32_t feature_check = 0;
-    vg_lite_filter_t filter;
+    //uint32_t feature_check = 0;
+    //vg_lite_filter_t filter;
     vg_lite_error_t error = VG_LITE_SUCCESS;
     vg_lite_matrix_t matrix;
     uint32_t data_size;
@@ -98,7 +98,7 @@ int main(int argc, const char * argv[])
 
     CHECK_ERROR(vg_lite_init(fb_width, fb_height));
 
-    filter = VG_LITE_FILTER_POINT;
+    //filter = VG_LITE_FILTER_POINT;
 
     fb_scale = (float)fb_width / DEFAULT_SIZE;
     printf("Framebuffer size: %d x %d\n", fb_width, fb_height);
@@ -159,7 +159,9 @@ int main(int argc, const char * argv[])
     path.path = malloc(data_size);
     CHECK_ERROR(vg_lite_append_path(&path, sides_cmd, sides_data_left, sizeof(sides_cmd)));
 
-    CHECK_ERROR(vg_lite_set_stroke(&path, VG_LITE_CAP_ROUND, join_style[j], 4, 8, NULL, 0, 8, 0));
+    if (j >= 0 && j < 3) {
+        CHECK_ERROR(vg_lite_set_stroke(&path, VG_LITE_CAP_ROUND, join_style[j], 4, 8, NULL, 0, 8, 0));
+    }
     CHECK_ERROR(vg_lite_update_stroke(&path));
     CHECK_ERROR(vg_lite_set_path_type(&path, draw_type[2]));
     CHECK_ERROR(vg_lite_draw(fb, &path, VG_LITE_FILL_EVEN_ODD, &matrix, VG_LITE_BLEND_NONE, 0xFF0000FF));

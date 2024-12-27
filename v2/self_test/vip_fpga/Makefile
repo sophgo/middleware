@@ -30,7 +30,7 @@ endif
 
 EXTRA_CFLAGS += $(DEFS) $(INCS)
 EXTRA_LDFLAGS += $(LIBS) -lpthread -lm -lini
-EXTRA_LDFLAGS += -lcvi_bin -lcvi_bin_isp
+EXTRA_LDFLAGS += -lcvi_bin
 
 all :
 #all : $(TARGET)

@@ -52,7 +52,7 @@ int main (int argc, char** argv)
     destroy();
 
 ErrorHandler:
-    return;
+    return error;
 }
 
 

@@ -4,7 +4,7 @@
  Transformation: None
  Alpha Blending: None
  Related APIs: vg_lite_blit
- Description: Read 4 pixels data into srcbuf, then blit to dstbuf to get a 2x2 picture. 
+ Description: Read 4 pixels data into srcbuf, then blit to dstbuf to get a 2x2 picture.
  It shows that dstbuf's width does not need to be aligned to 16 pixels.
  */
 #include <stdio.h>
@@ -44,7 +44,7 @@ int main(int argc, const char* argv[])
 {
     vg_lite_filter_t filter;
     vg_lite_matrix_t matrix;
-    uint32_t feature_check = 0;
+    //uint32_t feature_check = 0;
 
     /* Initialize vg_lite engine. */
     vg_lite_error_t error = VG_LITE_SUCCESS;
