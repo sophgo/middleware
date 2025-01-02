@@ -111,6 +111,7 @@ sensor-$(CONFIG_SENSOR_SONY_IMX334)          += sony_imx334
 sensor-$(CONFIG_SENSOR_SONY_IMX335)          += sony_imx335
 sensor-$(CONFIG_SENSOR_SONY_IMX412)          += sony_imx412
 sensor-$(CONFIG_SENSOR_SONY_IMX585)          += sony_imx585
+sensor-$(CONFIG_SENSOR_SONY_IMX900)          += sony_imx900
 sensor-$(CONFIG_SENSOR_TECHPOINT_TP2860)     += techpoint_tp2860
 sensor-$(CONFIG_SENSOR_LONTIUM_LT6911)       += lontium_lt6911
 else

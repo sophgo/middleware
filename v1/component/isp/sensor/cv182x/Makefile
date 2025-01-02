@@ -53,6 +53,9 @@ gcore_gc4023:
 gcore_gc4653:
 	$(call MAKE_SENSOR, ${@})
 
+gcore_gc8613:
+	$(call MAKE_SENSOR, ${@})
+
 nextchip_n5:
 	$(call MAKE_SENSOR, ${@})
 
@@ -197,13 +200,13 @@ sony_imx412:
 sony_imx585:
 	$(call MAKE_SENSOR, ${@})
 
+sony_imx900:
+	$(call MAKE_SENSOR, ${@})
+
 techpoint_tp2860:
 	$(call MAKE_SENSOR, ${@})
 
 lontium_lt6911:
-	$(call MAKE_SENSOR, ${@})
-
-gcore_gc8613:
 	$(call MAKE_SENSOR, ${@})
 
 all_sensor:
