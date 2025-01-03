@@ -233,6 +233,9 @@ CVI_S32 SAMPLE_COMM_ISP_GetIspAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, ISP_PUB_ATT
 
 	switch (enSnsType) {
 	case SOI_K06_MIPI_4M_25FPS_10BIT:
+	case SONY_IMX415_MIPI_4M_25FPS_12BIT:
+	case SONY_IMX415_MIPI_5M_25FPS_12BIT:
+	case SONY_IMX415_MIPI_8M_25FPS_12BIT:
 		pstPubAttr->enBayer = BAYER_GBRG;
 		break;
 	case OV_OV2736_MIPI_2M_30FPS_12BIT_WDR2TO1:
@@ -331,6 +334,7 @@ CVI_S32 SAMPLE_COMM_ISP_GetIspAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, ISP_PUB_ATT
 	case OV_OS04E10_SALVE_MIPI_4M_30FPS_2L_10BIT:
 	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
 	case OV_OS04E10_SLAVE_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
+	case PIXELPLUS_PR2100_2M_2CH_2L_25FPS_8BIT:
 		pstPubAttr->u8LaneNum = 2;
 		break;
 	default:
@@ -715,6 +719,7 @@ CVI_VOID *SAMPLE_COMM_GetSnsObj(SAMPLE_SNS_TYPE_E enSnsType)
 #if defined(SENSOR_PIXELPLUS_PR2100)
 	case PIXELPLUS_PR2100_2M_25FPS_8BIT:
 	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
+	case PIXELPLUS_PR2100_2M_2CH_2L_25FPS_8BIT:
 	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
 	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
 		pSnsObj = &stSnsPR2100_Obj;
@@ -968,6 +973,13 @@ CVI_VOID *SAMPLE_COMM_GetSnsObj(SAMPLE_SNS_TYPE_E enSnsType)
 		pSnsObj = &stSnsImx412_Obj;
 		break;
 #endif
+#if defined(SENSOR_SONY_IMX415)
+	case SONY_IMX415_MIPI_4M_25FPS_12BIT:
+	case SONY_IMX415_MIPI_5M_25FPS_12BIT:
+	case SONY_IMX415_MIPI_8M_25FPS_12BIT:
+		pSnsObj = &stSnsImx415_Obj;
+		break;
+#endif
 #if defined(SENSOR_SONY_IMX585)
 	case SONY_IMX585_MIPI_8M_30FPS_12BIT:
 	case SONY_IMX585_MIPI_8M_25FPS_12BIT_WDR2TO1:
@@ -1119,9 +1131,10 @@ CVI_S32 SAMPLE_COMM_ISP_SetSensorMode(SAMPLE_VI_CONFIG_S *pstViConfig)
 		stSnsrMode.f32Fps = stPubAttr.f32FrameRate;
 		stSnsrMode.u8LaneNum = stPubAttr.u8LaneNum;
 		stSnsrMode.u8EnableMaster = stPubAttr.u8EnableMaster;
-		printf("lane_num %d master mode %d\n", stSnsrMode.u8LaneNum, stSnsrMode.u8EnableMaster);
+		printf("sensor_type %d, lane_num %d, master mode, %d\n", pstViInfo->stSnsInfo.enSnsType,
+				stSnsrMode.u8LaneNum, stSnsrMode.u8EnableMaster);
 		printf("stSnsrMode.u16Width %d stSnsrMode.u16Height %d %f wdrMode %d pstSnsObj %p\n",
-		       stSnsrMode.u16Width, stSnsrMode.u16Height, stSnsrMode.f32Fps, wdrMode, pstSnsObj);
+				stSnsrMode.u16Width, stSnsrMode.u16Height, stSnsrMode.f32Fps, wdrMode, pstSnsObj);
 		pstSnsObj->pfnExpSensorCb(&stSnsrSensorFunc);
 
 		if (stSnsrSensorFunc.pfn_cmos_set_image_mode) {

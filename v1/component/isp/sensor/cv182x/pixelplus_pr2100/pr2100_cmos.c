@@ -21,12 +21,24 @@
 #include "pr2100_cmos_ex.h"
 #include "pr2100_cmos_param.h"
 
+#define PR2100_I2C_ADDR_MASTER 0x5F
+#define PR2100_I2C_ADDR_SLAVE 0x5C
 /****************************************************************************
  * global variables                                                         *
  ****************************************************************************/
 ISP_SNS_COMMBUS_U g_aunPr2100_BusInfo[VI_MAX_PIPE_NUM] = {
 	[0] = { .s8I2cDev = 0},
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cDev = -1}
+};
+
+ISP_SNS_COMMADDR_U g_aunPr2100_MasterAddrInfo[VI_MAX_PIPE_NUM] = {
+	[0] = { .s8I2cAddr = 0},
+	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
+};
+
+ISP_SNS_COMMADDR_U g_aunPr2100_SlaveAddrInfo[VI_MAX_PIPE_NUM] = {
+	[0] = { .s8I2cAddr = 0},
+	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
 };
 
 ISP_SNS_STATE_S *g_pastPr2100[VI_MAX_PIPE_NUM] = {CVI_NULL};
@@ -95,7 +107,11 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 				u8SensorImageMode = PR2100_MODE_1080P25;
 				break;
 			case SNS_BDG_MUX_2:
-				u8SensorImageMode = PR2100_MODE_1080P25_2CH;
+				if(pstSensorImageMode->u8LaneNum == 2) {
+					u8SensorImageMode = PR2100_MODE_1080P25_2CH_2L;
+				} else {
+					u8SensorImageMode = PR2100_MODE_1080P25_2CH;
+				}
 				break;
 			case SNS_BDG_MUX_3:
 			case SNS_BDG_MUX_4:
@@ -249,6 +265,18 @@ static CVI_S32 cmos_init_sensor_exp_function(ISP_SENSOR_EXP_FUNC_S *pstSensorExp
 /****************************************************************************
  * callback structure                                                       *
  ****************************************************************************/
+static CVI_VOID sensor_patch_i2c_addr(VI_PIPE ViPipe, CVI_S32 s32I2cAddr)
+{
+	if (s32I2cAddr < 0) {
+		g_aunPr2100_MasterAddrInfo[ViPipe].s8I2cAddr = PR2100_I2C_ADDR_MASTER;
+		g_aunPr2100_SlaveAddrInfo[ViPipe].s8I2cAddr = PR2100_I2C_ADDR_SLAVE;
+		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C addr input error ,please check [0x%x]\n", s32I2cAddr);
+	} else {
+		g_aunPr2100_MasterAddrInfo[ViPipe].s8I2cAddr = s32I2cAddr;
+		g_aunPr2100_SlaveAddrInfo[ViPipe].s8I2cAddr = s32I2cAddr + 1;
+	}
+
+}
 
 static CVI_S32 pr2100_set_bus_info(VI_PIPE ViPipe, ISP_SNS_COMMBUS_U unSNSBusInfo)
 {
@@ -349,7 +377,7 @@ ISP_SNS_OBJ_S stSnsPR2100_Obj = {
 	.pfnSetBusInfo          = pr2100_set_bus_info,
 	.pfnSetInit             = sensor_set_init,
 	.pfnPatchRxAttr         = sensor_patch_rx_attr,
-	.pfnPatchI2cAddr        = CVI_NULL,
+	.pfnPatchI2cAddr        = sensor_patch_i2c_addr,
 	.pfnGetRxAttr           = sensor_rx_attr,
 	.pfnExpSensorCb         = cmos_init_sensor_exp_function,
 	.pfnExpAeCb             = CVI_NULL,

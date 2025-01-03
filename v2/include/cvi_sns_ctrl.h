@@ -196,6 +196,7 @@ extern ISP_SNS_OBJ_S stSnsImx335_Obj;
 extern ISP_SNS_OBJ_S stSnsImx347_Obj;
 extern ISP_SNS_OBJ_S stSnsImx385_Obj;
 extern ISP_SNS_OBJ_S stSnsImx412_Obj;
+extern ISP_SNS_OBJ_S stSnsImx415_Obj;
 extern ISP_SNS_OBJ_S stSnsImx585_Obj;
 extern ISP_SNS_OBJ_S stSnsImx900_Obj;
 extern ISP_SNS_OBJ_S stSnsTP2850_Obj;
