@@ -268,9 +268,9 @@ enum ENUM_CHIP_ID {
  * multiplied by VI_MAX_CHN_NUM, because all VI devices
  * can't work at mode of 4 channels at the same time.
  */
-#define VI_MAX_DEV_NUM            8
+#define VI_MAX_DEV_NUM            12
 #define VI_MAX_PHY_PIPE_NUM       8
-#define VI_MAX_VIR_PIPE_NUM       0
+#define VI_MAX_VIR_PIPE_NUM       4
 #define VI_MAX_PIPE_NUM           (VI_MAX_PHY_PIPE_NUM + VI_MAX_VIR_PIPE_NUM)
 #define VI_MAX_WDR_NUM            1
 

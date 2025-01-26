@@ -320,8 +320,9 @@ static CVI_S32 cmos_inttime_update(VI_PIPE ViPipe, CVI_U32 *u32IntTime)
 		pstSnsRegsInfo->astI2cData[WDR_SHR1_L].u32Data = (u32ShortIntTime & 0xFF);
 		pstSnsRegsInfo->astI2cData[WDR_SHR1_H].u32Data = ((u32ShortIntTime & 0xFF00) >> 8);
 	} else {
-		u32Value = *u32IntTime = pstSnsState->au32FL[0] - *u32IntTime;
-
+		u32Value = pstSnsState->au32FL[0] - *u32IntTime;
+		u32Value = (u32Value > pstSnsState->au32FL[0] - 4) ? (pstSnsState->au32FL[0] - 4):
+			((u32Value < 8) ? 8 : u32Value);
 		pstSnsRegsInfo->astI2cData[LINEAR_SHR_L].u32Data = (u32Value & 0xFF);
 		pstSnsRegsInfo->astI2cData[LINEAR_SHR_M].u32Data = ((u32Value & 0xFF00) >> 8);
 		pstSnsRegsInfo->astI2cData[LINEAR_SHR_H].u32Data = ((u32Value & 0x10000) >> 16);
