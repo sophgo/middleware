@@ -3713,7 +3713,7 @@ CVI_S32 main(int argc, char *argv[])
 	}
 	case 16: {
 		printf("[cviaudio] IOCTL Test!\n");
-		SAMPLE_AUDIO_DEBUG_IOCTL_TEST();
+		printf("IOCTL Test is no longer supported\n");
 		printf("[cviaudio]IOCTL Test!...end\n");
 		break;
 	}
