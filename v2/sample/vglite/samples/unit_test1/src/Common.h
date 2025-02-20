@@ -3,12 +3,14 @@
 
 #define IS_ERROR(status)         (status > 0)
 #define CHECK_ERROR(Function) \
-    error = Function; \
-    if (IS_ERROR(error)) \
-    { \
-        printf("[%s: %d] error type is %s\n", __func__, __LINE__,error_type[error]);\
-        goto ErrorHandler; \
-    }
+    do { \
+        error = Function; \
+        if (IS_ERROR(error)) \
+        { \
+            printf("[%s: %d] error type is %s\n", __func__, __LINE__, error_type[error]);\
+            goto ErrorHandler; \
+        } \
+    } while (0)
 
 extern char *error_type[];
 extern vg_lite_blend_t blend_mode[];

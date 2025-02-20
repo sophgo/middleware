@@ -662,7 +662,7 @@ CVI_S32 CVI_SYS_StopThermalThread(void)
 
 	g_is_thermal_running = CVI_FALSE;
 	if (thermal_thread) {
-		char buf[8];
+		char buf[8] = {0};
 
 		write(therm_sockets[0], buf, 8);
 		pthread_join(thermal_thread, NULL);

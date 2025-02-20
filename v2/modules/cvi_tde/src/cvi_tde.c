@@ -36,8 +36,8 @@ char* error_type[] =
 
 char* cvi_error_type[] = {
     "CVI_ERR_TDE_DEV_NOT_OPEN",
-    "CVI_ERR_TDE_DEV_OPEN_FAILED",  
-    "CVI_ERR_TDE_NULL_PTR",   
+    "CVI_ERR_TDE_DEV_OPEN_FAILED",
+    "CVI_ERR_TDE_NULL_PTR",
     "CVI_ERR_TDE_NO_MEM",
     "CVI_ERR_TDE_INVALID_HANDLE",
     "CVI_ERR_TDE_INVALID_PARAM",
@@ -2331,8 +2331,8 @@ static CVI_U32 alpha_blending(vg_lite_buffer_t* bg_buf, vg_lite_buffer_t* fg_buf
 				vg_lite_finish();
 				print_cvi_error_message(vg_err, cvi_error_message);
 				fg_image_mode = fg_buf->image_mode;
-				bg_image_mode = fg_buf->transparency_mode;
-				fg_image_transparency = bg_buf->image_mode;
+				bg_image_mode = (vg_lite_image_mode_t)fg_buf->transparency_mode;
+				fg_image_transparency = (vg_lite_transparency_t)bg_buf->image_mode;
 				bg_image_transparency = bg_buf->transparency_mode;
 
 				fg_buf->image_mode = VG_LITE_NORMAL_IMAGE_MODE;
@@ -2354,8 +2354,8 @@ static CVI_U32 alpha_blending(vg_lite_buffer_t* bg_buf, vg_lite_buffer_t* fg_buf
 				print_cvi_error_message(vg_err, cvi_error_message);
 				vg_lite_finish();
 				fg_buf->image_mode = fg_image_mode;
-				fg_buf->transparency_mode = bg_image_mode;
-				bg_buf->image_mode = fg_image_transparency;
+				fg_buf->transparency_mode = (vg_lite_transparency_t)bg_image_mode;
+				bg_buf->image_mode = (vg_lite_image_mode_t)fg_image_transparency;
 				bg_buf->transparency_mode = bg_image_transparency;
 			#endif
 			#if (colorkey_bug_resolve == 2)

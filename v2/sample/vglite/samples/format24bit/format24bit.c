@@ -21,12 +21,12 @@
 #define DEFAULT_HEIGHT 480
 
 #define __func__ __FUNCTION__
-char *error_type[] = 
+char *error_type[] =
 {
     "VG_LITE_SUCCESS",
     "VG_LITE_INVALID_ARGUMENT",
     "VG_LITE_OUT_OF_MEMORY",
-    "VG_LITE_NO_CONTEXT",      
+    "VG_LITE_NO_CONTEXT",
     "VG_LITE_TIMEOUT",
     "VG_LITE_OUT_OF_RESOURCES",
     "VG_LITE_GENERIC_IO",
@@ -45,7 +45,7 @@ static float fb_scale = 1.0f;
 static vg_lite_buffer_t buffer[6];
 static vg_lite_buffer_t buffer1[6];
 static vg_lite_buffer_t image;
-static vg_lite_buffer_t * fb;
+//static vg_lite_buffer_t * fb;
 
 static char path_data[] = {
     2, -5, -10, /* moveto   -5,-10 */
@@ -71,7 +71,7 @@ static vg_lite_path_t path = {
     1
 };
 
-static vg_lite_buffer_format_t  formats[6] = {  
+static vg_lite_buffer_format_t  formats[6] = {
     VG_LITE_ABGR8565,
     VG_LITE_BGRA5658,
     VG_LITE_ARGB8565,

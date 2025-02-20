@@ -58,6 +58,25 @@ static const PR2100_MODE_S g_astPr2100_mode[PR2100_MODE_NUM] = {
 			},
 		},
 	},
+	[PR2100_MODE_1080P25_2CH_2L] = {
+		.name = "1080p25_2ch_2l",
+		.astImg[0] = {
+			.stSnsSize = {
+				.u32Width = 1920,
+				.u32Height = 1080,
+			},
+			.stWndRect = {
+				.s32X = 0,
+				.s32Y = 0,
+				.u32Width = 1920,
+				.u32Height = 1080,
+			},
+			.stMaxSize = {
+				.u32Width = 1920,
+				.u32Height = 1080,
+			},
+		},
+	},
 	[PR2100_MODE_1080P25_4CH] = {
 		.name = "1080p25_4ch",
 		.astImg[0] = {

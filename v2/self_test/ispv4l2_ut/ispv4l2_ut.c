@@ -20,7 +20,7 @@
 #define UNUSED(x) ((void)(x))
 #endif
 
-#define VIDEO_DEV_NUM 6
+#define VIDEO_DEV_NUM 12
 #define REQ_BUFFER_NUM 6
 #define THREAD_LOOP_CNT 1000
 
@@ -63,6 +63,30 @@ static int set_wdr_on(int fd, int on)
 	return 0;
 }
 
+static int set_dev_num(int fd, int dev_num)
+{
+
+	struct v4l2_ext_controls val;
+	struct v4l2_ext_control control;
+	int ret = 0;
+	memset(&val, 0, sizeof(struct v4l2_ext_controls));
+
+	if (fd > 0) {
+		// test set ext ctrl
+		control.id = VI_IOCTL_SET_DEV_NUM;
+		control.value = dev_num;
+		val.count = 1;
+		val.controls = &control;
+		if ((ret = ioctl(fd, VIDIOC_S_EXT_CTRLS, &val)) < 0) {
+			printf("set dev_num fail !\n");
+		} else {
+			printf("set dev_num:%d success\n", dev_num);
+		}
+	}
+
+	return ret;
+}
+
 static int set_bypass_frm(int fd, int bypass_num)
 {
 	struct v4l2_ext_controls val;
@@ -83,6 +107,19 @@ static int set_bypass_frm(int fd, int bypass_num)
 	}
 
 	return 0;
+}
+
+static __u32 get_pix_fmt(int fd)
+{
+	struct v4l2_format fmt = { .type = V4L2_BUF_TYPE_VIDEO_CAPTURE };
+	int res = 0;
+	if (fd > 0) {
+		if ((res = ioctl(fd, VIDIOC_G_FMT, &fmt)) < 0) {
+			printf("get fmt fail!\n");
+			return res;
+		}
+	}
+	return fmt.fmt.pix.pixelformat;
 }
 
 static int test_get_ext_ctrl(int fd)
@@ -578,6 +615,9 @@ static int _v4l2_ut_handle_op(int fd, int dev, int op)
 	case 6:// 2 output
 	case 7:// 4 output
 	case 8:// 6 output
+	case 9:// 8 output
+	case 10:// 10 output
+	case 11:// 12 output
 	{
 		int *arg = malloc(sizeof(int));
 		*arg = dev;
@@ -585,7 +625,7 @@ static int _v4l2_ut_handle_op(int fd, int dev, int op)
 		ret = 0;
 		break;
 	}
-	case 9:
+	case 12:
 	{
 		ret = test_get_ext_ctrl(fd);
 		if(ret != 0)
@@ -595,12 +635,12 @@ static int _v4l2_ut_handle_op(int fd, int dev, int op)
 			goto exit;
 		break;
 	}
-	case 10:
+	case 13:
 	{
 		ret = sensor_ae_test();
 		break;
 	}
-	case 11:
+	case 14:
 	{
 		ret = test_get_raw_dump(fd, dev);
 		ret = test_get_yuv_dump(fd, dev);
@@ -620,6 +660,8 @@ static int handle_op(int op)
 	int ret = 0;
 	char devicename[64];
 	int first_dev = 0;
+	__u32 pix_fmt;
+	// enum v4l2_buf_type type;
 
 	switch (op)
 	{
@@ -648,14 +690,23 @@ static int handle_op(int op)
 		test_dev_num = 6;
 		break;
 	case 9:
-		test_dev_num = 1;
-		is_dump_yuv = 0;
+		test_dev_num = 8;
 		break;
 	case 10:
+		test_dev_num = 10;
+		break;
+	case 11:
+		test_dev_num = 12;
+		break;
+	case 12:
 		test_dev_num = 1;
 		is_dump_yuv = 0;
 		break;
-	case 11:
+	case 13:
+		test_dev_num = 1;
+		is_dump_yuv = 0;
+		break;
+	case 14:
 		test_dev_num = 1;
 		break;
 	default:
@@ -687,6 +738,14 @@ static int handle_op(int op)
 		}
 	}
 
+	set_dev_num(v4l2_fd[0], test_dev_num);
+
+	pix_fmt = get_pix_fmt(v4l2_fd[0]);
+
+	//yuv sensor don't need isp
+	if (pix_fmt == V4L2_PIX_FMT_YUYV || pix_fmt == V4L2_PIX_FMT_UYVY)
+		is_run_isp_mw = 0;
+
 	// init isp mw
 	if (is_run_isp_mw) {
 		for (i = first_dev; i < test_dev_num; i++) {
@@ -701,7 +760,7 @@ static int handle_op(int op)
 	for (i = first_dev; i < test_dev_num; i++) {
 		if (v4l2_fd[i] <= 0 || is_init[i])
 			continue;
-		printf("stream on %d\n", i);
+
 		ret = stream_on(i);
 		if (ret)
 			return ret;
@@ -757,9 +816,12 @@ int main(int argc, char **argv)
 			printf("6 : test 2 video output\n");
 			printf("7 : test 4 video output\n");
 			printf("8 : test 6 video output\n");
-			printf("9 : test ioctl\n");
-			printf("10 : AE debug\n");
-			printf("11 : dump test\n");
+			printf("9 : test 8 video output\n");
+			printf("10 : test 10 video output\n");
+			printf("11 : test 12 video output\n");
+			printf("12 : test ioctl\n");
+			printf("13 : AE debug\n");
+			printf("14 : dump test\n");
 			printf("255: exit\n");
 			scanf("%d", &op);
 			handle_op(op);

@@ -209,7 +209,7 @@ static CVI_U32 _vo_reset_hdmi_param(){
 static CVI_S32 _hdmi_ut_handle_op(CVI_S32 op)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
-	CVI_HDMI_CALLBACK_FUNC callback_func;
+	CVI_HDMI_CALLBACK_FUNC callback_func = {0};
 
 	switch (op) {
 	case 1:
@@ -803,6 +803,9 @@ static CVI_S32 _hdmi_ut_handle_op(CVI_S32 op)
 	}
 
 	case 110: {
+		char private_data[30] = "Test Private_Data";
+		callback_func.hdmi_event_callback = Hdmi_EventProc;
+		callback_func.private_data = private_data;
 		s32Ret = CVI_HDMI_UnRegisterCallback(&callback_func);
 		if(s32Ret){
 			printf("HDMI UnRegisterCallback error\n");

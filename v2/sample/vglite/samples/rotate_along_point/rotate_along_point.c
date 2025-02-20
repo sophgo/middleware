@@ -137,15 +137,15 @@ static vg_lite_error_t vg_lite_rotate_2(vg_lite_float_t degrees, vg_lite_matrix_
 
 int main(int argc, const char* argv[])
 {
-    uint32_t feature_check = 0;
-    vg_lite_filter_t filter;
+    //uint32_t feature_check = 0;
+    //vg_lite_filter_t filter;
     vg_lite_error_t error = VG_LITE_SUCCESS;
     vg_lite_matrix_t matrix;
     uint32_t data_size;
     /* Initialize the draw. */
     CHECK_ERROR(vg_lite_init(fb_width, fb_height));
 
-    filter = VG_LITE_FILTER_POINT;
+    //filter = VG_LITE_FILTER_POINT;
 
     fb_scale = (float)fb_width / DEFAULT_SIZE;
     printf("Framebuffer size: %d x %d\n", fb_width, fb_height);

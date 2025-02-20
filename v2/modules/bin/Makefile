@@ -6,25 +6,20 @@ endif
 
 SDIR = $(PWD)/src
 SRCS := $(wildcard $(SDIR)/*.c)
+HDIR = $(PWD)/include
+TMP_FOLDER = $(PWD)/tmp
 
-# 3rdparty lib
-OSS_MODULE_INSTALL_PATH = $(OUTPUT_DIR)/mw_$(SDK_VER)/cvitek_mw_sdk
-OSS_MODULE_INCLUDE_PATH = $(OSS_MODULE_INSTALL_PATH)/include
-OSS_MODULE_LIB_PATH = $(OSS_MODULE_INSTALL_PATH)/lib
+INDEX_STRATEGY = 1
+ARFLAGS_x = x
 
-ifneq ($(findstring $(CHIP_ARCH), CV183X CV182X MARS PHOBOS CV181X CV180X CV186X),)
-ISP_BIN_DIR = $(MW_PATH)/modules/isp/$(shell echo $(CHIP_ARCH) | tr A-Z a-z)/isp_bin/inc
-else
-$(error UNKNOWN chip architecture - $(CHIP_ARCH))
-endif
-
-SRCS_ASM = $(wildcard $(SDIR)/*.S)
 INCS = -I$(MW_INC) -I$(MOD_INC) -I$(SYS_INC) -I$(ISP_INC) -Iinclude
-INCS += -I$(MW_PATH)/modules/vpss/include
-INCS += -I$(SYS_INC) -I$(OSS_MODULE_INCLUDE_PATH)/cvi_json-c -I$(ISP_BIN_DIR) -I$(OSS_MODULE_INCLUDE_PATH)/cvi_miniz
+INCS += -I$(MW_PATH)/modules/vpss/include -I../isp/algo
 OBJS = $(SRCS:.c=.o)
-OBJS_ASM = $(SRCS_ASM:.S=.o)
 DEPS = $(SRCS:.c=.d)
+
+PARAM_SRC = $(HDIR)/cvi_bin_param_header.h
+PARAM_PRE = $(addsuffix .i,$(basename $(addprefix $(TMP_FOLDER)/,$(notdir $(PARAM_SRC)))))
+PARAM_DEP = $(addsuffix .d,$(basename $(addprefix $(TMP_FOLDER)/,$(notdir $(PARAM_SRC)))))
 
 TARGET_A = $(MW_LIB)/libcvi_bin.a
 TARGET_SO = $(MW_LIB)/libcvi_bin.so
@@ -35,33 +30,42 @@ ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 EXTRA_CFLAGS += -DRPC_MULTI_PROCESS
 endif
 
-.PHONY : clean all prepare_3rdparty_module
-all : prepare_3rdparty_module $(TARGET_A) $(TARGET_SO)
-
-OSS_BUILD_SRCIPT = $(TOP_DIR)/oss/run_build.sh
-OSS_TARBALL_PATH = $(OUTPUT_DIR)/tpu_$(SDK_VER)/third_party
-OSS_TARBALL_CVI_JSONC_PATH = $(OSS_TARBALL_PATH)/cvi-json-c.tar.gz
-OSS_TARBALL_CVI_MINIZ_PATH = $(OSS_TARBALL_PATH)/cvi-miniz.tar.gz
-OSS_MODULE_LIB_CVI_JSONC_CHECK_PATH = $(OSS_MODULE_LIB_PATH)/libcvi_json-c*
-OSS_MODULE_LIB_CVI_MINIZ_CHECK_PATH = $(OSS_MODULE_LIB_PATH)/libcvi_miniz*
-
-prepare_3rdparty_module:
-# cvi_json-c
-ifeq "$(wildcard $(OSS_MODULE_LIB_CVI_JSONC_CHECK_PATH))" ""
-ifeq "$(wildcard $(OSS_TARBALL_CVI_JSONC_PATH))" ""
-	$(error libcvi_json-c source tarball not exist, please run build_3rd_party first!!)
-endif
-	@mkdir -p $(OSS_MODULE_INSTALL_PATH)
-	@$(OSS_BUILD_SRCIPT) -n cvi-json-c -e -t "$(OSS_TARBALL_PATH)" -i "$(OSS_MODULE_INSTALL_PATH)"
+EXTRA_CFLAGS += -DISP_BIN_COMMIT=\"$(shell git rev-parse --short HEAD)\"
+gerrit_id=$(shell git log -n1 | grep Reviewed-on | tail -n1 | sed "s/.*+\///g")
+ifneq ($(gerrit_id), )
+	EXTRA_CFLAGS += -DISP_BIN_GERRIT=\"$(gerrit_id)\"
 endif
 
-# cvi_miniz
-ifeq "$(wildcard $(OSS_MODULE_LIB_CVI_MINIZ_CHECK_PATH))" ""
-ifeq "$(wildcard $(OSS_TARBALL_CVI_MINIZ_PATH))" ""
-	$(error libcvi_miniz source tarball not exist, please run build_3rd_party first!!)
+.PHONY : clean all cleanall gencode
+all : gencode
+target : $(TARGET_A) $(TARGET_SO)
+
+gencode: $(PARAM_PRE)
+
+$(TMP_FOLDER):
+	@echo "Create $(TMP_FOLDER) for object file"
+	-@mkdir -p $(TMP_FOLDER)
+
+$(PARAM_PRE): $(PARAM_SRC) | $(TMP_FOLDER)
+ifeq ($(INDEX_STRATEGY),1)
+	@$(CC) -E $(DEPFLAGS) $(EXTRA_CFLAGS) -c $< -o $@
+	@sed -i '1s|.*|$@: \\|' $(PARAM_DEP)
+	@echo "Generate code"
+	@python3 python/gencode.py $@
 endif
-	@mkdir -p $(OSS_MODULE_INSTALL_PATH)
-	@$(OSS_BUILD_SRCIPT) -n cvi-miniz -e -t "$(OSS_TARBALL_PATH)" -i "$(OSS_MODULE_INSTALL_PATH)"
+	$(MAKE) target
+
+result = $(shell ./CalPqBinMD5.sh)
+ifeq ($(result),-1)
+abort:
+	@echo $(result)
+	$(error "md5 error: please check CalPqBinMD5.sh")
+else
+	EXTRA_CFLAGS += -DISP_BIN_MD5=\"$(result)\"
+endif
+
+ifeq ($(INDEX_STRATEGY),1)
+	EXTRA_CFLAGS += -DINDEX_STRATEGY
 endif
 
 $(SDIR)/%.o: $(SDIR)/%.c
@@ -72,18 +76,24 @@ $(SDIR)/%.o: $(SDIR)/%.S
 	$(CC) $(DEPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) -o $@ -c $<
 	@echo [$(notdir $(CC))] $(notdir $@)
 
-$(TARGET_A): $(OBJS) $(OBJS_ASM)
-	@$(AR) $(ARFLAGS) $(TARGET_A) $(OBJS) $(OBJS_ASM)
+$(TARGET_A): $(OBJS)
+	@$(AR) $(ARFLAGS) $(TARGET_A) $(OBJS)
 	@echo -e $(YELLOW)[LINK]$(END)[$(notdir $(AR))] $(notdir $(TARGET_A))
 	@echo "$$AR_MRI" | $(AR) -M
 
-$(TARGET_SO): $(OBJS) $(OBJS_ASM)
-	@$(LD) $(LDFLAGS) $(EXTRA_LDFLAGS) -o $(TARGET_SO) --start-group $(OBJS) $(OBJS_ASM) $(LIBS) --end-group
+$(TARGET_SO): $(OBJS)
+	@$(LD) $(LDFLAGS) $(EXTRA_LDFLAGS) -o $(TARGET_SO) --start-group $(OBJS) $(LIBS) --end-group
 	@echo -e $(GREEN)[LINK]$(END)[$(notdir $(LD))] $(notdir $(TARGET_SO))
 	@$(STRIP) $(TARGET_SO)
 
 clean:
-	@rm -f $(OBJS) $(OBJS_ASM) $(DEPS) $(TARGET_A) $(TARGET_SO)
-	@rm -rf $(OSS_MODULE_INSTALL_PATH)
+	@rm -f $(OBJS) $(DEPS) $(TARGET_A) $(TARGET_SO)
+	@rm -f $(PARAM_DEP) $(PARAM_PRE)
+	@rm -f $(SDIR)/*.autogen.*
+	@rm -f $(HDIR)/*.autogen.*
+
+cleanall: clean
+	@rm -rf $(TMP_FOLDER)
 
 -include $(DEPS)
+-include $(PARAM_DEP)

@@ -49,7 +49,7 @@ HTRANSINTERFACE output_file = NULL;
 
 int DATA_STRIDE = 0;
 #define LEN 2048
-unsigned char *image_data = NULL;     
+unsigned char *image_data = NULL;
 unsigned char *readpixel_data = NULL;
 
 int DIR_Initialized = FALSE;
@@ -204,7 +204,7 @@ void * gen_gradient(vg_lite_buffer_format_t format, uint32_t width, uint32_t hei
     uint32_t * pdata32;
     uint16_t * pdata16;
     uint8_t  * pdata8;
-    uint8_t  temp_pixel;
+    uint8_t  temp_pixel = 0;
     void     * pdata;
     int        bpp;
 
@@ -329,7 +329,7 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_BGRA8888:
         pixel = b | (g << 8) | (r << 16) | (a << 24);
         break;
-    
+
     case VG_LITE_ARGB8888:
         pixel = a | (r << 8) | (g << 16) | (b << 24);
         break;
@@ -361,7 +361,7 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_ABGR4444:
         pixel = ((a & 0xf0) >> 4) | (b & 0xf0) | ((g & 0xf0) << 4) | ((r & 0xf0) << 8);
         break;
-    
+
     case VG_LITE_RGBA2222:
         pixel = ((r & 0xc0) >> 6) | (g & 0xc0) >> 4 | ((b & 0xc0) >> 2) | (a & 0xc0);
         break;
@@ -396,7 +396,7 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_RGBX8888:
         pixel = r | (g << 8) | (b << 16);
         break;
-        
+
     case VG_LITE_BGRX8888:
         pixel = b | (g << 8) | (r << 16);
         break;
@@ -404,7 +404,7 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_XRGB8888:
         pixel = r | (g << 8) | (b << 16);
         break;
-        
+
     case VG_LITE_XBGR8888:
         pixel = b | (g << 8) | (r << 16);
         break;
@@ -416,7 +416,7 @@ uint32_t pack_pixel(vg_lite_buffer_format_t format,
     case VG_LITE_RGBA5551:
         pixel = ((r & 0xf8) >> 3) | ((g & 0xf8) << 2) | ((b & 0xf8) << 7) | ((a & 0x80) << 8);
         break;
-    
+
     case VG_LITE_ABGR1555:
         pixel = ((a & 0x80) >> 7) | ((b & 0xf8) << 1) | ((g & 0xf8) << 6) | ((r & 0xf8) << 11);
         break;
@@ -533,7 +533,7 @@ int InitBMP(int width, int height)
     if(image_data == NULL)
         return 1;
 
-    readpixel_data = (unsigned char *)(((unsigned int)image_data + sizeof(BITMAPINFOHEADER) + sizeof(BITMAPFILEHEADER) + 3) & (~0x3));
+    readpixel_data = (unsigned char *)(((uintptr_t)image_data + sizeof(BITMAPINFOHEADER) + sizeof(BITMAPFILEHEADER) + 3) & (~0x3));
 
     return 0;
 }
@@ -764,7 +764,7 @@ int SaveBMP(char *image_name, unsigned char* p, int width, int height,
                     surf[2] += 1;
                 }
             }else{
-                surf[3] += 1; 
+                surf[3] += 1;
             }
         }
 
@@ -794,7 +794,7 @@ int SaveBMP(char *image_name, unsigned char* p, int width, int height,
     **        width: The width of required bitmap
     **Return Value: Pointer point to the data of bitmap image
     **Description: Call ReadBMPFile() function to read the 24Bpp RGB bitmap data
-    **                to a buffer, then read data from this buffer and change the 
+    **                to a buffer, then read data from this buffer and change the
     **                24Bpp RGB data to 32Bpp RGBA data(A = 0xFF), then return it.
     -----------------------------------------------------------------*/
     unsigned char* Load_BMP(char *file_name, int *height, int *width)
@@ -841,7 +841,7 @@ int SaveBMP(char *image_name, unsigned char* p, int width, int height,
     **Returned Value: Pointer point to the data of bitmap
     **Description: For Nucleus, read from cache srcfile to pbuf;
     **               For Win32/WM/Linux, read form file to pbuf.
-    **               First read BMP file header BITMAPFILEHEADER and info header 
+    **               First read BMP file header BITMAPFILEHEADER and info header
     **               BITMAPINFOHEADER,get the width and height of the BMP,
     **             then read the RGB data from BITMAPFILEHEADER.bfOffBits of the file.
     ------------------------------------------------------------------------------*/

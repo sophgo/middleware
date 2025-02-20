@@ -1344,15 +1344,15 @@ int ParentProcessSendEncodeFrame(chnInputCfg *pIc)
     VB_BLK blk = VB_INVALID_HANDLE;
     FILE *fpInput = NULL;
     CVI_S32 s32MilliSec = -1;
-    CVI_U32 ySize = 0;
-    CVI_U32 uvSize = 0;
-    CVI_S32 s32ReadLen;
-    CVI_U32 u32BlkSize;
+    //CVI_U32 ySize = 0;
+    //CVI_U32 uvSize = 0;
+    //CVI_S32 s32ReadLen;
+    //CVI_U32 u32BlkSize;
     VB_CAL_CONFIG_S stVbCfg;
     CVI_S32 ret;
     CVI_S32 s32NumFrames = pIc->num_frames;
     PIXEL_FORMAT_E enPixelFormat;
-    int i;
+    //int i;
     CVI_S32 s32Ret;
     VB_CONFIG_S stVbConf = {0};
 
@@ -1525,14 +1525,14 @@ EXIT1:
 
 int main(int argc, char *argv[])
 {
-    chnInputCfg stChnCfg;
-    int ret = 0;
+    //chnInputCfg stChnCfg;
+    //int ret = 0;
 
     sampleVenc sv, *psv = &sv;
-    commonInputCfg *pcic = &psv->commonIc;
+    //commonInputCfg *pcic = &psv->commonIc;
     CVI_S32 s32Ret = CVI_SUCCESS;
-    int i;
-    pid_t child_pids[32];
+    //int i;
+    //pid_t child_pids[32];
     chnInputCfg *pChnIc = &sv.chnCtx[0].chnIc;
 
     s32Ret = SAMPLE_VENC_INIT_CFG(psv, argc, argv);

@@ -60,11 +60,11 @@ void cleanup(void)
 
 int main(int argc, const char* argv[])
 {
-    int i = 0;
+    //int i = 0;
     vg_lite_filter_t filter;
     vg_lite_matrix_t matrix;
     uint32_t feature_check = 0;
-    char fname[64];
+    //char fname[64];
 
     /* Initialize vg_lite engine. */
     vg_lite_error_t error = VG_LITE_SUCCESS;

@@ -5,17 +5,17 @@
 #include "vg_lite.h"
 #include "vg_lite_util.h"
 
-static char* error_type[] =
-{
-    "VG_LITE_SUCCESS",
-    "VG_LITE_INVALID_ARGUMENT",
-    "VG_LITE_OUT_OF_MEMORY",
-    "VG_LITE_NO_CONTEXT",
-    "VG_LITE_TIMEOUT",
-    "VG_LITE_OUT_OF_RESOURCES",
-    "VG_LITE_GENERIC_IO",
-    "VG_LITE_NOT_SUPPORT",
-};
+// static char* error_type[] =
+// {
+//     "VG_LITE_SUCCESS",
+//     "VG_LITE_INVALID_ARGUMENT",
+//     "VG_LITE_OUT_OF_MEMORY",
+//     "VG_LITE_NO_CONTEXT",
+//     "VG_LITE_TIMEOUT",
+//     "VG_LITE_OUT_OF_RESOURCES",
+//     "VG_LITE_GENERIC_IO",
+//     "VG_LITE_NOT_SUPPORT",
+// };
 #define IS_ERROR(status)         (status > 0)
 #define CHECK_ERROR(Function) \
     do { \
@@ -56,7 +56,7 @@ static int blitOperation(vg_lite_buffer_t* src, vg_lite_buffer_t* dst, float sca
     int s = scale * 100;
     float sw, sh;
     float tx, ty;
-    int rotate = 0 % 360;
+    //int rotate = 0 % 360;
     char filename[30];
     sprintf(filename, "result_s%d.png", s);
 
@@ -80,7 +80,7 @@ static int blitOperation(vg_lite_buffer_t* src, vg_lite_buffer_t* dst, float sca
 }
 
 
-void main()
+int main()
 {
     vg_lite_error_t error = VG_LITE_SUCCESS;
 
@@ -95,7 +95,7 @@ void main()
     if (vg_lite_load_raw(&source, "circle.raw") != 0) {
         printf("load raw file error\n");
         cleanup();
-        return;
+        return 0;
     }
 
     blitOperation(&source, &buffer, 1.2);
@@ -108,4 +108,5 @@ void main()
     blitOperation(&source, &buffer, 0.95);
 
     cleanup();
+    return 0;
 }

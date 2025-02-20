@@ -13,17 +13,17 @@ static int   fb_width = 320, fb_height = 480;
 static float fb_scale = 1.0f;
 
 static vg_lite_buffer_t buffer;     //offscreen framebuffer object for rendering.
-static vg_lite_buffer_t * sys_fb;   //system framebuffer object to show the rendering result.
+//static vg_lite_buffer_t * sys_fb;   //system framebuffer object to show the rendering result.
 static vg_lite_buffer_t * fb;
-static int has_fb = 0;
+//static int has_fb = 0;
 
 static vg_lite_buffer_t image;
-char *error_type[] = 
+char *error_type[] =
 {
     "VG_LITE_SUCCESS",
     "VG_LITE_INVALID_ARGUMENT",
     "VG_LITE_OUT_OF_MEMORY",
-    "VG_LITE_NO_CONTEXT",      
+    "VG_LITE_NO_CONTEXT",
     "VG_LITE_TIMEOUT",
     "VG_LITE_OUT_OF_RESOURCES",
     "VG_LITE_GENERIC_IO",
@@ -74,7 +74,7 @@ void create_imgA4(vg_lite_buffer_t *buffer)
 int main(int argc, const char * argv[])
 {
     vg_lite_filter_t filter;
-    uint32_t colors[256] = {0};
+    //uint32_t colors[256] = {0};
     vg_lite_matrix_t matrix;
 
     vg_lite_error_t error = VG_LITE_SUCCESS;

@@ -60,8 +60,10 @@ sensor-$(CONFIG_SENSOR_GCORE_GC2093)         += gcore_gc2093
 sensor-$(CONFIG_SENSOR_GCORE_GC2145)         += gcore_gc2145
 sensor-$(CONFIG_SENSOR_GCORE_GC4023)         += gcore_gc4023
 sensor-$(CONFIG_SENSOR_GCORE_GC4653)         += gcore_gc4653
+sensor-$(CONFIG_SENSOR_GCORE_GC8613)         += gcore_gc8613
 sensor-$(CONFIG_SENSOR_NEXTCHIP_N5)          += nextchip_n5
 sensor-$(CONFIG_SENSOR_NEXTCHIP_N6)          += nextchip_n6
+sensor-$(CONFIG_SENSOR_NUC_NC021)            += nuc_nc021
 sensor-$(CONFIG_SENSOR_ONSEMI_AR2020)        += onsemi_ar2020
 sensor-$(CONFIG_SENSOR_OV_OS04A10)           += ov_os04a10
 sensor-$(CONFIG_SENSOR_OV_OS04C10)           += ov_os04c10
@@ -106,9 +108,12 @@ sensor-$(CONFIG_SENSOR_SONY_IMX327_SUBLVDS)  += sony_imx327_sublvds
 sensor-$(CONFIG_SENSOR_SONY_IMX334)          += sony_imx334
 sensor-$(CONFIG_SENSOR_SONY_IMX335)          += sony_imx335
 sensor-$(CONFIG_SENSOR_SONY_IMX412)          += sony_imx412
+sensor-$(CONFIG_SENSOR_SONY_IMX415)          += sony_imx415
 sensor-$(CONFIG_SENSOR_SONY_IMX585)          += sony_imx585
+sensor-$(CONFIG_SENSOR_SONY_IMX900)          += sony_imx900
 sensor-$(CONFIG_SENSOR_TECHPOINT_TP2860)     += techpoint_tp2860
 sensor-$(CONFIG_SENSOR_LONTIUM_LT6911)       += lontium_lt6911
+
 else
 $(error not supported chip arch cv180x/cv181x/cv182x/cv183x/cv186x)
 endif

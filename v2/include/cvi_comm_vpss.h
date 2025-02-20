@@ -167,6 +167,14 @@ typedef struct _VPSS_STITCH_OUTPUT_ATTR_S {
 	CVI_U32 u32Height;
 } VPSS_STITCH_OUTPUT_ATTR_S;
 
+typedef struct _VPSS_BIN_DATA {
+	CVI_S32 proc_amp[PROC_AMP_MAX];
+} VPSS_BIN_DATA;
+
+typedef struct {
+	VPSS_BIN_DATA vpss_bin_data[VPSS_MAX_GRP_NUM];
+} VPSS_PARAMETER_BUFFER;
+
 #ifdef __cplusplus
 #if __cplusplus
 }

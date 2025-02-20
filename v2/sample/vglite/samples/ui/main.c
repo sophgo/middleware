@@ -7,12 +7,12 @@
 
 #define DEFAULT_SIZE   320.0f;
 #define __func__ __FUNCTION__
-char *error_type[] = 
+char *error_type[] =
 {
     "VG_LITE_SUCCESS",
     "VG_LITE_INVALID_ARGUMENT",
     "VG_LITE_OUT_OF_MEMORY",
-    "VG_LITE_NO_CONTEXT",      
+    "VG_LITE_NO_CONTEXT",
     "VG_LITE_TIMEOUT",
     "VG_LITE_OUT_OF_RESOURCES",
     "VG_LITE_GENERIC_IO",
@@ -31,7 +31,7 @@ static float fb_scale = 1.0f;
 
 static vg_lite_buffer_t buffer;     //offscreen framebuffer object for rendering.
 static vg_lite_buffer_t * fb;
-static vg_lite_buffer_t raw;
+//static vg_lite_buffer_t raw;
 
 #define ICON_COUNT 6
 static vg_lite_buffer_t icons[ICON_COUNT];
@@ -72,7 +72,7 @@ void loadImages()
         "icons/5.raw",
         "icons/6.raw"
     };
-    
+
     for (i = 0; i < ICON_COUNT; i++)
     {
         if (vg_lite_load_raw(&icons[i], img_file_names[i]) != 0)
@@ -115,7 +115,7 @@ int main(int argc, const char * argv[])
 
     fb_scale = (float)fb_width / DEFAULT_SIZE;
     printf("Framebuffer size: %d x %d\n", fb_width, fb_height);
-    
+
     // Allocate the off-screen buffer.
     buffer.width  = fb_width;
     buffer.height = fb_height;
@@ -123,7 +123,7 @@ int main(int argc, const char * argv[])
 
     CHECK_ERROR(vg_lite_allocate(&buffer));
     fb = &buffer;
-    
+
     loadImages();
     // Clear the buffer with blue.
     CHECK_ERROR(vg_lite_clear(fb, NULL, 0xFFFF0000));
@@ -138,7 +138,7 @@ int main(int argc, const char * argv[])
         {
             icon_pos[i * 3 + j][0] = gap_x * (j + 1) + j * icon_size;
             icon_pos[i * 3 + j][1] = gap_y * (i + 1) + i * icon_size;
-            
+
             /* Setup the matrix. */
             vg_lite_identity(&icon_matrix);
             vg_lite_translate(icon_pos[icon_id][0], icon_pos[icon_id][1], &icon_matrix);
@@ -156,7 +156,7 @@ int main(int argc, const char * argv[])
     vg_lite_translate(icon_pos[2][0], icon_pos[2][1], &highlight_matrix);
     vg_lite_scale(icon_size / 10.0f, icon_size / 10.0f, &highlight_matrix);
     vg_lite_scale(fb_scale, fb_scale, &highlight_matrix);
-    
+
     // Draw the path using the matrix.
     CHECK_ERROR(vg_lite_draw(fb, &path, VG_LITE_FILL_EVEN_ODD, &highlight_matrix, VG_LITE_BLEND_SRC_OVER, 0x22444488));
     CHECK_ERROR(vg_lite_finish());

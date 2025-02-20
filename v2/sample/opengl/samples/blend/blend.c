@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <GL/gl.h>
+#include <math.h>
 
 #define GL_DEBUG
 #ifdef GL_DEBUG

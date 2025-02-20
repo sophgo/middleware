@@ -16,6 +16,7 @@
 #include "render_accuracy_test.h"
 
 #define __func__ __FUNCTION__
+/*
 static char* error_type[] =
 {
 	"VG_LITE_SUCCESS",
@@ -35,7 +36,7 @@ static char* error_type[] =
         printf("[%s: %d] failed.error type is %s\n", __func__, __LINE__,error_type[err]);\
         goto ErrorHandler; \
     }
-
+*/
 static vg_lite_buffer_t buffer, src, ras_fb;
 static vg_lite_buffer_t* fb;
 static vg_lite_path_t p, p1;
@@ -488,7 +489,7 @@ int main(int argc, const char* argv[])
 
 	vg_lite_save_png("matrix_blit_chessboard_test.png", fb);
 
-ErrorHandler:
+//ErrorHandler:
 	// Cleanup.
 	cleanup();
 	return 0;

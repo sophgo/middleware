@@ -232,6 +232,10 @@ ifeq ($(USE_SONIC_LIB), yes)
 EXTRA_CFLAGS += -DUSE_SONIC_LIB
 endif
 
+ifeq ($(TOOLCHAIN_GLIBC_ARM64_V1131), y)
+EXTRA_CFLAGS += -mno-outline-atomics
+endif
+
 AEC_LDLIBS += -laec.v1.0.4
 RES_LDLIBS += -lcvi_RES1
 

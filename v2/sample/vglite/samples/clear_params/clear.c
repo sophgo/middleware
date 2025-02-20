@@ -9,17 +9,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "vg_lite.h"
 #include "vg_lite_util.h"
 
 #define DEFAULT_SIZE   256.0f;
 #define __func__ __FUNCTION__
-char *error_type[] = 
+char *error_type[] =
 {
     "VG_LITE_SUCCESS",
     "VG_LITE_INVALID_ARGUMENT",
     "VG_LITE_OUT_OF_MEMORY",
-    "VG_LITE_NO_CONTEXT",      
+    "VG_LITE_NO_CONTEXT",
     "VG_LITE_TIMEOUT",
     "VG_LITE_OUT_OF_RESOURCES",
     "VG_LITE_GENERIC_IO",
@@ -139,7 +140,7 @@ int main(int argc, const char * argv[])
         CHECK_ERROR(vg_lite_finish());
         if (fps_us != 0) {
             printf("usleep fps_us:%d\n", fps_us);
-            usleep(fps_us);
+            //usleep(fps_us);
         }
     }
     if (dump_png == 1) {

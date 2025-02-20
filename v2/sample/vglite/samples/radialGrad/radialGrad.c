@@ -75,7 +75,7 @@ int main(int argc, const char* argv[])
     vg_lite_radial_gradient_t grad;
     vg_lite_matrix_t* matGrad;
     vg_lite_matrix_t matPath;
-    vg_lite_filter_t filter = VG_LITE_FILTER_POINT;
+    //vg_lite_filter_t filter = VG_LITE_FILTER_POINT;
     vg_lite_error_t error = VG_LITE_SUCCESS;
     vg_lite_radial_gradient_parameter_t radialGradient = { 120.0f ,120.0f ,115.0f ,120.0f,120.0f };
 
@@ -104,7 +104,7 @@ int main(int argc, const char* argv[])
     };
 
     int fcount = 0;
-    char filename[20];
+    char filename[27];
 
     /* Initialize vg_lite engine. */
     CHECK_ERROR(vg_lite_init(fb_width, fb_height));

@@ -84,7 +84,7 @@ void cleanup(void)
 
 int main(int argc, const char* argv[])
 {
-    vg_lite_filter_t filter;
+    //vg_lite_filter_t filter;
     vg_lite_ext_linear_gradient_t grad;
 
     vg_lite_color_ramp_t vg_color_ramp[] =
@@ -115,7 +115,7 @@ int main(int argc, const char* argv[])
     vg_lite_error_t error = VG_LITE_SUCCESS;
     CHECK_ERROR(vg_lite_init(fb_width, fb_height));
 
-    filter = VG_LITE_FILTER_POINT;
+    //filter = VG_LITE_FILTER_POINT;
     if (!vg_lite_query_feature(gcFEATURE_BIT_VG_LINEAR_GRADIENT_EXT)) {
         printf("linearGradient is not supported.\n");
         return VG_LITE_NOT_SUPPORT;

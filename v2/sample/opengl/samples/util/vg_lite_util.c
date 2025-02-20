@@ -142,42 +142,42 @@ static vg_lite_float_t _calc_decnano_compress_ratio_2_0(
 }
 #endif
 
-static int write_int(FILE *fp,int  l)
-{
-    putc(l, fp);
-    return (putc(l >> 8, fp));
-}
+// static int write_int(FILE *fp,int  l)
+// {
+//     putc(l, fp);
+//     return (putc(l >> 8, fp));
+// }
 
-static int read_int(FILE *fp)
-{
-    unsigned char b0, b1; /* Bytes from file */
+// static int read_int(FILE *fp)
+// {
+//     unsigned char b0, b1; /* Bytes from file */
 
-    b0 = getc(fp);
-    b1 = getc(fp);
+//     b0 = getc(fp);
+//     b1 = getc(fp);
 
-    return ((int)b0 | b1 << 8 );
-}
+//     return ((int)b0 | b1 << 8 );
+// }
 
-static int read_int_inverse(FILE *fp)
-{
-    unsigned char b0, b1; /* Bytes from file */
+// static int read_int_inverse(FILE *fp)
+// {
+//     unsigned char b0, b1; /* Bytes from file */
 
-    b0 = getc(fp);
-    b1 = getc(fp);
+//     b0 = getc(fp);
+//     b1 = getc(fp);
 
-    return ((int)b1 | b0 << 8 );
-}
+//     return ((int)b1 | b0 << 8 );
+// }
 
 // Read a 32-bit signed integer.
 static int read_long(FILE *fp)
 {
     unsigned char b0, b1, b2, b3; /* Bytes from file */
-    
+
     b0 = getc(fp);
     b1 = getc(fp);
     b2 = getc(fp);
     b3 = getc(fp);
-    
+
     return ((int)(((((b3 << 8) | b2) << 8) | b1) << 8) | b0);
 }
 
@@ -316,7 +316,7 @@ int vg_lite_load_raw_yuv(vg_lite_buffer_t * buffer, const char * name)
             U_width = width;
             V_width = 0;
             break;
-       
+
         case VG_LITE_YUY2:
         case VG_LITE_YUY2_TILED:
             Y_height = height;
@@ -326,7 +326,7 @@ int vg_lite_load_raw_yuv(vg_lite_buffer_t * buffer, const char * name)
             U_width = 0;
             V_width = 0;
             break;
-            
+
        default:
             return -1;
     }
@@ -455,7 +455,7 @@ int vg_lite_load_raw(vg_lite_buffer_t * buffer, const char * name)
     fp = fopen(name, "rb");
     if (fp != NULL) {
         int flag;
-        
+
         // Get width, height, stride and format info.
         buffer->width  = read_long(fp);
         buffer->height = read_long(fp);
@@ -484,12 +484,12 @@ int vg_lite_load_raw(vg_lite_buffer_t * buffer, const char * name)
             fclose(fp);
             return -1;
         }
-        
+
         fclose(fp);
         fp = NULL;
         status = 0;
     }
-    
+
     // Return the status.
     return status;
 }
@@ -497,21 +497,21 @@ int vg_lite_load_raw(vg_lite_buffer_t * buffer, const char * name)
 int vg_lite_load_raw_byline(vg_lite_buffer_t * buffer, const char * name)
 {
     FILE * fp;
-    
+
     // Set status.
     int status = 1;
-    
+
     // Check the result with golden.
     fp = fopen(name, "r");
     if (fp != NULL) {
         int flag;
-        
+
         // Get width, height, stride and format info.
         buffer->width  = read_long(fp);
         buffer->height = read_long(fp);
         buffer->stride = read_long(fp);
         buffer->format = read_long(fp);
-        
+
         // Allocate the VGLite buffer memory.
         if (vg_lite_allocate(buffer) != VG_LITE_SUCCESS)
         {
@@ -526,12 +526,12 @@ int vg_lite_load_raw_byline(vg_lite_buffer_t * buffer, const char * name)
             fclose(fp);
             return -1;
         }
-        
+
         fclose(fp);
         fp = NULL;
         status = 0;
     }
-    
+
     // Return the status.
     return status;
 }
@@ -653,25 +653,25 @@ int vg_lite_save_raw(const char *name, vg_lite_buffer_t *buffer)
 {
     FILE * fp;
     int status = 1;
-    
+
     fp = fopen(name, "wb");
-    
+
     if (fp != NULL) {
         // Save width, height, stride and format info.
         write_long(fp, buffer->width);
         write_long(fp, buffer->height);
         write_long(fp, buffer->stride);
         write_long(fp, buffer->format);
-        
+
         // Save buffer info.
         fwrite(buffer->memory, 1, buffer->stride * buffer->height, fp);
-        
+
         fclose(fp);
         fp = NULL;
-        
+
         status = 0;
     }
-    
+
     // Return the status.
     return status;
 }
@@ -682,16 +682,16 @@ int vg_lite_save_raw_byline(const char *name, vg_lite_buffer_t *buffer)
     int status = 1;
     unsigned char* pt;
     int loop, mem;
-    
+
     fp = fopen(name, "w");
-    
+
     if (fp != NULL) {
         // Save width, height, stride and format info.
         write_long(fp, buffer->width);
         write_long(fp, buffer->height);
         write_long(fp, buffer->stride);
         write_long(fp, buffer->format);
-        
+
         // Save buffer info.
         pt = (unsigned char*) buffer->memory;
         for (loop = 0; loop < buffer->height; loop++) {
@@ -699,13 +699,13 @@ int vg_lite_save_raw_byline(const char *name, vg_lite_buffer_t *buffer)
                 putc(pt[mem], fp);
             }
         }
-        
+
         fclose(fp);
         fp = NULL;
-        
+
         status = 0;
     }
-    
+
     // Return the status.
     return status;
 }

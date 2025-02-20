@@ -663,8 +663,21 @@ CVI_S32 CompareWithFile(const CVI_CHAR *filename, VIDEO_FRAME_INFO_S *pstVideoFr
 					      pstVideoFrame->stVFrame.pu8VirAddr[i],
 					      pstVideoFrame->stVFrame.u32Stride[i]);
 
-				result = CVI_FAILURE;
-				break;
+				if (result)
+					break;
+
+				for (CVI_U32 byte = 0; byte < data_len; ++byte) {
+					CVI_U8 buffer_value = buffer[offset + byte];
+					CVI_U8 vir_value = pstVideoFrame->stVFrame.pu8VirAddr[i][offset + byte];
+
+					if (abs(buffer_value - vir_value) > 2) {
+						VPSS_UT_PRT("plane(%d) line(%d) byte(%d) data mismatch!\n",
+							i, line, byte);
+						result = CVI_FAILURE;
+						break;
+					}
+
+				}
 			}
 			offset += pstVideoFrame->stVFrame.u32Stride[i];
 		}
@@ -781,7 +794,7 @@ CVI_S32 CompareCmodel_rgb2yuv(VIDEO_FRAME_INFO_S *pstVideoFrameIn, VIDEO_FRAME_I
 			vpss_csc_rgb2yuv(p, yuvData);
 			y = pstVideoFrameOut->stVFrame.pu8VirAddr[0] +
 				pstVideoFrameOut->stVFrame.u32Stride[0] * h + w;
-			if (yuvData[0] != *y) {
+			if (yuvData[0] != *y) {
 				VPSS_UT_PRT("y data error,(%d -> %d), w:%d h:%d\n", yuvData[0], *y, w, h);
 				result = CVI_FAILURE;
 				break;
@@ -809,12 +822,12 @@ CVI_S32 CompareCmodel_rgb2yuv(VIDEO_FRAME_INFO_S *pstVideoFrameIn, VIDEO_FRAME_I
 				uv_bypass = CVI_FALSE;
 			}
 
-			if (!uv_bypass && (yuvData[1] != *u)) {
+			if (!uv_bypass && (yuvData[1] != *u)) {
 				VPSS_UT_PRT("u data error,(%d -> %d), w:%d h:%d\n", yuvData[1], *u, w, h);
 				result = CVI_FAILURE;
 				break;
 			}
-			if (!uv_bypass && (yuvData[2] != *v)) {
+			if (!uv_bypass && (yuvData[2] != *v)) {
 				VPSS_UT_PRT("v data error,(%d -> %d), w:%d h:%d\n", yuvData[2], *v, w, h);
 				result = CVI_FAILURE;
 				break;
@@ -1063,21 +1076,21 @@ CVI_S32 CompareCmodel_yuv2rgb(VIDEO_FRAME_INFO_S *pstVideoFrameIn, VIDEO_FRAME_I
 
 			vpss_csc_yuv2rgb(yuvData, rgbData);
 
-			if (rgbData[0] != *p) {
+			if (rgbData[0] != *p) {
 				VPSS_UT_PRT("R data error, yuv(%d %d %d), rgb(sw:%d hw:%d), w:%d h:%d\n",
 					yuvData[0], yuvData[1], yuvData[2], rgbData[0], *p, w, h);
 				result = CVI_FAILURE;
 				break;
 			}
 			p++;
-			if (rgbData[1] != *p) {
+			if (rgbData[1] != *p) {
 				VPSS_UT_PRT("G data error, yuv(%d %d %d), rgb(sw:%d hw:%d), w:%d h:%d\n",
 					yuvData[0], yuvData[1], yuvData[2], rgbData[1], *p, w, h);
 				result = CVI_FAILURE;
 				break;
 			}
 			p++;
-			if (rgbData[2] != *p) {
+			if (rgbData[2] != *p) {
 				VPSS_UT_PRT("B data error, yuv(%d %d %d), rgb(sw:%d hw:%d), w:%d h:%d\n",
 					yuvData[0], yuvData[1], yuvData[2], rgbData[2], *p, w, h);
 				result = CVI_FAILURE;

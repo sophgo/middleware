@@ -1270,13 +1270,13 @@ int SubProcessChannel(chnInputCfg *pIc)
     FILE *fpInput = NULL;
     CVI_S32 s32MilliSec = -1;
     FILE *fpOutput = NULL;
-    CVI_U32 ySize = 0;
+    //CVI_U32 ySize = 0;
     VB_CAL_CONFIG_S stVbCfg;
-    CVI_U32 uvSize = 0;
-    CVI_S32 s32ReadLen;
+    //CVI_U32 uvSize = 0;
+    //CVI_S32 s32ReadLen;
     CVI_S32 ret = 0;
     CVI_S32 s32NumFrames = pIc->num_frames;
-    CVI_U32 i;
+    //CVI_U32 i;
     PIXEL_FORMAT_E enPixelFormat;
 
     CVI_S32 s32Ret;

@@ -59,7 +59,7 @@ int main(int argc, const char* argv[])
 {
     vg_lite_error_t error = VG_LITE_SUCCESS;
     vg_lite_matrix_t matrix;
-    vg_lite_blend_t blend = VG_LITE_BLEND_SRC_OVER;
+    //vg_lite_blend_t blend = VG_LITE_BLEND_SRC_OVER;
     char filename_dec[35], filename_png[35];
     int i, j;
 

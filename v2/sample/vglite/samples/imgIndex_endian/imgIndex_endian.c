@@ -8,12 +8,12 @@
 
 #define DEFAULT_SIZE   320.0f;
 #define __func__ __FUNCTION__
-char *error_type[] = 
+char *error_type[] =
 {
     "VG_LITE_SUCCESS",
     "VG_LITE_INVALID_ARGUMENT",
     "VG_LITE_OUT_OF_MEMORY",
-    "VG_LITE_NO_CONTEXT",      
+    "VG_LITE_NO_CONTEXT",
     "VG_LITE_TIMEOUT",
     "VG_LITE_OUT_OF_RESOURCES",
     "VG_LITE_GENERIC_IO",
@@ -40,18 +40,18 @@ static vg_lite_buffer_t image[3];
 void cleanup(void)
 {
     int32_t i;
-    
+
     if (has_fb) {
         // Close the framebuffer.
         vg_lite_fb_close(sys_fb);
     }
-    
+
     if (buffer.handle != NULL) {
         // Free the buffer memory.
         vg_lite_free(&buffer);
     }
 
-    for (i = 0; i < 4; i ++)
+    for (i = 0; i < 3; i ++)
     {
         if (image[i].handle != NULL) {
             // Free the image memory.
@@ -81,7 +81,7 @@ void create_index2(vg_lite_buffer_t *buffer)
     uint32_t block = 16;
     uint8_t *p = (uint8_t*)buffer->memory;
     uint8_t values[] = {0x07, 0x59, 0xaf, 0xf0};
-    
+
     for (i = 0; i < buffer->height; i++)
     {
         memset(p, values[(i / block) % 4], buffer->stride);
@@ -98,7 +98,7 @@ void create_index4(vg_lite_buffer_t *buffer)
     0x89, 0x9a, 0xab, 0xbc,
     0xcd, 0xde, 0xef, 0xf0
     };
-    
+
     for (i = 0; i < buffer->height; i++)
     {
         memset(p, values[(i / block) % 16], buffer->stride);
@@ -111,7 +111,7 @@ void create_index8(vg_lite_buffer_t *buffer)
     uint32_t i;
     uint32_t block = 1;
     uint8_t *p = (uint8_t*)buffer->memory;
-   
+
     for (i = 0; i < buffer->height; i++)
     {
         memset(p, (i / block) % 256, buffer->stride);
@@ -125,19 +125,19 @@ void create_index_image(vg_lite_buffer_t *buffer)
         case VG_LITE_INDEX_8:
             create_index8(buffer);
             break;
-            
+
         case VG_LITE_INDEX_4:
             create_index4(buffer);
             break;
-            
+
         case VG_LITE_INDEX_2:
             create_index2(buffer);
             break;
-            
+
         case VG_LITE_INDEX_1:
             create_index1(buffer);
             break;
-            
+
         default:
             break;
     }
@@ -146,7 +146,7 @@ void create_index_image(vg_lite_buffer_t *buffer)
 void create_index_table(uint32_t colors[256])
 {
     int32_t i = 0;
-    
+
     colors[0] = 0xff000000;
     colors[1] = 0xffffffff;
     colors[2] = 0xffff0000;
@@ -163,7 +163,7 @@ void create_index_table(uint32_t colors[256])
     colors[10] = 0xffffff00;
     colors[9] = 0xffff00ff;
     colors[8] = 0xff00ffff;
-    
+
     for (i = 16; i < 256; i++)
     {
         colors[i] = colors[i % 16];
@@ -181,11 +181,11 @@ int main(int argc, const char * argv[])
                             "imgIndex1_littleEndian.png", "imgIndex2_littleEndian.png", "imgIndex4_littleEndian.png"};
 
     enum vg_lite_index_endian endian_mode[2] = {VG_LITE_INDEX_BIG_ENDIAN, VG_LITE_INDEX_LITTLE_ENDIAN};
-    
+
     // Initialize vg_lite engine.
     vg_lite_error_t error = VG_LITE_SUCCESS;
     CHECK_ERROR(vg_lite_init(0, 0));
-    
+
     filter = VG_LITE_FILTER_BI_LINEAR;
 
     feature_check = vg_lite_query_feature(gcFEATURE_BIT_VG_INDEX_ENDIAN);
@@ -193,7 +193,7 @@ int main(int argc, const char * argv[])
         printf("imgIndex_endian is not supported.\n");
         cleanup();
         return -1;
-    }  
+    }
 
     for (j = 0; j < 2; j++)
     {
@@ -207,10 +207,10 @@ int main(int argc, const char * argv[])
             create_index_image(&image[i]);
         }
         create_index_table(colors);
-    
+
         fb_scale = (float)fb_width / DEFAULT_SIZE;
         printf("Framebuffer size: %d x %d\n", fb_width, fb_height);
-    
+
         // Allocate the off-screen buffer.
         buffer.width  = fb_width;
         buffer.height = fb_height;

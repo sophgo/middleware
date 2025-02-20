@@ -53,10 +53,16 @@ gcore_gc4023:
 gcore_gc4653:
 	$(call MAKE_SENSOR, ${@})
 
+gcore_gc8613:
+	$(call MAKE_SENSOR, ${@})
+
 nextchip_n5:
 	$(call MAKE_SENSOR, ${@})
 
 nextchip_n6:
+	$(call MAKE_SENSOR, ${@})
+
+nuc_nc021:
 	$(call MAKE_SENSOR, ${@})
 
 onsemi_ar2020:
@@ -191,7 +197,13 @@ sony_imx335:
 sony_imx412:
 	$(call MAKE_SENSOR, ${@})
 
+sony_imx415:
+	$(call MAKE_SENSOR, ${@})
+
 sony_imx585:
+	$(call MAKE_SENSOR, ${@})
+
+sony_imx900:
 	$(call MAKE_SENSOR, ${@})
 
 techpoint_tp2860:

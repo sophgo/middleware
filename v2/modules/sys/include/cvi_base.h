@@ -202,14 +202,6 @@ struct vdev {
 #endif
 // -------- If you want to change these interfaces, please contact the isp team. --------
 
-typedef struct {
-	CVI_S32 proc_amp[PROC_AMP_MAX];
-} VPSS_BIN_DATA;
-
-typedef struct {
-	VPSS_BIN_DATA vpss_bin_data[VPSS_MAX_GRP_NUM];
-} VPSS_PARAMETER_BUFFER;
-
 // ++++++++ If you want to change these interfaces, please contact the isp team. ++++++++
 struct vdev *get_dev_info(CVI_U8 type, CVI_U8 dev_id);
 // -------- If you want to change these interfaces, please contact the isp team. --------

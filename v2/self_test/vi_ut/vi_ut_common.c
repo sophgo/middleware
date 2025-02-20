@@ -157,7 +157,7 @@ CVI_S32 vi_ut_plat_sys_init(void)
 {
 	CVI_S32		s32Ret;
 	PIC_SIZE_E	enPicSize;
-	CVI_U32		is_dpcm_on;
+	CVI_U32		is_dpcm_on = 0;
 	CVI_S32		i;
 	VB_CONFIG_S	stVbConf;
 	CVI_U32		u32BlkSize, u32BlkRotSize;
@@ -454,6 +454,7 @@ CVI_S32 vi_ut_plat_vi_init(void)
 			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2020_2M_30FPS_8BIT) ||
 			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2100_2M_25FPS_8BIT) ||
 			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT) ||
+			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2100_2M_2CH_2L_25FPS_8BIT) ||
 			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT) ||
 			(pstViInfo->stSnsInfo.enSnsType == PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT)) {
 			stPipeAttr.bYuvBypassPath = CVI_TRUE;

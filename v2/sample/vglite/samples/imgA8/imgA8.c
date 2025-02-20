@@ -7,12 +7,12 @@
 
 #define DEFAULT_SIZE   400.0f;
 #define __func__ __FUNCTION__
-char *error_type[] = 
+char *error_type[] =
 {
     "VG_LITE_SUCCESS",
     "VG_LITE_INVALID_ARGUMENT",
     "VG_LITE_OUT_OF_MEMORY",
-    "VG_LITE_NO_CONTEXT",      
+    "VG_LITE_NO_CONTEXT",
     "VG_LITE_TIMEOUT",
     "VG_LITE_OUT_OF_RESOURCES",
     "VG_LITE_GENERIC_IO",
@@ -27,11 +27,11 @@ char *error_type[] =
         goto ErrorHandler; \
     }
 static int   fb_width = 400, fb_height = 400;
-static float fb_scale = 1.0f;
+//static float fb_scale = 1.0f;
 
 static vg_lite_buffer_t buffer;     //offscreen framebuffer object for rendering.
-static vg_lite_buffer_t * sys_fb;   //system framebuffer object to show the rendering result.
-static vg_lite_buffer_t * fb;
+//static vg_lite_buffer_t * sys_fb;   //system framebuffer object to show the rendering result.
+//static vg_lite_buffer_t * fb;
 
 vg_lite_matrix_t matrix;
 
@@ -700,7 +700,7 @@ static vg_lite_error_t render()
     unsigned char * ptr;
     int i;
 
-    buffer.format = VG_LITE_RGB565; 
+    buffer.format = VG_LITE_RGB565;
     buffer.width = ALIGMENT(fb_width,64);
     buffer.height = fb_height;
     ptr = offscreenBuf.memory;

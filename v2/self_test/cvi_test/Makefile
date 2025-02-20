@@ -48,7 +48,7 @@ endif
 
 EXTRA_CFLAGS = $(DEFS) $(INCS)
 EXTRA_LDFLAGS = $(LIBS) -lini -lpthread -latomic
-EXTRA_LDFLAGS += -lcvi_bin -lcvi_bin_isp
+EXTRA_LDFLAGS += -lcvi_bin
 
 EXTRA_LDFLAGS_WITH_ASAN = -lasan
 
