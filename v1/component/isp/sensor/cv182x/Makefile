@@ -95,6 +95,9 @@ ov_ov6211:
 ov_ov7251:
 	$(call MAKE_SENSOR, ${@})
 
+ov_ov9282:
+	$(call MAKE_SENSOR, ${@})
+
 pixelplus_pr2020:
 	$(call MAKE_SENSOR, ${@})
 
@@ -117,6 +120,9 @@ sms_sc301iot:
 	$(call MAKE_SENSOR, ${@})
 
 sms_sc401ai:
+	$(call MAKE_SENSOR, ${@})
+
+sms_sc438ai:
 	$(call MAKE_SENSOR, ${@})
 
 sms_sc500ai:
