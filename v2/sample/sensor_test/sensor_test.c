@@ -1098,9 +1098,9 @@ int main(int argc, char **argv)
 	UNUSED(argc);
 	UNUSED(argv);
 
-	SAMPLE_PRT("select is replay yes [0] no [1]:");
+	SAMPLE_PRT("select is replay yes [1] no [0]:");
 	scanf("%d", &op);
-	if (!op) {
+	if (op) {
 		s32Ret = replay_vi_init();
 		if (s32Ret != CVI_SUCCESS)
 			return s32Ret;

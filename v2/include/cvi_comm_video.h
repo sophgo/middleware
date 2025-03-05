@@ -512,6 +512,8 @@ typedef struct _GRID_INFO_ATTR_S {
 	CVI_BOOL isBlending;
 	CVI_BOOL bEISEnable; /* enable EIS */
 	uint8_t homoRgnNum;
+	CVI_VOID *pBuf;
+	CVI_U32 Len;
 } GRID_INFO_ATTR_S;
 
 typedef struct _LDC_ATTR_S {

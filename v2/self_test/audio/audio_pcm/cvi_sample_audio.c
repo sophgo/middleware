@@ -23,7 +23,6 @@
 #if !(defined(__CV181X__) || defined(__CV180X__) || defined(__CV186X__))
 #include "sample_comm.h"
 #endif
-#include "acodec.h"
 #ifndef CVIAUDIO_STATIC
 #include "cvi_audio_dl_adp.h"
 #endif
@@ -2241,6 +2240,12 @@ CVI_S32 SAMPLE_AUDIO_AiAo(CVI_VOID)
 	usleep(100 * 1000);
 	s32Ret = SAMPLE_COMM_AUDIO_StartAo(AoDev, AoChn, &stAioAttr,
 					   enInSampleRate, gs_bAioReSample);
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_DBG(s32Ret);
+		goto AIAO_ERR2;
+	}
+
+	s32Ret = SAMPLE_COMM_AUDIO_ResumeAO(AoDev, AoChn);
 	if (s32Ret != CVI_SUCCESS) {
 		SAMPLE_DBG(s32Ret);
 		goto AIAO_ERR2;

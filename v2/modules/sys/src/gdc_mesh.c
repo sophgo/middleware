@@ -2375,7 +2375,8 @@ static int generate_mesh_on_fisheye(const GRID_INFO_ATTR_S* pstGridInfoAttr, FIS
 				CVI_TRACE_GDC(CVI_DBG_ERR, "meshData buf full.\n");
 				return -1;
 			}
-			if (load_meshdata(pstGridInfoAttr->gridFileName, &g_MeshData[grid_idx], pstGridInfoAttr->gridBindName)) {
+			if (load_meshdata(pstGridInfoAttr->gridFileName, &g_MeshData[grid_idx],
+				pstGridInfoAttr->gridBindName, pstGridInfoAttr->pBuf, pstGridInfoAttr->Len)) {
 				CVI_TRACE_GDC(CVI_DBG_ERR, "load_meshdata fail.\n");
 				return -1;
 			}

@@ -8,6 +8,7 @@ In order to process audio on the development board, we can use sample_audio or f
 ## Usage:
 
 ./sample_audio <index> --list
+-D [card] -d [device]
 -r [sample_rate] -R [Chnsample_rate]
 -c [channel] -p [preiod_size][*aac enc must 1024]
 -C [codec 0:g726 1:g711A 2:g711Mu 3: adpcm 4.AAC]
@@ -29,14 +30,15 @@ In order to process audio on the development board, we can use sample_audio or f
 
 ## Examples
 
-Aenc    eg : ./sample_audio 0 --list -r 8000 -R 8000 -c 2 -p 320 -C 1 -V 0 -F Cvi_8k_2chn.g711a -T 10
-           : ./sample_audio 0 --list -r 8000 -R 8000 -c 2 -p 1024 -C 4 -V 0 -F Cvi_8k_2chn.aac -T 10
-Adec    eg : ./sample_audio 2 --list -r 8000 -R 8000 -c 2 -p 320 -C 1 -V 0 -F Cvi_8k_2chn.g711a -T 10
-Ai      eg : ./sample_audio 4 --list -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 0 -F Cvi_8k_2chn.raw -T 10
-Ao      eg : ./sample_audio 5 --list -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 0 -F Cvi_8k_2chn.raw -T 10
+Aenc    eg : ./sample_audio 0 --list -D 0 -d 0 -r 8000 -R 8000 -c 2 -p 320 -C 1 -V 0 -F Cvi_8k_2chn.g711a -T 10
+           : ./sample_audio 1 --list -D 0 -d 0 -r 8000 -R 8000 -c 2 -p 1024 -C 4 -V 0 -F Cvi_8k_2chn.aac -T 10
+Adec    eg : ./sample_audio 2 --list -D 1 -d 0 -r 8000 -R 8000 -c 2 -p 320 -C 1 -V 0 -F Cvi_8k_2chn.g711a -T 10
+	     ./sample_audio 3 --list -D 1 -d 0 -r 8000 -R 8000 -c 2 -p 320 -C 4 -V 0 -F Cvi_8k_2chn.aac -T 10
+Ai      eg : ./sample_audio 4 --list -D 0 -d 0 -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 0 -F Cvi_8k_2chn.raw -T 10
+Ao      eg : ./sample_audio 5 --list -D 1 -d 0 -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 0 -F Cvi_8k_2chn.raw -T 10
 SetVol  eg : ./sample_audio 6
 GetVol  eg : ./sample_audio 8
-AECtest eg : ./sample_audio 10 --list -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 1 -F play.wav -T 10
+AECtest eg : ./sample_audio 10 --list -D 0 -d 0 -A 1 -a 0 -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 1 -F play.wav -T 10
 
 
 # Use FFmpeg

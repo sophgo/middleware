@@ -15,7 +15,6 @@
 #if !(defined(__CV181X__) || defined(__CV180X__) || defined(__CV186X__))
 #include "sample_comm.h"
 #endif
-#include "acodec.h"
 //#include "cvi_aud_internal.h"
 #ifdef SUPPORT_EXTERNAL_AAC
 #include "cvi_audio_aac_adp.h"
@@ -1715,6 +1714,41 @@ CVI_S32 SAMPLE_COMM_AUDIO_StopAdec(ADEC_CHN AdChn)
 
 	return CVI_SUCCESS;
 }
+
+/*******************************************************************************/
+/* function : Resume Ao*/
+/******************************************************************************/
+CVI_S32 SAMPLE_COMM_AUDIO_ResumeAO(AUDIO_DEV AoDevId, CVI_S32 s32AoChn)
+{
+    CVI_S32 s32Ret;
+	AO_CHN_STATE_S stStatus;
+
+    s32Ret = CVI_AO_PauseChn(AoDevId, s32AoChn);
+    if (s32Ret != CVI_SUCCESS) {
+        printf("%s: CVI_AO_PauseChn(dev_id=%d, chn_id=%d) failed with %#x!\n",
+               __func__, AoDevId, s32AoChn, s32Ret);
+        return s32Ret;
+    }
+    usleep(30 * 1000);
+
+    s32Ret = CVI_AO_ResumeChn(AoDevId, s32AoChn);
+    if (s32Ret != CVI_SUCCESS) {
+        printf("%s: CVI_AO_ResumeChn(dev_id=%d, chn_id=%d) failed with %#x!\n",
+               __func__, AoDevId, s32AoChn, s32Ret);
+        return s32Ret;
+    }
+    usleep(30 * 1000);
+
+    s32Ret = CVI_AO_QueryChnStat(AoDevId, s32AoChn, &stStatus);
+    if (s32Ret != CVI_SUCCESS) {
+        printf("%s: CVI_AO_QueryChnStat(dev_id=%d, chn_id=%d) failed with %#x!\n",
+               __func__, AoDevId, s32AoChn, s32Ret);
+        return s32Ret;
+    }
+
+    return CVI_SUCCESS;
+}
+
 
 #ifdef __cplusplus
 #if __cplusplus

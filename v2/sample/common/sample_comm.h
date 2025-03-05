@@ -26,7 +26,6 @@
 #include <cvi_comm_cif.h>
 #include "cvi_comm_adec.h"
 #include "cvi_comm_aenc.h"
-#include "cvi_comm_ao.h"
 #include "cvi_comm_aio.h"
 #include "cvi_audio.h"
 #include <cvi_defines.h>

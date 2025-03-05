@@ -42,8 +42,8 @@ typedef struct _HDMI_UT_FILE {
 } HDMI_AUDIO_FILE;
 
 HDMI_AUDIO_FILE hdmi_audio_file[] = {
-	{.SimpleSize = 24, .SimpleFreq = 44100,    .Channel_Alloc = 0x0,   .channel = 2, .filename = "res/44.1k_2ch_24bit.raw"},
-	{.SimpleSize = 24, .SimpleFreq = 192000,   .Channel_Alloc = 0x7f,  .channel = 8, .filename = "res/192k_8ch_24bit.raw"},
+	{.SimpleSize = 24, .SimpleFreq = 44100,    .Channel_Alloc = 0x0,   .channel = 2, .filename = "res/hdmi/44.1k_2ch_24bit.raw"},
+	{.SimpleSize = 24, .SimpleFreq = 192000,   .Channel_Alloc = 0x7f,  .channel = 8, .filename = "res/hdmi/192k_8ch_24bit.raw"},
 	{.SimpleSize = 0,  .SimpleFreq = 0,        .Channel_Alloc = 0,     .channel = 0, .filename = " "},
 };
 

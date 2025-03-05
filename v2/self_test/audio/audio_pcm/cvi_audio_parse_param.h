@@ -12,7 +12,6 @@
 #else
 #include "cvi_common.h"
 #endif
-#include "acodec.h"
 
 #define CVIAUDIO_PARSE_FILE_LENGTH 128
 #define CVIAUDIO_PARSE_NONE_SET (-1)

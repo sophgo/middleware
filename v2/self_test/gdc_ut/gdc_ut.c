@@ -233,6 +233,7 @@ typedef enum _GDC_TEST_OP {
 	GDC_TEST_LOAD_GRID_INFO_LDC,
 	GDC_TEST_LOAD_GRID_INFO_FISHEYE,
 	GDC_TEST_LOAD_GRID_INFO_DEWARP,
+	GDC_TEST_LOAD_GRID_INFO_LDC_WITH_BUF,
 	GDC_TEST_RST,
 	GDC_TEST_SUSPEND,
 	GDC_TEST_RESUME,
@@ -3269,6 +3270,90 @@ static CVI_S32 gdc_test_dewarp_grid_info(CVI_VOID)
 	return s32Ret;
 }
 
+int readFileToBuffer(const char *filePath, void **buffer, size_t *length) {
+    *length = 0;
+
+    FILE *file = fopen(filePath, "rb");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return -1;
+    }
+
+    fseek(file, 0, SEEK_END);
+    *length = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    *buffer = malloc(*length);
+    if (*buffer == NULL) {
+        perror("Failed to allocate memory");
+        fclose(file);
+        return -1;
+    }
+
+    size_t bytesRead = fread(*buffer, 1, *length, file);
+    if (bytesRead != *length) {
+        perror("Failed to read file");
+        free(*buffer);
+        *buffer = NULL;
+        *length = 0;
+        fclose(file);
+        return -1;
+    }
+
+    fclose(file);
+    return 0;
+}
+
+static CVI_S32 gdc_test_ldc_grid_info_withbuf(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	LDC_ATTR_S stLdcAttr = {0};
+	GDC_BASIC_TEST_PARAM param = {0};
+	char *filename_in[2] = {DWA_FILE_IN_LDC_GRID_INFO_L, DWA_FILE_IN_LDC_GRID_INFO_R};
+	char *filename_out[2] = {DWA_FILE_OUT_LDC_GRID_INFO_L, DWA_FILE_OUT_LDC_GRID_INFO_R};
+	char *filename_grid[2] = {DWA_FILE_IN_LDC_GRID_L, DWA_FILE_IN_LDC_GRID_R};
+
+	for (int i = 0; i < 2; i++) {
+		param.needPef = CVI_FALSE;
+
+		strcpy(param.filename_in, filename_in[i]);
+		strcpy(param.filename_out, filename_out[i]);
+
+		param.size_in.u32Width = 1280;
+		param.size_in.u32Height = 720;
+		param.size_out.u32Width = 1280;
+		param.size_out.u32Height = 720;
+
+		snprintf(param.stTask.name, sizeof(param.stTask.name), "tsk_gdc_grid_%d", i);
+		param.identity.enModId = CVI_ID_USER;
+		param.identity.u32ID = 0;
+		snprintf(param.identity.Name, sizeof(param.identity.Name), "job_gdc_grid__%d", i);
+		param.identity.syncIo = CVI_TRUE;
+
+		param.enPixelFormat = PIXEL_FORMAT_YUV_400;
+		param.op = GDC_TEST_LDC;
+		stLdcAttr.stGridInfoAttr.Enable = CVI_TRUE;
+
+		void *buffer = NULL;
+		size_t length = 0;
+		readFileToBuffer(filename_grid[i], &buffer, &length);
+		stLdcAttr.stGridInfoAttr.pBuf = buffer;
+		stLdcAttr.stGridInfoAttr.Len = length;
+
+		strcpy(stLdcAttr.stGridInfoAttr.gridBindName, param.stTask.name);
+
+		s32Ret |= gdc_basic(&param, (void *)&stLdcAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			GDC_UT_PRT("Test failed.\n");
+			return s32Ret;
+		}
+		free(buffer);
+	}
+
+	GDC_TEST_CHECK_RET(s32Ret);
+	return s32Ret;
+}
+
 static CVI_S32 gdc_test_suspend(CVI_VOID)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
@@ -3537,6 +3622,7 @@ static CVI_S32 gdc_test_auto_regression(CVI_VOID)
 		gdc_test_ldc_grid_info,
 		gdc_test_fisheye_grid_info,
 		gdc_test_dewarp_grid_info,
+		gdc_test_ldc_grid_info_withbuf,
 		gdc_test_reset,
 		//gdc_test_presure_size_for_each();//it takes too long time
 	};
@@ -3736,6 +3822,9 @@ static CVI_S32 _gdc_handle_op(CVI_S32 op)
 	case GDC_TEST_LOAD_GRID_INFO_DEWARP:
 		s32Ret = gdc_test_dewarp_grid_info();
 		break;
+	case GDC_TEST_LOAD_GRID_INFO_LDC_WITH_BUF:
+		s32Ret = gdc_test_ldc_grid_info_withbuf();
+		break;
 	case GDC_TEST_RST:
 		s32Ret = gdc_test_reset();
 		break;
@@ -3797,6 +3886,7 @@ static void gdc_show_help(void)
 	GDC_UT_PRT("%4d: gdc basic test grid_info_ldc\n", GDC_TEST_LOAD_GRID_INFO_LDC);
 	GDC_UT_PRT("%4d: gdc basic test grid_info_fisheye\n", GDC_TEST_LOAD_GRID_INFO_FISHEYE);
 	GDC_UT_PRT("%4d: gdc basic test grid_info_dewarp\n", GDC_TEST_LOAD_GRID_INFO_DEWARP);
+	GDC_UT_PRT("%4d: gdc basic test grid_info_ldc_withbuf\n", GDC_TEST_LOAD_GRID_INFO_LDC_WITH_BUF);
 	GDC_UT_PRT("%4d: gdc basic test reset\n", GDC_TEST_RST);
 	GDC_UT_PRT("%4d: gdc basic test suspend\n", GDC_TEST_SUSPEND);
 	GDC_UT_PRT("%4d: gdc basic test resume\n", GDC_TEST_RESUME);

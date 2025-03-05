@@ -371,17 +371,15 @@ enum ENUM_CHIP_ID {
 #define VO_WBC_DONEQ				1
 
 /* For AUDIO */
-#define AI_DEV_MAX_NUM          1
-#define AO_DEV_MIN_NUM          0
-#define AO_DEV_MAX_NUM          2
-#define AIO_MAX_NUM             2
-#define AENC_MAX_CHN_NUM        3
-#define ADEC_MAX_CHN_NUM        3
+#define AI_DEV_MAX_NUM          1       /* max dev num of input/output devices */
+#define AO_DEV_MAX_NUM          2       /* max dev num of output devices */
+#define AENC_MAX_CHN_NUM        3       /* max channel num of audio encoder */
+#define ADEC_MAX_CHN_NUM        3       /* max channel num of audio decoder */
 
-#define AI_MAX_CHN_NUM          2
-#define AO_MAX_CHN_NUM          1
-#define AO_SYSCHN_CHNID         (AO_MAX_CHN_NUM - 1)
-
+#define AI_MAX_CHN_NUM          2       /* max channel num of input device */
+#define AO_MAX_CHN_NUM          1       /* max channel num of output device */
+#define AO_SYSCHN_CHNID         (AO_MAX_CHN_NUM - 1) /* system channel id */
+                                        /* max channel num of input/output device */
 #define AIO_MAX_CHN_NUM         ((AO_MAX_CHN_NUM > AI_MAX_CHN_NUM) ? AO_MAX_CHN_NUM:AI_MAX_CHN_NUM)
 
 /* For VPSS */
