@@ -377,6 +377,7 @@ CVI_S32 SAMPLE_REGION_VI_VPSS_VO_8BIT_MODE(CVI_S32 HandleNum, RGN_TYPE_E enType,
 {
 	CVI_S32 i;
 	CVI_S32 s32Ret;
+	CVI_S32 s32ExtRet;
 	CVI_S32 MinHandle;
 	RGN_PALETTE_S stPalette;
 
@@ -437,12 +438,12 @@ CVI_S32 SAMPLE_REGION_VI_VPSS_VO_8BIT_MODE(CVI_S32 HandleNum, RGN_TYPE_E enType,
 
 	PAUSE();
 EXIT2:
-	s32Ret = SAMPLE_COMM_REGION_DetachFrmChn(HandleNum, enType, pstChn);
-	if (s32Ret != CVI_SUCCESS)
+	s32ExtRet = SAMPLE_COMM_REGION_DetachFrmChn(HandleNum, enType, pstChn);
+	if (s32ExtRet != CVI_SUCCESS)
 		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
 EXIT1:
-	s32Ret = SAMPLE_COMM_REGION_Destroy(HandleNum, enType);
-	if (s32Ret != CVI_SUCCESS)
+	s32ExtRet = SAMPLE_COMM_REGION_Destroy(HandleNum, enType);
+	if (s32ExtRet != CVI_SUCCESS)
 		SAMPLE_PRT("SAMPLE_COMM_REGION_AttachToChn failed!\n");
 
 	SAMPLE_REGION_VI_VPSS_VO_END();

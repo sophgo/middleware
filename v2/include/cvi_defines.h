@@ -268,75 +268,76 @@ enum ENUM_CHIP_ID {
  * multiplied by VI_MAX_CHN_NUM, because all VI devices
  * can't work at mode of 4 channels at the same time.
  */
-#define VI_MAX_DEV_NUM            8
-#define VI_MAX_PHY_PIPE_NUM       8
-#define VI_MAX_VIR_PIPE_NUM       0
-#define VI_MAX_PIPE_NUM           (VI_MAX_PHY_PIPE_NUM + VI_MAX_VIR_PIPE_NUM)
-#define VI_MAX_WDR_NUM            1
+#define VI_MAX_DEV_NUM            8  /* Maximum number of video input devices */
+#define VI_MAX_PHY_PIPE_NUM       8  /* Maximum number of physical pipes */
+#define VI_MAX_VIR_PIPE_NUM       0  /* Maximum number of virtual pipes */
+#define VI_MAX_PIPE_NUM           (VI_MAX_PHY_PIPE_NUM + VI_MAX_VIR_PIPE_NUM) /* Total maximum number of pipes */
+#define VI_MAX_WDR_NUM            1  /* Maximum number of Wide Dynamic Range (WDR) settings */
 
-#define VI_MAX_VIR_CHN_NUM          2
-#define VI_MAX_PHY_CHN_NUM          6
-#define VI_MAX_EXT_CHN_NUM          2
-#define VI_MAX_CHN_NUM              10
-#define VI_EXT_CHN_START            VI_MAX_CHN_NUM
-#define VI_MAX_EXTCHN_BIND_PER_CHN  1
+#define VI_MAX_VIR_CHN_NUM       2   /* Maximum number of virtual channels */
+#define VI_MAX_PHY_CHN_NUM       6   /* Maximum number of physical channels */
+#define VI_MAX_EXT_CHN_NUM       2   /* Maximum number of external channels */
+#define VI_MAX_CHN_NUM           10  /* Total maximum number of channels */
+#define VI_EXT_CHN_START         VI_MAX_CHN_NUM /* Starting index for external channels */
+#define VI_MAX_EXTCHN_BIND_PER_CHN  1 /* Maximum number of external channels that can be bound per channel */
 
-#define VI_MAX_WDR_FRAME_NUM    2
-#define VI_MAX_NODE_NUM         3
-#define VIPROC_IP_NUM           1
-#define VICAP_IP_NUM            1
+#define VI_MAX_WDR_FRAME_NUM     2   /* Maximum number of WDR frames */
+#define VI_MAX_NODE_NUM          3   /* Maximum number of nodes in the processing pipeline */
+#define VIPROC_IP_NUM            1   /* Number of video processing input ports */
+#define VICAP_IP_NUM             1   /* Number of video capture input ports */
 
-#define VI_DEV_MIN_WIDTH        120
-#define VI_DEV_MIN_HEIGHT       120
-#define VI_DEV_MAX_WIDTH        8192
-#define VI_DEV_MAX_HEIGHT       4320
-#define VI_FPN_MAX_WIDTH        VI_DEV_MAX_WIDTH
-#define VI_FPN_MAX_HEIGHT       VI_DEV_MAX_HEIGHT
+#define VI_DEV_MIN_WIDTH         120 /* Minimum width for video input device */
+#define VI_DEV_MIN_HEIGHT        120 /* Minimum height for video input device */
+#define VI_DEV_MAX_WIDTH         8192 /* Maximum width for video input device */
+#define VI_DEV_MAX_HEIGHT        4320 /* Maximum height for video input device */
+#define VI_FPN_MAX_WIDTH         VI_DEV_MAX_WIDTH /* Maximum width for FPN (Fixed Pattern Noise) */
+#define VI_FPN_MAX_HEIGHT        VI_DEV_MAX_HEIGHT /* Maximum height for FPN */
 
-#define VI_PIPE_OFFLINE_MIN_WIDTH           120
-#define VI_PIPE_OFFLINE_MIN_HEIGHT          120
-#define VI_PIPE_OFFLINE_MAX_WIDTH           4608
-#define VI_PIPE_OFFLINE_MAX_HEIGHT          4320
+#define VI_PIPE_OFFLINE_MIN_WIDTH           120 /* Minimum width for offline pipe */
+#define VI_PIPE_OFFLINE_MIN_HEIGHT          120 /* Minimum height for offline pipe */
+#define VI_PIPE_OFFLINE_MAX_WIDTH           4608 /* Maximum width for offline pipe */
+#define VI_PIPE_OFFLINE_MAX_HEIGHT          4320 /* Maximum height for offline pipe */
 
-#define VI_PIPE_ONLINE_MIN_WIDTH            120
-#define VI_PIPE_ONLINE_MIN_HEIGHT           120
-#define VI_PIPE_ONLINE_MAX_WIDTH            4608
-#define VI_PIPE_ONLINE_MAX_HEIGHT           4320
+#define VI_PIPE_ONLINE_MIN_WIDTH            120 /* Minimum width for online pipe */
+#define VI_PIPE_ONLINE_MIN_HEIGHT           120 /* Minimum height for online pipe */
+#define VI_PIPE_ONLINE_MAX_WIDTH            4608 /* Maximum width for online pipe */
+#define VI_PIPE_ONLINE_MAX_HEIGHT           4320 /* Maximum height for online pipe */
 
-#define VI_PIPE0_MAX_WIDTH                  4608
-#define VI_PIPE0_MAX_HEIGHT                 4320
-#define VI_PIPE1_MAX_WIDTH                  4608
-#define VI_PIPE1_MAX_HEIGHT                 4320
-#define VI_PIPE2_MAX_WIDTH                  4608
-#define VI_PIPE2_MAX_HEIGHT                 4320
-#define VI_PIPE3_MAX_WIDTH                  4608
-#define VI_PIPE3_MAX_HEIGHT                 4320
+#define VI_PIPE0_MAX_WIDTH                  4608 /* Maximum width for pipe 0 */
+#define VI_PIPE0_MAX_HEIGHT                 4320 /* Maximum height for pipe 0 */
+#define VI_PIPE1_MAX_WIDTH                  4608 /* Maximum width for pipe 1 */
+#define VI_PIPE1_MAX_HEIGHT                 4320 /* Maximum height for pipe 1 */
+#define VI_PIPE2_MAX_WIDTH                  4608 /* Maximum width for pipe 2 */
+#define VI_PIPE2_MAX_HEIGHT                 4320 /* Maximum height for pipe 2 */
+#define VI_PIPE3_MAX_WIDTH                  4608 /* Maximum width for pipe 3 */
+#define VI_PIPE3_MAX_HEIGHT                 4320 /* Maximum height for pipe 3 */
 
-#define VI_PIPE_WDR_FIRST_MAX_WIDTH         VI_PIPE1_MAX_WIDTH
-#define VI_PIPE_FUSION_MAX_WIDTH            4608
-#define VI_PIPE_FUSION_MAX_HEIGHT           4320
+#define VI_PIPE_WDR_FIRST_MAX_WIDTH         VI_PIPE1_MAX_WIDTH /* Maximum width for first WDR pipe */
+#define VI_PIPE_FUSION_MAX_WIDTH            4608 /* Maximum width for fusion pipe */
+#define VI_PIPE_FUSION_MAX_HEIGHT           4320 /* Maximum height for fusion pipe */
 
-#define VI_PHYCHN_OFFLINE_MIN_WIDTH         120
-#define VI_PHYCHN_OFFLINE_MIN_HEIGHT        120
-#define VI_PHYCHN_OFFLINE_MAX_WIDTH         4608
-#define VI_PHYCHN_OFFLINE_MAX_HEIGHT        4320
+#define VI_PHYCHN_OFFLINE_MIN_WIDTH         120 /* Minimum width for offline physical channel */
+#define VI_PHYCHN_OFFLINE_MIN_HEIGHT        120 /* Minimum height for offline physical channel */
+#define VI_PHYCHN_OFFLINE_MAX_WIDTH         4608 /* Maximum width for offline physical channel */
+#define VI_PHYCHN_OFFLINE_MAX_HEIGHT        4320 /* Maximum height for offline physical channel */
 
-#define VI_PHYCHN_ONLINE_MIN_WIDTH          120
-#define VI_PHYCHN_ONLINE_MIN_HEIGHT         120
-#define VI_PHYCHN_ONLINE_MAX_WIDTH          4608
-#define VI_PHYCHN_ONLINE_MAX_HEIGHT         4320
+#define VI_PHYCHN_ONLINE_MIN_WIDTH          120 /* Minimum width for online physical channel */
+#define VI_PHYCHN_ONLINE_MIN_HEIGHT         120 /* Minimum height for online physical channel */
+#define VI_PHYCHN_ONLINE_MAX_WIDTH          4608 /* Maximum width for online physical channel */
+#define VI_PHYCHN_ONLINE_MAX_HEIGHT         4320 /* Maximum height for online physical channel */
 
-#define VI_CMP_PARAM_SIZE                   152
+#define VI_CMP_PARAM_SIZE                   152 /* Size of comparison parameters */
 
-#define VI_PIXEL_FORMAT                     PIXEL_FORMAT_NV21
+#define VI_PIXEL_FORMAT                     PIXEL_FORMAT_NV21 /* Pixel format used for video input */
 
-#define CVI_VI_VPSS_EXTRA_BUF 0
+#define CVI_VI_VPSS_EXTRA_BUF              0 /* Extra buffer for VPSS (Video Pre-Processing Subsystem) */
 
-#define CVI_VI_CHN_0_BUF                    (2 + CVI_VI_VPSS_EXTRA_BUF)
-#define CVI_VI_CHN_1_BUF                    (2 + CVI_VI_VPSS_EXTRA_BUF)
-#define CVI_VI_CHN_2_BUF                    (2 + CVI_VI_VPSS_EXTRA_BUF)
-#define CVI_VI_CHN_3_BUF                    (2 + CVI_VI_VPSS_EXTRA_BUF)
-#define CVI_VI_BUF                          (CVI_VI_CHN_0_BUF + CVI_VI_CHN_1_BUF + CVI_VI_CHN_2_BUF + CVI_VI_CHN_3_BUF)
+#define CVI_VI_CHN_0_BUF                   (2 + CVI_VI_VPSS_EXTRA_BUF) /* Buffer size for channel 0 */
+#define CVI_VI_CHN_1_BUF                   (2 + CVI_VI_VPSS_EXTRA_BUF) /* Buffer size for channel 1 */
+#define CVI_VI_CHN_2_BUF                   (2 + CVI_VI_VPSS_EXTRA_BUF) /* Buffer size for channel 2 */
+#define CVI_VI_CHN_3_BUF                   (2 + CVI_VI_VPSS_EXTRA_BUF) /* Buffer size for channel 3 */
+#define CVI_VI_BUF                         (CVI_VI_CHN_0_BUF + CVI_VI_CHN_1_BUF + CVI_VI_CHN_2_BUF + CVI_VI_CHN_3_BUF) 
+											/* Total buffer size for all channels */
 
 /* For VO */
 #define VO_MAX_DEV_NUM				2

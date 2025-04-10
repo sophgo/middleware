@@ -101,6 +101,47 @@ static const IMX415_MODE_S g_astImx415_mode[IMX415_MODE_NUM] = {
 			.u32Step = 1,
 		},
 	},
+	[IMX415_MODE_8M30] = {
+		.name = "8M30",
+		.astImg[0] = {
+			.stSnsSize = {
+				.u32Width = 3864,
+				.u32Height = 2192,
+			},
+			.stWndRect = {
+				.s32X = 12,
+				.s32Y = 16,
+				.u32Width = 3840,
+				.u32Height = 2160,
+			},
+			.stMaxSize = {
+				.u32Width = 3864,
+				.u32Height = 2192,
+			},
+		},
+		.f32MaxFps = 30,
+		.f32MinFps = 0.0,
+		.u32HtsDef = 0x0215,
+		.u32VtsDef = 0x1197,
+		.stExp[0] = {
+			.u16Min = 8,
+			.u16Max = 0x1197 - 4,
+			.u16Def = 8,
+			.u16Step = 1,
+		},
+		.stAgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 32381, // 30db
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.stDgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 128913, // 42db
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+	},
 	[IMX415_MODE_5M25] = {
 		.name = "5M25",
 		.astImg[0] = {

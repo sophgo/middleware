@@ -30,6 +30,18 @@ extern "C" {
 			  ((x) == PIXEL_FORMAT_YUV_PLANAR_444) || ((x) == PIXEL_FORMAT_RGB_888_PLANAR) || \
 			  ((x) == PIXEL_FORMAT_BGR_888_PLANAR) || ((x) == PIXEL_FORMAT_HSV_888_PLANAR))
 
+/**
+ * @brief get frame buffer config.
+ *
+ * @param u32Width(In), frame width.
+ * @param u32Height(In), frame height.
+ * @param enPixelFormat(In), frame pixel format.
+ * @param enBitWidth(In), frame data bit width.
+ * @param enCmpMode(In), frame compress mode.
+ * @param u32Align(In), frame align.
+ * @param pstCalConfig(Out), frame buffer config.
+ * @return CVI_VOID.
+ */
 static inline CVI_VOID COMMON_GetPicBufferConfig(CVI_U32 u32Width, CVI_U32 u32Height,
 	PIXEL_FORMAT_E enPixelFormat, DATA_BITWIDTH_E enBitWidth,
 	COMPRESS_MODE_E enCmpMode, CVI_U32 u32Align, VB_CAL_CONFIG_S *pstCalConfig)
@@ -190,6 +202,17 @@ static inline CVI_VOID COMMON_GetPicBufferConfig(CVI_U32 u32Width, CVI_U32 u32He
 	pstCalConfig->u16AddrAlign = u32Align;
 }
 
+/**
+ * @brief get frame buffer size.
+ *
+ * @param u32Width(In), frame width.
+ * @param u32Height(In), frame height.
+ * @param enPixelFormat(In), frame pixel format.
+ * @param enBitWidth(In), frame data bit width.
+ * @param enCmpMode(In), frame compress mode.
+ * @param u32Align(In), frame align.
+ * @return CVI_S32 Return frame buffer size.
+ */
 static inline CVI_U32 COMMON_GetPicBufferSize(CVI_U32 u32Width, CVI_U32 u32Height, PIXEL_FORMAT_E enPixelFormat,
 						DATA_BITWIDTH_E enBitWidth, COMPRESS_MODE_E enCmpMode, CVI_U32 u32Align)
 {
@@ -203,6 +226,14 @@ static inline CVI_U32 COMMON_GetPicBufferSize(CVI_U32 u32Width, CVI_U32 u32Heigh
 
 #define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
 
+/**
+ * @brief get venc frame buffer size.
+ *
+ * @param s32Codec(In), venc codec.
+ * @param u32Width(In), frame width.
+ * @param u32Height(In), frame height.
+ * @return CVI_S32 Return venc frame buffer size.
+ */
 static inline CVI_U32 COMMON_GetVencFrameBufferSize(CVI_S32  s32Codec, CVI_U32  u32Width, CVI_U32  u32Height)
 {
 	CVI_U32 u32RetSize = 0;
@@ -220,6 +251,18 @@ static inline CVI_U32 COMMON_GetVencFrameBufferSize(CVI_S32  s32Codec, CVI_U32  
 
 	return u32RetSize;
 }
+
+/**
+ * @brief get vi raw buffer size.
+ *
+ * @param u32Width(In), frame width.
+ * @param u32Height(In), frame height.
+ * @param enPixelFormat(In), frame pixel format.
+ * @param enCmpMode(In), frame compress mode.
+ * @param u32Align(In), frame align.
+ * @param isTile(In), is tile.
+ * @return CVI_S32 Return vi raw buffer size.
+ */
 static inline CVI_U32 VI_GetRawBufferSize(CVI_U32 u32Width, CVI_U32 u32Height, PIXEL_FORMAT_E enPixelFormat,
 					    COMPRESS_MODE_E enCmpMode, CVI_U32 u32Align, CVI_BOOL isTile)
 {
@@ -281,6 +324,18 @@ static inline CVI_U32 VI_GetRawBufferSize(CVI_U32 u32Width, CVI_U32 u32Height, P
 	return u32Size;
 }
 
+/**
+ * @brief get vdec frame buffer config.
+ *
+ * @param enType(In), codec type.
+ * @param u32Width(In), frame width.
+ * @param u32Height(In), frame height.
+ * @param enPixelFormat(In), frame pixel format.
+ * @param enBitWidth(In), frame data bit width.
+ * @param enCmpMode(In), frame compress mode.
+ * @param pstVbCfg(Out), vdec frame buffer config.
+ * @return CVI_VOID.
+ */
 static inline CVI_VOID VDEC_GetPicBufferConfig(PAYLOAD_TYPE_E enType,
 	CVI_U32 u32Width, CVI_U32 u32Height,
 	PIXEL_FORMAT_E enPixelFormat, DATA_BITWIDTH_E enBitWidth,
@@ -310,6 +365,17 @@ static inline CVI_VOID VDEC_GetPicBufferConfig(PAYLOAD_TYPE_E enType,
 		enBitWidth, enCmpMode, u32Align, pstVbCfg);
 }
 
+/**
+ * @brief get vdec frame buffer size.
+ *
+ * @param enType(In), codec type.
+ * @param u32Width(In), frame width.
+ * @param u32Height(In), frame height.
+ * @param enPixelFormat(In), frame pixel format.
+ * @param enBitWidth(In), frame data bit width.
+ * @param enCmpMode(In), frame compress mode.
+ * @return CVI_U32 Return vdec frame buffer size.
+ */
 static inline CVI_U32 VDEC_GetPicBufferSize(PAYLOAD_TYPE_E enType,
 	CVI_U32 u32Width, CVI_U32 u32Height,
 	PIXEL_FORMAT_E enPixelFormat, DATA_BITWIDTH_E enBitWidth,
@@ -322,6 +388,17 @@ static inline CVI_U32 VDEC_GetPicBufferSize(PAYLOAD_TYPE_E enType,
 	return stVbCfg.u32VBSize;
 }
 
+/**
+ * @brief get venc frame buffer config.
+ *
+ * @param u32Width(In), frame width.
+ * @param u32Height(In), frame height.
+ * @param enPixelFormat(In), frame pixel format.
+ * @param enBitWidth(In), frame data bit width.
+ * @param enCmpMode(In), frame compress mode.
+ * @param pstVbCfg(Out), venc frame buffer config.
+ * @return CVI_VOID.
+ */
 static inline CVI_VOID VENC_GetPicBufferConfig(CVI_U32 u32Width, CVI_U32 u32Height,
 	PIXEL_FORMAT_E enPixelFormat, DATA_BITWIDTH_E enBitWidth, COMPRESS_MODE_E enCmpMode,
 	VB_CAL_CONFIG_S *pstVbCfg)
@@ -334,6 +411,16 @@ static inline CVI_VOID VENC_GetPicBufferConfig(CVI_U32 u32Width, CVI_U32 u32Heig
 		enBitWidth, enCmpMode, u32Align, pstVbCfg);
 }
 
+/**
+ * @brief get venc frame buffer size.
+ *
+ * @param u32Width(In), frame width.
+ * @param u32Height(In), frame height.
+ * @param enPixelFormat(In), frame pixel format.
+ * @param enBitWidth(In), frame data bit width.
+ * @param enCmpMode(In), frame compress mode.
+ * @return CVI_U32 Return venc frame buffer size.
+ */
 static inline CVI_U32 VENC_GetPicBufferSize(CVI_U32 u32Width, CVI_U32 u32Height,
 	PIXEL_FORMAT_E enPixelFormat, DATA_BITWIDTH_E enBitWidth, COMPRESS_MODE_E enCmpMode)
 {

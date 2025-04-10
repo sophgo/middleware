@@ -252,6 +252,7 @@ static CVI_S32 cmos_fps_set(VI_PIPE ViPipe, CVI_FLOAT f32Fps, AE_SENSOR_DEFAULT_
 
 	case IMX415_MODE_4M25:
 	case IMX415_MODE_8M25:
+	case IMX415_MODE_8M30:
 	case IMX415_MODE_5M25:
 		if ((f32Fps <= f32MaxFps) && (f32Fps >= f32MinFps)) {
 			u32VMAX = u32Vts * f32MaxFps / DIV_0_TO_1_FLOAT(f32Fps);
@@ -790,7 +791,7 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 	u8SensorImageMode = pstSnsState->u8ImgMode;
 	pstSnsState->bSyncInit = CVI_FALSE;
 
-	if (pstSensorImageMode->f32Fps <= 30) {
+	if (pstSensorImageMode->f32Fps <= 25) {
 		if (pstSnsState->enWDRMode == WDR_MODE_NONE) {
 			if (IMX415_RES_IS_4M(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height))
 				u8SensorImageMode = IMX415_MODE_4M25;
@@ -825,7 +826,19 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 			       pstSnsState->enWDRMode);
 			return CVI_FAILURE;
 		}
+	} else if (pstSensorImageMode->f32Fps <= 30){
+		if (IMX415_RES_IS_8M(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height))
+				u8SensorImageMode = IMX415_MODE_8M30;
+		else {
+				CVI_TRACE_SNS(CVI_DBG_ERR, "Not support! Width:%d, Height:%d, Fps:%f, WDRMode:%d\n",
+				       pstSensorImageMode->u16Width,
+				       pstSensorImageMode->u16Height,
+				       pstSensorImageMode->f32Fps,
+				       pstSnsState->enWDRMode);
+				return CVI_FAILURE;
+			}
 	} else {
+
 	}
 
 	if ((pstSnsState->bInit == CVI_TRUE) && (u8SensorImageMode == pstSnsState->u8ImgMode)) {

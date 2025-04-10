@@ -110,11 +110,18 @@ static int get_audio_pcm_config_params(struct pcm_config *pstPcmCfg, AIO_ATTR_S 
 	if (CVIAUDIO_CHECK_NULL((void *)pstPcmCfg) ||
 		CVIAUDIO_CHECK_NULL((void *)pstAioAttrs))
 		return -1;
-	if (pstAioAttrs->enBitwidth != AUDIO_BIT_WIDTH_16) {
-		log_warn("only support 16 bitdeepth,%d\n", pstAioAttrs->enBitwidth);
+	switch (pstAioAttrs->enBitwidth) {
+	case AUDIO_BIT_WIDTH_16:
+		pstPcmCfg->format = PCM_FORMAT_S16_LE;
+		break;
+	case AUDIO_BIT_WIDTH_32:
+		pstPcmCfg->format = PCM_FORMAT_S32_LE;
+		break;
+	default:
+		log_error("Don't support this bit width config\n");
+		return -1;
 	}
-	pstPcmCfg->format = PCM_FORMAT_S16_LE;
-	pstPcmCfg->channels = (pstAioAttrs->enSoundmode == AUDIO_SOUND_MODE_STEREO) ? 2 : 1;
+	pstPcmCfg->channels = pstAioAttrs->enSoundmode + 1;
 	pstPcmCfg->rate = pstAioAttrs->enSamplerate;
 
 	pstPcmCfg->period_count = pstAioAttrs->u32FrmNum >= 4 ? 3 : pstAioAttrs->u32FrmNum;
@@ -484,8 +491,8 @@ CVI_VOID *AudioPrimaryInputThread(CVI_VOID *arg)
 		log_warn("please use resample 8k/16k to dest_sampleRate[%d]\n", pstPcmCfg->rate);
 		period_frame_len = 320;
 	}
-
-	const int period_bytes = period_frame_len * pstPcmCfg->channels * DEFAULT_BYTES_PER_SAMPLE;
+	int sample_bytes = pstAiInstance->aio_attrs.enBitwidth + 1;
+	const int period_bytes = period_frame_len * pstPcmCfg->channels * sample_bytes;
 	int max_period_bytes = AUDIO_SAMPLE_RATE_48000 / 1000 * period_bytes;
 	short *pAlsaBuffer = (short *)malloc(period_bytes);
 	short *pOutBuffer = (short *)malloc(period_bytes);
@@ -586,22 +593,20 @@ CVI_VOID *AudioPrimaryInputThread(CVI_VOID *arg)
 					snprintf(dump_name + strlen(dump_name), 64, "%d.pcm",
 								pstTrackInfo->iShmMemIndex);
 					cvitek_dump_audiodata(dump_name, (char *)pDest,
-						AiWriteLen * pstTrackInfo->iChannels * DEFAULT_BYTES_PER_SAMPLE);
+						AiWriteLen * pstTrackInfo->iChannels * sample_bytes);
 				}
 
-				if (pstAiInstance->ppVolinstance[i]) {//sw set vol
+				if (pstAiInstance->ppVolinstance[i] && sample_bytes == 2) {//sw vol
 					_check_and_dump_num("/tmp/vol_before", i,
 						(char *)pDest,
-						AiWriteLen * pstTrackInfo->iChannels *
-						DEFAULT_BYTES_PER_SAMPLE);
+						AiWriteLen * pstTrackInfo->iChannels * sample_bytes);
 
 					vol_ctrl_process(pstAiInstance->ppVolinstance[i], pDest, pVolBuffer,
 							AiWriteLen * pstTrackInfo->iChannels);
 					pDest = pVolBuffer;
 					_check_and_dump_num("/tmp/vol_after", i,
 						(char *)pDest,
-						AiWriteLen * pstTrackInfo->iChannels *
-						DEFAULT_BYTES_PER_SAMPLE);
+						AiWriteLen * pstTrackInfo->iChannels * sample_bytes);
 				}
 
 			if (pstTrackInfo->stBindinfo.bBind) {/* ai bind aenc */
@@ -613,12 +618,11 @@ CVI_VOID *AudioPrimaryInputThread(CVI_VOID *arg)
 					ai_cli_thread_status(0, i, 0, AUD_TRACK_RUNINNG);
 					gstAencInstance[AeChn].s32SendBytePeriod =
 							pstAiInstance->aio_attrs.u32PtNumPerFrm *
-							pstTrackInfo->iChannels * DEFAULT_BYTES_PER_SAMPLE;
+							pstTrackInfo->iChannels * sample_bytes;
 					if (pstTrackInfo->b_need_resample && pstTrackInfo->pResHandle) {
 						_check_and_dump_num("/tmp/dump_ai_bind_aenc_Resin", i,
 							(char *)pDest,
-							s32OutResFrameLen * pstTrackInfo->iChannels *
-							DEFAULT_BYTES_PER_SAMPLE);
+							s32OutResFrameLen * pstTrackInfo->iChannels * sample_bytes);
 						s32OutResFrameLen = CVI_Resampler_Process(
 									pstTrackInfo->pResHandle,
 									pDest,
@@ -629,8 +633,7 @@ CVI_VOID *AudioPrimaryInputThread(CVI_VOID *arg)
 						pAencDest = pAiAencBuffer;
 						_check_and_dump_num("/tmp/dump_ai_bind_aenc_Resout", i,
 							(char *)pAiAencBuffer,
-							s32OutResFrameLen * pstTrackInfo->iChannels *
-							DEFAULT_BYTES_PER_SAMPLE);
+							s32OutResFrameLen * pstTrackInfo->iChannels * sample_bytes);
 					}
 
 						gstAencInstance[AeChn].s32SendBytePeriod =
@@ -645,8 +648,7 @@ CVI_VOID *AudioPrimaryInputThread(CVI_VOID *arg)
 						ret = share_cyclebuffer_server_write(
 									gstAencInstance[AeChn].iAencShmMemIndex,
 									(char *)pAencDest, s32OutResFrameLen *
-									pstTrackInfo->iChannels *
-									DEFAULT_BYTES_PER_SAMPLE);
+									pstTrackInfo->iChannels * sample_bytes);
 
 					if (ret < 0) {
 						log_error("[write error], record[%p] FrameLen:%d ",
@@ -670,24 +672,20 @@ CVI_VOID *AudioPrimaryInputThread(CVI_VOID *arg)
 
 
 				}
-
-
 			} else { /* ai */
 
 				ai_cli_thread_status(0, i, 0, AUD_TRACK_RUNINNG);
 				if (pstTrackInfo->b_need_resample && pstTrackInfo->pResHandle) {
 
 					_check_and_dump_num("/tmp/dump_ai_Resin", i, (char *)pDest,
-								AiWriteLen * pstTrackInfo->iChannels *
-								DEFAULT_BYTES_PER_SAMPLE);
+								AiWriteLen * pstTrackInfo->iChannels * sample_bytes);
 					s32OutResFrameLen = CVI_Resampler_Process(pstTrackInfo->pResHandle,
 								pDest,
 								period_frame_len,
 								pAiResBuffer);
 
 					_check_and_dump_num("/tmp/dump_ai_Reskout", i, (char *)pAiResBuffer,
-							s32OutResFrameLen * pstTrackInfo->iChannels *
-							DEFAULT_BYTES_PER_SAMPLE);
+							s32OutResFrameLen * pstTrackInfo->iChannels * sample_bytes);
 
 					pDest = pAiResBuffer;
 					AiWriteLen = s32OutResFrameLen;
@@ -697,9 +695,8 @@ CVI_VOID *AudioPrimaryInputThread(CVI_VOID *arg)
 				ai_cli_thread_status(0, i, 0, AUD_SHATEMEM_READLY);
 				if (pstTrackInfo->iShmMemIndex > 0 && AiWriteLen > 0) {
 					ret = share_cyclebuffer_server_write(pstTrackInfo->iShmMemIndex,
-									(char *)pDest,
-									AiWriteLen * pstTrackInfo->iChannels *
-										DEFAULT_BYTES_PER_SAMPLE);
+									(char *)pDest, AiWriteLen
+									* pstTrackInfo->iChannels * sample_bytes);
 					if (ret < 0) {
 						log_error("[write error], record[%p] buffer:%d code:%d\n",
 								pstTrackInfo, pstTrackInfo->iShmMemIndex, ret);
@@ -711,17 +708,9 @@ CVI_VOID *AudioPrimaryInputThread(CVI_VOID *arg)
 						lastTs = ts;
 					}
 				}
-
-
 			}
-
 			}
-
-
-
-
 		}
-
 		pstThreadInfo->u32Count++;
 	}
 

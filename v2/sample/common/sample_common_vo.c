@@ -18,12 +18,119 @@
 #include "sample_comm.h"
 
 #include "cvi_mipi_tx.h"
+#include "cvi_hdmi.h"
 
 #include "dsi_hx8394_evb.h"
 #include "lvds_lcm185x56.h"
 
 static CVI_S32 sample_vo_i2c_file = -1;
 static CVI_S32 sample_vo_i2c_slave_addr;
+
+static CVI_HDMI_VIDEO_FORMAT sample_vo_sync_to_hdmi_format(VO_INTF_SYNC_E enIntfSync)
+{
+	switch (enIntfSync) {
+	case VO_OUTPUT_640x480_60:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_640x480p60;
+	case VO_OUTPUT_720P60:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_1280x720p60;
+	case VO_OUTPUT_720P50:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_1280x720p50;
+	case VO_OUTPUT_576P50:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_720x576p50;
+	case VO_OUTPUT_480P60:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_720x480p60;
+	case VO_OUTPUT_1080P24:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_1920x1080p24;
+	case VO_OUTPUT_1080P25:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_1920x1080p25;
+	case VO_OUTPUT_1080P30:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_1920x1080p30;
+	case VO_OUTPUT_1080P50:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_1920x1080p50;
+	case VO_OUTPUT_1080P60:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_1920x1080p60;
+	case VO_OUTPUT_1440P60:
+		return CVI_HDMI_VIDEO_FORMAT_CVT_RB_2560X1440p60;
+	case VO_OUTPUT_2160P24:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_3840x2160p24;
+	case VO_OUTPUT_2160P25:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_3840x2160p25;
+	case VO_OUTPUT_2160P30:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_3840x2160p30;
+	case VO_OUTPUT_2160P50:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_3840x2160p50;
+	case VO_OUTPUT_2160P60:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_3840x2160p60;
+	case VO_OUTPUT_4096x2160P24:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_4096x2160p24;
+	case VO_OUTPUT_4096x2160P25:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_4096x2160p25;
+	case VO_OUTPUT_4096x2160P30:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_4096x2160p30;
+	case VO_OUTPUT_4096x2160P50:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_4096x2160p50;
+	case VO_OUTPUT_4096x2160P60:
+		return CVI_HDMI_VIDEO_FORMAT_CEA861_4096x2160p60;
+	default:
+		SAMPLE_PRT("Not support, VO_INTF_SYNC_E:%d\n", enIntfSync);
+		return CVI_HDMI_VIDEO_FORMAT_BUTT;
+	}
+}
+
+static CVI_U32 sample_hdmi_format_to_pixel_clk(CVI_HDMI_VIDEO_FORMAT hdmi_format)
+{
+	switch (hdmi_format) {
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_720x576p50:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_640x480p60:
+		return 27000;
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_1920x1080p24:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_1920x1080p25:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_1920x1080p30:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_1280x720p60:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_1280x720p50:
+		return 74250;
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_1920x1080p50:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_1920x1080p60:
+		return 148500;
+	case CVI_HDMI_VIDEO_FORMAT_CVT_RB_2560X1440p60:
+		return 241500;
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_3840x2160p24:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_3840x2160p25:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_3840x2160p30:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_4096x2160p24:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_4096x2160p25:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_4096x2160p30:
+		return 297000;
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_3840x2160p50:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_3840x2160p60:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_4096x2160p50:
+	case CVI_HDMI_VIDEO_FORMAT_CEA861_4096x2160p60:
+		return 594000;
+	default:
+		return 148500;
+	}
+
+	return 148500;
+}
+
+CVI_VOID sample_hdmi_callback(CVI_HDMI_EVENT_TYPE event, CVI_VOID *private_data)
+{
+	private_data = private_data;
+
+	switch (event) {
+	case CVI_HDMI_EVENT_HOTPLUG:
+		SAMPLE_PRT("\033[0;32mhdmi HOTPLUG event! \033[0;39m\n");
+		break;
+	case CVI_HDMI_EVENT_NO_PLUG:
+		SAMPLE_PRT("\033[0;31mhdmi NO_PLUG event! \033[0;39m\n");
+		break;
+	case CVI_HDMI_EVENT_EDID_FAIL:
+		SAMPLE_PRT("\033[0;31mHDMI edid fail! \033[0;39m\n");
+		break;
+	default:
+		break;
+	}
+}
 
 CVI_S32 SAMPLE_COMM_VO_GetWH(VO_INTF_SYNC_E enIntfSync, CVI_U32 *pu32W, CVI_U32 *pu32H, CVI_U32 *pu32Frm)
 {
@@ -133,6 +240,11 @@ CVI_S32 SAMPLE_COMM_VO_GetWH(VO_INTF_SYNC_E enIntfSync, CVI_U32 *pu32W, CVI_U32 
 		*pu32H = 480;
 		*pu32Frm = 60;
 		break;
+	case VO_OUTPUT_480x640_60:
+		*pu32W = 480;
+		*pu32H = 640;
+		*pu32Frm = 60;
+		break;
 	case VO_OUTPUT_720x1280_60:
 		*pu32W = 720;
 		*pu32H = 1280;
@@ -146,6 +258,26 @@ CVI_S32 SAMPLE_COMM_VO_GetWH(VO_INTF_SYNC_E enIntfSync, CVI_U32 *pu32W, CVI_U32 
 	case VO_OUTPUT_480x800_60:
 		*pu32W = 480;
 		*pu32H = 800;
+		*pu32Frm = 60;
+		break;
+	case VO_OUTPUT_2160P30:
+		*pu32W = 3840;
+		*pu32H = 2160;
+		*pu32Frm = 30;
+		break;
+	case VO_OUTPUT_2160P60:
+		*pu32W = 3840;
+		*pu32H = 2160;
+		*pu32Frm = 60;
+		break;
+	case VO_OUTPUT_4096x2160P30:
+		*pu32W = 4096;
+		*pu32H = 2160;
+		*pu32Frm = 30;
+		break;
+	case VO_OUTPUT_4096x2160P60:
+		*pu32W = 4096;
+		*pu32H = 2160;
 		*pu32Frm = 60;
 		break;
 	case VO_OUTPUT_USER:
@@ -382,6 +514,83 @@ CVI_S32 SAMPLE_COMM_VO_StopChn(VO_LAYER VoLayer, SAMPLE_VO_MODE_E enMode)
 	return s32Ret;
 }
 
+CVI_S32 SAMPLE_COMM_VO_StartHDMI(VO_INTF_SYNC_E enIntfSync)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	CVI_HDMI_ATTR stHdmiAttr;
+	CVI_HDMI_SINK_CAPABILITY stCapability = {0};
+	CVI_HDMI_CALLBACK_FUNC fnHdmiCb = {sample_hdmi_callback, NULL};
+
+	s32Ret = CVI_HDMI_RegisterCallback(&fnHdmiCb);
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("HDMI RegisterCallback failed with %#x!\n", s32Ret);
+		return CVI_FAILURE;
+	}
+
+	s32Ret = CVI_HDMI_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("HPD disconnected ! HDMI Init failed with %#x!\n", s32Ret);
+		return CVI_FAILURE;
+	}
+
+	CVI_HDMI_GetSinkCapability(&stCapability);
+	SAMPLE_PRT("is_connected:%d,power on:%d, support_hdmi(%d %d) native_video_format:%d\n",
+		stCapability.is_connected,
+		stCapability.is_sink_power_on,
+		stCapability.support_hdmi,
+		stCapability.support_hdmi_2_0,
+		stCapability.native_video_format);
+
+	memset(&stHdmiAttr, 0, sizeof(stHdmiAttr));
+	stHdmiAttr.hdmi_en = CVI_TRUE;
+	stHdmiAttr.audio_en = CVI_FALSE;
+	stHdmiAttr.hdcp14_en = CVI_FALSE;
+	stHdmiAttr.bit_depth = CVI_HDMI_BIT_DEPTH_24;
+	stHdmiAttr.video_format = sample_vo_sync_to_hdmi_format(enIntfSync);
+	stHdmiAttr.pix_clk = sample_hdmi_format_to_pixel_clk(stHdmiAttr.video_format);
+	stHdmiAttr.deep_color_mode = CVI_HDMI_DEEP_COLOR_24BIT;
+
+	s32Ret = CVI_HDMI_SetAttr(&stHdmiAttr);
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("HDMI SetAttr failed with %#x!\n", s32Ret);
+		CVI_HDMI_DeInit();
+		return CVI_FAILURE;
+	}
+
+	s32Ret =  CVI_HDMI_Start();
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("HDMI Start failed with %#x!\n", s32Ret);
+		CVI_HDMI_DeInit();
+		return CVI_FAILURE;
+	}
+
+	SAMPLE_PRT("HDMI start...\n");
+	return s32Ret;
+}
+
+CVI_S32 SAMPLE_COMM_VO_StopHDMI(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	CVI_HDMI_CALLBACK_FUNC fnHdmiCb = {sample_hdmi_callback, NULL};
+
+	s32Ret = CVI_HDMI_UnRegisterCallback(&fnHdmiCb);
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("HDMI UnRegisterCallback failed with %#x!\n", s32Ret);
+	}
+
+	s32Ret = CVI_HDMI_Stop();
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("HDMI Init failed with %#x!\n", s32Ret);
+	}
+
+	s32Ret = CVI_HDMI_DeInit();
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("HDMI Deinit failed with %#x!\n", s32Ret);
+	}
+
+	return s32Ret;
+}
+
 /*
  * Name : SAMPLE_COMM_VO_GetDefConfig
  * Desc : An instance of SAMPLE_VO_CONFIG_S, which allows you to use vo immediately.
@@ -429,6 +638,17 @@ CVI_S32 SAMPLE_COMM_VO_StartVO(SAMPLE_VO_CONFIG_S *pstVoConfig)
 	VoDev = pstVoConfig->VoDev;
 	VoLayer = pstVoConfig->VoDev;
 	enVoMode = pstVoConfig->enVoMode;
+
+	/********************************
+	 * if HDMI.
+	 ********************************/
+	if (pstVoConfig->stVoPubAttr.enIntfType == VO_INTF_HDMI) {
+		s32Ret = SAMPLE_COMM_VO_StartHDMI(pstVoConfig->stVoPubAttr.enIntfSync);
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("SAMPLE_COMM_VO_StartHDMI failed!\n");
+			return s32Ret;
+		}
+	}
 
 	/********************************
 	 * Set and start VO device VoDev#.
@@ -510,6 +730,10 @@ CVI_S32 SAMPLE_COMM_VO_StopVO(SAMPLE_VO_CONFIG_S *pstVoConfig)
 	if (pstVoConfig == NULL) {
 		SAMPLE_PRT("Error:argument can not be NULL\n");
 		return CVI_FAILURE;
+	}
+
+	if (pstVoConfig->stVoPubAttr.enIntfType == VO_INTF_HDMI) {
+		SAMPLE_COMM_VO_StopHDMI();
 	}
 
 	VoDev = pstVoConfig->VoDev;

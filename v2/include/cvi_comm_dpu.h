@@ -3,15 +3,7 @@
 #include <cvi_common.h>
 #include <cvi_defines.h>
 #include <cvi_comm_video.h>
-#undef ARRAY_SIZE
-#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
 
-
-#define uartlog(fmt, args...) \
-{ \
-    printf(fmt, ##args); \
-    fflush(stdout); \
-}
 
 typedef CVI_U64 DPU_HANLDE;
 

@@ -191,6 +191,7 @@ typedef enum _VPSS_TEST_OP {
 	VPSS_TEST_TILE_1_to_2,
 	VPSS_TEST_SLT,
 	VPSS_TEST_C_MODEL,
+	VPSS_TEST_GET_REGION_LUMA,
 	VPSS_TEST_USER_CONFIG = 100,
 	VPSS_TEST_AUTO = 200,
 } VPSS_TEST_OP;
@@ -4642,6 +4643,150 @@ static CVI_S32 vpss_test_user_config(CVI_VOID)
 	return s32Ret;
 }
 
+static CVI_S32 vpss_test_get_region_luma(CVI_VOID)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	VPSS_GRP VpssGrp = 0;
+	VPSS_CHN VpssChn = VPSS_CHN0;
+	VPSS_GRP_ATTR_S stVpssGrpAttr = {0};
+	VPSS_CHN_ATTR_S stVpssChnAttr = {0};
+	VB_CONFIG_S stVbConf;
+	CVI_U32 u32BlkSize;
+	SIZE_S stSize = {DEFAULT_W, DEFAULT_H};
+	PIXEL_FORMAT_E enFormat = PIXEL_FORMAT_YUV_PLANAR_420;
+	RECT_S rgn_rect[2] = {{20, 20, 50, 50}, {21, 30, 60, 80}};
+	VIDEO_REGION_INFO_S stRegionInfo = {.u32RegionNum = 2, .pstRegion = rgn_rect};
+	CVI_U64 *p64LumaData;
+	CVI_U32 i;
+
+	/************************************************
+	 * step1:  Init SYS and common VB
+	 ************************************************/
+	memset(&stVbConf, 0, sizeof(VB_CONFIG_S));
+
+	u32BlkSize = COMMON_GetPicBufferSize(stSize.u32Width, stSize.u32Height,
+		enFormat, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
+	stVbConf.u32MaxPoolCnt              = 1;
+	stVbConf.astCommPool[0].u32BlkSize	= u32BlkSize;
+	stVbConf.astCommPool[0].u32BlkCnt	= 2;
+	stVbConf.astCommPool[0].enRemapMode	= VB_REMAP_MODE_CACHED;
+	VPSS_UT_PRT("common pool[0] BlkSize %d\n", u32BlkSize);
+
+	s32Ret = CVI_VB_SetConfig(&stVbConf);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VB_SetConf failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_VB_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VB_Init failed!\n");
+		return s32Ret;
+	}
+
+	s32Ret = CVI_SYS_Init();
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_SYS_Init failed!\n");
+		goto exit0;
+	}
+
+	/************************************************
+	 * step2:  Init VPSS
+	 ************************************************/
+	stVpssGrpAttr.stFrameRate.s32SrcFrameRate    = -1;
+	stVpssGrpAttr.stFrameRate.s32DstFrameRate    = -1;
+	stVpssGrpAttr.enPixelFormat		     = enFormat;
+	stVpssGrpAttr.u32MaxW			     = stSize.u32Width;
+	stVpssGrpAttr.u32MaxH			     = stSize.u32Height;
+
+	stVpssChnAttr.u32Width		    = stSize.u32Width;
+	stVpssChnAttr.u32Height		    = stSize.u32Height;
+	stVpssChnAttr.enVideoFormat		    = VIDEO_FORMAT_LINEAR;
+	stVpssChnAttr.enPixelFormat		    = enFormat;
+	stVpssChnAttr.stFrameRate.s32SrcFrameRate = -1;
+	stVpssChnAttr.stFrameRate.s32DstFrameRate = -1;
+	stVpssChnAttr.u32Depth			= 1;
+
+	s32Ret = CVI_VPSS_CreateGrp(VpssGrp, &stVpssGrpAttr);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_CreateGrp(grp:%d) failed with %#x!\n", VpssGrp, s32Ret);
+		goto exit1;
+	}
+
+	s32Ret = CVI_VPSS_SetChnAttr(VpssGrp, VpssChn, &stVpssChnAttr);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_SetChnAttr failed with %#x\n", s32Ret);
+		goto exit2;
+	}
+
+	s32Ret = CVI_VPSS_EnableChn(VpssGrp, VpssChn);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_EnableChn failed with %#x\n", s32Ret);
+		goto exit2;
+	}
+
+	/*start vpss*/
+	s32Ret = CVI_VPSS_StartGrp(VpssGrp);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_StartGrp failed with %#x\n", s32Ret);
+		goto exit3;
+	}
+
+	s32Ret = FileSendToVpss(VpssGrp, &stSize, enFormat, VPSS_DEFAULT_FILE_IN);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("FileSendToVpss fail, s32Ret: 0x%x !\n", s32Ret);
+		goto exit4;
+	}
+
+	p64LumaData = malloc(sizeof(CVI_U64) * stRegionInfo.u32RegionNum);
+	if (p64LumaData == NULL) {
+		VPSS_UT_PRT("Memory allocation failed!\n");
+		s32Ret = CVI_FAILURE;
+		goto exit5;
+	}
+	if (CVI_VPSS_GetRegionLuma(0, 0, &stRegionInfo, p64LumaData, 1000) != CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_GetRegionLuma failed!\n");
+		s32Ret = CVI_FAILURE;
+		goto exit5;
+	}
+
+	for (i = 0; i < stRegionInfo.u32RegionNum; i++) {
+		VPSS_UT_PRT("Region[%d]: luma %ld\n", i, p64LumaData[i]);
+	}
+
+	rgn_rect[1].s32X = 1920;
+	rgn_rect[1].u32Width = 20;
+	stRegionInfo.pstRegion = rgn_rect;
+
+	s32Ret = FileSendToVpss(VpssGrp, &stSize, enFormat, VPSS_DEFAULT_FILE_IN);
+	if (s32Ret != CVI_SUCCESS) {
+		VPSS_UT_PRT("FileSendToVpss fail, s32Ret: 0x%x !\n", s32Ret);
+		goto exit5;
+	}
+
+	if (CVI_VPSS_GetRegionLuma(0, 0, &stRegionInfo, p64LumaData, 1000) == CVI_SUCCESS) {
+		VPSS_UT_PRT("CVI_VPSS_GetRegionLuma Should not OK - invalid param!\n");
+		s32Ret = CVI_FAILURE;
+	}
+
+exit5:
+	if (p64LumaData != NULL) {
+		free(p64LumaData);
+		p64LumaData = NULL;
+	}
+exit4:
+	CVI_VPSS_StopGrp(VpssGrp);
+exit3:
+	CVI_VPSS_DisableChn(VpssGrp, VpssChn);
+exit2:
+	CVI_VPSS_DestroyGrp(VpssGrp);
+exit1:
+	CVI_SYS_Exit();
+exit0:
+	CVI_VB_Exit();
+	return s32Ret;
+}
+
 static CVI_S32 vpss_test_auto(CVI_VOID)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
@@ -4682,6 +4827,7 @@ static CVI_S32 vpss_test_auto(CVI_VOID)
 	s32Ret |= vpss_test_stitch();
 	s32Ret |= vpss_test_stitch_pip();
 	s32Ret |= vpss_test_stitch_four_grid();
+	s32Ret |= vpss_test_get_region_luma();
 
 	return s32Ret;
 }
@@ -4811,6 +4957,9 @@ static CVI_S32 _vpss_handle_op(CVI_S32 op)
 	case VPSS_TEST_C_MODEL:
 		s32Ret = vpss_test_c_model();
 		break;
+	case VPSS_TEST_GET_REGION_LUMA:
+		s32Ret = vpss_test_get_region_luma();
+		break;
 	case VPSS_TEST_AUTO:
 		s32Ret = vpss_test_auto();
 		break;
@@ -4863,6 +5012,7 @@ static void vpss_show_help(void)
 	VPSS_UT_PRT("%4d: tile mode 2 chn\n", VPSS_TEST_TILE_1_to_2);
 	VPSS_UT_PRT("%4d: slt case\n", VPSS_TEST_SLT);
 	VPSS_UT_PRT("%4d: c-model test\n", VPSS_TEST_C_MODEL);
+	VPSS_UT_PRT("%4d: get region luma test\n", VPSS_TEST_GET_REGION_LUMA);
 	VPSS_UT_PRT("%4d: user config\n", VPSS_TEST_USER_CONFIG);
 	VPSS_UT_PRT("%4d: auto test\n", VPSS_TEST_AUTO);
 

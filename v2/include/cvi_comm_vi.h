@@ -20,21 +20,11 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-#define VI_MAX_ADCHN_NUM (4UL)
+#define VI_MAX_ADCHN_NUM (4UL) /* Maximum number of ADC channel */
 
-#define VI_COMPMASK_NUM (2UL)
-#define VI_PRO_MAX_FRAME_NUM (8UL)
-#define VI_SHARPEN_GAIN_NUM 32
-#define VI_AUTO_ISO_STRENGTH_NUM 16
-
-#define VI_INVALID_FRMRATE (-1)
-#define VI_CHN0 0
-#define VI_CHN1 1
-#define VI_CHN2 2
-#define VI_CHN3 3
-#define VI_INVALID_CHN -1
-
-#define VI_MAX_VC_NUM 4
+#define VI_COMPMASK_NUM (2UL) /* Maximum number of component mask */
+#define VI_SHARPEN_GAIN_NUM 32 /* Maximum number of sharpen gain */
+#define VI_AUTO_ISO_STRENGTH_NUM 16 /* Maximum number of auto ISO strength */
 
 typedef struct _VI_LOW_DELAY_INFO_S {
 	CVI_BOOL bEnable; /* RW; Low delay enable. */
@@ -53,7 +43,7 @@ typedef enum _VI_USERPIC_MODE_E {
 } VI_USERPIC_MODE_E;
 
 typedef struct _VI_USERPIC_BGC_S {
-	CVI_U32 u32BgColor;
+	CVI_U32 u32BgColor; /* Background color */
 } VI_USERPIC_BGC_S;
 
 typedef struct _VI_USERPIC_ATTR_S {
@@ -108,10 +98,10 @@ typedef enum _VI_WORK_MODE_E {
 
 /* YUV sensor scene(same with ISP_YUV_SCENE of vi_drv.h) */
 typedef enum _VI_ISP_YUV_SCENE {
-	VI_ISP_YUV_SCENE_BYPASS = 0,
-	VI_ISP_YUV_SCENE_ONLINE,
-	VI_ISP_YUV_SCENE_ISP,
-	VI_ISP_YUV_SCENE_MAX,
+	VI_ISP_YUV_SCENE_BYPASS = 0, /* bypass mode */
+	VI_ISP_YUV_SCENE_ONLINE, /* online mode */
+	VI_ISP_YUV_SCENE_ISP, /* ISP mode */
+	VI_ISP_YUV_SCENE_MAX, /* max scene */
 } VI_ISP_YUV_SCENE_E;
 
 /* whether an input picture is interlaced or progressive */
@@ -230,9 +220,10 @@ typedef enum _VI_VSYNC_VALID_NEG_E {
 	VI_VSYNC_VALID_NEG_BUTT
 } VI_VSYNC_VALID_NEG_E;
 
+/*VI status information*/
 typedef enum _VI_STATE {
-	VI_RUNNING,
-	VI_SUSPEND,
+	VI_RUNNING, /*VI is running*/
+	VI_SUSPEND, /*VI is in sleep mode*/
 	VI_MAX,
 } VI_STATE_E;
 
@@ -295,9 +286,9 @@ typedef struct _VI_BT656_SYNC_CFG_S {
 
 /* Input data type */
 typedef enum _VI_DATA_TYPE_E {
-	VI_DATA_TYPE_YUV = 0,
-	VI_DATA_TYPE_RGB,
-	VI_DATA_TYPE_YUV_EARLY,
+	VI_DATA_TYPE_YUV = 0, /*type yuv*/
+	VI_DATA_TYPE_RGB, /*type rgb*/
+	VI_DATA_TYPE_YUV_EARLY, /*type yuv (Interrupt in advance)*/
 
 	VI_DATA_TYPE_BUTT
 } VI_DATA_TYPE_E;
@@ -384,10 +375,12 @@ typedef enum _VI_NR_REF_SOURCE_E {
 } VI_NR_REF_SOURCE_E;
 
 // ++++++++ If you want to change these interfaces, please contact the isp team. ++++++++
+
+/* VI pipeline bypass mode */
 typedef enum _VI_PIPE_BYPASS_MODE_E {
-	VI_PIPE_BYPASS_NONE,
-	VI_PIPE_BYPASS_FE,
-	VI_PIPE_BYPASS_BE,
+	VI_PIPE_BYPASS_NONE, /*VI pipeline no bypass*/
+	VI_PIPE_BYPASS_FE, /*VI pipeline fe bypass*/
+	VI_PIPE_BYPASS_BE, /*VI pipeline be bypas*/
 
 	VI_PIPE_BYPASS_BUTT
 } VI_PIPE_BYPASS_MODE_E;
@@ -467,14 +460,14 @@ typedef struct _VI_PIPE_SHARPEN_AUTO_ATTR_S {
 
 typedef struct _VI_PIPE_SHARPEN_ATTR_S {
 	OPERATION_MODE_E enOpType;
-	CVI_U8 au8LumaWgt[VI_SHARPEN_GAIN_NUM]; /* RW; range: [0, 127];  Format:7.0;*/
-	VI_PIPE_SHARPEN_MANUAL_ATTR_S stSharpenManualAttr;
-	VI_PIPE_SHARPEN_AUTO_ATTR_S stSharpenAutoAttr;
+	CVI_U8 au8LumaWgt[VI_SHARPEN_GAIN_NUM]; /* RW; Range: [0,127] */
+	VI_PIPE_SHARPEN_MANUAL_ATTR_S stSharpenManualAttr; /* RW; Manual sharpen attribute */
+	VI_PIPE_SHARPEN_AUTO_ATTR_S stSharpenAutoAttr; /* RW; Auto sharpen attribute */
 } VI_PIPE_SHARPEN_ATTR_S;
 
 typedef enum _VI_PIPE_REPEAT_MODE_E {
-	VI_PIPE_REPEAT_NONE = 0,
-	VI_PIPE_REPEAT_ONCE = 1,
+	VI_PIPE_REPEAT_NONE = 0, /* No repeat */
+	VI_PIPE_REPEAT_ONCE = 1, /* Repeat once */
 	VI_PIPE_REPEAT_BUTT
 } VI_PIPE_REPEAT_MODE_E;
 
@@ -599,61 +592,67 @@ typedef struct {
 	tV59aNRc NRc;
 } VI_PIPE_NRX_PARAM_V1_S;
 
-typedef enum _VI_NR_VERSION_E { VI_NR_V1 = 1, VI_NR_V2 = 2, VI_NR_V3 = 3, VI_NR_V4 = 4, VI_NR_BUTT } VI_NR_VERSION_E;
+typedef enum _VI_NR_VERSION_E { 
+	VI_NR_V1 = 1, /* Version 1 */
+	VI_NR_V2 = 2, /* Version 2 */
+	VI_NR_V3 = 3, /* Version 3 */
+	VI_NR_V4 = 4, /* Version 4 */
+	VI_NR_BUTT 
+} VI_NR_VERSION_E;
 
 typedef struct _NRX_PARAM_MANUAL_V1_S {
-	VI_PIPE_NRX_PARAM_V1_S stNRXParamV1;
+	VI_PIPE_NRX_PARAM_V1_S stNRXParamV1; /* Manual NRX V1 parameters */
 } NRX_PARAM_MANUAL_V1_S;
 
 typedef struct _NRX_PARAM_AUTO_V1_S {
-	CVI_U32 u32ParamNum;
+	CVI_U32 u32ParamNum; /* Number of parameters */
 
-	CVI_U32 *ATTRIBUTE pau32ISO;
-	VI_PIPE_NRX_PARAM_V1_S *ATTRIBUTE pastNRXParamV1;
+	CVI_U32 *ATTRIBUTE pau32ISO; /* Pointer to ISO values */
+	VI_PIPE_NRX_PARAM_V1_S *ATTRIBUTE pastNRXParamV1; /* Pointer to NRX V1 parameters */
 } NRX_PARAM_AUTO_V1_S;
 
 typedef struct _NRX_PARAM_V1_S {
-	OPERATION_MODE_E enOptMode; /* RW;Adaptive NR */
-	NRX_PARAM_MANUAL_V1_S stNRXManualV1; /* RW;NRX V1 param for manual */
-	NRX_PARAM_AUTO_V1_S stNRXAutoV1; /* RW;NRX V1 param for auto */
+	OPERATION_MODE_E enOptMode; /* RW; Adaptive NR mode */
+	NRX_PARAM_MANUAL_V1_S stNRXManualV1; /* RW; Manual NRX V1 parameters */
+	NRX_PARAM_AUTO_V1_S stNRXAutoV1; /* RW; Auto NRX V1 parameters */
 } NRX_PARAM_V1_S;
 
 typedef struct {
-	CVI_U8 IES0, IES1, IES2, IES3;
-	CVI_U16 IEDZ : 10, _rb_ : 6;
+	CVI_U8 IES0, IES1, IES2, IES3; /* IES values */
+	CVI_U16 IEDZ : 10, _rb_ : 6; /* IEDZ value */
 } tV500_VI_IEy;
 
 typedef struct {
-	CVI_U8 SPN6 : 3, SFR : 5;
-	CVI_U8 SBN6 : 3, PBR6 : 5;
-	CVI_U16 SRT0 : 5, SRT1 : 5, JMODE : 3, DeIdx : 3;
-	CVI_U8 DeRate, SFR6[3];
+	CVI_U8 SPN6 : 3, SFR : 5; /* SPN6 and SFR values */
+	CVI_U8 SBN6 : 3, PBR6 : 5; /* SBN6 and PBR6 values */
+	CVI_U16 SRT0 : 5, SRT1 : 5, JMODE : 3, DeIdx : 3; /* Various parameters */
+	CVI_U8 DeRate, SFR6[3]; /* DeRate and SFR6 values */
 
-	CVI_U8 SFS1, SFT1, SBR1;
-	CVI_U8 SFS2, SFT2, SBR2;
-	CVI_U8 SFS4, SFT4, SBR4;
+	CVI_U8 SFS1, SFT1, SBR1; /* SFS, SFT, and SBR values */
+	CVI_U8 SFS2, SFT2, SBR2; /* SFS, SFT, and SBR values */
+	CVI_U8 SFS4, SFT4, SBR4; /* SFS, SFT, and SBR values */
 
-	CVI_U16 STH1 : 9, SFN1 : 3, NRyEn : 1, SFN0 : 3;
-	CVI_U16 STH2 : 9, SFN2 : 3, BWSF4 : 1, kMode : 3;
-	CVI_U16 STH3 : 9, SFN3 : 3, TriTh : 1, _rb0_ : 3;
+	CVI_U16 STH1 : 9, SFN1 : 3, NRyEn : 1, SFN0 : 3; /* Various parameters */
+	CVI_U16 STH2 : 9, SFN2 : 3, BWSF4 : 1, kMode : 3; /* Various parameters */
+	CVI_U16 STH3 : 9, SFN3 : 3, TriTh : 1, _rb0_ : 3; /* Various parameters */
 } tV500_VI_SFy;
 
 typedef struct {
-	tV500_VI_IEy IEy;
-	tV500_VI_SFy SFy;
+	tV500_VI_IEy IEy; /* NRX IEy parameters for V2 */
+	tV500_VI_SFy SFy; /* NRX SFy parameters for V2 */
 } VI_PIPE_NRX_PARAM_V2_S;
 
 typedef struct _NRX_PARAM_MANUAL_V2_S {
-	VI_PIPE_NRX_PARAM_V2_S stNRXParamV2;
+	VI_PIPE_NRX_PARAM_V2_S stNRXParamV2; /* Manual NRX V2 parameters */
 } NRX_PARAM_MANUAL_V2_S;
 
 typedef struct _NRX_PARAM_AUTO_V2_S {
-	CVI_U32 u32ParamNum;
+	CVI_U32 u32ParamNum; /* Number of parameters */
 
-	CVI_U32 *ATTRIBUTE pau32ISO;
-	VI_PIPE_NRX_PARAM_V2_S *ATTRIBUTE pastNRXParamV2;
-
+	CVI_U32 *ATTRIBUTE pau32ISO; /* Pointer to ISO values */
+	VI_PIPE_NRX_PARAM_V2_S *ATTRIBUTE pastNRXParamV2; /* Pointer to NRX V2 parameters */
 } NRX_PARAM_AUTO_V2_S;
+
 
 typedef struct _NRX_PARAM_V2_S {
 	OPERATION_MODE_E enOptMode; /* RW;Adaptive NR */
@@ -710,9 +709,10 @@ typedef struct _VI_VS_SIGNAL_ATTR_S {
 	CVI_U32 u32Interval; /* RW;output frequently interval, unit: frame*/
 } VI_VS_SIGNAL_ATTR_S;
 
+/*Source of VI extension channel*/
 typedef enum _VI_EXT_CHN_SOURCE_E {
-	VI_EXT_CHN_SOURCE_TAIL,
-	VI_EXT_CHN_SOURCE_HEAD,
+	VI_EXT_CHN_SOURCE_TAIL, /*The expansion channel comes from the tail*/
+	VI_EXT_CHN_SOURCE_HEAD,	/*The expansion channel comes from the head*/
 
 	VI_EXT_CHN_SOURCE_BUTT
 } VI_EXT_CHN_SOURCE_E;
@@ -762,9 +762,9 @@ typedef struct _VI_CHN_STATUS_S {
 
 // ++++++++ If you want to change these interfaces, please contact the isp team. ++++++++
 typedef enum _VI_DUMP_TYPE_E {
-	VI_DUMP_TYPE_RAW = 0,
-	VI_DUMP_TYPE_YUV = 1,
-	VI_DUMP_TYPE_IR = 2,
+	VI_DUMP_TYPE_RAW = 0,	/*dump raw*/
+	VI_DUMP_TYPE_YUV = 1,	/*dump yuv*/
+	VI_DUMP_TYPE_IR = 2,	/*dump ir*/
 	VI_DUMP_TYPE_BUTT
 } VI_DUMP_TYPE_E;
 // -------- If you want to change these interfaces, please contact the isp team. --------
@@ -785,15 +785,11 @@ typedef enum _VI_PIPE_FRAME_SOURCE_E {
 	VI_PIPE_FRAME_SOURCE_BUTT
 } VI_PIPE_FRAME_SOURCE_E;
 
-typedef struct _VI_RAW_INFO_S {
-	VIDEO_FRAME_INFO_S stVideoFrame;
-	ISP_CONFIG_INFO_S stIspInfo;
-} VI_RAW_INFO_S;
 
 /* module params */
 typedef struct _VI_MOD_PARAM_S {
-	CVI_S32 s32DetectErrFrame;
-	CVI_U32 u32DropErrFrame;
+	CVI_S32 s32DetectErrFrame;	/*Detecting the number of erroneous frames*/
+	CVI_U32 u32DropErrFrame;	/*The number of discarded error frames*/
 } VI_MOD_PARAM_S;
 
 typedef struct _VI_DEV_TIMING_ATTR_S {
@@ -802,15 +798,15 @@ typedef struct _VI_DEV_TIMING_ATTR_S {
 } VI_DEV_TIMING_ATTR_S;
 
 typedef struct _VI_EARLY_INTERRUPT_S {
-	CVI_BOOL bEnable;
-	CVI_U32 u32LineCnt;
+	CVI_BOOL bEnable; /*Enable the early interrupt function or not*/
+	CVI_U32 u32LineCnt; /*Early Interrupted line Count*/
 } VI_EARLY_INTERRUPT_S;
 
 /* VI dump register table */
 typedef struct _MLSC_GAIN_LUT_S {
-	CVI_U16 *RGain;
-	CVI_U16 *GGain;
-	CVI_U16 *BGain;
+	CVI_U16 *RGain;	/*The gain value of the red channel*/
+	CVI_U16 *GGain;	/*The gain value of the greeen channel*/
+	CVI_U16 *BGain;	/*The gain value of the blue channel*/
 } MLSC_GAIN_LUT_S;
 
 typedef struct _VI_DUMP_REGISTER_TABLE_S {
@@ -820,17 +816,17 @@ typedef struct _VI_DUMP_REGISTER_TABLE_S {
 typedef int (*pfnViDevPmOps)(void *pvData);
 
 typedef struct _VI_PM_OPS_S {
-	pfnViDevPmOps pfnSnsSuspend;
-	pfnViDevPmOps pfnSnsResume;
-	pfnViDevPmOps pfnMipiSuspend;
-	pfnViDevPmOps pfnMipiResume;
+	pfnViDevPmOps pfnSnsSuspend;	/*sensor suspend function*/
+	pfnViDevPmOps pfnSnsResume;		/*sensor resume function*/
+	pfnViDevPmOps pfnMipiSuspend;	/*mipi suspend function*/
+	pfnViDevPmOps pfnMipiResume;	/*mipi resume function*/
 } VI_PM_OPS_S;
 
 typedef struct _VI_SMOOTH_RAW_DUMP_INFO_S {
-	VI_PIPE ViPipe;
-	CVI_U8  u8BlkCnt;	// ring buffer number
-	CVI_U64 *phy_addr_list;	// ring buffer addr
-	RECT_S  stCropRect;
+	VI_PIPE ViPipe;      /*VI pipe number*/
+	CVI_U8  u8BlkCnt;	 /*ring buffer number*/
+	CVI_U64 *phy_addr_list;	  /*ring buffer addr*/
+	RECT_S  stCropRect;  /*Crop rectangular area*/
 } VI_SMOOTH_RAW_DUMP_INFO_S;
 
 #ifdef __cplusplus

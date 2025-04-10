@@ -19,17 +19,24 @@ extern "C" {
 #endif
 #endif /* End of #ifdef __cplusplus */
 
+/*pool ID, VB_INVALID_POOLID as search from all pools when find pool.*/
 #define VB_INVALID_POOLID (-1U)
+/*block ID, VB_INVALID_HANDLE as failure when get block.*/
 #define VB_INVALID_HANDLE (-1U)
+/*pool ID, VB_INVALID_POOLID for static pool.*/
 #define VB_STATIC_POOLID (-2U)
+/*pool ID, VB_INVALID_POOLID for external pool.*/
 #define VB_EXTERNAL_POOLID (-3U)
 
+/*pool cnt limit for common pool.*/
 #define VB_MAX_COMM_POOLS       (16)
+/*block cnt limit for vb pool.*/
 #define VB_POOL_MAX_BLK         (128)
 
 /* user ID for VB */
 #define VB_MAX_USER VB_UID_BUTT
 
+/* user ID for VB */
 typedef enum _VB_UID_E {
 	VB_UID_VI = 0,
 	VB_UID_VO = 1,
@@ -98,16 +105,6 @@ typedef struct _VB_CONFIG_S {
 	CVI_U32 u32MaxPoolCnt;
 	VB_POOL_CONFIG_S astCommPool[VB_MAX_COMM_POOLS];
 } VB_CONFIG_S;
-
-#define VB_SUPPLEMENT_JPEG_MASK 0x1
-#define VB_SUPPLEMENT_ISPINFO_MASK 0x2
-#define VB_SUPPLEMENT_MOTION_DATA_MASK 0x4
-#define VB_SUPPLEMENT_DNG_MASK 0x8
-
-typedef struct _VB_SUPPLEMENT_CONFIG_S {
-	CVI_U32 u32SupplementConfig;
-} VB_SUPPLEMENT_CONFIG_S;
-
 
 #ifdef __cplusplus
 #if __cplusplus

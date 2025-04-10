@@ -74,6 +74,9 @@ ov_os04a10:
 ov_os04c10:
 	$(call MAKE_SENSOR, ${@})
 
+ov_os05a20:
+	$(call MAKE_SENSOR, ${@})
+
 ov_os08a20:
 	$(call MAKE_SENSOR, ${@})
 
@@ -104,6 +107,9 @@ pixelplus_pr2020:
 pixelplus_pr2100:
 	$(call MAKE_SENSOR, ${@})
 
+sms_sc020hgs:
+	$(call MAKE_SENSOR, ${@})
+
 sms_sc035gs:
 	$(call MAKE_SENSOR, ${@})
 
@@ -114,6 +120,9 @@ sms_sc035hgs:
 	$(call MAKE_SENSOR, ${@})
 
 sms_sc200ai:
+	$(call MAKE_SENSOR, ${@})
+
+sms_sc233hgs:
 	$(call MAKE_SENSOR, ${@})
 
 sms_sc301iot:

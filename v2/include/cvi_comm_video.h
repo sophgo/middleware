@@ -18,17 +18,12 @@ extern "C" {
 #endif
 #endif /* __cplusplus */
 
-#define SRC_LENS_COEF_SEG 2
-#define DST_LENS_COEF_SEG 3
-#define SRC_LENS_COEF_NUM 4
-#define DST_LENS_COEF_NUM 4
-
-#define ISP_BAYER_CHN (4)
-
+/*check if pixel format is rgb type*/
 #define IS_FMT_RGB(fmt) \
 	((fmt == PIXEL_FORMAT_RGB_888) || (fmt == PIXEL_FORMAT_BGR_888) || \
 	 (fmt == PIXEL_FORMAT_RGB_888_PLANAR) || (fmt == PIXEL_FORMAT_BGR_888_PLANAR))
 
+/*check if pixel format is yuv type*/
 #define IS_FMT_YUV(fmt) \
 	((fmt == PIXEL_FORMAT_YUV_PLANAR_420) || (fmt == PIXEL_FORMAT_YUV_PLANAR_422) || \
 	 (fmt == PIXEL_FORMAT_YUV_PLANAR_444) || (fmt == PIXEL_FORMAT_YUV_400) || \
@@ -38,25 +33,29 @@ extern "C" {
 	 (fmt == PIXEL_FORMAT_YVYU) || (fmt == PIXEL_FORMAT_VYUY) || \
 	 (fmt == PIXEL_FORMAT_YUV_444))
 
+/*check if pixel format is yuv420 type*/
 #define IS_FMT_YUV420(fmt) \
 	((fmt == PIXEL_FORMAT_YUV_PLANAR_420) || \
 	 (fmt == PIXEL_FORMAT_NV12) || (fmt == PIXEL_FORMAT_NV21))
 
+/*check if pixel format is yuv422 type*/
 #define IS_FMT_YUV422(fmt) \
 	((fmt == PIXEL_FORMAT_YUV_PLANAR_422) || \
 	 (fmt == PIXEL_FORMAT_NV16) || (fmt == PIXEL_FORMAT_NV61) || \
 	 (fmt == PIXEL_FORMAT_YUYV) || (fmt == PIXEL_FORMAT_UYVY) || \
 	 (fmt == PIXEL_FORMAT_YVYU) || (fmt == PIXEL_FORMAT_VYUY))
 
+/*check if frame offset valid*/
 #define IS_FRAME_OFFSET_INVALID(f) \
 	((f).s16OffsetLeft < 0 || (f).s16OffsetRight < 0 || \
 	 (f).s16OffsetTop < 0 || (f).s16OffsetBottom < 0 || \
 	 ((u32)((f).s16OffsetLeft + (f).s16OffsetRight) > (f).u32Width) || \
 	 ((u32)((f).s16OffsetTop + (f).s16OffsetBottom) > (f).u32Height))
 
+/*operation mode*/
 typedef enum _OPERATION_MODE_E {
-	OPERATION_MODE_AUTO = 0,
-	OPERATION_MODE_MANUAL = 1,
+	OPERATION_MODE_AUTO = 0,	/*Automatic operation mode*/
+	OPERATION_MODE_MANUAL = 1,	/*Manual operation mode*/
 	OPERATION_MODE_BUTT
 } OPERATION_MODE_E;
 
@@ -79,37 +78,42 @@ typedef enum _MIRROR_TYPE_E {
 	MIRDIR_TYPE_BUTT
 } MIRROR_TYPE_E;
 
+/*vb source*/
 typedef enum _VB_SOURCE_E {
-	VB_SOURCE_COMMON = 0,
-	VB_SOURCE_MODULE = 1,
-	VB_SOURCE_PRIVATE = 2,
-	VB_SOURCE_USER = 3,
+	VB_SOURCE_COMMON = 0,	/*vb from common pool*/
+	VB_SOURCE_MODULE = 1,	/*vb from multi media module*/
+	VB_SOURCE_PRIVATE = 2,	/*vb from private pool*/
+	VB_SOURCE_USER = 3,	/*vb from user*/
 	VB_SOURCE_BUTT
 } VB_SOURCE_E;
 
+/*border definition*/
 typedef struct _BORDER_S {
-	CVI_U32 u32TopWidth;
-	CVI_U32 u32BottomWidth;
-	CVI_U32 u32LeftWidth;
-	CVI_U32 u32RightWidth;
-	CVI_U32 u32Color;
+	CVI_U32 u32TopWidth;	/*border width from top*/
+	CVI_U32 u32BottomWidth;	/*border width from bottom*/
+	CVI_U32 u32LeftWidth;	/*border width from left*/
+	CVI_U32 u32RightWidth;	/*border width from right*/
+	CVI_U32 u32Color;	/*border background color*/
 } BORDER_S;
 
+/*coordinate*/
 typedef struct _POINT_S {
-	CVI_S32 s32X;
-	CVI_S32 s32Y;
+	CVI_S32 s32X;	/*abscissa*/
+	CVI_S32 s32Y;	/*ordinate*/
 } POINT_S;
 
+/*size*/
 typedef struct _SIZE_S {
-	CVI_U32 u32Width;
-	CVI_U32 u32Height;
+	CVI_U32 u32Width;	/*width*/
+	CVI_U32 u32Height;	/*height*/
 } SIZE_S;
 
+/*width, height, and position of the rectangle*/
 typedef struct _RECT_S {
-	CVI_S32 s32X;
-	CVI_S32 s32Y;
-	CVI_U32 u32Width;
-	CVI_U32 u32Height;
+	CVI_S32 s32X;		/*X coordinate*/
+	CVI_S32 s32Y;		/*Y coordinate*/
+	CVI_U32 u32Width;	/*Width*/
+	CVI_U32 u32Height;	/*Height*/
 } RECT_S;
 
 typedef struct _VIDEO_REGION_INFO_S {
@@ -117,9 +121,10 @@ typedef struct _VIDEO_REGION_INFO_S {
 	RECT_S *pstRegion; /* W; region attribute */
 } VIDEO_REGION_INFO_S;
 
+/*crop information*/
 typedef struct _CROP_INFO_S {
-	CVI_BOOL bEnable;
-	RECT_S stRect;
+	CVI_BOOL bEnable;	/*crop enable selection*/
+	RECT_S stRect;		/*crop rectangular area*/
 } CROP_INFO_S;
 
 // ++++++++ If you want to change these interfaces, please contact the isp team. ++++++++
@@ -259,9 +264,10 @@ typedef enum _BAYER_FORMAT_E {
 } BAYER_FORMAT_E;
 // -------- If you want to change these interfaces, please contact the isp team. --------
 
+/*display mode*/
 typedef enum _VIDEO_DISPLAY_MODE_E {
-	VIDEO_DISPLAY_MODE_PREVIEW = 0x0,
-	VIDEO_DISPLAY_MODE_PLAYBACK = 0x1,
+	VIDEO_DISPLAY_MODE_PREVIEW = 0x0,	/*preview mode*/
+	VIDEO_DISPLAY_MODE_PLAYBACK = 0x1,	/*playback mode*/
 
 	VIDEO_DISPLAY_MODE_MAX
 } VIDEO_DISPLAY_MODE_E;
@@ -291,55 +297,19 @@ typedef struct _ISP_FRAME_INFO_S {
 } ISP_FRAME_INFO_S;
 // -------- If you want to change these interfaces, please contact the isp team. --------
 
-typedef struct _ISP_HDR_INFO_S {
-	CVI_U32 u32ColorTemp;
-	CVI_U16 au16CCM[9];
-	CVI_U8 u8Saturation;
-} ISP_HDR_INFO_S;
-
-typedef struct _ISP_ATTACH_INFO_S {
-	ISP_HDR_INFO_S stIspHdr;
-	CVI_U32 u32ISO;
-	CVI_U8 *u8SnsWDRMode;
-} ISP_ATTACH_INFO_S;
-
-typedef enum _FRAME_FLAG_E {
-	FRAME_FLAG_SNAP_FLASH = 0x1 << 0,
-	FRAME_FLAG_SNAP_CUR = 0x1 << 1,
-	FRAME_FLAG_SNAP_REF = 0x1 << 2,
-	FRAME_FLAG_SNAP_END = 0x1 << 31,
-	FRAME_FLAG_MAX
-} FRAME_FLAG_E;
-
 /* RGGB=4 */
 #define ISP_WB_GAIN_NUM 4
 /* 3*3=9 matrix */
 #define ISP_CAP_CCM_NUM 9
+/*ISP configuration information*/
 typedef struct _ISP_CONFIG_INFO_S {
-	CVI_U32 u32ISO;
-	CVI_U32 u32IspDgain;
-	CVI_U32 u32ExposureTime;
-	CVI_U32 au32WhiteBalanceGain[ISP_WB_GAIN_NUM];
-	CVI_U32 u32ColorTemperature;
-	CVI_U16 au16CapCCM[ISP_CAP_CCM_NUM];
+	CVI_U32 u32ISO;									/*ISP internal ISO*/
+	CVI_U32 u32IspDgain;							/*ISP digital gain value*/
+	CVI_U32 u32ExposureTime;						/*Exposure time*/
+	CVI_U32 au32WhiteBalanceGain[ISP_WB_GAIN_NUM];	/*White balance gain value array*/
+	CVI_U32 u32ColorTemperature;					/*Color temperature*/
+	CVI_U16 au16CapCCM[ISP_CAP_CCM_NUM];			/*Color Correction Matrix*/
 } ISP_CONFIG_INFO_S;
-
-/*
- * pJpegDCFVirAddr: JPEG_DCF_S, used in JPEG DCF
- * pIspInfoVirAddr: ISP_FRAME_INFO_S, used in ISP debug, when get raw and send raw
- * pLowDelayVirAddr: used in low delay
- */
-typedef struct _VIDEO_SUPPLEMENT_S {
-	CVI_U64 u64JpegDCFPhyAddr;
-	CVI_U64 u64IspInfoPhyAddr;
-	CVI_U64 u64LowDelayPhyAddr;
-	CVI_U64 u64FrameDNGPhyAddr;
-
-	CVI_VOID * ATTRIBUTE pJpegDCFVirAddr;
-	CVI_VOID * ATTRIBUTE pIspInfoVirAddr;
-	CVI_VOID * ATTRIBUTE pLowDelayVirAddr;
-	CVI_VOID * ATTRIBUTE pFrameDNGVirAddr;
-} VIDEO_SUPPLEMENT_S;
 
 // ++++++++ If you want to change these interfaces, please contact the isp team. ++++++++
 typedef enum _COLOR_GAMUT_E {
@@ -503,17 +473,18 @@ typedef struct _HOMOGRAPH_REGION_S {
 	uint8_t meshgrid_h;
 } HOMOGRAPH_REGION_S;
 
+/*Properties of GridInfo*/
 typedef struct _GRID_INFO_ATTR_S {
-	CVI_BOOL Enable;
-	char gridFileName[128];
-	char gridBindName[128];
-	SIZE_S grid_in;
-	SIZE_S grid_out;
-	CVI_BOOL isBlending;
-	CVI_BOOL bEISEnable; /* enable EIS */
-	uint8_t homoRgnNum;
-	CVI_VOID *pBuf;
-	CVI_U32 Len;
+	CVI_BOOL Enable;		/*enable gridinfo or not*/
+	char gridFileName[128];	/*Gridinfo file name*/
+	char gridBindName[128];	/*Gridinfo bind name*/
+	SIZE_S grid_in;	/*grid_in size*/
+	SIZE_S grid_out; /*grid_out size*/
+	CVI_BOOL isBlending; /*is blending*/
+	CVI_BOOL bEISEnable; /*is enable EIS */
+	uint8_t homoRgnNum; /*homo region num */
+	CVI_VOID *pBuf; /*gridinfo buffer*/
+	CVI_U32 Len; /*gridinfo buffer length*/
 } GRID_INFO_ATTR_S;
 
 typedef struct _LDC_ATTR_S {
@@ -524,15 +495,16 @@ typedef struct _LDC_ATTR_S {
 	CVI_S32 s32CenterXOffset; /* RW; Range: [-0x1ff, 0x1ff] */
 	CVI_S32 s32CenterYOffset; /* RW; Range: [-0x1ff, 0x1ff] */
 	CVI_S32 s32DistortionRatio; /* RW; Range: [-0x12c, 0x1f4] */
-	GRID_INFO_ATTR_S stGridInfoAttr;
-	ROTATION_E enRotation;
+	GRID_INFO_ATTR_S stGridInfoAttr; /*gridinfo attribute*/
+	ROTATION_E enRotation; /*rotation*/
 } LDC_ATTR_S;
 // -------- If you want to change these interfaces, please contact the isp team. --------
 
 // ++++++++ If you want to change these interfaces, please contact the isp team. ++++++++
+/*Wide dynamic range mode*/
 typedef enum _WDR_MODE_E {
-	WDR_MODE_NONE = 0,
-	WDR_MODE_BUILT_IN,
+	WDR_MODE_NONE = 0,				/*Do not use wide dynamic range mode*/
+	WDR_MODE_BUILT_IN,				/*Built in wide dynamic range mode*/
 	WDR_MODE_QUDRA,
 
 	WDR_MODE_2To1_LINE,
@@ -552,36 +524,23 @@ typedef enum _WDR_MODE_E {
 // -------- If you want to change these interfaces, please contact the isp team. --------
 
 // ++++++++ If you want to change these interfaces, please contact the isp team. ++++++++
+/*Processing Amplifier attribute*/
 typedef enum _PROC_AMP_E {
-	PROC_AMP_BRIGHTNESS = 0,
-	PROC_AMP_CONTRAST,
-	PROC_AMP_SATURATION,
-	PROC_AMP_HUE,
+	PROC_AMP_BRIGHTNESS = 0,	/*Brightness adjustment*/
+	PROC_AMP_CONTRAST,			/*Contrast adjustment*/
+	PROC_AMP_SATURATION,		/*Saturation adjustment*/
+	PROC_AMP_HUE,				/*Hue adjustment*/
 	PROC_AMP_MAX,
 } PROC_AMP_E;
 // -------- If you want to change these interfaces, please contact the isp team. --------
 
+/*Processing Amplifier Control Parameters*/
 typedef struct _PROC_AMP_CTRL_S {
-	CVI_S32 minimum;
-	CVI_S32 maximum;
-	CVI_S32 step;
-	CVI_S32 default_value;
+	CVI_S32 minimum;		/*The minimum adjustable value of this attribute*/
+	CVI_S32 maximum;		/*The maximum adjustable value of this attribute*/
+	CVI_S32 step;			/*Step size when adjusting this attribute*/
+	CVI_S32 default_value;	/*The default value of this attribute*/
 } PROC_AMP_CTRL_S;
-
-typedef struct _VCODEC_PERF_FPS_S {
-	CVI_U32 u32InFPS;
-	CVI_U32 u32OutFPS;
-	CVI_U64 u64HwTime;
-	CVI_U64 u64MaxHwTime;
-} VCODEC_PERF_FPS_S;
-
-typedef enum {
-	SEQ_INIT_NON,
-	SEQ_INIT_START,
-	SEQ_CHANGE,
-	SEQ_DECODE_START,
-	SEQ_DECODE_FINISH,
-}SEQ_STATUS;
 
 #ifdef __cplusplus
 #if __cplusplus

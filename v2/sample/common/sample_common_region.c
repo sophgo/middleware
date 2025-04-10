@@ -462,7 +462,7 @@ CVI_S32 SAMPLE_COMM_REGION_Destroy(CVI_S32 HandleNum, RGN_TYPE_E enType)
 		return CVI_FAILURE;
 	}
 	for (i = MinHandle; i < MinHandle + HandleNum; i++) {
-		s32Ret = SAMPLE_REGION_Destroy(i);
+		s32Ret |= SAMPLE_REGION_Destroy(i);
 		if (s32Ret != CVI_SUCCESS)
 			SAMPLE_PRT("SAMPLE_COMM_REGION_Destroy failed!\n");
 	}
@@ -568,7 +568,7 @@ CVI_S32 SAMPLE_COMM_REGION_AttachToChn(CVI_S32 HandleNum, RGN_TYPE_E enType, MMF
 			stChnAttr.unChnAttr.stMosaicChn.stRect.s32Y = 20 + 200 * (i - MosaicMinHandle);
 			stChnAttr.unChnAttr.stMosaicChn.u32Layer = i - MosaicMinHandle;
 		}
-		s32Ret = SAMPLE_REGION_AttachToChn(i, pstChn, &stChnAttr);
+		s32Ret |= SAMPLE_REGION_AttachToChn(i, pstChn, &stChnAttr);
 		if (s32Ret != CVI_SUCCESS) {
 			SAMPLE_PRT("SAMPLE_REGION_AttachToChn failed!\n");
 			break;
@@ -578,7 +578,7 @@ CVI_S32 SAMPLE_COMM_REGION_AttachToChn(CVI_S32 HandleNum, RGN_TYPE_E enType, MMF
 	if (s32Ret != CVI_SUCCESS && i > 0) {
 		i--;
 		for (; i >= MinHadle; i--)
-			s32Ret = SAMPLE_REGION_DetachFromChn(i, pstChn);
+			s32Ret |= SAMPLE_REGION_DetachFromChn(i, pstChn);
 	}
 	return s32Ret;
 }
@@ -621,7 +621,7 @@ CVI_S32 SAMPLE_COMM_REGION_DetachFrmChn(CVI_S32 HandleNum, RGN_TYPE_E enType, MM
 		return CVI_FAILURE;
 	}
 	for (i = MinHadle; i < MinHadle + HandleNum; i++) {
-		s32Ret = SAMPLE_REGION_DetachFromChn(i, pstChn);
+		s32Ret |= SAMPLE_REGION_DetachFromChn(i, pstChn);
 		if (s32Ret != CVI_SUCCESS)
 			SAMPLE_PRT("SAMPLE_REGION_DetachFromChn failed! Handle:%d\n", i);
 	}
@@ -671,9 +671,9 @@ CVI_S32 SAMPLE_COMM_REGION_SetBitMap(RGN_HANDLE Handle, const char *filename,
 		fread(stBitmap.pData, 1, u32FileSize, pFile);
 		fclose(pFile);
 	} else
-		SAMPLE_COMM_REGION_MST_LoadBmp(filename, &stBitmap, CVI_FALSE, 0, pixelFormat);
+		s32Ret |= SAMPLE_COMM_REGION_MST_LoadBmp(filename, &stBitmap, CVI_FALSE, 0, pixelFormat);
 
-	s32Ret = SAMPLE_REGION_SetBitMap(Handle, &stBitmap);
+	s32Ret |= SAMPLE_REGION_SetBitMap(Handle, &stBitmap);
 	if (s32Ret != CVI_SUCCESS)
 		SAMPLE_PRT("SAMPLE_REGION_SetBitMap failed!Handle:%d\n", Handle);
 	free(stBitmap.pData);
@@ -710,14 +710,14 @@ CVI_S32 SAMPLE_COMM_REGION_GetUpCanvas(RGN_HANDLE Handle, const char *filename)
 		fclose(pFile);
 	} else {
 		if (stCanvasInfo.enPixelFormat == PIXEL_FORMAT_8BIT_MODE)
-			SAMPLE_COMM_REGION_MST_UpdateCanvas(filename, &stBitmap, CVI_FALSE, 0, &stSize,
+			s32Ret = SAMPLE_COMM_REGION_MST_UpdateCanvas(filename, &stBitmap, CVI_FALSE, 0, &stSize,
 						stCanvasInfo.u32Stride, PIXEL_FORMAT_8BIT_MODE);
 		else
-			SAMPLE_COMM_REGION_MST_UpdateCanvas(filename, &stBitmap, CVI_FALSE, 0, &stSize,
+			s32Ret = SAMPLE_COMM_REGION_MST_UpdateCanvas(filename, &stBitmap, CVI_FALSE, 0, &stSize,
 						stCanvasInfo.u32Stride, PIXEL_FORMAT_ARGB_1555);
 	}
 
-	s32Ret = CVI_RGN_UpdateCanvas(Handle);
+	s32Ret |= CVI_RGN_UpdateCanvas(Handle);
 	if (s32Ret != CVI_SUCCESS) {
 		SAMPLE_PRT("CVI_RGN_UpdateCanvas failed with %#x!\n", s32Ret);
 		return CVI_FAILURE;

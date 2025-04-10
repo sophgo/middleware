@@ -24,10 +24,9 @@ extern "C" {
 /*
  * Debug Config
  */
-#define CONFIG_CVI_GDB_NO 1
-#define CONFIG_CVI_GDB "n"
+/*config whether to enable log trace*/
 #define CONFIG_CVI_LOG_TRACE_SUPPORT 1
-#define CONFIG_CVI_LOG_TRACE_ALL 1
+/*config default log level*/
 #define CONFIG_CVI_LOG_TRACE_LEVEL 4
 
 
@@ -40,10 +39,11 @@ extern "C" {
 #define CVI_DBG_INFO       6   /* informational                        */
 #define CVI_DBG_DEBUG      7   /* debug-level messages                 */
 
+/*log level config*/
 typedef struct _LOG_LEVEL_CONF_S {
-	MOD_ID_E  enModId;
-	CVI_S32   s32Level;
-	char   cModName[16];
+	MOD_ID_E  enModId;		/*mod id*/
+	CVI_S32   s32Level; 	/*log level*/
+	char   cModName[16];	/*mod name*/
 } LOG_LEVEL_CONF_S;
 
 #define CVI_PRINT printf

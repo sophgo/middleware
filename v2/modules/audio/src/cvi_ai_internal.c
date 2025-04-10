@@ -28,6 +28,21 @@ static void _mux_with_right_channel(CVI_S16 *right_buff,
 #endif
 #endif
 
+static CVI_S32 trans_bit_32to16(void *in, void *out, int samples)
+{
+	CVI_U8 *ptr_32 = (CVI_U8 *)in;
+	CVI_U8 *ptr_16 = (CVI_U8 *)out;
+	CVI_U16 i = 0, j = 0, outlen = 0;
+
+	while (samples--) {
+		ptr_16[i] = ptr_32[j + 2];
+		ptr_16[i + 1] = ptr_32[j + 3];
+		i += 2;
+		j += 4;
+		outlen++;
+	}
+	return outlen;
+}
 
 static CVI_S32 _parsing_ain_channel_vqe_status(AUDIO_DEV AiDevId, AI_CHN AiChn, CVI_ST_AUD_TRACK_INFO *pastTrackInfo)
 {
@@ -248,10 +263,14 @@ CVI_S32 CVI_AI_Enable(AUDIO_DEV AiDevId)
 		log_error("invalid order,ChnCnt has not been set.\n");
 		return CVI_ERR_AI_NOT_CONFIG;
 	}
+	if (gstAiInstance[AiDevId].stThreadInfo.card == 2 &&
+		gstAiInstance[AiDevId].aio_attrs.enBitwidth == AUDIO_BIT_WIDTH_16) {
 
+		gstAiInstance[AiDevId].aio_attrs.enBitwidth = AUDIO_BIT_WIDTH_32;
+	}
 
 	if (!_ain_instatnce->bThreadExist) {
-		param.sched_priority = 80;
+		param.sched_priority = 99;
 		pthread_attr_init(&attr);
 		pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		pthread_attr_setschedparam(&attr, &param);
@@ -449,6 +468,7 @@ CVI_S32 CVI_AI_GetFrame(AUDIO_DEV AiDevId, AI_CHN AiChn,
 
 		_parsing_ain_channel_vqe_status(AiDevId, AiChn, pstTrackInfo);
 		int channels = pstTrackInfo->iChannels;
+		int sample_bytes = pstAiInstance->aio_attrs.enBitwidth + 1;
 		int frame_cnt = pstTrackInfo->stAiChnCfg.stChnParams.u32UsrFrmDepth;
 		int period_len = pstAiInstance->aio_attrs.u32PtNumPerFrm;
 		int OutResLen = period_len * pstTrackInfo->iSampleRate / pstAiInstance->aio_attrs.enSamplerate;
@@ -456,9 +476,9 @@ CVI_S32 CVI_AI_GetFrame(AUDIO_DEV AiDevId, AI_CHN AiChn,
 		if (!frame_cnt)
 			frame_cnt = pstAiInstance->aio_attrs.u32FrmNum;
 
-		pstAiChnCfg->u32RawPeriodBytes = period_len * channels * DEFAULT_BYTES_PER_SAMPLE;
+		pstAiChnCfg->u32RawPeriodBytes = period_len * channels * sample_bytes;
 		if (pstTrackInfo->b_need_resample && pstTrackInfo->pResHandle && (period_len != 1024))
-			pstAiChnCfg->u32RawPeriodBytes = OutResLen * channels * DEFAULT_BYTES_PER_SAMPLE;
+			pstAiChnCfg->u32RawPeriodBytes = OutResLen * channels * sample_bytes;
 
 		pstTrackInfo->u32ShareBufSize = frame_cnt * pstAiChnCfg->u32RawPeriodBytes * 2;
 		pstAiChnCfg->pRawData = (CVI_S16 *)malloc(pstAiChnCfg->u32RawPeriodBytes);
@@ -494,11 +514,18 @@ CVI_S32 CVI_AI_GetFrame(AUDIO_DEV AiDevId, AI_CHN AiChn,
 	}
 	pstTrackInfo->allDataByte += pstAiChnCfg->u32RawPeriodBytes;
 	pstTrackInfo->dataByte = pstAiChnCfg->u32RawPeriodBytes;
-	pstFrm->enBitwidth = pstAiInstance->aio_attrs.enBitwidth;
+	pstFrm->u32Len = pstAiChnCfg->u32RawPeriodBytes /
+			 ((pstAiInstance->aio_attrs.enBitwidth + 1) * pstTrackInfo->iChannels);
+	if (pstAiInstance->aio_attrs.enBitwidth == AUDIO_BIT_WIDTH_32) {
+		pstFrm->u32Len = trans_bit_32to16((void *)(pstAiChnCfg->pRawData), (void *)(pstAiChnCfg->pRawData),
+							pstFrm->u32Len * pstTrackInfo->iChannels);
+		pstFrm->u32Len /= pstTrackInfo->iChannels;
+		pstFrm->enBitwidth = AUDIO_BIT_WIDTH_16;
+	} else {
+		pstFrm->enBitwidth = pstAiInstance->aio_attrs.enBitwidth;
+	}
 	pstFrm->enSoundmode = pstTrackInfo->iChannels - 1;
 	pstFrm->u64TimeStamp = _get_current_pts();
-	pstFrm->u32Len = pstAiChnCfg->u32RawPeriodBytes /
-			 (DEFAULT_BYTES_PER_SAMPLE * pstTrackInfo->iChannels);
 	pstFrm->u64VirAddr[0] = (CVI_U8 *)pstAiChnCfg->pRawData;
 	pstFrm->u32Seq = pstTrackInfo->u32SeqCnt++;
 	pthread_mutex_unlock(&g_track_lock[AiChn]);

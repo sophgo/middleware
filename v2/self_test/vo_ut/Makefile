@@ -25,7 +25,7 @@ COMM_SRC += $(COMMON_DIR)/sample_common_vpss.c
 COMM_OBJ := $(COMM_SRC:%.c=%.o)
 
 TARGET = vo_ut
-LIBS = -lvo -lvpss $(ISP_LIB) -lsys $(SNS_LIB)
+LIBS = -lvo -lhdmitx -lvpss $(ISP_LIB) -lsys $(SNS_LIB)
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 DEFS += -DRPC_MULTI_PROCESS
 endif

@@ -19,6 +19,8 @@
 
 static void sc500ai_wdr_1620p30_2to1_init(VI_PIPE ViPipe);
 static void sc500ai_linear_1620p30_init(VI_PIPE ViPipe);
+static void sc500ai_linear_1620p60_init(VI_PIPE ViPipe);
+static void sc500ai_linear_2l_1620p30_init(VI_PIPE ViPipe);
 static void sc500ai_wdr_1440p30_2to1_init(VI_PIPE ViPipe);
 static void sc500ai_linear_1440p30_init(VI_PIPE ViPipe);
 
@@ -306,7 +308,10 @@ void sc500ai_init(VI_PIPE ViPipe)
 			} else if (u8ImgMode == SC500AI_MODE_1440P30) {
 				/* SC500AI_MODE_1440P30 */
 				sc500ai_linear_1440p30_init(ViPipe);
-			} else {
+			} else if (u8ImgMode == SC500AI_MODE_1620P60) {
+				sc500ai_linear_1620p60_init(ViPipe);
+			} else if (u8ImgMode == SC500AI_2L_MODE_1620P30) {
+				sc500ai_linear_2l_1620p30_init(ViPipe);
 			}
 		}
 	}
@@ -327,7 +332,10 @@ void sc500ai_init(VI_PIPE ViPipe)
 			} else if (u8ImgMode == SC500AI_MODE_1440P30) {
 				/* SC500AI_MODE_1440P30 */
 				sc500ai_linear_1440p30_init(ViPipe);
-			} else {
+			} else if (u8ImgMode == SC500AI_MODE_1620P60)  {
+				sc500ai_linear_1620p60_init(ViPipe);
+			} else if (u8ImgMode == SC500AI_2L_MODE_1620P30) {
+				sc500ai_linear_2l_1620p30_init(ViPipe);
 			}
 		}
 	}
@@ -842,4 +850,222 @@ static void sc500ai_wdr_1440p30_2to1_init(VI_PIPE ViPipe)
 	delay_ms(50);
 
 	printf("===SC500AI sensor 1440P30fps 10bit 2to1 WDR(60fps->30fps) init success!=====\n");
+}
+
+static void sc500ai_linear_1620p60_init(VI_PIPE ViPipe)
+{
+	sc500ai_write_register(ViPipe, 0x0103, 0x01);
+	sc500ai_write_register(ViPipe, 0x0100, 0x00);
+	sc500ai_write_register(ViPipe, 0x36e9, 0x80);
+	sc500ai_write_register(ViPipe, 0x36f9, 0x80);
+	sc500ai_write_register(ViPipe, 0x301f, 0x22);
+	sc500ai_write_register(ViPipe, 0x3106, 0x01);
+	sc500ai_write_register(ViPipe, 0x3253, 0x0a);
+	sc500ai_write_register(ViPipe, 0x3301, 0x0b);
+	sc500ai_write_register(ViPipe, 0x3302, 0x20);
+	sc500ai_write_register(ViPipe, 0x3303, 0x10);
+	sc500ai_write_register(ViPipe, 0x3304, 0x70);
+	sc500ai_write_register(ViPipe, 0x3306, 0x50);
+	sc500ai_write_register(ViPipe, 0x3308, 0x18);
+	sc500ai_write_register(ViPipe, 0x3309, 0x80);
+	sc500ai_write_register(ViPipe, 0x330a, 0x00);
+	sc500ai_write_register(ViPipe, 0x330b, 0xe8);
+	sc500ai_write_register(ViPipe, 0x330d, 0x30);
+	sc500ai_write_register(ViPipe, 0x330e, 0x30);
+	sc500ai_write_register(ViPipe, 0x330f, 0x02);
+	sc500ai_write_register(ViPipe, 0x3310, 0x02);
+	sc500ai_write_register(ViPipe, 0x331c, 0x08);
+	sc500ai_write_register(ViPipe, 0x331e, 0x61);
+	sc500ai_write_register(ViPipe, 0x331f, 0x71);
+	sc500ai_write_register(ViPipe, 0x3320, 0x11);
+	sc500ai_write_register(ViPipe, 0x3333, 0x10);
+	sc500ai_write_register(ViPipe, 0x334c, 0x10);
+	sc500ai_write_register(ViPipe, 0x3356, 0x11);
+	sc500ai_write_register(ViPipe, 0x3364, 0x17);
+	sc500ai_write_register(ViPipe, 0x336d, 0x03);
+	sc500ai_write_register(ViPipe, 0x3390, 0x08);
+	sc500ai_write_register(ViPipe, 0x3391, 0x18);
+	sc500ai_write_register(ViPipe, 0x3392, 0x38);
+	sc500ai_write_register(ViPipe, 0x3393, 0x0a);
+	sc500ai_write_register(ViPipe, 0x3394, 0x0a);
+	sc500ai_write_register(ViPipe, 0x3395, 0x12);
+	sc500ai_write_register(ViPipe, 0x3396, 0x08);
+	sc500ai_write_register(ViPipe, 0x3397, 0x18);
+	sc500ai_write_register(ViPipe, 0x3398, 0x38);
+	sc500ai_write_register(ViPipe, 0x3399, 0x0a);
+	sc500ai_write_register(ViPipe, 0x339a, 0x0a);
+	sc500ai_write_register(ViPipe, 0x339b, 0x0a);
+	sc500ai_write_register(ViPipe, 0x339c, 0x12);
+	sc500ai_write_register(ViPipe, 0x33ac, 0x10);
+	sc500ai_write_register(ViPipe, 0x33ae, 0x20);
+	sc500ai_write_register(ViPipe, 0x33af, 0x21);
+	sc500ai_write_register(ViPipe, 0x360f, 0x01);
+	sc500ai_write_register(ViPipe, 0x3621, 0xe8);
+	sc500ai_write_register(ViPipe, 0x3622, 0x06);
+	sc500ai_write_register(ViPipe, 0x3630, 0x82);
+	sc500ai_write_register(ViPipe, 0x3633, 0x33);
+	sc500ai_write_register(ViPipe, 0x3634, 0x64);
+	sc500ai_write_register(ViPipe, 0x3637, 0x50);
+	sc500ai_write_register(ViPipe, 0x363a, 0x1f);
+	sc500ai_write_register(ViPipe, 0x363c, 0x40);
+	sc500ai_write_register(ViPipe, 0x3651, 0x7d);
+	sc500ai_write_register(ViPipe, 0x3670, 0x0a);
+	sc500ai_write_register(ViPipe, 0x3671, 0x06);
+	sc500ai_write_register(ViPipe, 0x3672, 0x16);
+	sc500ai_write_register(ViPipe, 0x3673, 0x17);
+	sc500ai_write_register(ViPipe, 0x3674, 0x82);
+	sc500ai_write_register(ViPipe, 0x3675, 0x62);
+	sc500ai_write_register(ViPipe, 0x3676, 0x44);
+	sc500ai_write_register(ViPipe, 0x367a, 0x48);
+	sc500ai_write_register(ViPipe, 0x367b, 0x78);
+	sc500ai_write_register(ViPipe, 0x367c, 0x48);
+	sc500ai_write_register(ViPipe, 0x367d, 0x58);
+	sc500ai_write_register(ViPipe, 0x3690, 0x34);
+	sc500ai_write_register(ViPipe, 0x3691, 0x34);
+	sc500ai_write_register(ViPipe, 0x3692, 0x54);
+	sc500ai_write_register(ViPipe, 0x369c, 0x48);
+	sc500ai_write_register(ViPipe, 0x369d, 0x78);
+	sc500ai_write_register(ViPipe, 0x36ea, 0x2d);
+	sc500ai_write_register(ViPipe, 0x36eb, 0x04);
+	sc500ai_write_register(ViPipe, 0x36ec, 0x0a);
+	sc500ai_write_register(ViPipe, 0x36ed, 0x14);
+	sc500ai_write_register(ViPipe, 0x36fa, 0x35);
+	sc500ai_write_register(ViPipe, 0x36fb, 0x04);
+	sc500ai_write_register(ViPipe, 0x36fc, 0x00);
+	sc500ai_write_register(ViPipe, 0x36fd, 0x16);
+	sc500ai_write_register(ViPipe, 0x3904, 0x04);
+	sc500ai_write_register(ViPipe, 0x3908, 0x41);
+	sc500ai_write_register(ViPipe, 0x391f, 0x10);
+	sc500ai_write_register(ViPipe, 0x39c2, 0x30);
+	sc500ai_write_register(ViPipe, 0x3e01, 0xcd);
+	sc500ai_write_register(ViPipe, 0x3e02, 0xc0);
+	sc500ai_write_register(ViPipe, 0x4500, 0x88);
+	sc500ai_write_register(ViPipe, 0x4509, 0x20);
+	sc500ai_write_register(ViPipe, 0x4800, 0x24);
+	sc500ai_write_register(ViPipe, 0x4837, 0x14);
+	sc500ai_write_register(ViPipe, 0x36e9, 0x30);
+	sc500ai_write_register(ViPipe, 0x36f9, 0x44);
+	sc500ai_init_ex(ViPipe);
+
+	sc500ai_default_reg_init(ViPipe);
+
+	sc500ai_write_register(ViPipe, 0x0100, 0x01);
+
+	printf("ViPipe:%d,===SC500AI 1620P 60fps 10bit LINE Init OK!===\n", ViPipe);
+}
+
+static void sc500ai_linear_2l_1620p30_init(VI_PIPE ViPipe)
+{
+
+	sc500ai_write_register(ViPipe, 0x0103, 0x01);
+	sc500ai_write_register(ViPipe, 0x0100, 0x00);
+	sc500ai_write_register(ViPipe, 0x36e9, 0x80);
+	sc500ai_write_register(ViPipe, 0x36f9, 0x80);
+	sc500ai_write_register(ViPipe, 0x3018, 0x32);
+	sc500ai_write_register(ViPipe, 0x3019, 0x0c);
+	sc500ai_write_register(ViPipe, 0x301f, 0x0b);
+	sc500ai_write_register(ViPipe, 0x3253, 0x0a);
+	sc500ai_write_register(ViPipe, 0x3301, 0x0a);
+	sc500ai_write_register(ViPipe, 0x3302, 0x18);
+	sc500ai_write_register(ViPipe, 0x3303, 0x10);
+	sc500ai_write_register(ViPipe, 0x3304, 0x60);
+	sc500ai_write_register(ViPipe, 0x3306, 0x60);
+	sc500ai_write_register(ViPipe, 0x3308, 0x10);
+	sc500ai_write_register(ViPipe, 0x3309, 0x70);
+	sc500ai_write_register(ViPipe, 0x330a, 0x00);
+	sc500ai_write_register(ViPipe, 0x330b, 0xf0);
+	sc500ai_write_register(ViPipe, 0x330d, 0x18);
+	sc500ai_write_register(ViPipe, 0x330e, 0x20);
+	sc500ai_write_register(ViPipe, 0x330f, 0x02);
+	sc500ai_write_register(ViPipe, 0x3310, 0x02);
+	sc500ai_write_register(ViPipe, 0x331c, 0x04);
+	sc500ai_write_register(ViPipe, 0x331e, 0x51);
+	sc500ai_write_register(ViPipe, 0x331f, 0x61);
+	sc500ai_write_register(ViPipe, 0x3320, 0x09);
+	sc500ai_write_register(ViPipe, 0x3333, 0x10);
+	sc500ai_write_register(ViPipe, 0x334c, 0x08);
+	sc500ai_write_register(ViPipe, 0x3356, 0x09);
+	sc500ai_write_register(ViPipe, 0x3364, 0x17);
+	sc500ai_write_register(ViPipe, 0x336d, 0x03);
+	sc500ai_write_register(ViPipe, 0x3390, 0x08);
+	sc500ai_write_register(ViPipe, 0x3391, 0x18);
+	sc500ai_write_register(ViPipe, 0x3392, 0x38);
+	sc500ai_write_register(ViPipe, 0x3393, 0x0a);
+	sc500ai_write_register(ViPipe, 0x3394, 0x20);
+	sc500ai_write_register(ViPipe, 0x3395, 0x20);
+	sc500ai_write_register(ViPipe, 0x3396, 0x08);
+	sc500ai_write_register(ViPipe, 0x3397, 0x18);
+	sc500ai_write_register(ViPipe, 0x3398, 0x38);
+	sc500ai_write_register(ViPipe, 0x3399, 0x0a);
+	sc500ai_write_register(ViPipe, 0x339a, 0x20);
+	sc500ai_write_register(ViPipe, 0x339b, 0x20);
+	sc500ai_write_register(ViPipe, 0x339c, 0x20);
+	sc500ai_write_register(ViPipe, 0x33ac, 0x10);
+	sc500ai_write_register(ViPipe, 0x33ae, 0x10);
+	sc500ai_write_register(ViPipe, 0x33af, 0x19);
+	sc500ai_write_register(ViPipe, 0x360f, 0x01);
+	sc500ai_write_register(ViPipe, 0x3622, 0x03);
+	sc500ai_write_register(ViPipe, 0x363a, 0x1f);
+	sc500ai_write_register(ViPipe, 0x363c, 0x40);
+	sc500ai_write_register(ViPipe, 0x3651, 0x7d);
+	sc500ai_write_register(ViPipe, 0x3670, 0x0a);
+	sc500ai_write_register(ViPipe, 0x3671, 0x07);
+	sc500ai_write_register(ViPipe, 0x3672, 0x17);
+	sc500ai_write_register(ViPipe, 0x3673, 0x1e);
+	sc500ai_write_register(ViPipe, 0x3674, 0x82);
+	sc500ai_write_register(ViPipe, 0x3675, 0x64);
+	sc500ai_write_register(ViPipe, 0x3676, 0x66);
+	sc500ai_write_register(ViPipe, 0x367a, 0x48);
+	sc500ai_write_register(ViPipe, 0x367b, 0x78);
+	sc500ai_write_register(ViPipe, 0x367c, 0x58);
+	sc500ai_write_register(ViPipe, 0x367d, 0x78);
+	sc500ai_write_register(ViPipe, 0x3690, 0x34);
+	sc500ai_write_register(ViPipe, 0x3691, 0x34);
+	sc500ai_write_register(ViPipe, 0x3692, 0x54);
+	sc500ai_write_register(ViPipe, 0x369c, 0x48);
+	sc500ai_write_register(ViPipe, 0x369d, 0x78);
+	sc500ai_write_register(ViPipe, 0x36ec, 0x0a);
+	sc500ai_write_register(ViPipe, 0x3904, 0x04);
+	sc500ai_write_register(ViPipe, 0x3908, 0x41);
+	sc500ai_write_register(ViPipe, 0x391d, 0x04);
+	sc500ai_write_register(ViPipe, 0x39c2, 0x30);
+	sc500ai_write_register(ViPipe, 0x3e01, 0xcd);
+	sc500ai_write_register(ViPipe, 0x3e02, 0xc0);
+	sc500ai_write_register(ViPipe, 0x3e16, 0x00);
+	sc500ai_write_register(ViPipe, 0x3e17, 0x80);
+	sc500ai_write_register(ViPipe, 0x4500, 0x88);
+	sc500ai_write_register(ViPipe, 0x4509, 0x20);
+	sc500ai_write_register(ViPipe, 0x4837, 0x14);
+	sc500ai_write_register(ViPipe, 0x5799, 0x00);
+	sc500ai_write_register(ViPipe, 0x59e0, 0x60);
+	sc500ai_write_register(ViPipe, 0x59e1, 0x08);
+	sc500ai_write_register(ViPipe, 0x59e2, 0x3f);
+	sc500ai_write_register(ViPipe, 0x59e3, 0x18);
+	sc500ai_write_register(ViPipe, 0x59e4, 0x18);
+	sc500ai_write_register(ViPipe, 0x59e5, 0x3f);
+	sc500ai_write_register(ViPipe, 0x59e7, 0x02);
+	sc500ai_write_register(ViPipe, 0x59e8, 0x38);
+	sc500ai_write_register(ViPipe, 0x59e9, 0x20);
+	sc500ai_write_register(ViPipe, 0x59ea, 0x0c);
+	sc500ai_write_register(ViPipe, 0x59ec, 0x08);
+	sc500ai_write_register(ViPipe, 0x59ed, 0x02);
+	sc500ai_write_register(ViPipe, 0x59ee, 0xa0);
+	sc500ai_write_register(ViPipe, 0x59ef, 0x08);
+	sc500ai_write_register(ViPipe, 0x59f4, 0x18);
+	sc500ai_write_register(ViPipe, 0x59f5, 0x10);
+	sc500ai_write_register(ViPipe, 0x59f6, 0x0c);
+	sc500ai_write_register(ViPipe, 0x59f9, 0x02);
+	sc500ai_write_register(ViPipe, 0x59fa, 0x18);
+	sc500ai_write_register(ViPipe, 0x59fb, 0x10);
+	sc500ai_write_register(ViPipe, 0x59fc, 0x0c);
+	sc500ai_write_register(ViPipe, 0x59ff, 0x02);
+	sc500ai_write_register(ViPipe, 0x36e9, 0x1c);
+	sc500ai_write_register(ViPipe, 0x36f9, 0x24);
+	sc500ai_init_ex(ViPipe);
+
+	sc500ai_default_reg_init(ViPipe);
+
+	sc500ai_write_register(ViPipe, 0x0100, 0x01);
+
+	printf("ViPipe:%d,===SC500AI 1620P 30fps 10bit 2lane LINE Init OK!===\n", ViPipe);
 }
