@@ -12,6 +12,8 @@ all: install
 	@# using pre-compiled dynamic library
 
 install:
+	@cp -f ./include/*.h $(MW_3RD_INC)
+	@rm -rf include
 	@cp -f $(TARGET_A) $(MW_LIB)/3rd/libvg_lite.a
 	@cp -f $(TARGET_SO) $(MW_LIB)/3rd/libvg_lite.so
 
