@@ -140,6 +140,9 @@ sms_sc500ai:
 sms_sc501ai_2L:
 	$(call MAKE_SENSOR, ${@})
 
+sms_sc1330:
+	$(call MAKE_SENSOR, ${@})
+
 sms_sc3332:
 	$(call MAKE_SENSOR, ${@})
 

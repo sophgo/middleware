@@ -201,6 +201,7 @@ extern ISP_SNS_OBJ_S stSnsSC500AI_Obj;			// SC500AI sensor object
 extern ISP_SNS_OBJ_S stSnsSC501AI_2L_Obj;		// SC501AI 2-lane mode sensor object
 extern ISP_SNS_OBJ_S stSnsSC531AI_2L_Obj;		// SC531AI 2-lane mode sensor object
 extern ISP_SNS_OBJ_S stSnsSC850SL_Obj;			// SC850SL sensor object
+extern ISP_SNS_OBJ_S stSnsSC1330_Obj;			// SC1330 sensor object
 extern ISP_SNS_OBJ_S stSnsSC3332_Obj;			// SC3332 sensor object
 extern ISP_SNS_OBJ_S stSnsSC3335_Obj;			// SC3335 sensor object
 extern ISP_SNS_OBJ_S stSnsSC3335_Slave_Obj;		// SC3335 slave mode sensor object
