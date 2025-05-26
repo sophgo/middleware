@@ -165,10 +165,10 @@
 
 #define DWA_FILE_IN_LDC_GRID_INFO_L             "res/ldc/input/imgL_1280X720.yonly.yuv"
 #define DWA_FILE_OUT_LDC_GRID_INFO_L            "res/ldc/output/imgL_1280x720.yonly.yuv"
-#define DWA_FILE_IN_LDC_GRID_L                  "res/ldc/input/grid_info_79_43_3397_80_45_1280x720.dat"
+#define DWA_FILE_IN_LDC_GRID_L                  "res/ldc/input/grid_info_79_44_3476_80_45_1280x720.dat"
 #define DWA_FILE_IN_LDC_GRID_INFO_R             "res/ldc/input/imgR_1280X720.yonly.yuv"
 #define DWA_FILE_OUT_LDC_GRID_INFO_R            "res/ldc/output/imgR_1280x720.yonly.yuv"
-#define DWA_FILE_IN_LDC_GRID_R                  "res/ldc/input/grid_info_79_44_3476_80_45_1280x720.dat"
+#define DWA_FILE_IN_LDC_GRID_R                  "res/ldc/input/grid_info_79_43_3397_80_45_1280x720.dat"
 
 #define DWA_FILE_IN_FISHEYE_GRID_INFO_L             "res/ldc/input/dc_src_2240x2240_L.yuv"
 #define DWA_FILE_OUT_FISHEYE_GRID_INFO_L            "res/ldc/output/imgL_2240x2240.yuv"

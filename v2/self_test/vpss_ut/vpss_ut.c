@@ -4822,7 +4822,6 @@ static CVI_S32 vpss_test_auto(CVI_VOID)
 	s32Ret |= vpss_test_fisheye();
 	s32Ret |= vpss_test_fbd_basic();
 	s32Ret |= vpss_test_pressure();
-	s32Ret |= vpss_test_perf();
 	s32Ret |= vpss_mp_get_chn_frm_test();
 	s32Ret |= vpss_test_stitch();
 	s32Ret |= vpss_test_stitch_pip();

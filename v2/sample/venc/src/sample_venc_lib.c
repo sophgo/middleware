@@ -684,6 +684,12 @@ CVI_S32 venc_main(int argc, char **argv)
 			return CVI_FAILURE;
 		}
 	} else if (pcic->testMode == VPSS_VENC_FRM_MODE) {
+		s32Ret = checkInputCfg(&psv->chnCtx[0].chnIc);
+		if (s32Ret) {
+			printf("VPSS_VENC_FRM_MODE check input cfg failure\n");
+			return CVI_FAILURE;
+		}
+
 		s32Ret = _SAMPLE_VENC_FRM_testVpssVenc(psv);
 		if (s32Ret < 0) {
 			printf("_SAMPLE_VENC_FRM_testVpssVenc\n");
@@ -1506,6 +1512,8 @@ static CVI_S32 _SAMPLE_VENC_FRM_testVpssVenc(sampleVenc *psv)
 	pIc->width = pcic->u32VpssWidth;
 	pIc->height = pcic->u32VpssHeight;
 	pIc->bind_mode = VENC_BIND_VPSS;
+	pIc->u32GopPreset = GOP_PRESET_IDX_IPP_SINGLE;
+	pIc->u32CmdQueueDepth = 1;
 	VencChn = 0;
 	pvecc = &psv->chnCtx[VencChn];
 
@@ -1559,6 +1567,7 @@ static CVI_S32 _SAMPLE_VENC_FRM_testVpssVenc(sampleVenc *psv)
 			printf("CVI_VPSS_ReleaseChnFrame. s32Ret: 0x%x !\n", s32Ret);
 			return s32Ret;
 		}
+
 	}
 
 	s32Ret = _SAMPLE_VENC_deInitVpss(pstVbCalConfig, pstVideoFrame);
@@ -1777,30 +1786,15 @@ static CVI_S32 _SAMPLE_VENC_readToVpss(VPSS_GRP VpssGrp, VB_CAL_CONFIG_S *pstVbC
 		VIDEO_FRAME_INFO_S *pstVideoFrame, FILE *fp)
 {
 	VIDEO_FRAME_S *pstVFrame = &pstVideoFrame->stVFrame;
-	CVI_U32 u32len;
+	CVI_S32 s32Ret = CVI_SUCCESS;
 
-	for (int i = 0; i < pstVbCalConfig->plane_num; ++i) {
-		if (pstVFrame->u32Length[i] == 0)
-			continue;
-		pstVFrame->pu8VirAddr[i]
-			= CVI_SYS_MmapCache(pstVFrame->u64PhyAddr[i], pstVFrame->u32Length[i]);
+	UNUSED(pstVbCalConfig);
 
-RETRY_GET_FRAME:
-		u32len = fread(pstVFrame->pu8VirAddr[i], pstVFrame->u32Length[i], 1, fp);
-		if (u32len <= 0) {
-			SAMPLE_PRT("fread plane%d error, u32len:%d\n", i, u32len);
-			if (u32len == 0) {
-				fseek(fp, 0, SEEK_SET);
-				goto RETRY_GET_FRAME;
-			}
-			return CVI_FAILURE;
-		}
-
-		CVI_SYS_IonInvalidateCache(pstVFrame->u64PhyAddr[i],
-				pstVFrame->pu8VirAddr[i],
-				pstVFrame->u32Length[i]);
+	s32Ret = cviReadSrcFrame(pstVFrame, fp, 1);
+	if (s32Ret != CVI_SUCCESS) {
+		printf("readToVpss cviReadSrcFrame fail\n");
+		return s32Ret;
 	}
-
 	CVI_VPSS_SendFrame(VpssGrp, pstVideoFrame, -1);
 
 	return CVI_SUCCESS;
@@ -2096,6 +2090,9 @@ CVI_S32 SAMPLE_VENC_STOP(sampleVenc *psv)
 			}
 #endif
 			for (int j = 0; j < pIc->u32MinSrcCount; j++) {
+				if (pvecc->frameUnusedQueue[j].u64PhyAddr == 0)
+					continue;
+
 				blk = CVI_VB_PhysAddr2Handle(pvecc->frameUnusedQueue[j].u64PhyAddr);
 				if (blk != VB_INVALID_HANDLE) {
 					CVI_VB_ReleaseBlock(blk);
@@ -3095,6 +3092,7 @@ static CVI_S32 cviReadSrcFrame(VIDEO_FRAME_S *pstVFrame, FILE *fp, CVI_BOOL circ
 
     pstVFrame->u32Stride[1] = pstVFrame->u32Stride[0] >> bCbWidthShift;
     pstVFrame->u32Stride[2] = pstVFrame->u32Stride[0] >> bCrWidthShift;
+
 RETRY_GET_FRAME:
 	if (pstVFrame->u32Width == pstVFrame->u32Stride[0]) {
 		// Luma
@@ -3109,6 +3107,7 @@ RETRY_GET_FRAME:
 			printf("Luma, fread %zu %d failed\n", read_byte, to_read);
 			return CVI_FAILURE;
 		}
+		CVI_SYS_IonFlushCache(pstVFrame->u64PhyAddr[0], pstVFrame->pu8VirAddr[0], pstVFrame->u32Length[0]);
 
 		// Cb
 		frm_ptr = pstVFrame->pu8VirAddr[1];
@@ -3118,6 +3117,7 @@ RETRY_GET_FRAME:
 			printf("Cb, fread %zu %d failed\n", read_byte, to_read);
 			return CVI_FAILURE;
 		}
+		CVI_SYS_IonFlushCache(pstVFrame->u64PhyAddr[1], pstVFrame->pu8VirAddr[1], pstVFrame->u32Length[1]);
 
 		// Cr
 		frm_ptr = pstVFrame->pu8VirAddr[2];
@@ -3127,6 +3127,11 @@ RETRY_GET_FRAME:
 			printf("Cr, fread %zu %d failed\n", read_byte, to_read);
 			return CVI_FAILURE;
 		}
+
+		if (pstVFrame->u64PhyAddr[2]) {
+			CVI_SYS_IonFlushCache(pstVFrame->u64PhyAddr[2], pstVFrame->pu8VirAddr[2], pstVFrame->u32Length[2]);
+		}
+
 	} else {
 		// Luma
 		for (j = 0; j < pstVFrame->u32Height; j++) {
@@ -3139,6 +3144,7 @@ RETRY_GET_FRAME:
 				return CVI_FAILURE;
 			}
 		}
+		CVI_SYS_IonFlushCache(pstVFrame->u64PhyAddr[0], pstVFrame->pu8VirAddr[0], pstVFrame->u32Length[0]);
 
 		// Cb
 		for (j = 0; j < u32CbCrReadSrcHeight; j++) {
@@ -3151,6 +3157,7 @@ RETRY_GET_FRAME:
 				return CVI_FAILURE;
 			}
 		}
+		CVI_SYS_IonFlushCache(pstVFrame->u64PhyAddr[1], pstVFrame->pu8VirAddr[1], pstVFrame->u32Length[1]);
 
 		// Cr
 		for (j = 0; j < u32CbCrReadSrcHeight; j++) {
@@ -3162,6 +3169,10 @@ RETRY_GET_FRAME:
 					j, read_byte, to_read);
 				return CVI_FAILURE;
 			}
+		}
+
+		if (pstVFrame->u64PhyAddr[2]) {
+			CVI_SYS_IonFlushCache(pstVFrame->u64PhyAddr[2], pstVFrame->pu8VirAddr[2], pstVFrame->u32Length[2]);
 		}
 	}
 
