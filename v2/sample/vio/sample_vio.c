@@ -1425,7 +1425,7 @@ CVI_S32 SAMPLE_VIO_VpssFileIO(SIZE_S stSize)
 	CVI_U32	           u32BlkSize;
 	CVI_S32            s32Ret = CVI_SUCCESS;
 
-#define VPSS_FILENAME_IN_1  "res/vo/golden_1920x1080.bgr"
+#define VPSS_FILENAME_IN  "input"
 #define VPSS_FILENAME_OUT "output"
 
 	/************************************************
@@ -1493,7 +1493,7 @@ CVI_S32 SAMPLE_VIO_VpssFileIO(SIZE_S stSize)
 	 ************************************************/
 	VIDEO_FRAME_INFO_S stVideoFrame;
 
-	SAMPLE_COMM_VPSS_SendFrame(VpssGrp, &stSize, PIXEL_FORMAT_BGR_888, VPSS_FILENAME_IN_1);
+	SAMPLE_COMM_VPSS_SendFrame(VpssGrp, &stSize, PIXEL_FORMAT_BGR_888, VPSS_FILENAME_IN);
 	s32Ret = CVI_VPSS_GetChnFrame(VpssGrp, VpssChn, &stVideoFrame, 50);
 	if (s32Ret != CVI_SUCCESS) {
 		CVI_TRACE_LOG(CVI_DBG_ERR, "CVI_VPSS_GetChnFrame for grp%d chn%d. s32Ret: 0x%x !\n"
@@ -1513,7 +1513,7 @@ CVI_S32 SAMPLE_VIO_VpssCombine2File(SIZE_S stSize)
 	CVI_U32		   u32BlkSize;
 	CVI_S32		   s32Ret = CVI_SUCCESS;
 
-#define VPSS_FILENAME_IN_2  "res/1080p.yuv420"
+#define VPSS_FILENAME_IN  "input"
 #define VPSS_FILENAME_OUT "output"
 
 	/************************************************
@@ -1625,7 +1625,7 @@ CVI_S32 SAMPLE_VIO_VpssCombine2File(SIZE_S stSize)
 	 ************************************************/
 	VIDEO_FRAME_INFO_S stVideoFrame;
 
-	SAMPLE_COMM_VPSS_SendFrame(0, &stSize, PIXEL_FORMAT_YUV_PLANAR_420, VPSS_FILENAME_IN_2);
+	SAMPLE_COMM_VPSS_SendFrame(0, &stSize, PIXEL_FORMAT_YUV_PLANAR_420, VPSS_FILENAME_IN);
 	s32Ret = CVI_VPSS_GetChnFrame(0, 0, &stVideoFrame, 100);
 	if (s32Ret != CVI_SUCCESS) {
 		CVI_TRACE_LOG(CVI_DBG_ERR, "CVI_VPSS_GetChnFrame for grp0 chn0. s32Ret: 0x%x !\n", s32Ret);
@@ -1634,7 +1634,7 @@ CVI_S32 SAMPLE_VIO_VpssCombine2File(SIZE_S stSize)
 
 	CVI_VPSS_SendChnFrame(1, 0, &stVideoFrame, -1);
 	CVI_VPSS_ReleaseChnFrame(0, 0, &stVideoFrame);
-	SAMPLE_COMM_VPSS_SendFrame(1, &stSize, PIXEL_FORMAT_YUV_PLANAR_420, VPSS_FILENAME_IN_2);
+	SAMPLE_COMM_VPSS_SendFrame(1, &stSize, PIXEL_FORMAT_YUV_PLANAR_420, VPSS_FILENAME_IN);
 
 	s32Ret = CVI_VPSS_GetChnFrame(1, 0, &stVideoFrame, 100);
 	if (s32Ret != CVI_SUCCESS) {

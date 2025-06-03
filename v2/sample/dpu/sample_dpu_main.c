@@ -27,14 +27,14 @@
 // #define GRID_INFO_FIEL_L  "fileGridInfoL.dat"
 // #define GRID_INFO_FIEL_R  "fileGridInfoR.dat"
 
-#define GRID_INFO_FIEL_L "res/dpu/dpu_demo/grid_info_27_22_594_28_23_448x368_L.dat"
-#define GRID_INFO_FIEL_R "res/dpu/dpu_demo/grid_info_27_22_594_28_23_448x368_R.dat"
+#define GRID_INFO_FIEL_L "grid_info_27_22_594_28_23_448x368_L.dat"
+#define GRID_INFO_FIEL_R "grid_info_27_22_594_28_23_448x368_R.dat"
 #define WIDTH 448
 #define HEIGHT 368
 
-static char fileNameInLeft[128] ="0";
-static char fileNameInRight[128]="0";
-static char fileNameOut[128]="0";
+static char fileNameInLeft[50] ="0";
+static char fileNameInRight[50]="0";
+static char fileNameOut[50]="0";
 void SAMPLE_DPU_HandleSig(CVI_S32 signo)
 {
 	signal(SIGINT, SIG_IGN);
@@ -100,8 +100,8 @@ int main(int argc, char *argv[])
 	strcpy(fileNameOut,"dpu_demo.bin");
 	// strcpy(fileNameInLeft,"imgL.bin");
 	// strcpy(fileNameInRight,"imgR.bin");
-	strcpy(fileNameInLeft,"res/dpu/input/Teddy_left_img.bin");
-	strcpy(fileNameInRight,"res/dpu/input/Teddy_right_img.bin");
+	strcpy(fileNameInLeft,"Teddy_left_img.bin");
+	strcpy(fileNameInRight,"Teddy_right_img.bin");
 	// strcpy(fileNameInLeft,"image_left1024X672.yuv");
 	// strcpy(fileNameInRight,"image_right1024X672.yuv");
 	// stSize.u32Width = 1280;

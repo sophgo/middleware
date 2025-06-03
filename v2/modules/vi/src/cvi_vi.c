@@ -1416,7 +1416,7 @@ CVI_S32 CVI_VI_SetChnAttr(VI_PIPE ViPipe, VI_CHN ViChn, VI_CHN_ATTR_S *pstChnAtt
 		CVI_TRACE_VI(CVI_DBG_WARN, "FrameRate ctrl, src(%d) dst(%d), not support yet.\n"
 				, pstChnAttr->stFrameRate.s32SrcFrameRate, pstChnAttr->stFrameRate.s32DstFrameRate);
 
-	if (pstChnAttr->enPixelFormat != PIXEL_FORMAT_NV21 && pstChnAttr->enPixelFormat != PIXEL_FORMAT_NV12 &&
+	if (pstChnAttr->enPixelFormat != PIXEL_FORMAT_NV21 &&
 		(pstChnAttr->enPixelFormat < PIXEL_FORMAT_YUYV || pstChnAttr->enPixelFormat > PIXEL_FORMAT_VYUY)) {
 		CVI_TRACE_VI(CVI_DBG_ERR, "not support %d\n", pstChnAttr->enPixelFormat);
 		return CVI_ERR_VI_NOT_SUPPORT;

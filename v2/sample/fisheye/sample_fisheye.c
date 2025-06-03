@@ -2157,8 +2157,6 @@ static CVI_S32 _gdc_handle_op(CVI_S32 op)
 	case GDC_TEST_DIS:
 		s32Ret = gdc_test_dis();
 		break;
-	case 255:
-		break;
 	default:
 		s32Ret = CVI_FAILURE;
 		break;

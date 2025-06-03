@@ -1649,8 +1649,8 @@ static void os04a10_linear_1520p30_10BIT_2L_slave_init(VI_PIPE ViPipe)
 	os04a10_write_register(ViPipe, 0x3823, 0x50);// ; [6] ext_vs_en
 	os04a10_write_register(ViPipe, 0x383e, 0x81);// ; //[7] disable vs_ext's reset of R counter and CS counter
 	os04a10_write_register(ViPipe, 0x3881, 0x05);// ; //[2] enable ext_vsync for vts_adj
-	os04a10_write_register(ViPipe, 0x3882, 0x00);// ; sync point: VTS - {r3882,r3883}
-	os04a10_write_register(ViPipe, 0x3883, 0x08);// ; here assume VTS = 0x658, sync point VTS - (0x3882/0x3883) = 8
+	os04a10_write_register(ViPipe, 0x3882, 0x06);// ; sync point: VTS - {r3882,r3883}
+	os04a10_write_register(ViPipe, 0x3883, 0x50);// ; here assume VTS = 0x658, sync point VTS - (0x3882/0x3883) = 8
 	os04a10_write_register(ViPipe, 0x3835, 0x00);//
 	os04a10_write_register(ViPipe, 0x3836, 0x10);// ;
 

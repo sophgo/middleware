@@ -14,10 +14,10 @@
 #include "sample_comm.h"
 #include "fontmod.h"
 
-#define  colorbar_bmp  "res/rgn/colorbar.bmp"
-#define  dog_bmp    "res/rgn/dog.bmp"
-#define  tiger_bmp  "res/rgn/tiger.bmp"
-#define  tiger_8bitmode "res/rgn/tiger_8bitmode.bmp"
+#define  colorbar_bmp  "colorbar.bmp"
+#define  dog_bmp    "dog.bmp"
+#define  tiger_bmp  "tiger.bmp"
+#define  tiger_8bitmode "tiger_8bitmode.bmp"
 #define  test_bmp tiger_bmp
 #define IsASCII(a)				(((a) >= 0x00 && (a) <= 0x7F) ? 1 : 0)
 #define BYTE_BITS				8
