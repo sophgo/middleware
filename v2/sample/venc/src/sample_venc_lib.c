@@ -2802,6 +2802,7 @@ RETRY_GET_STREAM:
 			// do nothing
 			pvecc->frameUnusedQueue[pvecc->pstFrameInfo->stVFrame.s32FrameIdx].iUseFlag = 0;
 			free_frame(pvecc->pstFrameInfo);
+			pvecc->pstFrameInfo = NULL;
 			continue;
 		} else if (s32SendRet == CVI_ERR_VENC_BUSY) {
 			if (pvecc->chnStat == CHN_STAT_STOP)
@@ -2860,6 +2861,11 @@ RETRY_GET_STREAM:
 		// }
 	}
 	printf("venc send task%d end\n", pvecc->VencChn);
+
+	if (pvecc->pstFrameInfo) {
+		free_frame(pvecc->pstFrameInfo);
+		pvecc->pstFrameInfo = NULL;
+	}
 
 	if (pvecc->s32VencFd >= 0) {
 		CVI_VENC_CloseFd(VencChn);

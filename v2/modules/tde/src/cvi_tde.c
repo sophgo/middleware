@@ -1783,11 +1783,8 @@ CVI_S32 cvi_draw_single_line(vg_lite_buffer_t *fb, const cvi_tde_line *line)
     data_size = vg_lite_get_path_length(sides_cmd, sizeof(sides_cmd), VG_LITE_FP32);
 
     CHECK_ERROR(vg_lite_init_path(&path, VG_LITE_FP32, VG_LITE_HIGH, data_size, NULL, 0, 0, 0, 0));
-    path.path = malloc(data_size);
     CHECK_ERROR(vg_lite_append_path(&path, sides_cmd, sides_data_left, sizeof(sides_cmd)));
-
     CHECK_ERROR(vg_lite_draw(fb, &path, VG_LITE_FILL_NON_ZERO, &matrix, blend, color));
-
     CHECK_ERROR(vg_lite_clear_path(&path));
 
 
