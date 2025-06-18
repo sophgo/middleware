@@ -4,7 +4,6 @@
 #include <string.h>
 #include <getopt.h>
 //#include "sample_comm.h"
-#include "acodec.h"
 
 
 stAudioPara stAudioparam;

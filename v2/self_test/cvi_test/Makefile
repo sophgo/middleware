@@ -38,9 +38,9 @@ TARGET = cvi_test_asan
 endif
 
 ifeq ($(SUBTYPE), fpga)
-LIBS = -lvi -lvenc -lvdec $(ISP_LIB) -lvpss -lvo -lrgn -lgdc -lsys $(SNS_LIB) -lmisc
+LIBS = -lvi -lvenc -lvdec $(ISP_LIB) -lvpss -lvo -lhdmitx -lrgn -lgdc -lsys $(SNS_LIB) -lmisc
 else
-LIBS = -lvi -lvenc -lvdec $(ISP_LIB) -lvpss -lvo -lrgn -lgdc -lsys $(SNS_LIB) -lmisc
+LIBS = -lvi -lvenc -lvdec $(ISP_LIB) -lvpss -lvo -lhdmitx -lrgn -lgdc -lsys $(SNS_LIB) -lmisc
 endif
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 DEFS += -DRPC_MULTI_PROCESS

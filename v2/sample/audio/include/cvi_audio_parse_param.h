@@ -11,7 +11,6 @@
 #else
 #include "cvi_common.h"
 #endif
-#include "acodec.h"
 
 typedef struct {
 	int sample_rate;

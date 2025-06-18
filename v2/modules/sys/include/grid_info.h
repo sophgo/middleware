@@ -86,7 +86,7 @@ typedef MESH_DATA_EIS_S meshdata_eis;
 
 int match_meshdata(char *bindName);
 int get_free_meshdata(const char *bindName);
-int load_meshdata(const char *path, MESH_DATA_ALL_S *pmeshdata, const char *bindName);
+int load_meshdata(const char *path, MESH_DATA_ALL_S *pmeshdata, const char *bindName, void *pBuf, int Len);
 int free_cur_meshdata(char *bindName);
 int free_all_meshdata(void);
 int save_meshdata(char *path, MESH_DATA_ALL_S *pstMeshData);

@@ -1906,7 +1906,7 @@ CVI_S32 CVI_VO_Get_Panel_Status(VO_LAYER VoLayer, VO_CHN VoChn, CVI_U32 *is_init
 		return s32Ret;
 	}
 
-	memcpy(&is_init, &cfg.is_init, sizeof(is_init));
+	memcpy(is_init, &cfg.is_init, sizeof(cfg.is_init));
 
 	return CVI_SUCCESS;
 }

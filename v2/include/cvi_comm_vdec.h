@@ -19,7 +19,9 @@ extern "C" {
 #endif
 #endif /* End of #ifdef __cplusplus */
 
-#define CVI_VDEC_STR_LEN	255
+#define CVI_VDEC_STR_LEN	255 /* max len of vdec string */
+
+/* Error code mask */
 #define CVI_VDEC_MASK_ERR	0x1
 #define CVI_VDEC_MASK_WARN	0x2
 #define CVI_VDEC_MASK_INFO	0x4
@@ -63,18 +65,18 @@ typedef struct _VDEC_ATTR_VIDEO_S {
 } VDEC_ATTR_VIDEO_S;
 
 typedef struct _BUFFER_INFO_S {
-	CVI_U32 size;
-	CVI_U64 phys_addr;
-	CVI_U64 virt_addr;
+	CVI_U32 size; /* extern buffer size */
+	CVI_U64 phys_addr; /* extern buffer physical address */
+	CVI_U64 virt_addr; /* extern buffer virtual address */
 } BUFFER_INFO_S;
 
 typedef struct _VDEC_BUFFER_INFO_S {
-	BUFFER_INFO_S* bitstream_buffer;
-	BUFFER_INFO_S* frame_buffer;
-	BUFFER_INFO_S* Ytable_buffer;
-	BUFFER_INFO_S* Ctable_buffer;
-	CVI_S32 s32numOfDecFbc;
-	CVI_S32 s32numOfDecwtl;
+	BUFFER_INFO_S* bitstream_buffer; /* extern bitstream buffer */
+	BUFFER_INFO_S* frame_buffer; /* extern frame buffer */
+	BUFFER_INFO_S* Ytable_buffer; /* extern Ytable buffer */
+	BUFFER_INFO_S* Ctable_buffer; /* extern Ctable buffer */
+	CVI_S32 s32numOfDecFbc; /* number of decode fbc */
+	CVI_S32 s32numOfDecwtl; /* number of decode wtl */
 } VDEC_BUFFER_INFO_S;
 
 typedef struct _VDEC_CHN_ATTR_S {
@@ -200,16 +202,16 @@ typedef struct _VDEC_PARAM_PICTURE_S {
 	 * ABGR1555 [128 ,256] is deemed to non-transparent when enPixelFormat is
 	 * ARGB1555 or ABGR1555
 	 */
-	CVI_U32 u32HDownSampling;
-	CVI_U32 u32VDownSampling;
-	CVI_S32 s32ROIEnable;
-	CVI_S32 s32ROIOffsetX;
-	CVI_S32 s32ROIOffsetY;
-	CVI_S32 s32ROIOffset;
-	CVI_S32 s32ROIWidth;
-	CVI_S32 s32ROIHeight;
-	CVI_S32 s32RotAngle;
-	CVI_S32 s32MirDir;
+	CVI_U32 u32HDownSampling; /* horizon down sampling */
+	CVI_U32 u32VDownSampling; /* virtical down sampling */
+	CVI_S32 s32ROIEnable; /* roi enable */
+	CVI_S32 s32ROIOffsetX; /* roi x offset */
+	CVI_S32 s32ROIOffsetY; /* roi y offset */
+	CVI_S32 s32ROIOffset; /* roi offset */
+	CVI_S32 s32ROIWidth; /* roi width */
+	CVI_S32 s32ROIHeight; /* roi height */
+	CVI_S32 s32RotAngle; /* rotation angle */
+	CVI_S32 s32MirDir; /* mirror direction */
 } VDEC_PARAM_PICTURE_S;
 
 typedef struct _VDEC_CHN_PARAM_S {
@@ -269,25 +271,25 @@ typedef enum _VDEC_EVNT_E {
 } VDEC_EVNT_E;
 
 typedef enum _VDEC_CAPACITY_STRATEGY_E {
-	VDEC_CAPACITY_STRATEGY_BY_MOD = 0,
-	VDEC_CAPACITY_STRATEGY_BY_CHN = 1,
+	VDEC_CAPACITY_STRATEGY_BY_MOD = 0, /* limited by chn attr */
+	VDEC_CAPACITY_STRATEGY_BY_CHN = 1, /* limited by mod param */
 	VDEC_CAPACITY_STRATEGY_BUTT
 } VDEC_CAPACITY_STRATEGY_E;
 
 typedef struct _VDEC_VIDEO_MOD_PARAM_S {
-	CVI_U32 u32MaxPicWidth;
-	CVI_U32 u32MaxPicHeight;
-	CVI_U32 u32MaxSliceNum;
-	CVI_U32 u32VdhMsgNum;
-	CVI_U32 u32VdhBinSize;
-	CVI_U32 u32VdhExtMemLevel;
+	CVI_U32 u32MaxPicWidth; /* max pic width */
+	CVI_U32 u32MaxPicHeight; /* max pic height */
+	CVI_U32 u32MaxSliceNum; /* max slice number */
+	CVI_U32 u32VdhMsgNum; /* vdh message number */
+	CVI_U32 u32VdhBinSize; /* vdh bin size */
+	CVI_U32 u32VdhExtMemLevel; /* vdh extern mem level */
 } VDEC_VIDEO_MOD_PARAM_S;
 
 typedef struct _VDEC_PICTURE_MOD_PARAM_S {
-	CVI_U32 u32MaxPicWidth;
-	CVI_U32 u32MaxPicHeight;
-	CVI_BOOL bSupportProgressive;
-	CVI_BOOL bDynamicAllocate;
+	CVI_U32 u32MaxPicWidth; /* pic mod max width */
+	CVI_U32 u32MaxPicHeight; /* pic mod max height */
+	CVI_BOOL bSupportProgressive; /* progressive support in JPEG/MJPEG */
+	CVI_BOOL bDynamicAllocate; /* dynamic allocate buf for progressive format */
 	VDEC_CAPACITY_STRATEGY_E enCapStrategy;
 } VDEC_PICTURE_MOD_PARAM_S;
 
@@ -300,8 +302,8 @@ typedef struct _VDEC_MOD_PARAM_S {
 } VDEC_MOD_PARAM_S;
 
 typedef struct _VDEC_USER_DATA_ATTR_S {
-	CVI_BOOL bEnable;
-	CVI_U32 u32MaxUserDataLen;
+	CVI_BOOL bEnable; /* enable user data */
+	CVI_U32 u32MaxUserDataLen; /* user data len */
 } VDEC_USER_DATA_ATTR_S;
 
 // TODO: refinememt for hardcode

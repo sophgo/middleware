@@ -701,7 +701,7 @@ CVI_S32 CompareWithMD5(const CVI_CHAR *md5sum, VIDEO_FRAME_INFO_S *pstVideoFrame
 	VIDEO_FRAME_S *pstVFrame = &pstVideoFrame->stVFrame;
 	MD5_CTX md5_ctx;
 	CVI_CHAR md[MD5_DIGEST_LENGTH];
-	CVI_CHAR md_str[32];
+	CVI_CHAR md_str[33];
 	CVI_CHAR *p = md_str;
 	CVI_S32 s32Index = 0;
 
@@ -749,7 +749,7 @@ CVI_S32 CompareWithMD5(const CVI_CHAR *md5sum, VIDEO_FRAME_INFO_S *pstVideoFrame
 	CVI_SYS_Munmap(vir_addr, image_size);
 
 	for (i = 0; i < MD5_DIGEST_LENGTH; i++)
-		s32Index += snprintf(p + s32Index, 32, "%02x", md[i]);
+		s32Index += snprintf(p + s32Index, 33 - s32Index, "%02x", md[i]);
 
 	if (strncmp(md5sum, md_str, 32)) {
 		VPSS_UT_PRT("md5sum error, frame md5sum:%s\n", md_str);

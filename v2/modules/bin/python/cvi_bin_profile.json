@@ -5757,6 +5757,10 @@
             {
                 "ID": 6,
                 "type":["unsigned", "char"], "name":"u8DebugMode", "dims":[], "children": []
+            },
+            {
+                "ID": 7,
+                "type":["ISP_AWB_WDR_STS_E"], "name":"enWdrStsMode", "dims":[], "children": []
             }
         ]
     },
@@ -6083,6 +6087,14 @@
             {
                 "ID": 24,
                 "type":["unsigned", "char"], "name":"adjBgainMode", "dims":[], "children": []
+            },
+            {
+                "ID": 25,
+                "type":["unsigned", "short"], "name":"u16TargetCT", "dims":["3"], "children": []
+            },
+            {
+                "ID": 26,
+                "type":["unsigned", "char"], "name":"u8TargetStrength", "dims":["3"], "children": []
             }
         ]
     },

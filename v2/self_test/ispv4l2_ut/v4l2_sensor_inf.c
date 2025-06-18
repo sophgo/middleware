@@ -41,7 +41,7 @@ int get_sensor_fd(int dev)
 int test_sensor_ctrl(int dev)
 {
 	int sns_type;
-	int orient = 2;
+	int orient = 3;
 	int fd;
 
 	fd = get_sensor_fd(dev);

@@ -1680,6 +1680,8 @@ int main(int argc, char *argv[])
 		} while (op != 255);
 	}
 
+	sleep(1);
+
 	s32Ret = vo_ut_sys_deinit();
 	if (s32Ret != CVI_SUCCESS) {
 		SAMPLE_PRT("vo_ut_sys_deinit failed\n");

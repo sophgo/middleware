@@ -111,7 +111,11 @@ static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSns
 	pstAeSnsDft->u32FullLinesStd = pstSnsState->u32FLStd;
 	pstAeSnsDft->u32FlickerFreq = 50 * 256;
 	pstAeSnsDft->u32FullLinesMax = SC500AI_FULL_LINES_MAX;
-	pstAeSnsDft->u32HmaxTimes = (1000000) / (pstSnsState->u32FLStd * 30);
+	if (pstSnsState->u8ImgMode == SC500AI_MODE_1620P60) {
+		pstAeSnsDft->u32HmaxTimes = (1000000) / (pstSnsState->u32FLStd * 60);
+	} else {
+		pstAeSnsDft->u32HmaxTimes = (1000000) / (pstSnsState->u32FLStd * 30);
+	}
 
 	pstAeSnsDft->stIntTimeAccu.enAccuType = AE_ACCURACY_LINEAR;
 	pstAeSnsDft->stIntTimeAccu.f32Accuracy = 0.5;
@@ -128,7 +132,11 @@ static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSns
 	pstAeSnsDft->u32MaxISPDgainTarget = 2 << pstAeSnsDft->u32ISPDgainShift;
 
 	if (g_au32LinesPer500ms[ViPipe] == 0)
-		pstAeSnsDft->u32LinesPer500ms = pstSnsState->u32FLStd * 30 / 2;
+		if (pstSnsState->u8ImgMode == SC500AI_MODE_1620P60) {
+			pstAeSnsDft->u32LinesPer500ms = pstSnsState->u32FLStd * 60 / 2;
+		} else {
+			pstAeSnsDft->u32LinesPer500ms = pstSnsState->u32FLStd * 30 / 2;
+		}
 	else
 		pstAeSnsDft->u32LinesPer500ms = g_au32LinesPer500ms[ViPipe];
 	pstAeSnsDft->u32SnsStableFrame = 0;
@@ -143,20 +151,20 @@ static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSns
 	switch (pstSnsState->enWDRMode) {
 	default:
 	case WDR_MODE_NONE:   /*linear mode*/
-		pstAeSnsDft->f32Fps = g_astSC500AI_mode[SC500AI_MODE_1620P30].f32MaxFps;
-		pstAeSnsDft->f32MinFps = g_astSC500AI_mode[SC500AI_MODE_1620P30].f32MinFps;
+		pstAeSnsDft->f32Fps = g_astSC500AI_mode[pstSnsState->u8ImgMode].f32MaxFps;
+		pstAeSnsDft->f32MinFps = g_astSC500AI_mode[pstSnsState->u8ImgMode].f32MinFps;
 		pstAeSnsDft->au8HistThresh[0] = 0xd;
 		pstAeSnsDft->au8HistThresh[1] = 0x28;
 		pstAeSnsDft->au8HistThresh[2] = 0x60;
 		pstAeSnsDft->au8HistThresh[3] = 0x80;
 
-		pstAeSnsDft->u32MaxAgain = g_astSC500AI_mode[SC500AI_MODE_1620P30].stAgain[0].u32Max;
-		pstAeSnsDft->u32MinAgain = g_astSC500AI_mode[SC500AI_MODE_1620P30].stAgain[0].u32Min;
+		pstAeSnsDft->u32MaxAgain = g_astSC500AI_mode[pstSnsState->u8ImgMode].stAgain[0].u32Max;
+		pstAeSnsDft->u32MinAgain = g_astSC500AI_mode[pstSnsState->u8ImgMode].stAgain[0].u32Min;
 		pstAeSnsDft->u32MaxAgainTarget = pstAeSnsDft->u32MaxAgain;
 		pstAeSnsDft->u32MinAgainTarget = pstAeSnsDft->u32MinAgain;
 
-		pstAeSnsDft->u32MaxDgain = g_astSC500AI_mode[SC500AI_MODE_1620P30].stDgain[0].u32Max;
-		pstAeSnsDft->u32MinDgain = g_astSC500AI_mode[SC500AI_MODE_1620P30].stDgain[0].u32Min;
+		pstAeSnsDft->u32MaxDgain = g_astSC500AI_mode[pstSnsState->u8ImgMode].stDgain[0].u32Max;
+		pstAeSnsDft->u32MinDgain = g_astSC500AI_mode[pstSnsState->u8ImgMode].stDgain[0].u32Min;
 		pstAeSnsDft->u32MaxDgainTarget = pstAeSnsDft->u32MaxDgain;
 		pstAeSnsDft->u32MinDgainTarget = pstAeSnsDft->u32MinDgain;
 
@@ -258,6 +266,8 @@ static CVI_S32 cmos_fps_set(VI_PIPE ViPipe, CVI_FLOAT f32Fps, AE_SENSOR_DEFAULT_
 
 	case SC500AI_MODE_1620P30:
 	case SC500AI_MODE_1440P30:
+	case SC500AI_MODE_1620P60:
+	case SC500AI_2L_MODE_1620P30:
 		if ((f32Fps <= f32MaxFps) && (f32Fps >= f32MinFps)) {
 			u32VMAX = u32Vts * f32MaxFps / DIV_0_TO_1_FLOAT(f32Fps);
 		} else {
@@ -1059,7 +1069,11 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 			if (SC500AI_RES_IS_1440P(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height)) {
 				u8SensorImageMode = SC500AI_MODE_1440P30;
 			} else if (SC500AI_RES_IS_1620P(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height)) {
-				u8SensorImageMode = SC500AI_MODE_1620P30;
+				if (pstSensorImageMode->u8LaneNum == 2) {
+					u8SensorImageMode = SC500AI_2L_MODE_1620P30;
+				} else {
+					u8SensorImageMode = SC500AI_MODE_1620P30;
+				}
 			} else {
 				CVI_TRACE_SNS(CVI_DBG_ERR, "Not support! Width:%d, Height:%d, Fps:%f, WDRMode:%d\n",
 				       pstSensorImageMode->u16Width,
@@ -1089,7 +1103,8 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 			       pstSnsState->enWDRMode);
 			return CVI_FAILURE;
 		}
-	} else {
+	} else  if (pstSensorImageMode->f32Fps <= 60)  {
+		u8SensorImageMode = SC500AI_MODE_1620P60;
 	}
 
 	if ((pstSnsState->bInit == CVI_TRUE) && (u8SensorImageMode == pstSnsState->u8ImgMode)) {

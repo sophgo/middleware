@@ -1660,6 +1660,7 @@ CVI_S32 CVI_VPSS_GetRegionLuma(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VIDEO_R
 	VIDEO_FRAME_INFO_S video_frame;
 	CVI_U8 *vir_addr;
 	SIZE_S size;
+	CVI_U32 i;
 	CVI_U32 x, y, x_step, y_step, num;
 	CVI_U32 main_stride;
 	CVI_S32 start_x, start_y;
@@ -1675,32 +1676,22 @@ CVI_S32 CVI_VPSS_GetRegionLuma(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VIDEO_R
 	if (ret != CVI_SUCCESS)
 		return ret;
 
-	start_x = pstRegionInfo->pstRegion->s32X;
-	start_y = pstRegionInfo->pstRegion->s32Y;
-	size.u32Width = pstRegionInfo->pstRegion->u32Width;
-	size.u32Height = pstRegionInfo->pstRegion->u32Height;
-	if ((start_x < 0) || (start_y < 0)) {
-		CVI_TRACE_VPSS(CVI_DBG_ERR, "region info(%d %d %d %d) invalid.\n"
-					, start_x, start_y, size.u32Width, size.u32Height);
-		return CVI_ERR_VPSS_ILLEGAL_PARAM;
+	for (i = 0; i < pstRegionInfo->u32RegionNum; ++i) {
+		start_x = pstRegionInfo->pstRegion[i].s32X;
+		start_y = pstRegionInfo->pstRegion[i].s32Y;
+		size.u32Width = pstRegionInfo->pstRegion[i].u32Width;
+		size.u32Height = pstRegionInfo->pstRegion[i].u32Height;
+		if ((start_x < 0) || (start_y < 0)) {
+			CVI_TRACE_VPSS(CVI_DBG_ERR, "region[%d] info(%d %d %d %d) invalid.\n"
+						, i, start_x, start_y, size.u32Width, size.u32Height);
+			return CVI_ERR_VPSS_ILLEGAL_PARAM;
+		}
 	}
 
 	ret = CVI_VPSS_GetChnFrame(VpssGrp, VpssChn, &video_frame, s32MilliSec);
 	if (ret != CVI_SUCCESS) {
 		CVI_TRACE_VPSS(CVI_DBG_ERR, "Grp(%d) Chn(%d) get buf fail\n", VpssGrp, VpssChn);
 		return ret;
-	}
-
-	if ((start_x + size.u32Width > video_frame.stVFrame.u32Width) ||
-		(start_y + size.u32Height > video_frame.stVFrame.u32Height) ||
-		((CVI_U32)start_x >= video_frame.stVFrame.u32Width) ||
-		((CVI_U32)start_y >= video_frame.stVFrame.u32Height) ||
-		(size.u32Width > video_frame.stVFrame.u32Width) ||
-		(size.u32Height > video_frame.stVFrame.u32Height)) {
-		CVI_TRACE_VPSS(CVI_DBG_ERR, "size(%d %d %d %d) out of range.\n"
-					, start_x, start_y, size.u32Width, size.u32Height);
-		ret = CVI_ERR_VPSS_ILLEGAL_PARAM;
-		goto release_blk;
 	}
 
 	if (!IS_FMT_YUV(video_frame.stVFrame.enPixelFormat)) {
@@ -1710,39 +1701,59 @@ CVI_S32 CVI_VPSS_GetRegionLuma(VPSS_GRP VpssGrp, VPSS_CHN VpssChn, const VIDEO_R
 		goto release_blk;
 	}
 
-	luma_size = video_frame.stVFrame.u32Length[0];
+	for (i = 0; i < pstRegionInfo->u32RegionNum; ++i) {
+		start_x = pstRegionInfo->pstRegion[i].s32X;
+		start_y = pstRegionInfo->pstRegion[i].s32Y;
+		size.u32Width = pstRegionInfo->pstRegion[i].u32Width;
+		size.u32Height = pstRegionInfo->pstRegion[i].u32Height;
 
-	vir_addr = CVI_SYS_Mmap(video_frame.stVFrame.u64PhyAddr[0], luma_size);
-	if (vir_addr == NULL) {
-		CVI_TRACE_VPSS(CVI_DBG_ERR, "mmap for video_frame failed.\n");
-		ret = CVI_FAILURE;
-		goto release_blk;
-	}
-
-	main_stride = video_frame.stVFrame.u32Stride[0];
-
-	num = 0;
-	*pu64LumaData = 0;
-	x_step = size.u32Width > 9 ? size.u32Width / 9 : 1;
-	y_step = size.u32Height > 9 ? size.u32Height / 9 : 1;
-
-	for (y = start_y; y < start_y + size.u32Height; y += y_step) {
-		for (x = start_x; x < (start_x + size.u32Width); x += x_step) {
-			*pu64LumaData += *(vir_addr + x + y * main_stride);
-			num++;
+		if ((start_x + size.u32Width > video_frame.stVFrame.u32Width) ||
+			(start_y + size.u32Height > video_frame.stVFrame.u32Height) ||
+			((CVI_U32)start_x >= video_frame.stVFrame.u32Width) ||
+			((CVI_U32)start_y >= video_frame.stVFrame.u32Height) ||
+			(size.u32Width > video_frame.stVFrame.u32Width) ||
+			(size.u32Height > video_frame.stVFrame.u32Height)) {
+			CVI_TRACE_VPSS(CVI_DBG_ERR, "region[%d] size(%d %d %d %d) out of range.\n"
+						, i, start_x, start_y, size.u32Width, size.u32Height);
+			ret = CVI_ERR_VPSS_ILLEGAL_PARAM;
+			goto release_blk;
 		}
-	}
 
-	for (x = start_x + x_step / 2; x < (start_x + size.u32Width); x += x_step) {
-		for (y = start_y + y_step / 2; y < (start_y + size.u32Height); y += y_step) {
-			*pu64LumaData += *(vir_addr + x + y * main_stride);
-			num++;
+		luma_size = video_frame.stVFrame.u32Length[0];
+
+		vir_addr = CVI_SYS_Mmap(video_frame.stVFrame.u64PhyAddr[0], luma_size);
+		if (vir_addr == NULL) {
+			CVI_TRACE_VPSS(CVI_DBG_ERR, "mmap for video_frame failed.\n");
+			ret = CVI_FAILURE;
+			goto release_blk;
 		}
+
+		main_stride = video_frame.stVFrame.u32Stride[0];
+
+		num = 0;
+		pu64LumaData[i] = 0;
+		x_step = size.u32Width > 9 ? size.u32Width / 9 : 1;
+		y_step = size.u32Height > 9 ? size.u32Height / 9 : 1;
+
+		for (y = start_y; y < start_y + size.u32Height; y += y_step) {
+			for (x = start_x; x < (start_x + size.u32Width); x += x_step) {
+				pu64LumaData[i] += *(vir_addr + x + y * main_stride);
+				num++;
+			}
+		}
+
+		for (x = start_x + x_step / 2; x < (start_x + size.u32Width); x += x_step) {
+			for (y = start_y + y_step / 2; y < (start_y + size.u32Height); y += y_step) {
+				pu64LumaData[i] += *(vir_addr + x + y * main_stride);
+				num++;
+			}
+		}
+
+		pu64LumaData[i] = pu64LumaData[i] / num;
+
+		CVI_SYS_Munmap(vir_addr, luma_size);
 	}
 
-	*pu64LumaData = *pu64LumaData / num;
-
-	CVI_SYS_Munmap(vir_addr, luma_size);
 release_blk:
 	if (CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &video_frame) != CVI_SUCCESS)
 		return CVI_FAILURE;

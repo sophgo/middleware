@@ -700,7 +700,6 @@ static int handle_op(int op)
 		break;
 	case 12:
 		test_dev_num = 1;
-		is_dump_yuv = 0;
 		break;
 	case 13:
 		test_dev_num = 1;

@@ -61,6 +61,88 @@ static const SC500AI_MODE_S g_astSC500AI_mode[SC500AI_MODE_NUM] = {
 			.u32Step = 1,
 		},
 	},
+	[SC500AI_MODE_1620P60] = {
+		.name = "1620p60",
+		.astImg[0] = {
+			.stSnsSize = {
+				.u32Width = 2880,
+				.u32Height = 1620,
+			},
+			.stWndRect = {
+				.s32X = 0,
+				.s32Y = 0,
+				.u32Width = 2880,
+				.u32Height = 1620,
+			},
+			.stMaxSize = {
+				.u32Width = 2880,
+				.u32Height = 1620,
+			},
+		},
+		.f32MaxFps = 60,
+		.f32MinFps = 3.02, /* 1650 * 30 / 0x7FFF*/
+		.u32HtsDef = 2560, /* NA */
+		.u32VtsDef = 1650,
+		.stExp[0] = {
+			.u16Min = 3,
+			.u16Max = 3290,
+			.u16Def = 400,
+			.u16Step = 1,
+		},
+		.stAgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 24644,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.stDgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 32640,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+	},
+	[SC500AI_2L_MODE_1620P30] = {
+		.name = "1620p30_2l",
+		.astImg[0] = {
+			.stSnsSize = {
+				.u32Width = 2880,
+				.u32Height = 1620,
+			},
+			.stWndRect = {
+				.s32X = 0,
+				.s32Y = 0,
+				.u32Width = 2880,
+				.u32Height = 1620,
+			},
+			.stMaxSize = {
+				.u32Width = 2880,
+				.u32Height = 1620,
+			},
+		},
+		.f32MaxFps = 30,
+		.f32MinFps = 1.52, /* 1650 * 30 / 0x7FFF*/
+		.u32HtsDef = 2560, /* NA */
+		.u32VtsDef = 1650,
+		.stExp[0] = {
+			.u16Min = 3,
+			.u16Max = 3290,
+			.u16Def = 400,
+			.u16Step = 1,
+		},
+		.stAgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 24644,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.stDgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 32640,
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+	},
 	[SC500AI_MODE_1620P30_WDR] = {
 		.name = "1620p30wdr",
 		.astImg[0] = {

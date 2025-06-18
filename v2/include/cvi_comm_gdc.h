@@ -45,7 +45,13 @@ typedef struct _GDC_TASK_ATTR_S {
 	CVI_CHAR name[32];
 } GDC_TASK_ATTR_S;
 
-/* Mount mode of device */
+/* Mount mode of device
+ *
+ * FISHEYE_DESKTOP_MOUNT: desktop mount
+ * FISHEYE_CEILING_MOUNT: ceiling mount
+ * FISHEYE_WALL_MOUNT: wall mount
+ * FISHEYE_MOUNT_MODE_BUTT: mount mode bottom
+ */
 typedef enum _FISHEYE_MOUNT_MODE_E {
 	FISHEYE_DESKTOP_MOUNT = 0,
 	FISHEYE_CEILING_MOUNT = 1,
@@ -53,7 +59,13 @@ typedef enum _FISHEYE_MOUNT_MODE_E {
 	FISHEYE_MOUNT_MODE_BUTT
 } FISHEYE_MOUNT_MODE_E;
 
-/* View mode of client*/
+/* View mode of client
+ *
+ * FISHEYE_VIEW_360_PANORAMA: 360 panorama
+ * FISHEYE_VIEW_180_PANORAMA: 180 panorama
+ * FISHEYE_VIEW_NORMAL: normal
+ * FISHEYE_NO_TRANSFORMATION: no transformation
+ */
 typedef enum _FISHEYE_VIEW_MODE_E {
 	FISHEYE_VIEW_360_PANORAMA = 0,
 	FISHEYE_VIEW_180_PANORAMA = 1,
@@ -84,7 +96,20 @@ typedef struct _FISHEYE_REGION_ATTR_S {
 	RECT_S stOutRect;
 } FISHEYE_REGION_ATTR_S;
 
-/* fish eye usage mode*/
+/* fish eye usage mode
+ *
+ * MODE_PANORAMA_360: 360 panorama
+ * MODE_PANORAMA_180: 180 panorama
+ * MODE_01_1O: 01_1O
+ * MODE_02_1O4R: 02_1O4R
+ * MODE_03_4R: 03_4R
+ * MODE_04_1P2R: 04_1P2R
+ * MODE_05_1P2R: 05_1P2R
+ * MODE_06_1P: 06_1P
+ * MODE_07_2P: 07_2P
+ * MODE_STEREO_FIT: stereo fit
+ * MODE_MAX: max
+ */
 typedef enum _USAGE_MODE {
 	MODE_PANORAMA_360 = 1,
 	MODE_PANORAMA_180 = 2,

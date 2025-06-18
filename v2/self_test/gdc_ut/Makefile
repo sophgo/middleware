@@ -42,7 +42,7 @@ $(SDIR)/%.o: $(SDIR)/%.c
 	@echo [$(notdir $(CC))] $(notdir $@)
 
 $(TARGET) : $(COMM_OBJ) $(OBJS) $(MW_LIB)/libsys.a
-	$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(MW_LIB)/libsys.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
+	$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CC))] $(notdir $@)
 	@cp $(TARGET) ../auto_test/
 

@@ -21,7 +21,6 @@
 #include <sys/time.h>
 //#include "cvi_sample_comm.h"
 //#include "sample_comm.h"
-#include "acodec.h"
 #include "cvi_audio_dl_adp.h"
 #include "cvi_audio_parse_param.h"
 //#ifdef SUPPORT_EXTERNAL_AAC
@@ -475,7 +474,7 @@ int printf_parse_usage(void)
 	printf("Ao eg:./sample_audio 5 --list -D 1 -d 0 -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 0 -F Cvi_8k_2chn.raw -T 10\n");
 	printf("SetVol eg:./sample_audio 6\n");
 	printf("GetVol eg:./sample_audio 8\n");
-	printf("AECtest eg:./sample_audio 10 --list -D 0 -d 0 -A 0 -a 0 -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 1 -F play.wav -T 10\n");
+	printf("AECtest eg:./sample_audio 10 --list -D 0 -d 0 -A 1 -a 0 -r 8000 -R 8000 -c 2 -p 320 -C 0 -V 1 -F play.wav -T 10\n");
 	printf("[----------------------------------]\n");
 	return 0;
 }

@@ -5,6 +5,8 @@
 #include <time.h>
 #include <inttypes.h>
 #include <unistd.h>
+#include <stdatomic.h>
+#include <pthread.h>
 
 #include "cvi_sys.h"
 #include "cvi_vb.h"
@@ -31,6 +33,7 @@
 	} while (0)
 
 #define SYS_UT_ION_LEN	0x1000
+#define CDMA_THREAD_CNT 5
 
 typedef enum _SYS_TEST_OP {
 	SYS_TEST_SET_VIVPSS_MODE = 0,
@@ -42,6 +45,9 @@ typedef enum _SYS_TEST_OP {
 	SYS_TEST_THERMAL,
 	SYS_TEST_TRACE,
 } SYS_TEST_OP;
+
+
+static atomic_int counter;
 
 static long test_get_diff_in_us(struct timespec t1, struct timespec t2)
 {
@@ -188,6 +194,7 @@ CVI_S32 _cdma_test_1d(void)
 		return s32Ret;
 	}
 	memset(pVirSrc, 0x5a, u32Len);
+	CVI_SYS_IonFlushCache(u64PhySrc, pVirSrc, u32Len);
 
 	s32Ret = CVI_SYS_IonAlloc(&u64PhyDst, &pVirDst, "sys_test_dst", u32Len);
 	if (s32Ret != CVI_SUCCESS) {
@@ -206,6 +213,7 @@ CVI_S32 _cdma_test_1d(void)
 	duration = test_get_diff_in_us(time[0], time[1]);
 	SYS_UT_PRT("cdma copy size:%u time:%ldus\n", u32Len, duration);
 
+	CVI_SYS_IonInvalidateCache(u64PhyDst, pVirDst, u32Len);
 	s32Ret = memcmp(pVirSrc, pVirDst, u32Len);
 	if (s32Ret) {
 		SYS_UT_PRT("cdma pVirSrc pVirDst memcmp faild.\n");
@@ -237,7 +245,8 @@ CVI_S32 _cdma_test_2d(void)
 		SYS_UT_PRT("CVI_SYS_IonAlloc src faild.\n");
 		return s32Ret;
 	}
-	memset(pVirSrc, 0x5a, u32Len);
+	memset(pVirSrc, 0x5b, u32Len);
+	CVI_SYS_IonFlushCache(u64PhySrc, pVirSrc, u32Len);
 
 	s32Ret = CVI_SYS_IonAlloc(&u64PhyDst, &pVirDst, "sys_test_dst", u32Len);
 	if (s32Ret != CVI_SUCCESS) {
@@ -264,6 +273,7 @@ CVI_S32 _cdma_test_2d(void)
 	duration = test_get_diff_in_us(time[0], time[1]);
 	SYS_UT_PRT("cdma copy 2D size:%u time:%ldus\n", u32Len, duration);
 
+	CVI_SYS_IonInvalidateCache(u64PhyDst, pVirDst, u32Len);
 	s32Ret = memcmp(pVirSrc, pVirDst, u32Len);
 	if (s32Ret) {
 		SYS_UT_PRT("cdma pVirSrc pVirDst memcmp faild.\n");
@@ -274,6 +284,92 @@ exit1:
 	CVI_SYS_IonFree(u64PhyDst, pVirDst);
 exit0:
 	CVI_SYS_IonFree(u64PhySrc, pVirSrc);
+	return s32Ret;
+}
+
+void *_cdma_thread_run(void *arg)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	CVI_U64 u64PhySrc = 0;
+	CVI_VOID *pVirSrc;
+	CVI_U64 u64PhyDst = 0;
+	CVI_VOID *pVirDst;
+	CVI_U32 u16Width = 4 * 1024, u16Height = 1024;
+	CVI_U32 u32Len = u16Width * u16Height;
+	CVI_CDMA_2D_S cdmaParam = {0};
+	CVI_U32 i, u32TestCnt = 1000;
+
+	UNUSED(arg);
+
+	s32Ret = CVI_SYS_IonAlloc(&u64PhySrc, &pVirSrc, "sys_test_src", u32Len);
+	if (s32Ret != CVI_SUCCESS) {
+		SYS_UT_PRT("CVI_SYS_IonAlloc src faild.\n");
+		return NULL;
+	}
+	memset(pVirSrc, 0x6a, u32Len);
+	CVI_SYS_IonFlushCache(u64PhySrc, pVirSrc, u32Len);
+
+	s32Ret = CVI_SYS_IonAlloc(&u64PhyDst, &pVirDst, "sys_test_dst", u32Len);
+	if (s32Ret != CVI_SUCCESS) {
+		SYS_UT_PRT("CVI_SYS_IonAlloc dst faild.\n");
+		goto exit0;
+	}
+
+	memset(pVirDst, 0, u32Len);
+	cdmaParam.u64PhyAddrSrc = u64PhySrc;
+	cdmaParam.u64PhyAddrDst = u64PhyDst;
+	cdmaParam.u16Width = u16Width;
+	cdmaParam.u16Height = u16Height;
+	cdmaParam.u16StrideSrc = cdmaParam.u16Width;
+	cdmaParam.u16StrideDst = cdmaParam.u16Width;
+	cdmaParam.bEnableFixed = CVI_FALSE;
+
+	for (i = 0; i < u32TestCnt; i++) {
+		s32Ret = CVI_SYS_CDMACopy2D(&cdmaParam);
+		if (s32Ret != CVI_SUCCESS) {
+			SYS_UT_PRT("CVI_SYS_CDMACopy2D faild.\n");
+			goto exit1;
+		}
+	}
+
+	SYS_UT_PRT("[tid:%ld] done.\n", pthread_self());
+
+exit1:
+	CVI_SYS_IonFree(u64PhyDst, pVirDst);
+exit0:
+	CVI_SYS_IonFree(u64PhySrc, pVirSrc);
+
+	if (s32Ret == CVI_SUCCESS)
+		atomic_fetch_add(&counter, 1);
+
+	return NULL;
+
+}
+
+CVI_S32 _cdma_multi_thread_test(void)
+{
+	CVI_S32 i, s32Ret = CVI_SUCCESS;
+	CVI_S32 s32ThreadNum = CDMA_THREAD_CNT;
+	pthread_t thread[CDMA_THREAD_CNT] = {[0 ... CDMA_THREAD_CNT - 1] = -1};
+
+
+	atomic_init(&counter, 0);
+
+	for (i = 0; i < s32ThreadNum; i++) {
+		s32Ret = pthread_create(&thread[i], NULL, _cdma_thread_run, NULL);
+		if (s32Ret < 0) {
+			SYS_UT_PRT("pthread_create fail. s32Ret: 0x%x !\n", s32Ret);
+			break;
+		}
+	}
+
+	for (i = 0; i < s32ThreadNum; i++)
+		if (thread[i] > 0)
+			pthread_join(thread[i], NULL);
+
+	if (atomic_load(&counter) != s32ThreadNum)
+		s32Ret = CVI_FAILURE;
+
 	return s32Ret;
 }
 
@@ -529,6 +625,7 @@ CVI_S32 sys_ut_cdma(void)
 
 	s32Ret |= _cdma_test_1d();
 	s32Ret |= _cdma_test_2d();
+	s32Ret |= _cdma_multi_thread_test();
 
 	return s32Ret;
 }

@@ -18,14 +18,6 @@ extern "C"{
 #endif
 #endif /* End of #ifdef __cplusplus */
 
-
-#ifdef NOT_HAVE_GET_BLOCK_WITH_ID
-#define CVI_VB_GET_BLOCK(id, size, MOD)	CVI_VB_GetBlock((id), (size))
-#else
-#define CVI_VB_GET_BLOCK(id, size, MOD)	CVI_VB_GetBlockwithID((id), (size), (MOD))
-#endif
-
-
 /**
  * @brief VB initialization.
  *

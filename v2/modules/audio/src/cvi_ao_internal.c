@@ -187,7 +187,7 @@ CVI_S32 CVI_AO_Enable(AUDIO_DEV AoDevId)
 
 	if (!pstAoInstance->bThreadExist) {
 		pstAoInstance->stThreadInfo.i32ExitPending = CVI_FALSE;
-		param.sched_priority = 80;
+		param.sched_priority = 99;
 		pthread_attr_init(&attr);
 		pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		pthread_attr_setschedparam(&attr, &param);
