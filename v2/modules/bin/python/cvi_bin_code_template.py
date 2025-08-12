@@ -180,16 +180,11 @@ CVI_S32 cvi_bin_getBinSize_autogen(CVI_U32 *binSize)
 CVI_S32 cvi_bin_computeIndexHeaderOffset_autogen(CVI_BIN_INDEX_HEADER *idx_header, CVI_U32 bin_header_size)
 {{
     CVI_S32 ret = CVI_SUCCESS;
-    CVI_U32 size_sum = 0;
+    CVI_U32 size_sum = bin_header_size;
 
-    size_sum += bin_header_size;
-
-    for (int idx = 0; idx < CVI_BIN_ID_MAX; idx++) {{
+    for (int idx = CVI_BIN_ID_ISP0; idx < CVI_BIN_ID_MAX; idx++) {{
         idx_header->offsetData[idx] = size_sum;
-
-        if (idx != CVI_BIN_ID_MAX - 1) {{
-            size_sum += idx_header->size[idx + CVI_BIN_ID_ISP0];
-        }}
+        size_sum += idx_header->size[idx];
     }}
 
     idx_header->offsetIspEntry  += size_sum;

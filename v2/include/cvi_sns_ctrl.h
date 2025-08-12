@@ -90,6 +90,14 @@ typedef enum _SNS_BDG_MUX_MODE_E {
 	SNS_BDG_MUX_4,			/* sensor bridge mux 4 input */
 } SNS_BDG_MUX_MODE_E;
 
+typedef enum _ISP_SNS_SYNCMODE_TYPE_E {	/* Master and salve function of sensor */
+	ISP_SNS_SLAVE_BY_FSYNC			= 0,
+	ISP_SNS_MASTER_BY_FSYNC			= 1,
+	ISP_SNS_NORMAL_MODE				= 2,
+	ISP_SNS_SLAVE_BY_HIGH_ACTIVE	= 3,
+	ISP_SNS_SLAVE_BY_LOW_ACTIVE		= 4,
+} ISP_SNS_SYNCMODE_TYPE_E;
+
 /* ISP initialization attributes */
 typedef struct _ISP_INIT_ATTR_S {
 	CVI_U32 u32ExpTime;					/* Exposure time */
@@ -110,6 +118,16 @@ typedef struct _ISP_INIT_ATTR_S {
 	SNS_BDG_MUX_MODE_E enSnsBdgMuxMode;	/* Sensor bridge mux mode */
 } ISP_INIT_ATTR_S;
 
+// Structure representing the AHD (Analog High Definition) object.
+typedef struct _SNS_AHD_OBJ_S {
+	CVI_S32 (*pfnAhdInit)(VI_PIPE ViPipe, bool isFirstInit); // Initialize AHD sensor.
+	CVI_S32 (*pfnAhdDeinit)(VI_PIPE ViPipe); // Deinitialize AHD sensor.
+	CVI_S32 (*pfnGetAhdMode)(VI_PIPE ViPipe); // Get current AHD mode.
+	CVI_S32 (*pfnSetAhdMode)(VI_PIPE ViPipe, CVI_S32 astAhdMode); // Set AHD mode.
+	CVI_S32 (*pfnSetAhdBusInfo)(VI_PIPE ViPipe, CVI_S32 astI2cDev); // Set AHD communication bus information.
+	CVI_S32 (*pfnDetectAhdStatus)(VI_PIPE ViPipe, CVI_S32 ahdOldType, CVI_S32 *ahdType); // Detect AHD status.
+} SNS_AHD_OBJ_S;
+
 /* ISP sensor object structure - Contains function pointers for sensor operations */
 typedef struct _ISP_SNS_OBJ_S {
 	// Callback registration functions
@@ -129,128 +147,11 @@ typedef struct _ISP_SNS_OBJ_S {
 	CVI_S32 (*pfnGetRxAttr)(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *);						// Get receiver attributes
 	CVI_S32 (*pfnExpSensorCb)(ISP_SENSOR_EXP_FUNC_S *);										// Exposure sensor callback
 	CVI_S32 (*pfnExpAeCb)(AE_SENSOR_EXP_FUNC_S *);											// Auto exposure callback
+	CVI_S32 (*pfnAHDCb)(SNS_AHD_OBJ_S *); 													// AHD callback
 	CVI_S32 (*pfnSnsProbe)(VI_PIPE ViPipe); 												// Probe sensor presence
 } ISP_SNS_OBJ_S;
 
 // External declarations for various sensor objects, grouped by manufacturer
-
-// BG Series
-extern ISP_SNS_OBJ_S stSnsBG0808_Obj;			// BG0808 sensor object
-
-// GalaxyCore (GC) Series
-extern ISP_SNS_OBJ_S stSnsGc02m1_Obj;			// GC02M1 sensor object
-extern ISP_SNS_OBJ_S stSnsGc1054_Obj;			// GC1054 sensor object
-extern ISP_SNS_OBJ_S stSnsGc2053_Obj;			// GC2053 sensor object
-extern ISP_SNS_OBJ_S stSnsGc2053_Slave_Obj;		// GC2053 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsGc2053_1l_Obj;		// GC2053 1-lane mode sensor object
-extern ISP_SNS_OBJ_S stSnsGc2093_Obj;			// GC2093 sensor object
-extern ISP_SNS_OBJ_S stSnsGc2093_Slave_Obj;		// GC2093 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsGc2145_Obj;			// GC2145 sensor object
-extern ISP_SNS_OBJ_S stSnsGc4023_Obj;			// GC4023 sensor object
-extern ISP_SNS_OBJ_S stSnsGc4653_Obj;			// GC4653 sensor object
-extern ISP_SNS_OBJ_S stSnsGc4653_Slave_Obj;		// GC4653 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsGc8613_Obj;			// GC8613 sensor object
-
-// N Series and NC Series
-extern ISP_SNS_OBJ_S stSnsN5_Obj;				// N5 sensor object
-extern ISP_SNS_OBJ_S stSnsN6_Obj;				// N6 sensor object
-extern ISP_SNS_OBJ_S stSnsNC021_Obj;			// NC021 sensor object
-
-// AR Series
-extern ISP_SNS_OBJ_S stSnsAR2020_Obj;			// AR2020 sensor object
-
-// OnSemi (OS) Series
-extern ISP_SNS_OBJ_S stSnsOs02d10_Obj;			// OS02D10 sensor object
-extern ISP_SNS_OBJ_S stSnsOs02d10_Slave_Obj;	// OS02D10 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsOs02k10_Slave_Obj;	// OS02K10 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsOs04a10_Obj;			// OS04A10 sensor object
-extern ISP_SNS_OBJ_S stSnsOs04c10_Obj;			// OS04C10 sensor object
-extern ISP_SNS_OBJ_S stSnsOs04c10_Slave_Obj;	// OS04C10 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsOs04e10_Obj;			// OS04E10 sensor object
-extern ISP_SNS_OBJ_S stSnsOs05a20_Obj;			// OS05A20 sensor object
-extern ISP_SNS_OBJ_S stSnsOs08a20_Obj;			// OS08A20 sensor object
-extern ISP_SNS_OBJ_S stSnsOs08a20_Slave_Obj;	// OS08A20 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsOs08b10_Obj;			// OS08B10 sensor object
-
-// OmniVision (OV) Series
-extern ISP_SNS_OBJ_S stSnsOv2736_Obj;			// OV2736 sensor object
-extern ISP_SNS_OBJ_S stSnsOv4689_Obj;			// OV4689 sensor object
-extern ISP_SNS_OBJ_S stSnsOv6211_Obj;			// OV6211 sensor object
-extern ISP_SNS_OBJ_S stSnsOv7251_Obj;			// OV7251 sensor object
-extern ISP_SNS_OBJ_S stSnsOv9282_Obj;			// OV9282 sensor object
-
-// PICO Series
-extern ISP_SNS_OBJ_S stSnsPICO384_Obj;			// PICO384 sensor object
-extern ISP_SNS_OBJ_S stSnsPICO640_Obj;			// PICO640 sensor object
-
-// PR Series
-extern ISP_SNS_OBJ_S stSnsPR2020_Obj;			// PR2020 sensor object
-extern ISP_SNS_OBJ_S stSnsPR2100_Obj;			// PR2100 sensor object
-
-// SmartSens (SC) Series
-extern ISP_SNS_OBJ_S stSnsSC020HGS_Obj;			// SC020HGS sensor object
-extern ISP_SNS_OBJ_S stSnsSC035GS_Obj;			// SC035GS sensor object
-extern ISP_SNS_OBJ_S stSnsSC035GS_1L_Obj;		// SC035GS 1-lane mode sensor object
-extern ISP_SNS_OBJ_S stSnsSC035HGS_Obj;			// SC035HGS sensor object
-extern ISP_SNS_OBJ_S stSnsSC200AI_Obj;			// SC200AI sensor object
-extern ISP_SNS_OBJ_S stSnsSC233HGS_Obj;			// SC233HGS sensor object
-extern ISP_SNS_OBJ_S stSnsSC301IOT_Obj;			// SC301IOT sensor object
-extern ISP_SNS_OBJ_S stSnsSC401AI_Obj;			// SC401AI sensor object
-extern ISP_SNS_OBJ_S stSnsSC438AI_Obj;			// SC438AI sensor object
-extern ISP_SNS_OBJ_S stSnsSC500AI_Obj;			// SC500AI sensor object
-extern ISP_SNS_OBJ_S stSnsSC501AI_2L_Obj;		// SC501AI 2-lane mode sensor object
-extern ISP_SNS_OBJ_S stSnsSC531AI_2L_Obj;		// SC531AI 2-lane mode sensor object
-extern ISP_SNS_OBJ_S stSnsSC850SL_Obj;			// SC850SL sensor object
-extern ISP_SNS_OBJ_S stSnsSC1330_Obj;			// SC1330 sensor object
-extern ISP_SNS_OBJ_S stSnsSC3332_Obj;			// SC3332 sensor object
-extern ISP_SNS_OBJ_S stSnsSC3335_Obj;			// SC3335 sensor object
-extern ISP_SNS_OBJ_S stSnsSC3335_Slave_Obj;		// SC3335 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsSC3336_Obj;			// SC3336 sensor object
-extern ISP_SNS_OBJ_S stSnsSC2335_Obj;			// SC2335 sensor object
-extern ISP_SNS_OBJ_S stSnsSC4210_Obj;			// SC4210 sensor object
-extern ISP_SNS_OBJ_S stSnsSC4336_Obj;			// SC4336 sensor object
-extern ISP_SNS_OBJ_S stSnsSC4336P_Obj;			// SC4336P sensor object
-extern ISP_SNS_OBJ_S stSnsSC4336P_SLAVE_Obj;	// SC4336P slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsSC8238_Obj;			// SC8238 sensor object
-
-// F Series
-extern ISP_SNS_OBJ_S stSnsF23_Obj;				// F23 sensor object
-extern ISP_SNS_OBJ_S stSnsF35_Obj;				// F35 sensor object
-extern ISP_SNS_OBJ_S stSnsF35_Slave_Obj;		// F35 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsF37P_Obj;				// F37P sensor object
-
-// H, K, Q Series
-extern ISP_SNS_OBJ_S stSnsH65_Obj;				// H65 sensor object
-extern ISP_SNS_OBJ_S stSnsK06_Obj;				// K06 sensor object
-extern ISP_SNS_OBJ_S stSnsQ03_Obj;				// Q03 sensor object
-
-// Sony IMX Series
-extern ISP_SNS_OBJ_S stSnsImx290_2l_Obj;		// IMX290 2-lane mode sensor object
-extern ISP_SNS_OBJ_S stSnsImx307_Obj;			// IMX307 sensor object
-extern ISP_SNS_OBJ_S stSnsImx307_Slave_Obj;		// IMX307 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsImx307_2l_Obj;		// IMX307 2-lane mode sensor object
-extern ISP_SNS_OBJ_S stSnsImx307_Sublvds_Obj;	// IMX307 Sub-LVDS mode sensor object
-extern ISP_SNS_OBJ_S stSnsImx327_Obj;			// IMX327 sensor object
-extern ISP_SNS_OBJ_S stSnsImx327_Slave_Obj;		// IMX327 slave mode sensor object
-extern ISP_SNS_OBJ_S stSnsImx327_2l_Obj;		// IMX327 2-lane mode sensor object
-extern ISP_SNS_OBJ_S stSnsImx327_fpga_Obj;		// IMX327 FPGA mode sensor object
-extern ISP_SNS_OBJ_S stSnsImx327_Sublvds_Obj;	// IMX327 Sub-LVDS mode sensor object
-extern ISP_SNS_OBJ_S stSnsImx334_Obj;			// IMX334 sensor object
-extern ISP_SNS_OBJ_S stSnsImx335_Obj;			// IMX335 sensor object
-extern ISP_SNS_OBJ_S stSnsImx347_Obj;			// IMX347 sensor object
-extern ISP_SNS_OBJ_S stSnsImx385_Obj;			// IMX385 sensor object
-extern ISP_SNS_OBJ_S stSnsImx412_Obj;			// IMX412 sensor object
-extern ISP_SNS_OBJ_S stSnsImx415_Obj;			// IMX415 sensor object
-extern ISP_SNS_OBJ_S stSnsImx585_Obj;			// IMX585 sensor object
-extern ISP_SNS_OBJ_S stSnsImx900_Obj;			// IMX900 sensor object
-
-// Other Manufacturers
-extern ISP_SNS_OBJ_S stSnsTP2850_Obj;			// TP2850 sensor object
-extern ISP_SNS_OBJ_S stSnsTP2860_Obj;			// TP2860 sensor object
-extern ISP_SNS_OBJ_S stSnsMCS369_Obj;			// MCS369 sensor object
-extern ISP_SNS_OBJ_S stSnsMCS369Q_Obj;			// MCS369Q sensor object
-extern ISP_SNS_OBJ_S stSnsMM308M2_Obj;			// MM308M2 sensor object
-extern ISP_SNS_OBJ_S stSnsLT6911_Obj;			// LT6911 sensor object
 
 /* Utility macros for pointer validation and memory management */
 #define CMOS_CHECK_POINTER(ptr)\

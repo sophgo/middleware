@@ -225,6 +225,7 @@ static CVI_S32 basic(const VPSS_BASIC_TEST_PARAM *pTestParam)
 	VIDEO_FRAME_INFO_S stVideoFrame;
 	CVI_BOOL bFlag = CVI_FALSE;
 	CVI_BOOL bSaveFile = CVI_FALSE;
+	MMF_CHN_S Chn;
 
 	/************************************************
 	 * step1:  Init SYS and common VB
@@ -404,6 +405,17 @@ static CVI_S32 basic(const VPSS_BASIC_TEST_PARAM *pTestParam)
 		}
 	}
 
+	if (pTestParam->enRotation != ROTATION_0 || pTestParam->stFishEyeAttr.bEnable || pTestParam->stLDCAttr.bEnable) {
+		Chn.enModId = CVI_ID_VPSS;
+		Chn.s32DevId = VpssGrp;
+		Chn.s32ChnId = VpssChn;
+		s32Ret = CVI_GDC_AttachVbPool(&Chn, 1);
+		if (s32Ret != CVI_SUCCESS) {
+			VPSS_UT_PRT("CVI_GDC_AttachVbPool failed with %#x\n", s32Ret);
+			goto exit4;
+		}
+	}
+
 	//chn coef
 	if (pTestParam->enCoef != VPSS_SCALE_COEF_BICUBIC) {
 		s32Ret = CVI_VPSS_SetChnScaleCoefLevel(VpssGrp, VpssChn, pTestParam->enCoef);
@@ -480,6 +492,17 @@ static CVI_S32 basic(const VPSS_BASIC_TEST_PARAM *pTestParam)
 	}
 
 	CVI_VPSS_ReleaseChnFrame(VpssGrp, VpssChn, &stVideoFrame);
+
+	if (pTestParam->enRotation != ROTATION_0 || pTestParam->stFishEyeAttr.bEnable || pTestParam->stLDCAttr.bEnable) {
+		Chn.enModId = CVI_ID_VPSS;
+		Chn.s32DevId = VpssGrp;
+		Chn.s32ChnId = VpssChn;
+		s32Ret = CVI_GDC_DetachVbPool(&Chn);
+		if (s32Ret != CVI_SUCCESS) {
+			VPSS_UT_PRT("CVI_GDC_DetachVbPool failed with %#x\n", s32Ret);
+			goto exit4;
+		}
+	}
 
 exit4:
 	CVI_VPSS_StopGrp(VpssGrp);

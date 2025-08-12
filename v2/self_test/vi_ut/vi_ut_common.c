@@ -3,6 +3,8 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <inttypes.h>
+#include <linux/limits.h>
+#include <sys/inotify.h>
 
 int _vi_set_hdr(void)
 {
@@ -77,11 +79,175 @@ int _vi_set_patgen(bool enable)
 	return s32Ret;
 }
 
+static CVI_S32 vi_ut_suspend(SAMPLE_VI_CONFIG_S *pstViConfig)
+{
+	int i;
+	CVI_U32 u32SnsId = 0;
+	VI_PIPE ViPipe;
+	ISP_SNS_OBJ_S *pstSnsObj;
+
+	for (i = 0; i < pstViConfig->s32WorkingViNum; i++) {
+		if (i >= VI_MAX_DEV_NUM)
+			continue;
+
+		ViPipe = pstViConfig->astViInfo[i].stPipeInfo.aPipe[0];
+		u32SnsId = pstViConfig->astViInfo[i].stSnsInfo.s32SnsId;
+		pstSnsObj = (ISP_SNS_OBJ_S *)SAMPLE_COMM_ISP_GetSnsObj(u32SnsId);
+
+		if (pstSnsObj && pstSnsObj->pfnStandby) {
+			pstSnsObj->pfnStandby(ViPipe);
+		}
+	}
+
+	VI_UT_PRT("VI suspend: %d pipes\n", pstViConfig->s32WorkingViNum);
+
+	return CVI_SUCCESS;
+}
+
+static CVI_S32 vi_ut_resume(SAMPLE_VI_CONFIG_S *pstViConfig)
+{
+	int i;
+	VI_PIPE ViPipe;
+	CVI_U32 u32SnsId;
+	ISP_SNS_OBJ_S *pstSnsObj;
+	ISP_SENSOR_EXP_FUNC_S pfnSnsExp;
+
+	for (i = 0; i < pstViConfig->s32WorkingViNum; i++) {
+		if (i >= VI_MAX_DEV_NUM)
+			continue;
+
+		ViPipe = pstViConfig->astViInfo[i].stPipeInfo.aPipe[0];
+		u32SnsId = pstViConfig->astViInfo[i].stSnsInfo.s32SnsId;
+		pstSnsObj = (ISP_SNS_OBJ_S *)SAMPLE_COMM_ISP_GetSnsObj(u32SnsId);
+
+		if (pstSnsObj && pstSnsObj->pfnExpSensorCb) {
+			memset(&pfnSnsExp, 0, sizeof(pfnSnsExp));
+			pstSnsObj->pfnExpSensorCb(&pfnSnsExp);
+		}
+
+		if (pfnSnsExp.pfn_cmos_sensor_init) {
+			pfnSnsExp.pfn_cmos_sensor_init(ViPipe);
+		}
+	}
+
+	VI_UT_PRT("VI resume: %d pipes\n", pstViConfig->s32WorkingViNum);
+
+	return CVI_SUCCESS;
+}
+
+static CVI_VOID *inotify_state_thread(CVI_VOID *data)
+{
+	int ret, fd, wd;
+	struct inotify_event *event = NULL;
+	int buf_len = (sizeof(struct inotify_event) + NAME_MAX + 1);
+	char *buf = malloc(buf_len);
+	ssize_t len;
+	fd_set rfds;
+	struct timeval tv;
+	bool is_suspend = false;
+	SAMPLE_VI_CONFIG_S *pstViConfig = (SAMPLE_VI_CONFIG_S *)data;
+
+	// 创建 inotify 实例
+	fd = inotify_init();
+	if (fd < 0) {
+		perror("inotify_init");
+		exit(EXIT_FAILURE);
+	}
+
+	// 监听 /sys/power/state 文件
+	wd = inotify_add_watch(fd, "/sys/power/state", IN_MODIFY);
+	if (wd < 0) {
+		perror("inotify_add_watch");
+		close(fd);
+		exit(EXIT_FAILURE);
+	}
+
+	VI_UT_PRT("Listening for suspend/resume events...\n");
+
+	while (!vi_ut_ctx.isInotityExit) {
+		FD_ZERO(&rfds);
+		FD_SET(fd, &rfds);
+
+		tv.tv_sec = 0;
+		tv.tv_usec = 500 * 1000;
+
+		ret = select(fd + 1, &rfds, NULL, NULL, &tv);
+		if (ret < 0) {
+			perror("select");
+			break;
+		} else if (ret == 0) {
+			continue;
+		}
+
+		if (FD_ISSET(fd, &rfds)) {
+			len = read(fd, buf, buf_len);
+			if (len < 0) {
+				perror("read");
+				break;
+			}
+
+			event = (struct inotify_event *)buf;
+			if (event->mask & IN_MODIFY)
+				VI_UT_PRT("File modified: [%d]%s, cookies(%d)\n",
+						event->len, event->name, event->cookie);
+			else
+				VI_UT_PRT("Unknown event occurred\n");
+
+			VI_UT_PRT("System state changed (suspend/resume detected) %ld\n", len);
+
+			if (is_suspend) {
+				vi_ut_resume(pstViConfig);
+				is_suspend = false;
+			} else {
+				vi_ut_suspend(pstViConfig);
+				is_suspend = true;
+			}
+		}
+	}
+
+	inotify_rm_watch(fd, wd);
+	close(fd);
+	free(buf);
+	return 0;
+}
+
+static CVI_S32 vi_suspend_resume(SAMPLE_VI_CONFIG_S *pstViConfig)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	struct sched_param param;
+	pthread_attr_t attr;
+
+	param.sched_priority = 80;
+
+	pthread_attr_init(&attr);
+	pthread_attr_setschedpolicy(&attr, SCHED_RR);
+	pthread_attr_setschedparam(&attr, &param);
+	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+	s32Ret = pthread_create(&vi_ut_ctx.inotify_thread, &attr, (void *)inotify_state_thread, pstViConfig);
+	if (s32Ret != 0) {
+		VI_UT_PRT("create vi event thread failed!, error: %d, %s\r\n",
+					s32Ret, strerror(s32Ret));
+	}
+
+	return s32Ret;
+}
+
+static CVI_S32 vi_ut_suspend_resume_exit(void)
+{
+	vi_ut_ctx.isInotityExit = CVI_TRUE;
+
+	pthread_join(vi_ut_ctx.inotify_thread, NULL);
+
+	return CVI_SUCCESS;
+}
+
 static void _vi_ut_sys_handle_signal(int nSignal, siginfo_t *si, void *arg)
 {
 	UNUSED(nSignal);
 	UNUSED(si);
 	UNUSED(arg);
+
+	vi_ut_suspend_resume_exit();
 
 	if (stViConfig.s32WorkingViNum != 0) {
 		SAMPLE_COMM_VI_DestroyIsp(&stViConfig);
@@ -265,6 +431,12 @@ CVI_S32 vi_ut_plat_sys_init(void)
 	s32Ret = SAMPLE_COMM_SYS_Init(&stVbConf);
 	if (s32Ret != CVI_SUCCESS) {
 		VI_UT_PRT("system init failed with %#x\n", s32Ret);
+		return s32Ret;
+	}
+
+	s32Ret = vi_suspend_resume(&stViConfig);
+	if (s32Ret != CVI_SUCCESS) {
+		VI_UT_PRT("vi_suspend_resume failed with %#x\n", s32Ret);
 		return s32Ret;
 	}
 
@@ -551,6 +723,8 @@ error:
 CVI_S32 vi_ut_plat_vi_deinit(void)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
+
+	vi_ut_suspend_resume_exit();
 
 	SAMPLE_COMM_VI_DestroyIsp(&stViConfig);
 	SAMPLE_COMM_VI_DestroyVi(&stViConfig);

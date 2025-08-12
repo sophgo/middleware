@@ -35,6 +35,17 @@ CVI_S32 CVI_VI_Suspend(void);
  */
 CVI_S32 CVI_VI_Resume(void);
 
+/**
+ * @brief Get vi version.
+ *
+ * @param ViPipe(In), Version info.
+ * @param resizeCfg(In), Version info.
+ * @param recropCfg(In), Version info.
+ *
+ * @return CVI_S32 Return CVI_SUCCESS if succeed.
+ */
+CVI_S32 CVI_VI_ResizeYuvPath(VI_PIPE ViPipe, SIZE_S *resizeCfg, RECT_S *recropCfg);
+
 /* 1 for vi device */
 /**
  * @brief Set vi device num.

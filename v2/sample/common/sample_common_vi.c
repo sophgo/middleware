@@ -147,6 +147,11 @@ CVI_S32 SAMPLE_COMM_SYS_GetPicSize(PIC_SIZE_E enPicSize, SIZE_S *pstSize)
 		pstSize->u32Height = 1600;
 		break;
 
+	case PIC_2560x1944:
+		pstSize->u32Width  = 2560;
+		pstSize->u32Height = 1944;
+		break;
+
 	case PIC_2592x1944:
 		pstSize->u32Width  = 2592;
 		pstSize->u32Height = 1944;
@@ -180,6 +185,11 @@ CVI_S32 SAMPLE_COMM_SYS_GetPicSize(PIC_SIZE_E enPicSize, SIZE_S *pstSize)
 	case PIC_2880x1620:
 		pstSize->u32Width  = 2880;
 		pstSize->u32Height = 1620;
+		break;
+
+	case PIC_3200x1800:
+		pstSize->u32Width  = 3200;
+		pstSize->u32Height = 1800;
 		break;
 
 	case PIC_3844x1124:
@@ -293,10 +303,15 @@ void SAMPLE_COMM_VI_GetSensorInfo(SAMPLE_VI_CONFIG_S *pstViConfig)
 	pstViConfig->astViInfo[1].stSnsInfo.enSnsType = SONY_IMX290_MIPI_2M_60FPS_12BIT;
 }
 
-CVI_S32 SAMPLE_COMM_VI_GetDevAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, VI_DEV_ATTR_S *pstViDevAttr)
+CVI_S32 SAMPLE_COMM_VI_GetDevAttrBySns(CVI_SNS_TYPE_E enSnsType, VI_DEV_ATTR_S *pstViDevAttr)
 {
 	PIC_SIZE_E enPicSize;
 	SIZE_S stSize;
+
+	CVI_S32 dev_num = SAMPLE_COMM_VI_GetDevNumBySnsMode(enSnsType);
+	if (cvi_sns_getdevattr(dev_num, &gstSensorCfg) != CVI_SUCCESS) {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "cvi_sns_getdevattr failed\n");
+	}
 
 	memcpy(pstViDevAttr, &DEV_ATTR_SENSOR_BASE, sizeof(VI_DEV_ATTR_S));
 
@@ -307,214 +322,17 @@ CVI_S32 SAMPLE_COMM_VI_GetDevAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, VI_DEV_ATTR_
 	pstViDevAttr->stSize.u32Height = stSize.u32Height;
 	pstViDevAttr->stWDRAttr.u32CacheLine = stSize.u32Height;
 
-	// WDR mode
-	if (enSnsType >= SAMPLE_SNS_TYPE_LINEAR_BUTT)
-		pstViDevAttr->stWDRAttr.enWDRMode = WDR_MODE_2To1_LINE;
-
-	// YUV Sensor
-	switch (enSnsType) {
-	case NEXTCHIP_N5_1M_2CH_25FPS_8BIT:
-	case NEXTCHIP_N5_2M_25FPS_8BIT:
-	case NEXTCHIP_N6_2M_4CH_25FPS_8BIT:
-	case PICO384_THERMAL_384X288:
-	case PICO640_THERMAL_479P:
-	case PIXELPLUS_PR2020_1M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_1M_30FPS_8BIT:
-	case PIXELPLUS_PR2020_2M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_2M_30FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_2CH_2L_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
-	case VIVO_MCS369_2M_30FPS_12BIT:
-	case VIVO_MCS369Q_4M_30FPS_12BIT:
-	case VIVO_MM308M2_2M_25FPS_8BIT:
-		pstViDevAttr->enDataSeq = VI_DATA_SEQ_YUYV;
-		pstViDevAttr->enInputDataType = VI_DATA_TYPE_YUV;
-		pstViDevAttr->enIntfMode = VI_MODE_MIPI_YUV422;
-		break;
-	case GCORE_GC2145_MIPI_2M_12FPS_8BIT:
-		pstViDevAttr->enDataSeq = VI_DATA_SEQ_YUYV;
-		pstViDevAttr->enInputDataType = VI_DATA_TYPE_YUV;
-		pstViDevAttr->enIntfMode = VI_MODE_BT601;
-		break;
-	case LONTIUM_MIPI_LT6911_1M_60FPS_8BIT:
-	case LONTIUM_MIPI_LT6911_2M_60FPS_8BIT:
-	case LONTIUM_MIPI_LT6911_8M_60FPS_8BIT:
-		pstViDevAttr->enDataSeq = VI_DATA_SEQ_UYVY;
-		pstViDevAttr->enInputDataType = VI_DATA_TYPE_YUV;
-		pstViDevAttr->enIntfMode = VI_MODE_MIPI_YUV422;
-		break;
-	default:
-		break;
-	};
-
-	// BT601
-	switch (enSnsType) {
-	case GCORE_GC2145_MIPI_2M_12FPS_8BIT:
-		pstViDevAttr->enIntfMode = VI_MODE_BT601;
-		break;
-	default:
-		break;
-	};
-
-	// BT656
-	switch (enSnsType) {
-	case NEXTCHIP_N5_1M_2CH_25FPS_8BIT:
-	case NEXTCHIP_N5_2M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_1M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_1M_30FPS_8BIT:
-	case PIXELPLUS_PR2020_2M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_2M_30FPS_8BIT:
-	case TECHPOINT_TP2860_MIPI_2M_25FPS_8BIT:
-		pstViDevAttr->enIntfMode = VI_MODE_BT656;
-		break;
-	default:
-		break;
-	};
-
-	// BT1120
-	switch (enSnsType) {
-	case VIVO_MCS369_2M_30FPS_12BIT:
-	case VIVO_MCS369Q_4M_30FPS_12BIT:
-	case VIVO_MM308M2_2M_25FPS_8BIT:
-		pstViDevAttr->enIntfMode = VI_MODE_BT1120_STANDARD;
-		break;
-	default:
-		break;
-	};
-
-	// subLVDS
-	switch (enSnsType) {
-	case SONY_IMX307_SUBLVDS_2M_30FPS_12BIT:
-	case SONY_IMX307_SUBLVDS_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_SUBLVDS_2M_60FPS_12BIT:
-	case SONY_IMX327_SUBLVDS_2M_30FPS_12BIT:
-	case SONY_IMX327_SUBLVDS_2M_30FPS_12BIT_WDR2TO1:
-		pstViDevAttr->enIntfMode = VI_MODE_LVDS;
-		break;
-	default:
-		break;
-	};
-
-	switch (enSnsType) {
-	// Sony
-	case BOARD_FULL_SIZE_MIPI_30FPS_12BIT:
-	case BOARD_MAX_SIZE_MIPI_30FPS_12BIT:
-	case SONY_IMX307_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_SLAVE_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_SLAVE_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_2L_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_2L_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_SUBLVDS_2M_30FPS_12BIT:
-	case SONY_IMX307_SUBLVDS_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX307_SUBLVDS_2M_60FPS_12BIT:
-	case SONY_IMX327_MIPI_1M_30FPS_10BIT:
-	case SONY_IMX327_MIPI_1M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX327_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_SLAVE_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_SLAVE_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_2L_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_2L_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_SUBLVDS_2M_30FPS_12BIT:
-	case SONY_IMX327_SUBLVDS_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX334_MIPI_8M_30FPS_12BIT:
-	case SONY_IMX334_MIPI_8M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_4M_30FPS_12BIT:
-	case SONY_IMX335_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_2L_MIPI_4M_30FPS_10BIT:
-	case SONY_IMX335_MIPI_4M_1600P_30FPS_12BIT:
-	case SONY_IMX335_MIPI_4M_1600P_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_5M_30FPS_12BIT:
-	case SONY_IMX335_MIPI_5M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_2M_60FPS_10BIT:
-	case SONY_IMX335_MIPI_4M_60FPS_10BIT:
-	case SONY_IMX335_MIPI_5M_60FPS_10BIT:
-	case SONY_IMX347_MIPI_4M_60FPS_12BIT:
-	case SONY_IMX347_MIPI_4M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX385_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX385_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX412_MIPI_12M_30FPS_12BIT:
-	case SONY_IMX412_MIPI_12M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX412_MIPI_8M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX585_MIPI_8M_30FPS_12BIT:
-	case SONY_IMX585_MIPI_8M_25FPS_12BIT_WDR2TO1:
-	case SONY_IMX900_MIPI_3M_70FPS_12BIT_COLOR:
-	case SONY_IMX900_MIPI_3M_70FPS_12BIT_MONO:
-	// GalaxyCore
-	case GCORE_GC02M1_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC1054_MIPI_1M_30FPS_10BIT:
-	case GCORE_GC2053_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2053_SLAVE_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2053_1L_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case GCORE_GC2093_SLAVE_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_SLAVE_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case GCORE_GC4023_MIPI_4M_30FPS_10BIT:
-	case GCORE_GC8613_MIPI_8M_30FPS_10BIT:
-	case GCORE_GC8613_MIPI_8M_30FPS_10BIT_WDR2TO1:
-	case GCORE_GC8613_MIPI_8M_60FPS_10BIT:
-		pstViDevAttr->enBayerFormat = BAYER_FORMAT_RG;
-		break;
-		// brigates
-	case BRIGATES_BG0808_MIPI_2M_30FPS_10BIT:
-	case BRIGATES_BG0808_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case SMS_SC4336_MIPI_4M_30FPS_10BIT:
-	case GCORE_GC4653_MIPI_4M_30FPS_10BIT:
-	case GCORE_GC4653_SLAVE_MIPI_4M_30FPS_10BIT:
-	case TECHPOINT_TP2850_MIPI_2M_30FPS_8BIT:
-	case TECHPOINT_TP2850_MIPI_4M_30FPS_8BIT:
-	case ONSEMI_AR2020_20M_25FPS_10BIT:
-		pstViDevAttr->enBayerFormat = BAYER_FORMAT_GR;
-		break;
-	case SOI_K06_MIPI_4M_25FPS_10BIT:
-	case SONY_IMX415_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX415_MIPI_4M_25FPS_12BIT:
-	case SONY_IMX415_MIPI_5M_25FPS_12BIT:
-	case SONY_IMX415_MIPI_8M_25FPS_12BIT:
-	case SONY_IMX415_MIPI_8M_30FPS_10BIT:
-		pstViDevAttr->enBayerFormat = BAYER_FORMAT_GB;
-		break;
-	case OV_OV2736_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case OV_OV2736_MIPI_2M_30FPS_12BIT:
-		pstViDevAttr->enBayerFormat = BAYER_FORMAT_BGRGI;
-		break;
-	default:
-		pstViDevAttr->enBayerFormat = BAYER_FORMAT_BG;
-		break;
-	};
-
-	// virtual channel for multi-ch
-#ifndef ARCH_CV183X
-	switch (enSnsType) {
-	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_2CH_2L_25FPS_8BIT:
-	case NEXTCHIP_N5_1M_2CH_25FPS_8BIT:
-		pstViDevAttr->enWorkMode = VI_WORK_MODE_2Multiplex;
-		break;
-	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
-		pstViDevAttr->enWorkMode = VI_WORK_MODE_4Multiplex;
-		break;
-	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
-		pstViDevAttr->enWorkMode = VI_WORK_MODE_4Multiplex;
-		break;
-	default:
-		pstViDevAttr->enWorkMode = VI_WORK_MODE_1Multiplex;
-		break;
-	}
-#endif
+	pstViDevAttr->stWDRAttr.enWDRMode = gstSensorCfg.sns_cfg.enWDRMode[dev_num];
+	pstViDevAttr->enDataSeq = (VI_YUV_DATA_SEQ_E)gstSensorCfg.sns_cfg.enYuvFormat[dev_num];
+	pstViDevAttr->enInputDataType = (VI_DATA_TYPE_E)gstSensorCfg.sns_cfg.enFormatMode[dev_num];
+	pstViDevAttr->enIntfMode = (VI_INTF_MODE_E)gstSensorCfg.sns_cfg.enInterFaceMode[dev_num];
+	pstViDevAttr->enBayerFormat = gstSensorCfg.sns_cfg.enBayerFormat[dev_num];
+	pstViDevAttr->enWorkMode = (VI_WORK_MODE_E)gstSensorCfg.sns_cfg.enChnMode[dev_num];
 
 	return CVI_SUCCESS;
 }
 
-CVI_S32 SAMPLE_COMM_VI_GetChnAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, VI_CHN_ATTR_S *pstChnAttr)
+CVI_S32 SAMPLE_COMM_VI_GetChnAttrBySns(CVI_SNS_TYPE_E enSnsType, VI_CHN_ATTR_S *pstChnAttr)
 {
 	VI_DEV_ATTR_S stViDevAttr;
 
@@ -617,7 +435,7 @@ CVI_S32 SAMPLE_COMM_VI_SetMipiAttr(SAMPLE_VI_CONFIG_S *pstViConfig)
 	CVI_U32 u32SnsId;
 	SNS_COMBO_DEV_ATTR_S stDevAttr;
 	SAMPLE_VI_INFO_S *pstViInfo = CVI_NULL;
-	SAMPLE_SNS_TYPE_E enSnsType;
+	CVI_SNS_TYPE_E enSnsType;
 
 	const ISP_SNS_OBJ_S *pstSnsObj;
 
@@ -768,7 +586,7 @@ static CVI_S32 SAMPLE_COMM_VI_ResumeMipi(CVI_VOID *pvData)
 	CVI_S32 devno;
 	ISP_SNS_OBJ_S *pstSnsObj;
 	SNS_COMBO_DEV_ATTR_S stDevAttr;
-	SAMPLE_SNS_TYPE_E enSnsType;
+	CVI_SNS_TYPE_E enSnsType;
 	CVI_S32 s32Ret = 0;
 	SNS_RST_CONFIG pstSnsrstInfo;
 
@@ -963,7 +781,7 @@ CVI_S32 SAMPLE_COMM_VI_StartDev(SAMPLE_VI_INFO_S *pstViInfo)
 {
 	CVI_S32             s32Ret;
 	VI_DEV              ViDev;
-	SAMPLE_SNS_TYPE_E   enSnsType;
+	CVI_SNS_TYPE_E   enSnsType;
 	VI_DEV_ATTR_S       stViDevAttr;
 	VI_DEV_BIND_PIPE_S  stViDevBindAttr;
 	ISP_PUB_ATTR_S      pstPubAttr;
@@ -1019,308 +837,275 @@ CVI_S32 SAMPLE_COMM_VI_StopDev(SAMPLE_VI_INFO_S *pstViInfo)
 	return CVI_SUCCESS;
 }
 
-CVI_S32 SAMPLE_COMM_VI_GetYuvBypassSts(SAMPLE_SNS_TYPE_E enSnsType)
+CVI_S32 SAMPLE_COMM_VI_GetYuvBypassSts(CVI_SNS_TYPE_E enSnsType)
 {
 	CVI_S32 s32Ret = 0;
-	//Set YUV sensor need bypass isp
-	switch (enSnsType) {
-	case GCORE_GC2145_MIPI_2M_12FPS_8BIT:
-	case PICO640_THERMAL_479P:
-	case TECHPOINT_TP2850_MIPI_2M_30FPS_8BIT:
-	case TECHPOINT_TP2850_MIPI_4M_30FPS_8BIT:
-	case TECHPOINT_TP2860_MIPI_2M_25FPS_8BIT:
-	case VIVO_MCS369Q_4M_30FPS_12BIT:
-	case VIVO_MCS369_2M_30FPS_12BIT:
-	case VIVO_MM308M2_2M_25FPS_8BIT:
-	case NEXTCHIP_N5_2M_25FPS_8BIT:
-	case NEXTCHIP_N5_1M_2CH_25FPS_8BIT:
-	case PIXELPLUS_PR2020_1M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_1M_30FPS_8BIT:
-	case PIXELPLUS_PR2020_2M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_2M_30FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_2CH_2L_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
-	case LONTIUM_MIPI_LT6911_1M_60FPS_8BIT:
-	case LONTIUM_MIPI_LT6911_2M_60FPS_8BIT:
-	case LONTIUM_MIPI_LT6911_8M_60FPS_8BIT:
+	CVI_S32 dev_num = SAMPLE_COMM_VI_GetDevNumBySnsMode(enSnsType);
+	if (cvi_sns_getyuvbypass(dev_num, &gstSensorCfg) != CVI_SUCCESS) {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "cvi_sns_getyuvbypass failed\n");
+	}
+	if (gstSensorCfg.sns_cfg.bBypassIsp[dev_num] == 1) {
 		s32Ret = 1;
-		break;
-	default:
-		break;
 	}
 	return s32Ret;
+}
+
+CVI_S32 SAMPLE_COMM_VI_GetDevNumBySnsMode(CVI_SNS_TYPE_E enSnsType)
+{
+	CVI_S32 i;
+
+	for (i = 0; i < gstSensorCfg.sns_ini_cfg.devNum; i++) {
+		if (gstSensorCfg.sns_ini_cfg.enSnsType[i] == enSnsType)
+			return i;
+	}
+
+	return 0;
 }
 /******************************************************************************
  * funciton : Get enSize by diffrent sensor
  ******************************************************************************/
-CVI_S32 SAMPLE_COMM_VI_GetSizeBySensor(SAMPLE_SNS_TYPE_E enMode, PIC_SIZE_E *penSize)
+CVI_S32 SAMPLE_COMM_VI_GetSizeBySensor(CVI_SNS_TYPE_E enMode, PIC_SIZE_E *penSize)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
+	CVI_S32 dev_num = SAMPLE_COMM_VI_GetDevNumBySnsMode(enMode);
 
 	if (!penSize)
 		return CVI_FAILURE;
 
-	switch (enMode) {
-	case GCORE_GC1054_MIPI_1M_30FPS_10BIT:
-	case NEXTCHIP_N5_1M_2CH_25FPS_8BIT:
-	case PIXELPLUS_PR2020_1M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_1M_30FPS_8BIT:
-	case SOI_H65_MIPI_1M_30FPS_10BIT:
-	case SONY_IMX290_MIPI_1M_30FPS_12BIT:
-	case SONY_IMX327_MIPI_1M_30FPS_10BIT:
-	case SONY_IMX327_MIPI_1M_30FPS_10BIT_WDR2TO1:
-	case LONTIUM_MIPI_LT6911_1M_60FPS_8BIT:
-		*penSize = PIC_720P;
-		break;
-	case OV_OV9282_MASTER_MIPI_800P_15FPS_2L_10BIT:
-	case OV_OV9282_SLAVE_MIPI_800P_15FPS_2L_10BIT:
-		*penSize = PIC_1280x800;
-		break;
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT_MASTER:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT_SLAVE:
-		*penSize = PIC_1280x960;
-		break;
-	case BOARD_FULL_SIZE_MIPI_30FPS_12BIT:
-		*penSize = PIC_8192x4320;
-		break;
-	case ONSEMI_AR2020_20M_25FPS_10BIT:
-		*penSize = PIC_5120x3840;
-		break;
-	case BOARD_MAX_SIZE_MIPI_30FPS_12BIT:
-		*penSize = PIC_4608x4320;
-		break;
-	case GCORE_GC02M1_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2145_MIPI_2M_12FPS_8BIT:
-		*penSize = PIC_1600x1200;
-		break;
-	case BRIGATES_BG0808_MIPI_2M_30FPS_10BIT:
-	case BRIGATES_BG0808_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case GCORE_GC2053_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2053_SLAVE_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2053_1L_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case GCORE_GC2093_SLAVE_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_SLAVE_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case NEXTCHIP_N5_2M_25FPS_8BIT:
-	case NEXTCHIP_N6_2M_4CH_25FPS_8BIT:
-	case OV_OS02D10_MIPI_2M_30FPS_10BIT:
-	case OV_OS02D10_SLAVE_MIPI_2M_30FPS_10BIT:
-	case OV_OS02K10_SLAVE_MIPI_2M_30FPS_12BIT:
-	case OV_OV2736_MIPI_2M_30FPS_12BIT:
-	case OV_OV2736_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case PIXELPLUS_PR2020_2M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_2M_30FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_25FPS_8BIT:
-	case SMS_SC2335_MIPI_2M_30FPS_10BIT:
-	case SMS_SC200AI_MIPI_2M_30FPS_10BIT:
-	case SMS_SC200AI_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case SMS_SC233HGS_MIPI_2M_60FPS_10BIT:
-	case SMS_SC233HGS_MIPI_2M_60FPS_10BIT_WDR2TO1:
-	case SOI_F23_MIPI_2M_30FPS_10BIT:
-	case SOI_F35_MIPI_2M_30FPS_10BIT:
-	case SOI_F35_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case SOI_F35_SLAVE_MIPI_2M_30FPS_10BIT:
-	case SOI_F35_SLAVE_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case SOI_F37P_MIPI_2M_30FPS_10BIT:
-	case SONY_IMX290_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX307_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_2L_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_2L_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_SLAVE_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_SLAVE_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_SUBLVDS_2M_30FPS_12BIT:
-	case SONY_IMX307_SUBLVDS_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX307_SUBLVDS_2M_60FPS_12BIT:
-	case SONY_IMX327_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_2L_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_2L_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_SLAVE_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_SLAVE_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_SUBLVDS_2M_30FPS_12BIT:
-	case SONY_IMX327_SUBLVDS_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX335_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_2M_60FPS_10BIT:
-	case SONY_IMX385_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX385_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX415_MIPI_2M_60FPS_12BIT:
-	case TECHPOINT_TP2850_MIPI_2M_30FPS_8BIT:
-	case VIVO_MCS369_2M_30FPS_12BIT:
-	case VIVO_MM308M2_2M_25FPS_8BIT:
-	case LONTIUM_MIPI_LT6911_2M_60FPS_8BIT:
-	case NUC_NC021_MIPI_2M_50FPS_8BIT:
-		*penSize = PIC_1080P;
-		break;
-	case GCORE_GC4023_MIPI_4M_30FPS_10BIT:
-	case GCORE_GC4653_MIPI_4M_30FPS_10BIT:
-	case GCORE_GC4653_SLAVE_MIPI_4M_30FPS_10BIT:
-	case OV_OS04A10_MIPI_4M_1440P_30FPS_12BIT:
-	case OV_OS04A10_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_MIPI_4M_1440P_30FPS_10BIT_WDR2TO1:
-	case OV_OS04A10_MASTER_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_SLAVE_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_MASTER_MIPI_4M_1440P_2L_10BIT_WDR2TO1:
-	case OV_OS04A10_SLAVE_MIPI_4M_1440P_2L_10BIT_WDR2TO1:
-	case OV_OS04C10_MIPI_4M_1440P_30FPS_12BIT:
-	case OV_OS04C10_MIPI_4M_1440P_30FPS_10BIT_WDR2TO1:
-	case OV_OS08A20_MIPI_4M_30FPS_10BIT:
-	case OV_OS08A20_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case OV_OS08A20_SLAVE_MIPI_4M_30FPS_10BIT:
-	case OV_OS08A20_SLAVE_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case SMS_SC401AI_MIPI_4M_30FPS_10BIT:
-	case SMS_SC500AI_MIPI_4M_30FPS_10BIT:
-	case SMS_SC500AI_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case SMS_SC4210_MIPI_4M_30FPS_12BIT:
-	case SMS_SC4210_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case SMS_SC4336_MIPI_4M_30FPS_10BIT:
-	case SMS_SC4336P_MIPI_4M_30FPS_10BIT:
-	case SMS_SC4336P_SLAVE_MIPI_4M_30FPS_10BIT:
-	case SOI_K06_MIPI_4M_25FPS_10BIT:
-	case SONY_IMX335_MIPI_4M_30FPS_12BIT:
-	case SONY_IMX335_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_2L_MIPI_4M_30FPS_10BIT:
-	case SONY_IMX335_MIPI_4M_60FPS_10BIT:
-	case SONY_IMX415_MIPI_4M_25FPS_12BIT:
-	case TECHPOINT_TP2850_MIPI_4M_30FPS_8BIT:
-	case VIVO_MCS369Q_4M_30FPS_12BIT:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT_MASTER:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT_SLAVE:
-		*penSize = PIC_1440P;
-		break;
-	case SMS_SC401AI_MIPI_3M_30FPS_10BIT:
-	case SMS_SC3332_MIPI_3M_30FPS_10BIT:
-	case SMS_SC3335_MIPI_3M_30FPS_10BIT:
-	case SMS_SC3335_SLAVE_MIPI_3M_30FPS_10BIT:
-	case SMS_SC3336_MIPI_3M_30FPS_10BIT:
-	case SOI_Q03_MIPI_3M_30FPS_10BIT:
-		*penSize = PIC_2304x1296;
-		break;
-	case SMS_SC301IOT_MIPI_3M_30FPS_10BIT:
-	case SONY_IMX900_MIPI_3M_70FPS_12BIT_COLOR:
-	case SONY_IMX900_MIPI_3M_70FPS_12BIT_MONO:
-		*penSize = PIC_2048x1536;
-		break;
-	case OV_OS04E10_MIPI_4M_30FPS_12BIT:
-	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT:
-	case OV_OS04E10_SALVE_MIPI_4M_30FPS_2L_10BIT:
-	case OV_OS04E10_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
-	case OV_OS04E10_SLAVE_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
-		*penSize = PIC_2048x2048;
-		break;
-	case SONY_IMX335_MIPI_4M_1600P_30FPS_12BIT:
-	case SONY_IMX335_MIPI_4M_1600P_30FPS_10BIT_WDR2TO1:
-		*penSize = PIC_2560x1600;
-		break;
-	case OV_OS08A20_MIPI_5M_30FPS_10BIT:
-	case OV_OS08A20_MIPI_5M_30FPS_10BIT_WDR2TO1:
-	case OV_OS08A20_SLAVE_MIPI_5M_30FPS_10BIT:
-	case OV_OS08A20_SLAVE_MIPI_5M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_5M_30FPS_12BIT:
-	case SONY_IMX335_MIPI_5M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_5M_60FPS_10BIT:
-		*penSize = PIC_2592x1944;
-		break;
-	case SONY_IMX415_MIPI_5M_25FPS_12BIT:
-		*penSize = PIC_2560x2160;
-		break;
-	case OV_OS04C10_MIPI_4M_30FPS_12BIT:
-	case OV_OS04C10_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case OV_OS04C10_SLAVE_MIPI_4M_30FPS_12BIT:
-	case OV_OS04C10_SLAVE_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case OV_OV4689_MIPI_4M_30FPS_10BIT:
-	case SONY_IMX347_MIPI_4M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX347_MIPI_4M_60FPS_12BIT:
-		*penSize = PIC_2688x1520;
-		break;
-	case OV_OS05A20_MIPI_1944P_15FPS_2L_12BIT:
-		*penSize = PIC_2688x1944;
-		break;
-	case SMS_SC500AI_MIPI_5M_30FPS_10BIT:
-	case SMS_SC500AI_MIPI_5M_30FPS_10BIT_WDR2TO1:
-	case SMS_SC500AI_MIPI_5M_60FPS_10BIT:
-	case SMS_SC500AI_2L_MIPI_5M_30FPS_10BIT:
-	case SMS_SC501AI_2L_MIPI_5M_30FPS_10BIT:
-	case SMS_SC531AI_2L_MIPI_5M_30FPS_10BIT:
-		*penSize = PIC_2880x1620;
-		break;
-	case OV_OS08A20_MIPI_8M_30FPS_10BIT:
-	case OV_OS08A20_MIPI_8M_30FPS_10BIT_WDR2TO1:
-	case OV_OS08A20_SLAVE_MIPI_8M_30FPS_10BIT:
-	case OV_OS08A20_SLAVE_MIPI_8M_30FPS_10BIT_WDR2TO1:
-	case OV_OS08B10_MIPI_8M_30FPS_10BIT:
-	case OV_OS08B10_MIPI_8M_30FPS_10BIT_WDR2TO1:
-	case SMS_SC850SL_MIPI_8M_30FPS_12BIT:
-	case SMS_SC850SL_MIPI_8M_30FPS_10BIT_WDR2TO1:
-	case SMS_SC8238_MIPI_8M_30FPS_10BIT:
-	case SMS_SC8238_MIPI_8M_15FPS_10BIT_WDR2TO1:
-	case SONY_IMX334_MIPI_8M_30FPS_12BIT:
-	case SONY_IMX585_MIPI_8M_30FPS_12BIT:
-	case SONY_IMX334_MIPI_8M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX585_MIPI_8M_25FPS_12BIT_WDR2TO1:
-	case SONY_IMX415_MIPI_8M_25FPS_12BIT:
-	case SONY_IMX415_MIPI_8M_30FPS_10BIT:
-	case LONTIUM_MIPI_LT6911_8M_60FPS_8BIT:
-	case GCORE_GC8613_MIPI_8M_30FPS_10BIT:
-	case GCORE_GC8613_MIPI_8M_30FPS_10BIT_WDR2TO1:
-	case GCORE_GC8613_MIPI_8M_60FPS_10BIT:
-		*penSize = PIC_3840x2160;
-		break;
-	case SONY_IMX412_MIPI_12M_30FPS_12BIT:
-	case SONY_IMX412_MIPI_12M_30FPS_12BIT_WDR2TO1:
-		*penSize = PIC_4032x3000;
-		break;
-	case SONY_IMX412_MIPI_8M_30FPS_12BIT_WDR2TO1:
-		*penSize = PIC_4032x2288;
-		break;
-	case OV_OV7251_MIPI_480P_120FPS_10BIT:
-	case SMS_SC035GS_MIPI_480P_120FPS_12BIT:
-	case SMS_SC035GS_1L_MIPI_480P_120FPS_10BIT:
-	case SMS_SC035HGS_MIPI_480P_120FPS_12BIT:
-		*penSize = PIC_640x480;
-		break;
-	case PICO640_THERMAL_479P:
-		*penSize = PIC_479P;
-		break;
-	case OV_OV6211_MIPI_400P_120FPS_10BIT:
-	case SMS_SC020HGS_MIPI_400P_120FPS_10BIT:
-		*penSize = PIC_400x400;
-		break;
-	case PICO384_THERMAL_384X288:
-		*penSize = PIC_288P;
-		break;
-#ifdef ARCH_CV183X
-	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
-		*penSize = PIC_3844x1124;
-		break;
-	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
-		*penSize = PIC_7688x1124;
-		break;
-	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
-		*penSize = PIC_7688x1124;
-		break;
-#else
-	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_2CH_2L_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
-	case TECHPOINT_TP2860_MIPI_2M_25FPS_8BIT:
-		*penSize = PIC_1080P;
-		break;
-#endif
-	default:
-		s32Ret = CVI_FAILURE;
-		break;
+	s32Ret = cvi_sns_getsize(dev_num, &gstSensorCfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "sensor_0x%x getsize failed with %#x!\n", enMode, s32Ret);
+		return s32Ret;
 	}
+
+	SNS_CFG_S sns_cfg = gstSensorCfg.sns_cfg;
+
+	if (sns_cfg.u32ImageWigth[dev_num] == 352) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 288) {
+			*penSize = PIC_CIF;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 720) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 576) {
+			*penSize = PIC_D1_PAL;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 480) {
+			*penSize = PIC_D1_NTSC;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 1280) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 720) {
+			*penSize = PIC_720P;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 800) {
+			*penSize = PIC_1280x800;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 960) {
+			*penSize = PIC_1280x960;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 1920) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1080) {
+			*penSize = PIC_1080P;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 1088) {
+			*penSize = PIC_1088;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 1600) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1200) {
+			*penSize = PIC_1600x1200;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 2560) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1440) {
+			*penSize = PIC_1440P;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 1600) {
+			*penSize = PIC_2560x1600;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 2160) {
+			*penSize = PIC_2560x2160;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 1944) {
+			*penSize = PIC_2560x1944;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 2048) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1536) {
+			*penSize = PIC_2048x1536;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 2048) {
+			*penSize = PIC_2048x2048;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 2304) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1296) {
+			*penSize = PIC_2304x1296;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 2592) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1520) {
+			*penSize = PIC_2592x1520;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 1944) {
+			*penSize = PIC_2592x1944;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 1536) {
+			*penSize = PIC_2592x1536;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 2688) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1520) {
+			*penSize = PIC_2688x1520;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 1944) {
+			*penSize = PIC_2688x1944;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 2716) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1524) {
+			*penSize = PIC_2716x1524;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 2880) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1620) {
+			*penSize = PIC_2880x1620;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 3200) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1800) {
+			*penSize = PIC_3200x1800;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 3844) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1124) {
+			*penSize = PIC_3844x1124;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 3840) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 2160) {
+			*penSize = PIC_3840x2160;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 8640) {
+			*penSize = PIC_3840x8640;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 3000) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 3000) {
+			*penSize = PIC_3000x3000;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 4000) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 3000) {
+			*penSize = PIC_4000x3000;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 4032) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 3000) {
+			*penSize = PIC_4032x3000;
+			return s32Ret;
+		}
+		if (sns_cfg.u32ImageHeight[dev_num] == 2288) {
+			*penSize = PIC_4032x2288;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 4096) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 2160) {
+			*penSize = PIC_4096x2160;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 4608) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 4320) {
+			*penSize = PIC_4608x4320;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 7688) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 1124) {
+			*penSize = PIC_7688x1124;
+			return s32Ret;
+		}
+
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 7680) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 4320) {
+			*penSize = PIC_7680x4320;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 8192) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 4320) {
+			*penSize = PIC_8192x4320;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 5120) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 3840) {
+			*penSize = PIC_5120x3840;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 640) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 480) {
+			*penSize = PIC_640x480;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 632) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 479) {
+			*penSize = PIC_479P;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 400) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 400) {
+			*penSize = PIC_400x400;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 384) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 288) {
+			*penSize = PIC_288P;
+			return s32Ret;
+		}
+	}
+
+	CVI_TRACE_LOG(CVI_DBG_ERR, "sensor_0x%x getsize failed with %#x!\n", enMode, s32Ret);
+	CVI_TRACE_LOG(CVI_DBG_ERR, "use default size 1920x1080!\n");
+	*penSize = PIC_1080P;
+
 	return s32Ret;
 }
 
@@ -1648,204 +1433,6 @@ CVI_S32 SAMPLE_COMM_VI_CLOSE(CVI_VOID)
 	return s32ret;
 }
 
-static const char *snsr_type_name[SAMPLE_SNS_TYPE_BUTT] = {
-	/* ------ LINEAR BEGIN ------*/
-	"BRIGATES_BG0808_MIPI_2M_30FPS_10BIT",
-	"GCORE_GC02M1_MIPI_2M_30FPS_10BIT",
-	"GCORE_GC1054_MIPI_1M_30FPS_10BIT",
-	"GCORE_GC2053_MIPI_2M_30FPS_10BIT",
-	"GCORE_GC2053_SLAVE_MIPI_2M_30FPS_10BIT",
-	"GCORE_GC2053_1L_MIPI_2M_30FPS_10BIT",
-	"GCORE_GC2093_MIPI_2M_30FPS_10BIT",
-	"GCORE_GC2093_SLAVE_MIPI_2M_30FPS_10BIT",
-	"GCORE_GC2145_MIPI_2M_12FPS_8BIT",
-	"GCORE_GC4023_MIPI_4M_30FPS_10BIT",
-	"GCORE_GC4653_MIPI_4M_30FPS_10BIT",
-	"GCORE_GC4653_SLAVE_MIPI_4M_30FPS_10BIT",
-	"GCORE_GC8613_MIPI_8M_30FPS_10BIT",
-	"GCORE_GC8613_MIPI_8M_60FPS_10BIT",
-	"NEXTCHIP_N5_1M_2CH_25FPS_8BIT",
-	"NEXTCHIP_N5_2M_25FPS_8BIT",
-	"NEXTCHIP_N6_2M_4CH_25FPS_8BIT",
-	"ONSEMI_AR2020_20M_25FPS_10BIT",
-	"OV_OS02D10_MIPI_2M_30FPS_10BIT",
-	"OV_OS02D10_SLAVE_MIPI_2M_30FPS_10BIT",
-	"OV_OS02K10_SLAVE_MIPI_2M_30FPS_12BIT",
-	"OV_OS04A10_MIPI_4M_1440P_30FPS_12BIT",
-	"OV_OS04A10_MIPI_4M_1440P_2L_10BIT",
-	"OV_OS04A10_MASTER_MIPI_4M_1440P_2L_10BIT",
-	"OV_OS04A10_SLAVE_MIPI_4M_1440P_2L_10BIT",
-	"OV_OS04C10_MIPI_4M_30FPS_12BIT",
-	"OV_OS04C10_MIPI_4M_1440P_30FPS_12BIT",
-	"OV_OS04C10_SLAVE_MIPI_4M_30FPS_12BIT",
-	"OV_OS04E10_MIPI_4M_30FPS_12BIT",
-	"OV_OS04E10_MIPI_4M_30FPS_2L_10BIT",
-	"OV_OS04E10_SALVE_MIPI_4M_30FPS_2L_10BIT",
-	"OV_OS05A20_MIPI_1944P_15FPS_2L_12BIT",
-	"OV_OS08A20_MIPI_4M_30FPS_10BIT",
-	"OV_OS08A20_SLAVE_MIPI_4M_30FPS_10BIT",
-	"OV_OS08A20_MIPI_5M_30FPS_10BIT",
-	"OV_OS08A20_SLAVE_MIPI_5M_30FPS_10BIT",
-	"OV_OS08A20_MIPI_8M_30FPS_10BIT",
-	"OV_OS08A20_SLAVE_MIPI_8M_30FPS_10BIT",
-	"OV_OS08B10_MIPI_8M_30FPS_10BIT",
-	"OV_OV2736_MIPI_2M_30FPS_12BIT",
-	"OV_OV4689_MIPI_4M_30FPS_10BIT",
-	"OV_OV6211_MIPI_400P_120FPS_10BIT",
-	"OV_OV7251_MIPI_480P_120FPS_10BIT",
-	"OV_OV9282_MASTER_MIPI_800P_15FPS_2L_10BIT",
-	"OV_OV9282_SLAVE_MIPI_800P_15FPS_2L_10BIT",
-	"PICO384_THERMAL_384X288",
-	"PICO640_THERMAL_479P",
-	"PIXELPLUS_PR2020_1M_25FPS_8BIT",
-	"PIXELPLUS_PR2020_1M_30FPS_8BIT",
-	"PIXELPLUS_PR2020_2M_25FPS_8BIT",
-	"PIXELPLUS_PR2020_2M_30FPS_8BIT",
-	"PIXELPLUS_PR2100_2M_25FPS_8BIT",
-	"PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT",
-	"PIXELPLUS_PR2100_2M_2CH_2L_25FPS_8BIT",
-	"PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT",
-	"PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT",
-	"SMS_SC020HGS_MIPI_400P_120FPS_12BIT",
-	"SMS_SC035GS_MIPI_480P_120FPS_12BIT",
-	"SMS_SC035GS_1L_MIPI_480P_120FPS_10BIT",
-	"SMS_SC035HGS_MIPI_480P_120FPS_12BIT",
-	"SMS_SC200AI_MIPI_2M_30FPS_10BIT",
-	"SMS_SC233HGS_MIPI_2M_60FPS_10BIT",
-	"SMS_SC301IOT_MIPI_3M_30FPS_10BIT",
-	"SMS_SC401AI_MIPI_3M_30FPS_10BIT",
-	"SMS_SC401AI_MIPI_4M_30FPS_10BIT",
-	"SMS_SC438AI_MIPI_4M_30FPS_10BIT",
-	"SMS_SC438AI_MIPI_4M_30FPS_10BIT_MASTER",
-	"SMS_SC438AI_MIPI_4M_30FPS_10BIT_SLAVE",
-	"SMS_SC500AI_MIPI_4M_30FPS_10BIT",
-	"SMS_SC500AI_MIPI_5M_30FPS_10BIT",
-	"SMS_SC500AI_MIPI_5M_60FPS_10BIT",
-	"SMS_SC500AI_2L_MIPI_5M_30FPS_10BIT",
-	"SMS_SC501AI_2L_MIPI_5M_30FPS_10BIT",
-	"SMS_SC531AI_2L_MIPI_5M_30FPS_10BIT",
-	"SMS_SC850SL_MIPI_8M_30FPS_12BIT",
-	"SMS_SC1330_MIPI_1M_30FPS_10BIT",
-	"SMS_SC1330_MIPI_1M_30FPS_10BIT_MASTER",
-	"SMS_SC1330_MIPI_1M_30FPS_10BIT_SLAVE",
-	"SMS_SC3332_MIPI_3M_30FPS_10BIT",
-	"SMS_SC3335_MIPI_3M_30FPS_10BIT",
-	"SMS_SC3335_SLAVE_MIPI_3M_30FPS_10BIT",
-	"SMS_SC3336_MIPI_3M_30FPS_10BIT",
-	"SMS_SC2335_MIPI_2M_30FPS_10BIT",
-	"SMS_SC4210_MIPI_4M_30FPS_12BIT",
-	"SMS_SC4336_MIPI_4M_30FPS_10BIT",
-	"SMS_SC4336P_MIPI_4M_30FPS_10BIT",
-	"SMS_SC4336P_SLAVE_MIPI_4M_30FPS_10BIT",
-	"SMS_SC8238_MIPI_8M_30FPS_10BIT",
-	"SOI_F23_MIPI_2M_30FPS_10BIT",
-	"SOI_F35_MIPI_2M_30FPS_10BIT",
-	"SOI_F35_SLAVE_MIPI_2M_30FPS_10BIT",
-	"SOI_F37P_MIPI_2M_30FPS_10BIT",
-	"SOI_H65_MIPI_1M_30FPS_10BIT",
-	"SOI_K06_MIPI_4M_25FPS_10BIT",
-	"SOI_Q03_MIPI_3M_30FPS_10BIT",
-	"SONY_IMX290_MIPI_1M_30FPS_12BIT",
-	"SONY_IMX290_MIPI_2M_60FPS_12BIT",
-	"SONY_IMX307_MIPI_2M_30FPS_12BIT",
-	"SONY_IMX307_SLAVE_MIPI_2M_30FPS_12BIT",
-	"SONY_IMX307_2L_MIPI_2M_30FPS_12BIT",
-	"SONY_IMX307_SUBLVDS_2M_30FPS_12BIT",
-	"SONY_IMX307_MIPI_2M_60FPS_12BIT",
-	"SONY_IMX307_SUBLVDS_2M_60FPS_12BIT",
-	"SONY_IMX327_MIPI_1M_30FPS_10BIT",
-	"SONY_IMX327_MIPI_2M_30FPS_12BIT",
-	"SONY_IMX327_SLAVE_MIPI_2M_30FPS_12BIT",
-	"SONY_IMX327_2L_MIPI_2M_30FPS_12BIT",
-	"SONY_IMX327_SUBLVDS_2M_30FPS_12BIT",
-	"SONY_IMX327_MIPI_2M_60FPS_12BIT",
-	"SONY_IMX334_MIPI_8M_30FPS_12BIT",
-	"SONY_IMX335_MIPI_4M_30FPS_12BIT",
-	"SONY_IMX335_MIPI_4M_1600P_30FPS_12BIT",
-	"SONY_IMX335_2L_MIPI_4M_30FPS_10BIT",
-	"SONY_IMX335_MIPI_5M_30FPS_12BIT",
-	"SONY_IMX335_MIPI_2M_60FPS_10BIT",
-	"SONY_IMX335_MIPI_4M_60FPS_10BIT",
-	"SONY_IMX335_MIPI_5M_60FPS_10BIT",
-	"SONY_IMX347_MIPI_4M_60FPS_12BIT",
-	"SONY_IMX385_MIPI_2M_30FPS_12BIT",
-	"SONY_IMX412_MIPI_12M_30FPS_12BIT",
-	"SONY_IMX415_MIPI_2M_60FPS_12BIT",
-	"SONY_IMX415_MIPI_4M_25FPS_12BIT",
-	"SONY_IMX415_MIPI_5M_25FPS_12BIT",
-	"SONY_IMX415_MIPI_8M_25FPS_12BIT",
-	"SONY_IMX415_MIPI_8M_30FPS_10BIT",
-	"SONY_IMX585_MIPI_8M_30FPS_12BIT",
-	"SONY_IMX900_MIPI_3M_70FPS_12BIT_COLOR",
-	"SONY_IMX900_MIPI_3M_70FPS_12BIT_MONO",
-	"TECHPOINT_TP2850_MIPI_2M_30FPS_8BIT",
-	"TECHPOINT_TP2850_MIPI_4M_30FPS_8BIT",
-	"TECHPOINT_TP2860_MIPI_2M_25FPS_8BIT",
-	"VIVO_MCS369_2M_30FPS_12BIT",
-	"VIVO_MCS369Q_4M_30FPS_12BIT",
-	"VIVO_MM308M2_2M_25FPS_8BIT",
-	"BOARD_FULL_SIZE_MIPI_30FPS_12BIT",
-	"BOARD_MAX_SIZE_MIPI_30FPS_12BIT",
-	"LONTIUM_MIPI_LT6911_1M_60FPS_8BIT",
-	"LONTIUM_MIPI_LT6911_2M_60FPS_8BIT",
-	"LONTIUM_MIPI_LT6911_8M_60FPS_8BIT",
-	"NUC_NC021_MIPI_2M_50FPS_8BIT",
-	/* ------ LINEAR END ------*/
-
-	/* ------ WDR 2TO1 BEGIN ------*/
-	"BRIGATES_BG0808_MIPI_2M_30FPS_10BIT_WDR2TO1",
-	"GCORE_GC2093_MIPI_2M_30FPS_10BIT_WDR2TO1",
-	"GCORE_GC2093_SLAVE_MIPI_2M_30FPS_10BIT_WDR2TO1",
-	"GCORE_GC8613_MIPI_8M_30FPS_10BIT_WDR2TO1",
-	"NUC_NC021_MIPI_2M_25FPS_8BIT_WDR2TO1",
-	"OV_OS04A10_MIPI_4M_1440P_30FPS_10BIT_WDR2TO1",
-	"OV_OS04A10_MASTER_MIPI_4M_1440P_2L_10BIT_WDR2TO1",
-	"OV_OS04A10_SLAVE_MIPI_4M_1440P_2L_10BIT_WDR2TO1",
-	"OV_OS04C10_MIPI_4M_30FPS_10BIT_WDR2TO1",
-	"OV_OS04C10_MIPI_4M_1440P_30FPS_10BIT_WDR2TO1",
-	"OV_OS04C10_SLAVE_MIPI_4M_30FPS_10BIT_WDR2TO1",
-	"OV_OS04E10_MIPI_4M_30FPS_10BIT_WDR2TO1",
-	"OV_OS04E10_MIPI_4M_30FPS_2L_10BIT_WDR2TO1",
-	"OV_OS04E10_SLAVE_MIPI_4M_30FPS_2L_10BIT_WDR2TO1",
-	"OV_OS08A20_MIPI_4M_30FPS_10BIT_WDR2TO1",
-	"OV_OS08A20_SLAVE_MIPI_4M_30FPS_10BIT_WDR2TO1",
-	"OV_OS08A20_MIPI_5M_30FPS_10BIT_WDR2TO1",
-	"OV_OS08A20_SLAVE_MIPI_5M_30FPS_10BIT_WDR2TO1",
-	"OV_OS08A20_MIPI_8M_30FPS_10BIT_WDR2TO1",
-	"OV_OS08A20_SLAVE_MIPI_8M_30FPS_10BIT_WDR2TO1",
-	"OV_OS08B10_MIPI_8M_30FPS_10BIT_WDR2TO1",
-	"OV_OV2736_MIPI_2M_30FPS_12BIT_WDR2TO1",
-	"SMS_SC200AI_MIPI_2M_30FPS_10BIT_WDR2TO1",
-	"SMS_SC233HGS_MIPI_2M_60FPS_10BIT_WDR2TO1",
-	"SMS_SC500AI_MIPI_4M_30FPS_10BIT_WDR2TO1",
-	"SMS_SC500AI_MIPI_5M_30FPS_10BIT_WDR2TO1",
-	"SMS_SC850SL_MIPI_8M_30FPS_10BIT_WDR2TO1",
-	"SMS_SC4210_MIPI_4M_30FPS_10BIT_WDR2TO1",
-	"SMS_SC8238_MIPI_8M_15FPS_10BIT_WDR2TO1",
-	"SOI_F35_MIPI_2M_30FPS_10BIT_WDR2TO1",
-	"SOI_F35_SLAVE_MIPI_2M_30FPS_10BIT_WDR2TO1",
-	"SONY_IMX307_MIPI_2M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX307_2L_MIPI_2M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX307_SLAVE_MIPI_2M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX307_SUBLVDS_2M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX327_MIPI_1M_30FPS_10BIT_WDR2TO1",
-	"SONY_IMX327_MIPI_2M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX327_2L_MIPI_2M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX327_SLAVE_MIPI_2M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX327_SUBLVDS_2M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX334_MIPI_8M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX335_MIPI_2M_30FPS_10BIT_WDR2TO1",
-	"SONY_IMX335_MIPI_4M_30FPS_10BIT_WDR2TO1",
-	"SONY_IMX335_MIPI_4M_1600P_30FPS_10BIT_WDR2TO1",
-	"SONY_IMX335_MIPI_5M_30FPS_10BIT_WDR2TO1",
-	"SONY_IMX347_MIPI_4M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX385_MIPI_2M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX412_MIPI_12M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX412_MIPI_8M_30FPS_12BIT_WDR2TO1",
-	"SONY_IMX585_MIPI_8M_25FPS_12BIT_WDR2TO1",
-	/* ------ WDR 2TO1 END ------*/
-};
-
 static SAMPLE_INI_CFG_S	stDefIniCfg = {
 	.enSource  = VI_PIPE_FRAME_SOURCE_DEV,
 	.devNum    = 1,
@@ -2013,29 +1600,28 @@ static void parse_sensor_name(SAMPLE_INI_CFG_S *cfg, const char *value,
 {
 #define NAME_SIZE 20
 	CVI_U32 index = param0;
-	CVI_U32 i;
 
 	(CVI_VOID) param1;
 	(CVI_VOID) param2;
-	SAMPLE_PRT("sensor_%d =  %s\n", index, value);
-	char sensorNameEnv[NAME_SIZE];
+	SNS_DBG_PRT("sensor_%d =  %s\n", index, value);
 
-	snprintf(sensorNameEnv, NAME_SIZE, "SENSORNAME%d", index);
-	setenv(sensorNameEnv, value, 1);
+	char *endptr;
+	unsigned long num = strtoul(value, &endptr, 0);
 
-	for (i = 0; i < SAMPLE_SNS_TYPE_BUTT; i++) {
-		if (strcmp(value, snsr_type_name[i]) == 0) {
-			cfg->enSnsType[index] = i;
-			cfg->enWDRMode[index] = (i < SAMPLE_SNS_TYPE_LINEAR_BUTT) ?
-				WDR_MODE_NONE : WDR_MODE_2To1_LINE;
-			break;
-		}
-	}
-	if (i == SAMPLE_SNS_TYPE_BUTT) {
+	if (num == CVI_SNS_TYPE_BUTT) {
+		SNS_DBG_PRT("Sensor name parse error, will set IMX327\n");
 		cfg->enSnsType[index] = SONY_IMX327_MIPI_2M_30FPS_12BIT;
-		cfg->enWDRMode[index] = WDR_MODE_NONE;
-		cfg->u8UseMultiSns = index;
+		return;
 	}
+	if (endptr == value) {
+		SNS_DBG_PRT("Have no any numbers\n");
+		return;
+	}
+	if (*endptr!= '\0') {
+		SNS_DBG_PRT("Non-numeric characters encountered in conversion :%s\n", endptr);
+		return;
+	}
+	cfg->enSnsType[index] = num;
 }
 
 static void parse_sensor_busid(SAMPLE_INI_CFG_S *cfg, const char *value,
@@ -2346,7 +1932,7 @@ CVI_S32 SAMPLE_COMM_VI_ParseIni(SAMPLE_INI_CFG_S *pstIniCfg)
 		SAMPLE_PRT("Parse %s\n", g_snsCfgPath);
 		ret = ini_parse(g_snsCfgPath, parse_handler, pstIniCfg);
 		if (ret >= 0) {
-			return CVI_SUCCESS;
+			goto parse_end;
 		}
 		if (ret != -1) {
 			SAMPLE_PRT("Parse %s incomplete, use default cfg\n", INI_FILE_PATH);
@@ -2358,7 +1944,7 @@ CVI_S32 SAMPLE_COMM_VI_ParseIni(SAMPLE_INI_CFG_S *pstIniCfg)
 	SAMPLE_PRT("Parse %s\n", INI_FILE_PATH);
 	ret = ini_parse(INI_FILE_PATH, parse_handler, pstIniCfg);
 	if (ret >= 0) {
-		return CVI_SUCCESS;
+		goto parse_end;
 	}
 	if (ret != -1) {
 		SAMPLE_PRT("Parse %s incomplete, use default cfg\n", INI_FILE_PATH);
@@ -2376,6 +1962,29 @@ CVI_S32 SAMPLE_COMM_VI_ParseIni(SAMPLE_INI_CFG_S *pstIniCfg)
 		}
 
 		return CVI_FAILURE;
+	}
+
+parse_end:
+	gstSensorCfg.sns_ini_cfg.devNum = pstIniCfg->devNum;
+	gstSensorCfg.sns_ini_cfg.enSnsMode = pstIniCfg->enSnsMode;
+	for (int i = 0; i < pstIniCfg->devNum; i++) {
+		gstSensorCfg.sns_ini_cfg.enSnsType[i] = pstIniCfg->enSnsType[i];
+		gstSensorCfg.sns_ini_cfg.s32BusId[i] = pstIniCfg->s32BusId[i];
+		gstSensorCfg.sns_ini_cfg.s32SnsI2cAddr[i] = pstIniCfg->s32SnsI2cAddr[i];
+		gstSensorCfg.sns_ini_cfg.MipiDev[i] = pstIniCfg->MipiDev[i];
+		for (int j = 0; j < MIPI_LANE_NUM + 1; j++) {
+			gstSensorCfg.sns_ini_cfg.as16LaneId[i][j] = pstIniCfg->as16LaneId[i][j];
+			gstSensorCfg.sns_ini_cfg.as8PNSwap[i][j] = pstIniCfg->as8PNSwap[i][j];
+		}
+		for (int j = 0; j < TTL_PIN_FUNC_NUM; j++) {
+			gstSensorCfg.sns_ini_cfg.as16FuncId[i][j] = pstIniCfg->as16FuncId[i][j];
+		}
+		gstSensorCfg.sns_ini_cfg.u8HwSync[i] = pstIniCfg->u8HwSync[i];
+		gstSensorCfg.sns_ini_cfg.stMclkAttr[i].bMclkEn = pstIniCfg->stMclkAttr[i].bMclkEn;
+		gstSensorCfg.sns_ini_cfg.stMclkAttr[i].u8Mclk = pstIniCfg->stMclkAttr[i].u8Mclk;
+		gstSensorCfg.sns_ini_cfg.bHsettlen[i] = pstIniCfg->bHsettlen[i];
+		gstSensorCfg.sns_ini_cfg.u8Hsettle[i] = pstIniCfg->u8Hsettle[i];
+		gstSensorCfg.sns_ini_cfg.u8Orien[i] = pstIniCfg->u8Orien[i];
 	}
 
 	return CVI_SUCCESS;
@@ -2485,10 +2094,37 @@ CVI_S32 SAMPLE_COMM_VI_IniToViCfg(SAMPLE_INI_CFG_S *pstIniCfg, SAMPLE_VI_CONFIG_
 			}
 		}
 	}
+	gstSensorCfg.sns_ini_cfg.enSnsMode = pstIniCfg->enSnsMode;
+	gstSensorCfg.sns_ini_cfg.devNum = pstIniCfg->devNum;
 
 	SAMPLE_PRT("%s: select mode [%d]\n", __func__, pstIniCfg->enSnsMode);
 
 	for (s32WorkSnsId = 0; s32WorkSnsId < pstIniCfg->devNum; s32WorkSnsId++) {
+		// config gstSensorCfg
+		gstSensorCfg.sns_ini_cfg.enSnsType[s32WorkSnsId] = pstIniCfg->enSnsType[s32WorkSnsId];
+		gstSensorCfg.sns_ini_cfg.s32BusId[s32WorkSnsId] = pstIniCfg->s32BusId[s32WorkSnsId];
+		gstSensorCfg.sns_ini_cfg.s32SnsI2cAddr[s32WorkSnsId] = pstIniCfg->s32SnsI2cAddr[s32WorkSnsId];
+		gstSensorCfg.sns_ini_cfg.MipiDev[s32WorkSnsId] = pstIniCfg->MipiDev[s32WorkSnsId];
+		for (lane_num = 0; lane_num < MIPI_LANE_NUM + 1; lane_num++) {
+			gstSensorCfg.sns_ini_cfg.as16LaneId[s32WorkSnsId][lane_num] =
+				pstIniCfg->as16LaneId[s32WorkSnsId][lane_num];
+			gstSensorCfg.sns_ini_cfg.as8PNSwap[s32WorkSnsId][lane_num] =
+				pstIniCfg->as8PNSwap[s32WorkSnsId][lane_num];
+		}
+		for (lane_num = 0; lane_num < TTL_PIN_FUNC_NUM; lane_num++) {
+			gstSensorCfg.sns_ini_cfg.as16FuncId[s32WorkSnsId][lane_num] =
+				pstIniCfg->as16FuncId[s32WorkSnsId][lane_num];
+		}
+		gstSensorCfg.sns_ini_cfg.u8HwSync[s32WorkSnsId] = pstIniCfg->u8HwSync[s32WorkSnsId];
+		gstSensorCfg.sns_ini_cfg.stMclkAttr[s32WorkSnsId].bMclkEn =
+			pstIniCfg->stMclkAttr[s32WorkSnsId].bMclkEn;
+		gstSensorCfg.sns_ini_cfg.stMclkAttr[s32WorkSnsId].u8Mclk =
+			pstIniCfg->stMclkAttr[s32WorkSnsId].u8Mclk;
+		gstSensorCfg.sns_ini_cfg.bHsettlen[s32WorkSnsId] = pstIniCfg->bHsettlen[s32WorkSnsId];
+		gstSensorCfg.sns_ini_cfg.u8Hsettle[s32WorkSnsId] = pstIniCfg->u8Hsettle[s32WorkSnsId];
+		gstSensorCfg.sns_ini_cfg.u8Orien[s32WorkSnsId] = pstIniCfg->u8Orien[s32WorkSnsId];
+
+		// config pstViConfig
 		pstViConfig->s32WorkingViNum					= 1 + s32WorkSnsId;
 		pstViConfig->as32WorkingViId[s32WorkSnsId]			= s32WorkSnsId;
 		pstViConfig->astViInfo[s32WorkSnsId].stSnsInfo.enSnsType	= pstIniCfg->enSnsType[s32WorkSnsId];
@@ -2508,7 +2144,7 @@ CVI_S32 SAMPLE_COMM_VI_IniToViCfg(SAMPLE_INI_CFG_S *pstIniCfg, SAMPLE_VI_CONFIG_
 		pstViConfig->astViInfo[s32WorkSnsId].stSnsInfo.s32RstPin	= pstIniCfg->s32RstPin[s32WorkSnsId];
 		pstViConfig->astViInfo[s32WorkSnsId].stSnsInfo.s32RstActive	= pstIniCfg->s32RstActive[s32WorkSnsId];
 
-		for (lane_num = 0; lane_num < 9; lane_num++) {
+		for (lane_num = 0; lane_num < MIPI_LANE_NUM + 1; lane_num++) {
 			pstViConfig->astViInfo[s32WorkSnsId].stSnsInfo.as16LaneId[lane_num]	=
 				pstIniCfg->as16LaneId[s32WorkSnsId][lane_num];
 			pstViConfig->astViInfo[s32WorkSnsId].stSnsInfo.as8PNSwap[lane_num]	=
@@ -2607,9 +2243,3 @@ CVI_S32 SAMPLE_COMM_VI_DefaultConfig(CVI_VOID)
 
 	return s32Ret;
 }
-
-CVI_CHAR *SAMPLE_COMM_VI_GetSnsrTypeName(void)
-{
-	return (CVI_CHAR *)snsr_type_name;
-}
-

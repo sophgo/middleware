@@ -596,6 +596,33 @@ CVI_S32 CVI_VI_SetBypassFrm(CVI_U32 snr_num, CVI_U8 bypass_num)
 /**************************************************************************
  *   Public APIs.
  **************************************************************************/
+CVI_S32 CVI_VI_ResizeYuvPath(VI_PIPE ViPipe, SIZE_S *resizeCfg, RECT_S *recropCfg)
+{
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	CVI_S32 fd = -1;
+	struct resize_yuv_path_cfg_s resize_cfg;
+
+	CHECK_VI_PIPEID_VALID(ViPipe);
+
+	fd = get_vi_fd();
+
+	resize_cfg.max_width = resizeCfg->u32Width;
+	resize_cfg.max_height = resizeCfg->u32Height;
+	resize_cfg.crop_cfg.start_x = recropCfg->s32X;
+	resize_cfg.crop_cfg.start_y = recropCfg->s32Y;
+	resize_cfg.crop_cfg.end_x = recropCfg->s32X + recropCfg->u32Width;
+	resize_cfg.crop_cfg.end_y = recropCfg->s32Y + recropCfg->u32Height;
+	resize_cfg.ViPipe = ViPipe;
+
+	s32Ret = vi_resize_yuv_path(fd, &resize_cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VI(CVI_DBG_ERR, "resize_yuv_path ioctl failed\n");
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}
+
 CVI_S32 CVI_VI_SetDevNum(CVI_U32 devNum)
 {
 	UNUSED(devNum);

@@ -51,7 +51,8 @@ typedef enum _VB_TEST_OP {
 	VB_TEST_CREATE_POOL,
 	VB_TEST_GET_VB_CFG,
 	VB_TEST_GET_BLK_INFO,
-	VB_TEST_VB_BUF_SIZE
+	VB_TEST_VB_BUF_SIZE,
+	VB_TEST_CREATE_EX_POOL,
 } VB_TEST_OP;
 
 static VB_CONFIG_S stVbConf;
@@ -751,6 +752,87 @@ CVI_S32 _vb_ut_fmt_test(void)
 	return s32Ret;
 }
 
+static CVI_S32 _vb_ut_create_ex_pool_test(void)
+{
+	CVI_U32 u32BlkSize;
+	CVI_U32 u32RotBlkSize;
+	VB_BLK blk = VB_INVALID_HANDLE;
+	CVI_S32 s32Ret = CVI_SUCCESS;
+	CVI_U64 u64PhyAddr = 0;
+	CVI_VOID *pVirAddr = NULL;
+	VB_POOL_CONFIG_EX_S stExconfig;
+	int whproduct;
+	VB_POOL pool = VB_INVALID_POOLID, tmpPool;
+
+	u32BlkSize = COMMON_GetPicBufferSize(384, 256,
+					PIXEL_FORMAT_NV21, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
+	u32RotBlkSize = COMMON_GetPicBufferSize(256, 384,
+					PIXEL_FORMAT_NV21, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, DEFAULT_ALIGN);
+	u32BlkSize	= u32BlkSize > u32RotBlkSize ? u32BlkSize : u32RotBlkSize;
+
+	CVI_SYS_IonAlloc(&u64PhyAddr, &pVirAddr,
+					"vb_memory", u32BlkSize);
+
+	memset(&stExconfig, 0, sizeof(stExconfig));
+	stExconfig.u32BlkCnt =  1;
+	whproduct = 384 * 256;
+	stExconfig.astUserBlk[0].au64PhyAddr[0] = u64PhyAddr; //stride 0
+	stExconfig.astUserBlk[0].au64PhyAddr[1] = u64PhyAddr + whproduct;//stride 1
+	stExconfig.astUserBlk[0].au64PhyAddr[2] = 0;//stride 1
+
+	pool = CVI_VB_CreateExPool(&stExconfig);
+	if (pool == VB_INVALID_POOLID) {
+		VB_UT_PRT("CVI_VB_CreateExPool NG.\n");
+		return CVI_FAILURE;
+	}
+	VB_UT_PRT("create ex pool:%d\n", pool);
+
+	blk = CVI_VB_GetBlock(pool, u32BlkSize);
+	if (blk == VB_INVALID_HANDLE) {
+		VB_UT_PRT("CVI_VB_GetBlock NG\n");
+		goto CREATE_EX_POOL_TEST_FAIL;
+	}
+	CVI_VB_PrintPool(pool);
+
+	tmpPool = CVI_VB_Handle2PoolId(blk);
+	if (tmpPool != pool) {
+		VB_UT_PRT("get blk from unexpected pool(%d)\n", tmpPool);
+		goto CREATE_EX_POOL_TEST_FAIL;
+	}
+	s32Ret = CVI_VB_ReleaseBlock(blk);
+	if (s32Ret != CVI_SUCCESS) {
+		VB_UT_PRT("CVI_VB_DestroyPool NG\n");
+		goto CREATE_EX_POOL_TEST_FAIL;
+	}
+	CVI_VB_PrintPool(pool);
+
+	s32Ret = CVI_VB_DestroyPool(pool);
+	if (s32Ret != CVI_SUCCESS) {
+		VB_UT_PRT("CVI_VB_DestroyPool NG\n");
+		goto CREATE_EX_POOL_TEST_FAIL;
+	}
+
+	s32Ret = CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
+	if (s32Ret != CVI_SUCCESS) {
+		VB_UT_PRT("CVI_SYS_IonFree NG\n");
+		goto CREATE_EX_POOL_TEST_FAIL;
+	}
+
+	return CVI_SUCCESS;
+
+CREATE_EX_POOL_TEST_FAIL:
+	if (blk != VB_INVALID_HANDLE)
+		CVI_VB_ReleaseBlock(blk);
+
+	if (pool != VB_INVALID_POOLID)
+		CVI_VB_DestroyPool(pool);
+
+	if (u64PhyAddr && pVirAddr)
+		CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
+
+	return CVI_FAILURE;
+}
+
 static CVI_S32 _vb_ut_handle_op(CVI_S32 op)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
@@ -790,6 +872,13 @@ static CVI_S32 _vb_ut_handle_op(CVI_S32 op)
 		s32Ret = _vb_ut_fmt_test();
 		if (s32Ret == CVI_SUCCESS)
 			VB_UT_PRT("_vb_ut_fmt_test success\n");
+		break;
+	}
+
+	case VB_TEST_CREATE_EX_POOL: {
+		s32Ret = _vb_ut_create_ex_pool_test();
+		if (s32Ret == CVI_SUCCESS)
+			VB_UT_PRT("_vb_ut_create_ex_pool_test success\n");
 		break;
 	}
 
@@ -875,6 +964,7 @@ static void vb_show_help(void)
 	VB_UT_PRT("%4d: Get vb config test\n", VB_TEST_GET_VB_CFG);
 	VB_UT_PRT("%4d: Get blk info test\n", VB_TEST_GET_BLK_INFO);
 	VB_UT_PRT("%4d: vb buf size test\n", VB_TEST_VB_BUF_SIZE);
+	VB_UT_PRT("%4d: Create ex pool test\n", VB_TEST_CREATE_EX_POOL);
 	VB_UT_PRT("255: exit vb ut\n");
 }
 

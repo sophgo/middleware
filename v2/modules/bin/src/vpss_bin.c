@@ -86,7 +86,7 @@ CVI_S32 vpss_getIndexBinParam(CVI_U8 *buf, VPSS_Parameter_Structures *pst, CVI_U
 		return CVI_FAILURE;
 	}
 
-	ret = vpss_getBinParam_autogen(CVI_BIN_ID_VPSS - CVI_BIN_ID_ISP0, buf, pst, indexOffset);
+	ret = vpss_getBinParam_autogen(CVI_BIN_ID_VPSS, buf, pst, indexOffset);
 
 	return ret;
 }

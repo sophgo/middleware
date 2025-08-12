@@ -17,6 +17,7 @@
 #include "cvi_isp.h"
 #include "cvi_ae.h"
 #include "cvi_awb.h"
+#include "cvi_af.h"
 #include "3A_internal.h"
 
 #ifndef UNUSED
@@ -57,8 +58,8 @@ static CVI_S32 isp_bin_checkMd5(VI_PIPE ViPipe, CVI_U8 *addr, CVI_U32 binSize);
 static CVI_S32 isp_bin_checkBinVersion(CVI_U8 *addr, CVI_U32 binSize);
 static CVI_S32 isp_get_paramstruct(VI_PIPE ViPipe, ISP_Parameter_Structures *pstParaBuf);
 static CVI_S32 isp_set_paramstruct(VI_PIPE ViPipe, ISP_Parameter_Structures *pstParaBuf);
-static CVI_S32 isp_getIndexBinParam(VI_PIPE ViPipe, CVI_U8 *buf, ISP_Parameter_Structures *pst, CVI_U32 indexOffset);
-static CVI_S32 isp_index_bin_getparamfrombinImp(VI_PIPE ViPipe, CVI_U8 *addr, CVI_U32 binSize, CVI_U32 indexOffset);
+static CVI_S32 isp_getIndexBinParam(enum CVI_BIN_SECTION_ID id, CVI_U8 *buf, ISP_Parameter_Structures *pst, CVI_U32 indexOffset);
+static CVI_S32 isp_index_bin_getparamfrombinImp(enum CVI_BIN_SECTION_ID id, CVI_U8 *addr, CVI_U32 binSize, CVI_U32 indexOffset);
 
 static ISP_BIN_BYPASS g_binBypassParams = {0};
 
@@ -310,15 +311,16 @@ static CVI_S32 isp_bin_setBinParamImptobuf(VI_PIPE ViPipe, unsigned char *buffer
 	return ret;
 }
 
-static CVI_S32 isp_index_bin_getparamfrombinImp(VI_PIPE ViPipe, CVI_U8 *addr, CVI_U32 binSize, CVI_U32 indexOffset)
+static CVI_S32 isp_index_bin_getparamfrombinImp(enum CVI_BIN_SECTION_ID id, CVI_U8 *addr, CVI_U32 binSize, CVI_U32 indexOffset)
 {
 	CVI_S32 ret = CVI_SUCCESS;
+	VI_PIPE ViPipe = id - CVI_BIN_ID_ISP0;
 
 	ISP_Parameter_Structures *param = (ISP_Parameter_Structures *)malloc(sizeof(ISP_Parameter_Structures));
 
 	isp_get_paramstruct(ViPipe, param); // get current params before import from index table
 
-	isp_getIndexBinParam(ViPipe, addr, param, indexOffset);
+	isp_getIndexBinParam(id, addr, param, indexOffset);
 
 	isp_set_paramstruct(ViPipe, param);
 
@@ -330,12 +332,12 @@ static CVI_S32 isp_index_bin_getparamfrombinImp(VI_PIPE ViPipe, CVI_U8 *addr, CV
 	return ret;
 }
 
-static CVI_S32 isp_getIndexBinParam(VI_PIPE ViPipe, CVI_U8 *buf, ISP_Parameter_Structures *pst, CVI_U32 indexOffset)
+static CVI_S32 isp_getIndexBinParam(enum CVI_BIN_SECTION_ID id, CVI_U8 *buf, ISP_Parameter_Structures *pst, CVI_U32 indexOffset)
 {
 	CVI_S32 ret = CVI_SUCCESS;
 
-	if (((ViPipe) < 0) || ((ViPipe) >= SUPPORT_VI_MAX_PIPE_NUM)) {
-		CVI_TRACE_ISP_BIN(LOG_ERR, "ViPipe %d value error\n", ViPipe);
+	if ((id < CVI_BIN_ID_MIN) || (id >= CVI_BIN_ID_MAX)) {
+		CVI_TRACE_ISP_BIN(LOG_ERR, "module id %d value error\n", id);
 		return CVI_FAILURE;
 	}
 
@@ -347,7 +349,7 @@ static CVI_S32 isp_getIndexBinParam(VI_PIPE ViPipe, CVI_U8 *buf, ISP_Parameter_S
 		return CVI_FAILURE;
 	}
 
-	ret = isp_getBinParam_autogen(ViPipe, buf, pst, indexOffset);
+	ret = isp_getBinParam_autogen(id, buf, pst, indexOffset);
 
 	return ret;
 }
@@ -594,6 +596,9 @@ static CVI_S32 isp_set_paramstruct(VI_PIPE ViPipe, ISP_Parameter_Structures *pst
 	CVI_ISP_SetWBCalibrationEx(ViPipe, &pstParaBuf->WBCalibEx);
 	CVI_ISP_SetStatisticsConfig(ViPipe, &pstParaBuf->StatCfg);
 
+	// AF
+	CVI_ISP_SetAFAttr(ViPipe, &pstParaBuf->FocusAttr);
+
 	return CVI_SUCCESS;
 }
 
@@ -699,6 +704,9 @@ static CVI_S32 isp_get_paramstruct(VI_PIPE ViPipe, ISP_Parameter_Structures *pst
 	CVI_ISP_GetWBCalibrationEx(ViPipe, &pstParaBuf->WBCalibEx);
 	CVI_ISP_GetStatisticsConfig(ViPipe, &pstParaBuf->StatCfg);
 
+	// AF
+	CVI_ISP_GetAFAttr(ViPipe, &pstParaBuf->FocusAttr);
+
 	return CVI_SUCCESS;
 }
 
@@ -772,7 +780,7 @@ CVI_S32 isp_index_bin_getparamfrombin(CVI_U8 *buffer, enum CVI_BIN_SECTION_ID id
 {
 	CVI_S32 ret = CVI_SUCCESS;
 
-	ret = isp_index_bin_getparamfrombinImp(id - CVI_BIN_ID_ISP0, buffer, binSize, indexOffset);
+	ret = isp_index_bin_getparamfrombinImp(id, buffer, binSize, indexOffset);
 
 	return ret;
 }

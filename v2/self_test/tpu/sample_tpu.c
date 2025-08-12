@@ -1197,7 +1197,7 @@ static CVI_S32 _handle_op(CVI_S32 op, CVI_VOID *param1, CVI_VOID *param2)
 
 int main(void)
 {
-	SAMPLE_SNS_TYPE_E enSnsType = SENSOR0_TYPE;
+	CVI_SNS_TYPE_E enSnsType = SENSOR0_TYPE;
 	WDR_MODE_E enWDRMode = WDR_MODE_NONE;
 	DYNAMIC_RANGE_E enDynamicRange = DYNAMIC_RANGE_SDR8;
 	PIXEL_FORMAT_E enPixFormat = PIXEL_FORMAT_YUV_PLANAR_420;

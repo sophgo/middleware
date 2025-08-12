@@ -652,11 +652,73 @@ CVI_S32 CVI_VO_GetWbcFrame(VO_WBC VoWbc, VIDEO_FRAME_INFO_S *pstVideoFrame, CVI_
  */
 CVI_S32 CVI_VO_ReleaseWbcFrame(VO_WBC VoWbc, const VIDEO_FRAME_INFO_S *pstVideoFrame);
 
+/* CVI_VO_AttachWbcVbPool: attach wbc vb pool
+ *
+ * @param VoWbc: wbc to attach vb pool
+ * @param u32VbPoolId: vb pool id
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
+CVI_S32 CVI_VO_AttachWbcVbPool(VO_WBC VoWbc, VB_POOL u32VbPoolId);
+
+/* CVI_VO_DetachWbcVbPool: detach wbc vb pool
+ *
+ * @param VoWbc: wbc to detach vb pool
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
+CVI_S32 CVI_VO_DetachWbcVbPool(VO_WBC VoWbc);
+
+/* CVI_VO_AttachLayerVbPool: attach layer vb pool
+ *
+ * @param VoLayer: layer to attach vb pool
+ * @param u32VbPoolId: vb pool id
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
+CVI_S32 CVI_VO_AttachLayerVbPool(VO_LAYER VoLayer, VB_POOL u32VbPoolId);
+
+/* CVI_VO_DetachLayerVbPool: detach layer vb pool
+ *
+ * @param VoLayer: layer to detach vb pool
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
+CVI_S32 CVI_VO_DetachLayerVbPool(VO_LAYER VoLayer);
+
 /* Module Parameter Settings */
+
+/* CVI_VO_Get_Panel_Status: get panel status
+ *
+ * @param VoLayer: Video layer
+ * @param VoChn: Video chn
+ * @param is_init: initialization status
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
 CVI_S32 CVI_VO_Get_Panel_Status(VO_LAYER VoLayer, VO_CHN VoChn, CVI_U32 *is_init);
+
+/* CVI_VO_RegPmCallBack: register power management callback functions
+ *
+ * @param VoDev: video output device
+ * @param pstPmOps: power management operations
+ * @param pvData: user data
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
 CVI_S32 CVI_VO_RegPmCallBack(VO_DEV VoDev, VO_PM_OPS_S *pstPmOps, void *pvData);
+
+/* CVI_VO_UnRegPmCallBack: unregister power management callback functions
+ *
+ * @param VoDev: video output device
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
 CVI_S32 CVI_VO_UnRegPmCallBack(VO_DEV VoDev);
+
+/* CVI_VO_Suspend: suspend video output module
+ *
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
 CVI_S32 CVI_VO_Suspend(void);
+
+/* CVI_VO_Resume: resume video output module
+ *
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
 CVI_S32 CVI_VO_Resume(void);
 
 #ifdef __cplusplus

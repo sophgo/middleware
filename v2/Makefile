@@ -45,6 +45,7 @@ else
 endif
 	@mkdir -p include/isp
 	@cp -rf modules/isp/include/* include/isp
+	@cp $(MW_SNS_INC)/sensor_cfg/*.h $(MW_INC)
 ifeq ($(CHIP_ARCH), $(filter $(CHIP_ARCH), CV181X CV180X CV186X))
 	@cp -rf modules/isp/$(shell echo $(CHIP_ARCH) | tr A-Z a-z)/isp-daemon2/inc/cvi_ispd2.h include/isp/$(shell echo $(CHIP_ARCH) | tr A-Z a-z)/
 endif
@@ -59,7 +60,7 @@ self_test: sample
 	@make -C self_test/
 
 component:
-	@make -C component/isp/ all
+	@make -C component/SensorSupportList/ all
 
 dl_daemon: sample
 	@cmake self_test/dl_daemon -Bself_test/dl_daemon/build
@@ -123,5 +124,6 @@ endif
 	@make -C 3rdparty/ clean
 	@make -C sample/ clean
 	@make -C self_test/ clean
-	@make -C component/isp/ clean
+	@make -C component/SensorSupportList/ clean
 	@rm -rf self_test/dl_daemon/build
+	@rm -f $(MW_INC)/sensor_cfg.h

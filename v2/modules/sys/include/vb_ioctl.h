@@ -9,6 +9,7 @@ int vb_ioctl_get_config(int fd, struct vb_cfg *cfg);
 int vb_ioctl_init(int fd);
 int vb_ioctl_exit(int fd);
 int vb_ioctl_create_pool(int fd, struct vb_pool_cfg *cfg);
+int vb_ioctl_create_ex_pool(int fd, struct vb_pool_ex_cfg *cfg);
 int vb_ioctl_destroy_pool(int fd, VB_POOL poolId);
 int vb_ioctl_phys_to_handle(int fd, struct vb_blk_info *blk_info);
 int vb_ioctl_get_blk_info(int fd, struct vb_blk_info *blk_info);

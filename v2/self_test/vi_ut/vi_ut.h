@@ -124,6 +124,9 @@ typedef struct _VI_UT_CTX {
 	char filepath_se[128];
 	char binpath[128];
 	pid_t pid;
+	CVI_BOOL isInotityExit;
+	pthread_t inotify_thread;
+
 	CVI_U32 is_enable_sensor	: 1;
 	CVI_U32 is_be_online		: 1;
 	CVI_U32 is_post_online		: 1;

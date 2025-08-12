@@ -154,7 +154,7 @@ int load_meshdata(const char *path, MESH_DATA_ALL_S *pmeshdata,
 				CVI_TRACE_GDC(CVI_DBG_ERR, "load gridinfo fail\n");
 				return -1;
 			}
-			memcpy(pmeshdata->pmesh_dst, buffer, sizeof(int) * (count_grid * 2 * 4));
+			memcpy(pmeshdata->pmesh_src, buffer, sizeof(int) * (count_grid * 2 * 4));
 			buffer += (count_grid * 2 * 4);
 
 			length += (count_grid * 2 * 4);

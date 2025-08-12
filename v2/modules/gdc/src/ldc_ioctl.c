@@ -90,3 +90,12 @@ CVI_S32 gdc_resume(CVI_S32 fd)
 	return ioctl(fd, CVI_LDC_RESUME);
 }
 
+CVI_S32 gdc_attach_vbpool(CVI_S32 fd, struct ldc_vb_pool_cfg *cfg)
+{
+	return ioctl(fd, CVI_LDC_ATTACH_VB_POOL, cfg);
+}
+
+CVI_S32 gdc_detach_vbpool(CVI_S32 fd, struct ldc_vb_pool_cfg *cfg)
+{
+	return ioctl(fd, CVI_LDC_DETACH_VB_POOL, cfg);
+}

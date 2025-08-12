@@ -116,7 +116,7 @@ CVI_S32 vi_start_dev(SAMPLE_VI_INFO_S *pstViInfo, CVI_U32 isp_mode)
 {
 	CVI_S32             s32Ret;
 	VI_DEV              ViDev;
-	SAMPLE_SNS_TYPE_E   enSnsType;
+	CVI_SNS_TYPE_E   enSnsType;
 	VI_DEV_ATTR_S       stViDevAttr;
 	VI_DEV_BIND_PIPE_S  stViDevBindAttr;
 	ISP_PUB_ATTR_S      pstPubAttr;
@@ -291,7 +291,7 @@ static int sys_vi_init(void)
 	LOG_LEVEL_CONF_S log_conf;
 	VI_DEV_ATTR_S stVidevAttr;
 	CVI_U32 Vb_cnt;
-	CVI_S32 isp_mode;
+	CVI_S32 isp_mode = 1;
 
 	memset(&stVersion, 0, sizeof(MMF_VERSION_S));
 	memset(&stIniCfg, 0, sizeof(SAMPLE_INI_CFG_S));
@@ -336,8 +336,6 @@ static int sys_vi_init(void)
 			} else {
 				stViConfig.astViInfo[i].stChnInfo.enPixFormat = PIXEL_FORMAT_NV21;
 			}
-		} else {
-			isp_mode = 1;
 		}
 	}
 
@@ -1085,6 +1083,66 @@ CVI_S32 get_vi_yuv_debug(void)
 
 	return get_yuv_from_addr(phy_addr_y, phy_addr_uv);
 }
+
+CVI_S32 resize_yuv_ahd(void)
+{
+	CVI_S32 op, pipe, s32Ret = CVI_SUCCESS;
+	RECT_S stRect = {0, 0, 3840, 2160};
+	SIZE_S stSize = {3840, 2160};
+
+	system("stty erase ^H");
+
+	while (1) {
+		SAMPLE_PRT("select want to change pipe, input 255 to exit:\n");
+		scanf("%d", &pipe);
+		if (pipe == 255) {
+			return s32Ret;
+		}
+		if (pipe >= VI_MAX_PIPE_NUM || pipe < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "pipe(%d) is invalid!\n", pipe);
+			return s32Ret;
+		}
+		SAMPLE_PRT("select want to change size:\n");
+		SAMPLE_PRT("1: 3840X2160\n");
+		SAMPLE_PRT("2: 2560X1440\n");
+		SAMPLE_PRT("3: 1920X1080\n");
+		SAMPLE_PRT("4: 1280X720\n");
+		SAMPLE_PRT("5: 720X480\n");
+		scanf("%d", &op);
+
+		switch (op) {
+		case 1:
+			stSize.u32Width = stRect.u32Width = 3840;
+			stSize.u32Height = stRect.u32Height = 2160;
+			break;
+		case 2:
+			stSize.u32Width = stRect.u32Width = 2560;
+			stSize.u32Height = stRect.u32Height = 1440;
+			break;
+		case 3:
+			stSize.u32Width = stRect.u32Width = 1920;
+			stSize.u32Height = stRect.u32Height = 1080;
+			break;
+		case 4:
+			stSize.u32Width = stRect.u32Width = 1280;
+			stSize.u32Height = stRect.u32Height = 720;
+			break;
+		case 5:
+			stSize.u32Width = stRect.u32Width = 720;
+			stSize.u32Height = stRect.u32Height = 480;
+			break;
+		default:
+			break;
+		}
+		s32Ret = CVI_VI_ResizeYuvPath(pipe, &stSize, &stRect);
+		if (s32Ret != CVI_SUCCESS) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "op(%d) failed with %#x!\n", op, s32Ret);
+		}
+	}
+
+	return s32Ret;
+}
+
 //#define ENABLE_ISP_TOOL_DAEMON 1
 //#define JSONRPC_PORT	(5566)
 //extern void isp_daemon2_init(unsigned int port);
@@ -1130,6 +1188,7 @@ int main(int argc, char **argv)
 		SAMPLE_PRT("7: sensor proc\n");
 		SAMPLE_PRT("8: sensor md5 test(for slt_test lt6911)\n");
 		SAMPLE_PRT("9: dump vi yuv frame from phyaddr\n");
+		SAMPLE_PRT("10: change YUV AHD size\n");
 		SAMPLE_PRT("255: exit\n");
 		scanf("%d", &op);
 
@@ -1160,6 +1219,9 @@ int main(int argc, char **argv)
 			break;
 		case 9:
 			s32Ret = get_vi_yuv_debug();
+			break;
+		case 10:
+			s32Ret = resize_yuv_ahd();
 			break;
 		default:
 			break;

@@ -20,7 +20,6 @@
 		printf("[%s]-%d: ", __func__, __LINE__); \
 		printf(fmt); \
 	} while (0)
-#define MCODE_720P 69
 
 static struct option long_options[] = {
 	{"mcode", required_argument, NULL, 'm'},
@@ -37,6 +36,10 @@ static struct option long_options[] = {
 	{"set_infoframe", required_argument, NULL, 's'},
 	{"exit_flag", required_argument, NULL, 'e'},
 	{"audio_file", required_argument, NULL, 'n'},
+	{"Width", required_argument, NULL, 'W'},
+	{"Height", required_argument, NULL, 'H'},
+	{"FPS", required_argument, NULL, 'F'},
+	{"Pattern", required_argument, NULL, 'P'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -292,7 +295,8 @@ CVI_VOID SAMPLE_HDMI_Usage(CVI_CHAR *sPrgNm)
 	printf("\t   0  :  RGB888\n");
 	printf("\t   1  :  YUV444\n");
 	printf("\t   2  :  YUV422\n");
-	printf("Example : ./sample_hdmi --mcode 16 --pixel_clk 148500 --force_output 0 --pixel_repeat 0 --hdcp14_en 0 --csc_en 0 --audio_en 0 " \
+	printf("Example 1 : ./sample_hdmi --Width 1920 --Height 1080 --FPS 60.00 --Pattern 1 --exit_flag 1\n");
+	printf("Example 2 : ./sample_hdmi --mcode 16 --pixel_clk 148500 --force_output 0 --pixel_repeat 0 --hdcp14_en 0 --csc_en 0 --audio_en 0 " \
 	       "--fmt_in 0 --fmt_out 0 --avmute 0 --audio_mute 0 --set_infoframe 0 --exit_flag 1 --audio_file ./audio.raw \n");
 	printf("          (test pixel repeat should set set_infoframe = 1) \n");
 	printf("          (loopback test should set exit_flag = 0) \n");
@@ -307,68 +311,92 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 	CVI_VOID *pVirAddr;
 	CVI_CHAR* filename = "";
 	CVI_CHAR strName[] = "hdmi_sample";
-	CVI_S32 mcode = 0, pixel_clk = 0, hdcp14_en = 0, csc_en = 0, audio_en = 0, fmt_in = 0, fmt_out = 0, avmute = 0,
-			audio_mute = 0, set_infoframe = 0, force_output = 0, pixel_repeat = 0, exit_flag = 0, opt = 0, option_index = 0;
+	CVI_S32 mcode = 0, pixel_clk = 0, hdcp14_en = 0, csc_en = 0, audio_en = 0, fmt_in = 0, fmt_out = 0, avmute = 0;
+	CVI_S32	audio_mute = 0, set_infoframe = 0, force_output = 0, pixel_repeat = 0, exit_flag = 0, opt = 0, option_index = 0;
+	CVI_S32	width = 0, height = 0, pattern = 0, mcode_temp = 0;
+	CVI_DOUBLE fps = 0.0;
 
-	if (argc < 14) {
-		SAMPLE_HDMI_Usage(argv[0]);
-		return CVI_FAILURE;
-	}
-
-	if (!strncmp(argv[1], "-h", 2)) {
+	if (argc < 2 || !strncmp(argv[1], "-h", 2)) {
 		SAMPLE_HDMI_Usage(argv[0]);
 		return CVI_SUCCESS;
 	}
 
-	while ((opt = getopt_long(argc, argv, "m:p:f:r:h:c:a:i:o:v:u:s:e:n", long_options, &option_index)) != -1) {
-        	switch (opt) {
-        	case 'm':
-            	mcode = atoi(optarg);
-            	break;
-       		case 'p':
-            	pixel_clk = atoi(optarg);
-            	break;
-        	case 'f':
-            	force_output = atoi(optarg);
-            	break;
-        	case 'r':
-            	pixel_repeat = atoi(optarg);
-            	break;
-        	case 'h':
-            	hdcp14_en = atoi(optarg);
-            	break;
-        	case 'c':
-            	csc_en = atoi(optarg);
-            	break;
-        	case 'a':
-            	audio_en = atoi(optarg);
-            	break;
-        	case 'i':
-            	fmt_in = atoi(optarg);
-            	break;
-        	case 'o':
-            	fmt_out = atoi(optarg);
-            	break;
-        	case 'v':
-            	avmute = atoi(optarg);
-            	break;
-        	case 'u':
-            	audio_mute = atoi(optarg);
-            	break;
-        	case 's':
-            	set_infoframe = atoi(optarg);
-            	break;
-        	case 'e':
-            	exit_flag = atoi(optarg);
-            	break;
-		case 'n':
-		filename = optarg;
-		break;
-        	default:
-            	SAMPLE_HDMI_Usage(argv[0]);
-            	return CVI_FAILURE;
+	while ((opt = getopt_long(argc, argv, "W:H:F:P:m:p:f:r:h:c:a:i:o:v:u:s:e:n", long_options, &option_index)) != -1) {
+			switch (opt) {
+			case 'W':
+				width = atoi(optarg);
+				break;
+			case 'H':
+				height = atoi(optarg);
+				break;
+			case 'F':
+				fps = atof(optarg);
+				break;
+			case 'P':
+				pattern = atoi(optarg);
+				break;
+			case 'm':
+				mcode = atoi(optarg);
+				break;
+			case 'p':
+				pixel_clk = atoi(optarg);
+				break;
+			case 'f':
+				force_output = atoi(optarg);
+				break;
+			case 'r':
+				pixel_repeat = atoi(optarg);
+				break;
+			case 'h':
+				hdcp14_en = atoi(optarg);
+				break;
+			case 'c':
+				csc_en = atoi(optarg);
+				break;
+			case 'a':
+				audio_en = atoi(optarg);
+				break;
+			case 'i':
+				fmt_in = atoi(optarg);
+				break;
+			case 'o':
+				fmt_out = atoi(optarg);
+				break;
+			case 'v':
+				avmute = atoi(optarg);
+				break;
+			case 'u':
+				audio_mute = atoi(optarg);
+				break;
+			case 's':
+				set_infoframe = atoi(optarg);
+				break;
+			case 'e':
+				exit_flag = atoi(optarg);
+				break;
+			case 'n':
+				filename = optarg;
+				break;
+			default:
+				SAMPLE_HDMI_Usage(argv[0]);
+				return CVI_FAILURE;
         }
     }
+
+	if (!width && !height && !fps){
+		if (argc < 14) {
+			SAMPLE_HDMI_Usage(argv[0]);
+			return CVI_FAILURE;
+		}
+		if(!mcode || !pixel_clk)
+		{
+			printf("mcode or pixel_clk should be no-zero\n");
+			return CVI_FAILURE;
+		}
+	} else if (!width || !height || !fps) {
+		printf("width、height and fps should be no-zero\n");
+		return CVI_FAILURE;
+	}
 
 	memset(&setAttr, 0, sizeof(setAttr));
 
@@ -394,11 +422,51 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 		}
 	}
 
-	if(!mcode || !pixel_clk)
-	{
-		printf("mcode or pixel_clk should be no-zero\n");
+	s32Ret = Get_Edid();
+	if(s32Ret){
+		printf("HDMI Get Edid error\n");
 		return CVI_FAILURE;
 	}
+
+	s32Ret = Get_Sink_Cap();
+	if(s32Ret){
+		printf("HDMI Get Sink Capability error\n");
+		return CVI_FAILURE;
+	}
+
+	if (width && height && fps) {
+		CVI_HDMI_SINK_CAPABILITY capability;
+		memset(&capability, 0, sizeof(capability));
+		s32Ret = CVI_HDMI_GetSinkCapability(&capability);
+		if(s32Ret){
+			printf("hdmi get sink capability error\n");
+			return s32Ret;
+		}
+
+		while(capability.support_video_format[mcode_temp].mcode)
+		{
+			if ((width == (CVI_S32)capability.support_video_format[mcode_temp].timing_info.hact) &&
+				(height == (CVI_S32)capability.support_video_format[mcode_temp].timing_info.vact) &&
+				(fps == ((((CVI_DOUBLE)capability.support_video_format[mcode_temp].fresh_rate) / 1000)))) {
+					pixel_clk = capability.support_video_format[mcode_temp].timing_info.pixel_clk;
+					mcode = capability.support_video_format[mcode_temp].mcode;
+					break;
+			}
+			mcode_temp++;
+		}
+
+		if(!capability.support_video_format[mcode_temp].mcode) {
+			printf("Output resolution is not supported, %dx%dp@%0.2f\n", width, height, fps);
+			return CVI_FAILURE;
+		}
+
+		printf("######### output %dx%dp@%0.2f, mcode:%d, pixel_clk:%d\n", width, height, fps, mcode, pixel_clk);
+	}
+
+	if (pattern)
+		system("devmem 0x67005094 32 0x701000a");
+	else
+		system("devmem 0x67005094 32 0x7010008");
 
 	setAttr.hdmi_en = true;
 	setAttr.audio_en = audio_en;
@@ -454,18 +522,6 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 	s32Ret = CVI_HDMI_Start();
 	if(s32Ret){
 		printf("HDMI start error\n");
-		return CVI_FAILURE;
-	}
-
-	s32Ret = Get_Edid();
-	if(s32Ret){
-		printf("HDMI Get Edid error\n");
-		return CVI_FAILURE;
-	}
-
-	s32Ret = Get_Sink_Cap();
-	if(s32Ret){
-		printf("HDMI Get Sink Capability error\n");
 		return CVI_FAILURE;
 	}
 

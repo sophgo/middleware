@@ -510,7 +510,7 @@ CVI_S32 SAMPLE_VIO_TWO_SNS_TWO_VO(void)
 
 CVI_S32 SAMPLE_VIO_VoRotation(void)
 {
-	SAMPLE_SNS_TYPE_E  enSnsType	    = SENSOR0_TYPE;
+	CVI_SNS_TYPE_E  enSnsType	    = SENSOR0_TYPE;
 	WDR_MODE_E	   enWDRMode	    = WDR_MODE_NONE;
 	COMPRESS_MODE_E    enCompressMode   = COMPRESS_MODE_NONE;
 
@@ -735,7 +735,7 @@ CVI_S32 SAMPLE_VIO_VoRotation(void)
 
 CVI_S32 SAMPLE_VIO_ViVpssAspectRatio(void)
 {
-	SAMPLE_SNS_TYPE_E  enSnsType	    = SENSOR0_TYPE;
+	CVI_SNS_TYPE_E  enSnsType	    = SENSOR0_TYPE;
 	WDR_MODE_E	   enWDRMode	    = WDR_MODE_NONE;
 	COMPRESS_MODE_E    enCompressMode   = COMPRESS_MODE_NONE;
 
@@ -961,7 +961,7 @@ CVI_S32 SAMPLE_VIO_ViVpssAspectRatio(void)
 
 CVI_S32 SAMPLE_VIO_ViRotation(void)
 {
-	SAMPLE_SNS_TYPE_E  enSnsType	    = SENSOR0_TYPE;
+	CVI_SNS_TYPE_E  enSnsType	    = SENSOR0_TYPE;
 	WDR_MODE_E	   enWDRMode	    = WDR_MODE_NONE;
 	COMPRESS_MODE_E    enCompressMode   = COMPRESS_MODE_NONE;
 
@@ -1195,7 +1195,7 @@ CVI_S32 SAMPLE_VIO_ViRotation(void)
 
 CVI_S32 SAMPLE_VIO_VpssRotation(void)
 {
-	SAMPLE_SNS_TYPE_E  enSnsType	    = SENSOR0_TYPE;
+	CVI_SNS_TYPE_E  enSnsType	    = SENSOR0_TYPE;
 	WDR_MODE_E	   enWDRMode	    = WDR_MODE_NONE;
 	COMPRESS_MODE_E    enCompressMode   = COMPRESS_MODE_NONE;
 

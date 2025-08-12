@@ -143,6 +143,21 @@ CVI_S32 CVI_GDC_Suspend(void);
  */
 CVI_S32 CVI_GDC_Resume(void);
 
+/* attach vb pool for specific gdc callback, It only works with internal mode.
+ *
+ * @param pChn(In): chn which to call gdc
+ * @param u32VbPool(In): vb pool to attach
+ * @return Error code (0 if successful)
+ */
+CVI_S32 CVI_GDC_AttachVbPool(MMF_CHN_S *pChn, VB_POOL u32VbPool);
+
+/* detach vb pool for specific gdc callback, It only works with internal mode.
+ *
+ * @param pChn(In): chn which to call gdc
+ * @return Error code (0 if successful)
+ */
+CVI_S32 CVI_GDC_DetachVbPool(MMF_CHN_S *pChn);
+
 /* Update dwa mesh.
  *
  * @param bindName(In): bind name, compatible GRID_INFO_ATTR_S gridBindName

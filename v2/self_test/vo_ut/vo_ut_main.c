@@ -1,4 +1,5 @@
 #include "vo_ut.h"
+#include "cvi_gdc.h"
 
 #define VO_DEVNODE	"/dev/soph-vo"
 
@@ -468,6 +469,7 @@ static CVI_S32 _vo_ut_handle_op(CVI_S32 op, VO_DEV VoDev)
 	CVI_S32 s32Ret = CVI_SUCCESS, s32DeinitRet = CVI_SUCCESS;
 	VO_LAYER VoLayer = VoDev;
 	VO_CHN VoChn = 0;
+	MMF_CHN_S Chn;
 
 	s32Ret = vo_ut_vo_init_by_fmt(vo_ut_file1[0 + intf * 2].enPixelFormat, VoDev);
 	if (s32Ret != CVI_SUCCESS) {
@@ -493,11 +495,27 @@ static CVI_S32 _vo_ut_handle_op(CVI_S32 op, VO_DEV VoDev)
 			break;
 		}
 
+		Chn.enModId = CVI_ID_VO;
+		Chn.s32DevId = VoLayer;
+		Chn.s32ChnId = VoChn;
+		s32Ret  = CVI_GDC_AttachVbPool(&Chn, 1);
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("CVI_GDC_AttachVbPool is fail\n");
+			break;
+		}
+
 		s32Ret = vo_ut_send_frame(&vo_ut_file1[1 + intf * 2], VoDev);
 		if (s32Ret != CVI_SUCCESS) {
 			SAMPLE_PRT("vo_ut_send_frame failed\n");
 			break;
 		}
+
+		s32Ret = CVI_GDC_DetachVbPool(&Chn);
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("CVI_GDC_DetachVbPool is fail\n");
+			break;
+		}
+
 		break;
 	}
 
@@ -1222,6 +1240,12 @@ static CVI_S32 _vo_ut_handle_op(CVI_S32 op, VO_DEV VoDev)
 			break;
 		}
 
+		s32Ret = CVI_VO_AttachLayerVbPool(VoLayer, 0);
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("CVI_VO_AttachLayerVbPool failed\n");
+			break;
+		}
+
 		s32Ret = CVI_VO_EnableVideoLayer(VoLayer);
 		if (s32Ret != CVI_SUCCESS) {
 			SAMPLE_PRT("CVI_VO_EnableVideoLayer is fail\n");
@@ -1279,11 +1303,20 @@ static CVI_S32 _vo_ut_handle_op(CVI_S32 op, VO_DEV VoDev)
 		SAMPLE_PRT("CompressMode %d\n", stWbcAttr.enCompressMode);
 		SAMPLE_PRT("Depth %d\n", u32Depth);
 
+		s32Ret = CVI_VO_AttachWbcVbPool(VoWbc, 0);
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("CVI_VO_AttachWbcVbPool failed\n");
+			break;
+		}
+
 		s32Ret = CVI_VO_EnableWbc(VoWbc);
 		if (s32Ret != CVI_SUCCESS) {
 			SAMPLE_PRT("CVI_VO_EnableWbc failed\n");
 			break;
 		}
+
+		system("cat /proc/soph/vo");
+		system("cat /proc/soph/vb");
 
 		memcpy(&ut_file, &vo_ut_file1[0 + intf * 2], sizeof(VO_UT_FILE));
 
@@ -1320,6 +1353,19 @@ static CVI_S32 _vo_ut_handle_op(CVI_S32 op, VO_DEV VoDev)
 			SAMPLE_PRT("CVI_VO_ReleaseWbcFrame failed\n");
 			break;
 		}
+
+		s32Ret = CVI_VO_DetachWbcVbPool(VoWbc);
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("CVI_VO_DetachWbcVbPool failed\n");
+		}
+
+		s32Ret = CVI_VO_DetachLayerVbPool(VoLayer);
+		if (s32Ret != CVI_SUCCESS) {
+			SAMPLE_PRT("CVI_VO_DetachLayerVbPool failed\n");
+		}
+
+		system("cat /proc/soph/vo");
+		system("cat /proc/soph/vb");
 
 		s32Ret = CVI_VO_DisableWbc(VoWbc);
 		if (s32Ret != CVI_SUCCESS) {

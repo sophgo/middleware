@@ -17,6 +17,10 @@ To compile the HDMI Sample Application, you can use the provided Makefile and SD
 ## Usage
 To run the HDMI Sample Application, use the following command:
 
+./sample_hdmi <Width> <Height> <FPS> <Pattern> <exit_flag>
+
+Or:
+
 ./sample_hdmi <mCode> <pixel_clk> <force_output> <pixel_repeat> <hdcp14_en> <csc_en> <audio_en> <csc_fmt_in> <csc_fmt_out> <avmute_en> <audio_mute_en> <set_infoframe> <exit_flag> <audio_file>
 
 
@@ -61,7 +65,8 @@ Note: If you are testing pixel repeat, you should set set_infoframe to 1.
       In addition, just set exit_flag = 1.
 
 ## Example
-./sample_hdmi --mcode 16 --pixel_clk 148500 --force_output 0 --pixel_repeat 0 --hdcp14_en 0 --csc_en 0 --audio_en 0 --fmt_in 0 --fmt_out 0 --avmute 0 --audio_mute 0 --set_infoframe 0 --exit_flag 1 ./audio.file
+Example 1 : ./sample_hdmi --Width 1920 --Height 1080 --FPS 60.00 --Pattern 1 --exit_flag 1
+Example 2 : ./sample_hdmi --mcode 16 --pixel_clk 148500 --force_output 0 --pixel_repeat 0 --hdcp14_en 0 --csc_en 0 --audio_en 0 --fmt_in 0 --fmt_out 0 --avmute 0 --audio_mute 0 --set_infoframe 0 --exit_flag 1 ./audio.file
 
 Execute the above line of commands to output 1920x1080-60Hz images.
 If you have other needs, you can refer to the parameter list above to set it yourself.

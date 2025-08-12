@@ -457,13 +457,26 @@ static CVI_S32 reset_id_size_in_bin(enum CVI_BIN_SECTION_ID src_id, enum CVI_BIN
 {
 	CVI_BIN_HEADER *pstHeader = (CVI_BIN_HEADER *)buf;
 	CVI_U8 *addr = (CVI_U8 *)buf;
+	CVI_U32 secSize = pstHeader->size[CVI_BIN_ID_HEADER] - sizeof(CVI_U32) - sizeof(CVI_BIN_EXTRA_S);
+	CVI_U32 secCnt = secSize / sizeof(CVI_U32);
+	CVI_BIN_INDEX_HEADER *pheader_index = NULL;
 
 	g_u32CurIspBinSize = pstHeader->size[src_id];
 	pstHeader->size[src_id] = 0;
 	pstHeader->size[dst_id] = g_u32CurIspBinSize;
 
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
+	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < secCnt; idx++) {
 		addr += pstHeader->size[idx];
+	}
+	pheader_index = (CVI_BIN_INDEX_HEADER *)(addr);
+	pheader_index->size[src_id] = 0;
+	pheader_index->size[dst_id] = g_u32CurIspBinSize;
+
+	CVI_U32 offsetData = pstHeader->size[CVI_BIN_ID_HEADER];
+
+	for (CVI_U32 idx = CVI_BIN_ID_ISP0; idx < secCnt; idx++) {
+		pheader_index->offsetData[idx] = offsetData;
+		offsetData += pheader_index->size[idx];
 	}
 
 	return CVI_SUCCESS;
@@ -474,12 +487,25 @@ static CVI_S32 restore_init_id_size_in_bin(enum CVI_BIN_SECTION_ID src_id, enum 
 {
 	CVI_BIN_HEADER *pstHeader = (CVI_BIN_HEADER *)buf;
 	CVI_U8 *addr = (CVI_U8 *)buf;
+	CVI_U32 secSize = pstHeader->size[CVI_BIN_ID_HEADER] - sizeof(CVI_U32) - sizeof(CVI_BIN_EXTRA_S);
+	CVI_U32 secCnt = secSize / sizeof(CVI_U32);
+	CVI_BIN_INDEX_HEADER *pheader_index = NULL;
 
 	pstHeader->size[dst_id] = 0;
 	pstHeader->size[src_id] = g_u32CurIspBinSize;
 
-	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < CVI_BIN_ID_MAX; idx++) {
+	for (CVI_U32 idx = CVI_BIN_ID_MIN; idx < secCnt; idx++) {
 		addr += pstHeader->size[idx];
+	}
+	pheader_index = (CVI_BIN_INDEX_HEADER *)(addr);
+	pheader_index->size[dst_id] = 0;
+	pheader_index->size[src_id] = g_u32CurIspBinSize;
+
+	CVI_U32 offsetData = pstHeader->size[CVI_BIN_ID_HEADER];
+
+	for (CVI_U32 idx = CVI_BIN_ID_ISP0; idx < secCnt; idx++) {
+		pheader_index->offsetData[idx] = offsetData;
+		offsetData += pheader_index->size[idx];
 	}
 
 	return CVI_SUCCESS;
@@ -635,9 +661,10 @@ CVI_S32 CVI_BIN_LoadParamFromBin(enum CVI_BIN_SECTION_ID id, CVI_U8 *buf)
 		goto ERROR_HANDLER;
 	}
 
-	const CVI_CHAR *pchModuleName[CVI_BIN_ID_MAX] = {"Header", "Sensor_0", "Sensor_1",
-										"Sensor_2", "Sensor_3",
-										"Vpss", "Vdec", "Venc", "Vo"};
+	const CVI_CHAR *pchModuleName[CVI_BIN_ID_MAX] = {
+					"Header", "Sensor_0", "Sensor_1", "Sensor_2",
+					"Sensor_3", "Sensor_4", "Sensor_5", "Sensor_6",
+					"Sensor_7", "Vpss", "Vdec", "Venc", "Vo_0", "Vo_1"};
 	CVI_BIN_HEADER *pstHeader = (CVI_BIN_HEADER *)buf;
 	CVI_U32 secSize = pstHeader->size[CVI_BIN_ID_HEADER] - sizeof(CVI_U32) - sizeof(CVI_BIN_EXTRA_S);
 	CVI_U32 secCnt = secSize / sizeof(CVI_U32);

@@ -118,6 +118,11 @@ int vi_set_usr_pic(int fd, struct cvi_isp_usr_pic_cfg *cfg)
 	S_CTRL_PTR(fd, cfg, VI_IOCTL_USR_PIC_CFG);
 }
 
+int vi_resize_yuv_path(int fd, struct resize_yuv_path_cfg_s *cfg)
+{
+	S_CTRL_PTR(fd, cfg, VI_IOCTL_RESIZE_YUV_PATH);
+}
+
 int vi_put_usr_pic(int fd, CVI_U64 phyAddr)
 {
 	S_CTRL_VALUE64(fd, phyAddr, VI_IOCTL_USR_PIC_PUT);

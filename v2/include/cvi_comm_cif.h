@@ -30,6 +30,12 @@ extern "C" {
 struct img_size_s {
 	unsigned int	width;		/* Image width */
 	unsigned int	height; 	/* Image height */
+	unsigned int	start_x;	/* Image start x */
+	unsigned int	start_y;	/* Image start y */
+	unsigned int	active_w;	/* Active width */
+	unsigned int	active_h;	/* Active height */
+	unsigned int	max_width;	/* Maximum width */
+	unsigned int	max_height;	/* Maximum height */
 };
 
 /* RX MAC clock frequency enumeration */

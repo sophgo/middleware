@@ -84,6 +84,8 @@ enum VO_SDK_CTRL {
 	VO_SDK_GET_LAYERPRRIORITY,
 	VO_SDK_BIND_LAYER,
 	VO_SDK_UNBIND_LAYER,
+	VO_SDK_ATTACH_LAYER_VBPOOL,
+	VO_SDK_DETACH_LAYER_VBPOOL,
 	//CHN CTRL
 	VO_SDK_SET_CHNATTR,
 	VO_SDK_GET_CHNATTR,
@@ -128,6 +130,8 @@ enum VO_SDK_CTRL {
 	VO_SDK_GET_WBCDEPTH,
 	VO_SDK_GET_WBCFRAME,
 	VO_SDK_RELEASE_WBCFRAME,
+	VO_SDK_ATTACH_WBC_VBPOOL,
+	VO_SDK_DETACH_WBC_VBPOOL,
 	VO_SDK_SET_BTPARAM,
 	VO_SDK_GET_BTPARAM,
 };
@@ -386,6 +390,16 @@ struct vo_wbc_frame_cfg {
 
 struct vo_gamma_info_cfg {
 	VO_GAMMA_INFO_S *pinfo;
+};
+
+struct vo_layer_vb_pool_cfg {
+	CVI_U8 VoLayer;
+	VB_POOL u32VbPool;
+};
+
+struct vo_wbc_vb_pool_cfg {
+	CVI_U8 VoWbc;
+	VB_POOL u32VbPool;
 };
 
 #ifdef __cplusplus

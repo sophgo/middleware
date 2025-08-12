@@ -3,6 +3,7 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <ctype.h>
+#include "cvi_gdc.h"
 
 #define UT_INFO(_case, _func, _flags)			\
 	[(_case)] = {					\
@@ -396,11 +397,6 @@ static int case_raw_replay_manual(void *p)
 
 	UNUSED(p);
 
-	if (vi_ut_ctx.is_test_mode && !vi_ut_ctx.is_fpga_ip_test) {
-		VI_UT_PRT("This test case is not support under auto test.\n");
-		return s32Ret;
-	}
-
 	s32Ret = vi_raw_replay_manual_test();
 
 	return s32Ret;
@@ -759,6 +755,7 @@ static int case_set_chn_rotation(void *p)
 	ROTATION_E rot;
 	ROTATION_E rot_bak;
 	int tmp;
+	MMF_CHN_S Chn;
 
 	UNUSED(p);
 
@@ -797,6 +794,17 @@ static int case_set_chn_rotation(void *p)
 		return CVI_FAILURE;
 	}
 
+	Chn.enModId = CVI_ID_VI;
+	Chn.s32DevId = 0;
+	Chn.s32ChnId = 0;
+	s32Ret  = CVI_GDC_AttachVbPool(&Chn, 1);
+	if (s32Ret == CVI_SUCCESS) {
+		VI_UT_PRT("CVI_GDC_AttachVbPool TEST-PASS\n");
+	} else {
+		VI_UT_PRT("CVI_GDC_AttachVbPool TEST-FAIL\n");
+		return CVI_FAILURE;
+	}
+
 	s32Ret = CVI_VI_GetChnRotation(0, 0, &rot_bak);
 	if (s32Ret == CVI_SUCCESS) {
 		if (rot_bak == rot) {
@@ -812,6 +820,14 @@ static int case_set_chn_rotation(void *p)
 
 	if (vi_ut_ctx.is_test_mode && !vi_ut_ctx.is_fpga_ip_test) {
 		s32Ret = vi_ut_get_chn_frame(0);
+	}
+
+	s32Ret = CVI_GDC_DetachVbPool(&Chn);
+	if (s32Ret == CVI_SUCCESS) {
+		VI_UT_PRT("CVI_GDC_DetachVbPool TEST-PASS\n");
+	} else {
+		VI_UT_PRT("CVI_GDC_DetachVbPool TEST-FAIL\n");
+		return CVI_FAILURE;
 	}
 
 	return s32Ret;
@@ -1693,11 +1709,11 @@ static const struct vi_ut_info vi_uts[] = {
 	UT_INFO(CASE_VI_MMAP,				 			case_vi_mmap,				 			0),
 	UT_INFO(CASE_VI_POLL,				 			case_vi_poll,				 			0),
 	UT_INFO(CASE_RAW_REPLAY,			 			case_raw_replay,			 			0),
-	UT_INFO(CASE_RAW_REPLAY_MANUAL,			 		case_raw_replay_manual,		 			0),
-	UT_INFO(CASE_SENSOR_ON_THE_FLY,			 		case_sensor_onthefly,			 		1),
+	UT_INFO(CASE_RAW_REPLAY_MANUAL,			 		case_raw_replay_manual,		 			1),
+	UT_INFO(CASE_SENSOR_ON_THE_FLY,			 		case_sensor_onthefly,			 		0),
 	UT_INFO(CASE_SENSOR_FE_BE_DRAM_POST_DRAM,		case_sensor_fe_be_dram_post_dram,		0),
 	UT_INFO(CASE_SENSOR_FE_DRAM_BE_POST_DRAM,		case_sensor_fe_dram_be_post_dram,		0),
-	UT_INFO(CASE_PATGEN_ON_THE_FLY,			 		case_patgen_onthefly,			 		1),
+	UT_INFO(CASE_PATGEN_ON_THE_FLY,			 		case_patgen_onthefly,			 		0),
 	UT_INFO(CASE_PATGEN_FE_BE_DRAM_POST_DRAM,		case_patgen_fe_be_dram_post_dram,		0),
 	UT_INFO(CASE_PATGEN_FE_DRAM_BE_POST_DRAM,		case_patgen_fe_dram_be_post_dram,		0),
 	UT_INFO(CASE_PATGEN_FE_DRAM_BE_POST_SC,			case_patgen_fe_dram_be_post_sc,	 		0),
@@ -1758,8 +1774,10 @@ static CVI_S32 _vi_ut_handle_op(unsigned int op)
 
 	info = &vi_uts[op];
 
-	if (vi_ut_ctx.is_test_mode && info->flags)
+	if (vi_ut_ctx.is_test_mode && info->flags){
+		VI_UT_PRT("This test case is not support under auto test.\n");
 		return s32Ret;
+	}
 
 	if (vi_ut_ctx.is_test_mode) {
 		_vi_set_tuning_dis(0, 1, 1, 1);
@@ -1829,6 +1847,7 @@ int main(int argc, char *argv[])
 	CVI_S32 s32Ret;
 	CVI_BOOL abChnEnable[VPSS_MAX_CHN_NUM] = {CVI_TRUE, };
 	int argv_offset = 0;
+	const struct vi_ut_info *InFo = NULL;
 
 	UNUSED(argc);
 	UNUSED(argv);
@@ -1873,7 +1892,10 @@ int main(int argc, char *argv[])
 		} while (op != 255);
 	}
 
-	vi_ut_plat_vi_deinit();
+	InFo = &vi_uts[op];
+	if(!vi_ut_ctx.is_test_mode || !InFo->flags){
+		vi_ut_plat_vi_deinit();
+	}
 
 	if (vi_ut_ctx.is_vpss_online)
 		SAMPLE_COMM_VPSS_Stop(VPSS_ONLINE_GRP_0, abChnEnable);
