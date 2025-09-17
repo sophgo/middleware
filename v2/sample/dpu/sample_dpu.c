@@ -199,7 +199,7 @@ CVI_S32 SAMPLE_DPU_BASE( SIZE_S stSize , CVI_CHAR *filenameL,CVI_CHAR *filenameR
 		SAMPLE_PRT("common pool[0] BlkSize %d\n", u32BlkSizeIn_left);
 		if(grp_attr.bIsBtcostOut){
 			u32BlkSizeOut_btcost = COMMON_GetPicBufferSize(chn_attr.stImgSize.u32Width*128, chn_attr.stImgSize.u32Height,
-			PIXEL_FORMAT_YUV_400, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, ALIGN_16);
+			PIXEL_FORMAT_YUV_400, DATA_BITWIDTH_16, COMPRESS_MODE_NONE, ALIGN_16);
 			stVbConf.astCommPool[2].u32BlkSize	= u32BlkSizeOut_btcost;
 			stVbConf.astCommPool[2].u32BlkCnt	= 1;
 			stVbConf.astCommPool[2].enRemapMode	= VB_REMAP_MODE_CACHED;
@@ -225,7 +225,7 @@ CVI_S32 SAMPLE_DPU_BASE( SIZE_S stSize , CVI_CHAR *filenameL,CVI_CHAR *filenameR
 
 		if(grp_attr.bIsBtcostOut){
 			u32BlkSizeOut_btcost = COMMON_GetPicBufferSize(chn_attr.stImgSize.u32Width*128, chn_attr.stImgSize.u32Height,
-			PIXEL_FORMAT_YUV_400, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, ALIGN_16);
+			PIXEL_FORMAT_YUV_400, DATA_BITWIDTH_16, COMPRESS_MODE_NONE, ALIGN_16);
 			stVbConf.astCommPool[2].u32BlkSize	= u32BlkSizeOut_btcost;
 			stVbConf.astCommPool[2].u32BlkCnt	= 1;
 			stVbConf.astCommPool[2].enRemapMode	= VB_REMAP_MODE_CACHED;
@@ -249,7 +249,7 @@ CVI_S32 SAMPLE_DPU_BASE( SIZE_S stSize , CVI_CHAR *filenameL,CVI_CHAR *filenameR
 		SAMPLE_PRT("common pool[1] BlkSize %d\n", u32BlkSizeOut16*2);
 		if(grp_attr.bIsBtcostOut){
 			u32BlkSizeOut_btcost = COMMON_GetPicBufferSize(chn_attr.stImgSize.u32Width*128, chn_attr.stImgSize.u32Height,
-			PIXEL_FORMAT_YUV_400, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, ALIGN_16);
+			PIXEL_FORMAT_YUV_400, DATA_BITWIDTH_16, COMPRESS_MODE_NONE, ALIGN_16);
 			stVbConf.astCommPool[2].u32BlkSize	= u32BlkSizeOut_btcost;
 			stVbConf.astCommPool[2].u32BlkCnt	= 1;
 			stVbConf.astCommPool[2].enRemapMode	= VB_REMAP_MODE_CACHED;
@@ -275,7 +275,7 @@ CVI_S32 SAMPLE_DPU_BASE( SIZE_S stSize , CVI_CHAR *filenameL,CVI_CHAR *filenameR
 		SAMPLE_PRT("common pool[1] BlkSize %d\n", u32BlkSizeOut16*2);
 		if(grp_attr.bIsBtcostOut){
 			u32BlkSizeOut_btcost = COMMON_GetPicBufferSize(chn_attr.stImgSize.u32Width*128, chn_attr.stImgSize.u32Height,
-			PIXEL_FORMAT_YUV_400, DATA_BITWIDTH_8, COMPRESS_MODE_NONE, ALIGN_16);
+			PIXEL_FORMAT_YUV_400, DATA_BITWIDTH_16, COMPRESS_MODE_NONE, ALIGN_16);
 			stVbConf.astCommPool[2].u32BlkSize	= u32BlkSizeOut_btcost;
 			stVbConf.astCommPool[2].u32BlkCnt	= 1;
 			stVbConf.astCommPool[2].enRemapMode	= VB_REMAP_MODE_CACHED;

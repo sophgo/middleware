@@ -74,10 +74,24 @@ CVI_S32 SAMPLE_COMM_DPU_Init(DPU_GRP DpuGrp, DPU_GRP_ATTR_S *pstDpuGrpAttr,
 		return CVI_FAILURE;
 	}
 
+	DPUChn=0;
+	s32Ret = CVI_DPU_SetChnAttr(DpuGrp, DPUChn, pstDPUChnAttr);
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("CVI_DPU_SetChnAttr failed with %#x\n", s32Ret);
+		CVI_DPU_DestroyGrp(DpuGrp);
+		return CVI_FAILURE;
+	}
+
+	s32Ret = CVI_DPU_EnableChn(DpuGrp, DPUChn);
+	if (s32Ret != CVI_SUCCESS) {
+		SAMPLE_PRT("CVI_DPU_EnableChn failed with %#x\n", s32Ret);
+		CVI_DPU_DestroyGrp(DpuGrp);
+		return CVI_FAILURE;
+	}
+
 	if(pstDpuGrpAttr->bIsBtcostOut){
 		DPUChn=1;
 		s32Ret = CVI_DPU_SetChnAttr(DpuGrp, DPUChn, pstDPUChnAttr);
-
 		if (s32Ret != CVI_SUCCESS) {
 			SAMPLE_PRT("CVI_DPU_SetChnAttr failed with %#x\n", s32Ret);
 			CVI_DPU_DestroyGrp(DpuGrp);
@@ -85,32 +99,14 @@ CVI_S32 SAMPLE_COMM_DPU_Init(DPU_GRP DpuGrp, DPU_GRP_ATTR_S *pstDpuGrpAttr,
 		}
 
 		s32Ret = CVI_DPU_EnableChn(DpuGrp, DPUChn);
-
 		if (s32Ret != CVI_SUCCESS) {
-			CVI_DPU_DisableChn(DpuGrp, DPUChn);
+			CVI_DPU_DisableChn(DpuGrp, 0);
 			CVI_DPU_DestroyGrp(DpuGrp);
 			SAMPLE_PRT("CVI_DPU_EnableChn failed with %#x\n", s32Ret);
-			return CVI_FAILURE;
-		}
-	}else{
-		DPUChn=0;
-		s32Ret = CVI_DPU_SetChnAttr(DpuGrp, DPUChn, pstDPUChnAttr);
-
-		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("CVI_DPU_SetChnAttr failed with %#x\n", s32Ret);
-			CVI_DPU_DestroyGrp(DpuGrp);
-			return CVI_FAILURE;
-		}
-
-		s32Ret = CVI_DPU_EnableChn(DpuGrp, DPUChn);
-
-		if (s32Ret != CVI_SUCCESS) {
-			SAMPLE_PRT("CVI_DPU_EnableChn failed with %#x\n", s32Ret);
-			CVI_DPU_DisableChn(DpuGrp, DPUChn);
-			CVI_DPU_DestroyGrp(DpuGrp);
 			return CVI_FAILURE;
 		}
 	}
+
 	SAMPLE_PRT("- \n");
 	return CVI_SUCCESS;
 }
@@ -162,7 +158,7 @@ CVI_S32 SAMPLE_COMM_DPU_Stop(DPU_GRP DpuGrp)
 
 	s32Ret = CVI_DPU_GetGrpAttr(DpuGrp,&stGrpAttr);
 	if(stGrpAttr.bIsBtcostOut){
-		DPUChn = 0;
+		DPUChn = 1;
 		s32Ret = CVI_DPU_DisableChn(DpuGrp, DPUChn);
 		if (s32Ret != CVI_SUCCESS) {
 			SAMPLE_PRT("DPU stop Grp %d channel %d failed! Please check param\n",
@@ -287,23 +283,15 @@ static CVI_S32 SAMPLE_COMM_DPU_FileToFrame(SIZE_S *stSize, PIXEL_FORMAT_E enPixe
 CVI_S32 SAMPLE_COMM_DPU_SendFrame(DPU_GRP DpuGrp ,VIDEO_FRAME_INFO_S *pstVideoFrameL,VIDEO_FRAME_INFO_S *pstVideoFrameR)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
-	// VB_BLK vb_left;
-	// VB_BLK vb_right;
-	SAMPLE_PRT("+ \n");
+
 	s32Ret = CVI_DPU_SendFrame(DpuGrp,pstVideoFrameL,pstVideoFrameR,1000);
 	if (s32Ret != CVI_SUCCESS) {
 		SAMPLE_PRT("DPU Grp(%d) Send Frame  failed! \n", DpuGrp);
-		return CVI_FAILURE;
 	}
 
-	// vb_left = CVI_VB_PhysAddr2Handle(pstVideoFrameL->stVFrame.u64PhyAddr[0]);
-	// if(CVI_VB_ReleaseBlock(vb_left)!=CVI_SUCCESS)
-	// 	SAMPLE_PRT("ReleaseBlock blk_left fail !\n");
-	// vb_right = CVI_VB_PhysAddr2Handle(pstVideoFrameR->stVFrame.u64PhyAddr[0]);
-	// if(CVI_VB_ReleaseBlock(vb_right)!=CVI_SUCCESS)
-	// 	SAMPLE_PRT("ReleaseBlock blk_right fail !\n");
+	CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(pstVideoFrameL->stVFrame.u64PhyAddr[0]));
+	CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(pstVideoFrameR->stVFrame.u64PhyAddr[0]));
 
-	SAMPLE_PRT("- \n");
 	return s32Ret;
 }
 
@@ -338,6 +326,7 @@ CVI_S32 SAMPLE_COMM_DPU_SendFrame_FromFile(DPU_GRP DpuGrp ,SIZE_S *stSize, PIXEL
 	s32Ret = SAMPLE_COMM_DPU_FileToFrame(stSize,enPixelFormat,filenameR,&stVideoFrameR);
 	if (s32Ret != CVI_SUCCESS) {
 		SAMPLE_PRT("Right FileToFrame  failed! \n");
+		CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(stVideoFrameL.stVFrame.u64PhyAddr[0]));
 		return s32Ret;
 	}
 
@@ -346,6 +335,7 @@ CVI_S32 SAMPLE_COMM_DPU_SendFrame_FromFile(DPU_GRP DpuGrp ,SIZE_S *stSize, PIXEL
 		SAMPLE_PRT("SendFrame  failed! \n");
 		return s32Ret;
 	}
+
 	SAMPLE_PRT("- \n");
 	return s32Ret;
 }
@@ -371,7 +361,7 @@ CVI_S32 SAMPLE_COMM_DPU_GetFrameToFile(DPU_GRP DpuGrp ,DPU_CHN DpuChn,CVI_CHAR *
 	SAMPLE_PRT("+ \n");
 	memset(&stVideoFrame,0,sizeof(stVideoFrame));
 	SAMPLE_PRT("1 \n");
-	s32Ret = CVI_DPU_GetFrame(DpuGrp,DpuChn,&stVideoFrame,TIMEOUT_GET_FRAME);
+	s32Ret = CVI_DPU_GetFrame(DpuGrp,DpuChn,&stVideoFrame,1000);
 	if (s32Ret != CVI_SUCCESS){
 		SAMPLE_PRT("CVI_DPU_GetFrame fail. s32Ret: 0x%x !\n", s32Ret);
 		return s32Ret;

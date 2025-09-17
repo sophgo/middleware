@@ -329,11 +329,8 @@ static CVI_S32 cmos_inttime_update(VI_PIPE ViPipe, CVI_U32 *u32IntTime)
 		/* update isp */
 		cmos_get_wdr_size(ViPipe, &pstSnsState->astSyncInfo[0].ispCfg);
 	} else {
-		if (pstSnsState->au32FL[0] < *u32IntTime - 1) {
-			CVI_TRACE_SNS(CVI_DBG_ERR, "FL %d is smaller than  = %d\n",
-					pstSnsState->au32FL[0], *u32IntTime - 1);
-			return CVI_FAILURE;
-		}
+
+		*u32IntTime = (*u32IntTime > pstSnsState->au32FL[0] + 1) ? pstSnsState->au32FL[0] + 1 : *u32IntTime;
 		u32Value = pstSnsState->au32FL[0] - *u32IntTime - 1;
 
 		pstSnsRegsInfo->astI2cData[LINEAR_SHS1_0].u32Data = (u32Value & 0xFF);
@@ -511,22 +508,20 @@ static CVI_S32 cmos_get_inttime_max(VI_PIPE ViPipe, CVI_U16 u16ManRatioEnable, C
 
 	u32ShortTimeMinLimit = (WDR_MODE_2To1_LINE == pstSnsState->enWDRMode) ? 2 : 2;
 
-	if (WDR_MODE_2To1_LINE == pstSnsState->enWDRMode) {
-		if (genFSWDRMode[ViPipe] == ISP_FSWDR_LONG_FRAME_MODE) {
-			u32IntTimeMaxTmp = pstSnsState->au32FL[0] - 10;
-			au32IntTimeMax[0] = u32IntTimeMaxTmp;
-			au32IntTimeMin[0] = u32ShortTimeMinLimit;
-			return CVI_SUCCESS;
-		}
-		u32IntTimeMaxTmp0 = ((pstSnsState->au32FL[1] - 6 - pstSnsState->au32WDRIntTime[0]) * 0x40) /
-						DIV_0_TO_1(au32Ratio[0]);
-		u32IntTimeMaxTmp  = ((pstSnsState->au32FL[0] - 6) * 0x40)  / DIV_0_TO_1(au32Ratio[0] + 0x40);
-		u32IntTimeMaxTmp = (u32IntTimeMaxTmp > u32IntTimeMaxTmp0) ? u32IntTimeMaxTmp0 : u32IntTimeMaxTmp;
-		u32IntTimeMaxTmp  = (u32IntTimeMaxTmp > (g_astImx307_2l_State[ViPipe].u32RHS1_MAX - 3)) ?
-						(g_astImx307_2l_State[ViPipe].u32RHS1_MAX - 3) : u32IntTimeMaxTmp;
-		u32IntTimeMaxTmp  = (!u32IntTimeMaxTmp) ? 1 : u32IntTimeMaxTmp;
-
+	if (genFSWDRMode[ViPipe] == ISP_FSWDR_LONG_FRAME_MODE) {
+		u32IntTimeMaxTmp = pstSnsState->au32FL[0] - 10;
+		au32IntTimeMax[0] = u32IntTimeMaxTmp;
+		au32IntTimeMin[0] = u32ShortTimeMinLimit;
+		return CVI_SUCCESS;
 	}
+	u32IntTimeMaxTmp0 = ((pstSnsState->au32FL[1] - 6 - pstSnsState->au32WDRIntTime[0]) * 0x40) /
+					DIV_0_TO_1(au32Ratio[0]);
+	u32IntTimeMaxTmp  = ((pstSnsState->au32FL[0] - 6) * 0x40)  / DIV_0_TO_1(au32Ratio[0] + 0x40);
+	u32IntTimeMaxTmp = (u32IntTimeMaxTmp > u32IntTimeMaxTmp0) ? u32IntTimeMaxTmp0 : u32IntTimeMaxTmp;
+	u32IntTimeMaxTmp  = (u32IntTimeMaxTmp > (g_astImx307_2l_State[ViPipe].u32RHS1_MAX - 3)) ?
+					(g_astImx307_2l_State[ViPipe].u32RHS1_MAX - 3) : u32IntTimeMaxTmp;
+	u32IntTimeMaxTmp  = (!u32IntTimeMaxTmp) ? u32ShortTimeMinLimit : u32IntTimeMaxTmp;
+
 
 	if (u32IntTimeMaxTmp >= u32ShortTimeMinLimit) {
 		if (pstSnsState->enWDRMode == WDR_MODE_2To1_LINE) {
