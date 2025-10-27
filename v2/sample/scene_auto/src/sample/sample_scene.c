@@ -14,7 +14,7 @@
 
 CVI_S32 SAMPLE_SCENE_VoRotation_Start(TStreamInfo *ptStreamInfo)
 {
-	SAMPLE_SNS_TYPE_E  enSnsType        = SENSOR0_TYPE;
+	CVI_SNS_TYPE_E  enSnsType        = SENSOR0_TYPE;
 	WDR_MODE_E         enWDRMode        = WDR_MODE_NONE;
 	DYNAMIC_RANGE_E    enDynamicRange   = DYNAMIC_RANGE_SDR8;
 	PIXEL_FORMAT_E     enPixFormat      = SAMPLE_PIXEL_FORMAT;

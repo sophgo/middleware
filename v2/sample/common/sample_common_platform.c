@@ -64,7 +64,7 @@ CVI_S32 SAMPLE_PLAT_SYS_INIT(SIZE_S stSize)
 
 	stVbConf.astCommPool[0].u32BlkSize	= u32BlkSize;
 #if !defined(DDR_64MB_SIZE)
-	stVbConf.astCommPool[0].u32BlkCnt	= 8;
+	stVbConf.astCommPool[0].u32BlkCnt	= 10;
 #else
 	stVbConf.astCommPool[0].u32BlkCnt	= 4;
 #endif

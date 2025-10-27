@@ -12,6 +12,7 @@
 
 int vi_enable_usr_pic(int fd, bool enable);
 int vi_set_usr_pic(int fd, struct cvi_isp_usr_pic_cfg *cfg);
+int vi_resize_yuv_path(int fd, struct resize_yuv_path_cfg_s *cfg);
 int vi_put_usr_pic(int fd, CVI_U64 phyAddr);
 int vi_set_usr_pic_timing(int fd, CVI_U32 fps);
 int vi_set_be_online(int fd, CVI_BOOL online);

@@ -22,6 +22,8 @@ CVI_S32 gdc_get_work_job(CVI_S32 fd, struct gdc_handle_data *cfg);
 CVI_S32 gdc_get_chn_frm(CVI_S32 fd, struct gdc_chn_frm_cfg *cfg);
 CVI_S32 gdc_suspend(CVI_S32 fd);
 CVI_S32 gdc_resume(CVI_S32 fd);
+CVI_S32 gdc_attach_vbpool(CVI_S32 fd, struct ldc_vb_pool_cfg *cfg);
+CVI_S32 gdc_detach_vbpool(CVI_S32 fd, struct ldc_vb_pool_cfg *cfg);
 
 /* INTERNAL */
 CVI_S32 gdc_set_chn_buf_wrap(CVI_S32 fd, const struct ldc_buf_wrap_cfg *cfg);

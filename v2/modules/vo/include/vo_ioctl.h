@@ -164,6 +164,10 @@ int vo_sdk_set_wbcdepth(int fd, struct vo_wbc_depth_cfg *cfg);
 int vo_sdk_get_wbcdepth(int fd, struct vo_wbc_depth_cfg *cfg);
 int vo_sdk_get_wbcframe(int fd, struct vo_wbc_frame_cfg *cfg);
 int vo_sdk_release_wbcframe(int fd, struct vo_wbc_frame_cfg *cfg);
+int vo_sdk_attach_layer_vb_pool(int fd, struct vo_layer_vb_pool_cfg *cfg);
+int vo_sdk_detach_layer_vb_pool(int fd, struct vo_layer_vb_pool_cfg *cfg);
+int vo_sdk_attach_wbc_vb_pool(int fd, struct vo_wbc_vb_pool_cfg *cfg);
+int vo_sdk_detach_wbc_vb_pool(int fd, struct vo_wbc_vb_pool_cfg *cfg);
 int vo_sdk_suspend(int fd);
 int vo_sdk_resume(int fd);
 

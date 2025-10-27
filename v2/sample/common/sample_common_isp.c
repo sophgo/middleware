@@ -14,6 +14,10 @@
 #include <unistd.h>
 #include <sys/prctl.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
 
 #include <cvi_defines.h>
 #include "sample_comm.h"
@@ -23,6 +27,7 @@
 #include "cvi_sns_ctrl.h"
 #include "cvi_ae.h"
 #include "cvi_isp.h"
+#include "motor_ioctl.h"//it depend cb how to design
 
 #ifdef SUPPORT_ISP_PQTOOL
 #include <dlfcn.h>
@@ -32,18 +37,311 @@ static void *g_ISPDHandle;
 #define ISPD_CONNECT_PORT 5566
 #endif //
 
+#define DEVICE_NAME "/dev/cvi-motor"
+
 static pthread_t g_IspPid[VI_MAX_DEV_NUM];
 static CVI_U32 g_au32IspSnsId[VI_MAX_DEV_NUM] = { 0 };
 
-SAMPLE_SNS_TYPE_E g_enSnsType[VI_MAX_DEV_NUM] = {
+CVI_SNS_TYPE_E g_enSnsType[VI_MAX_DEV_NUM] = {
 	SONY_IMX327_MIPI_2M_30FPS_12BIT
 };
 
 static ISP_INIT_ATTR_S gstInitAttr[VI_MAX_DEV_NUM];
+static int motor_fd = -1;
+
+SENSOR_CFG_S gstSensorCfg = {0};
 
  /* snsr_size, action_size, fps, bayer_format, wdr_mode, snsr_mode, data_lane_num, master_or_slave_mode */
 ISP_PUB_ATTR_S ISP_PUB_ATTR_SAMPLE =
 						{ { 0, 0, 1920, 1080 }, { 1920, 1080 }, 30, BAYER_RGGB, WDR_MODE_NONE, 0, 4, 2};
+CVI_S32 SAMPLE_COMM_ISP_Motor_SetFocusInCb(VI_PIPE ViPipe, CVI_U8 step)
+{
+	struct cvi_motor_regval reg;
+
+	if (ViPipe == 0) {
+		if (motor_fd == -1) {
+			motor_fd = open(DEVICE_NAME, O_RDWR);
+			if (motor_fd == -1) {
+				CVI_TRACE_LOG(CVI_DBG_ERR, "open motor device:%s err\n", DEVICE_NAME);
+				return CVI_FAILURE;
+			}
+		}
+		reg.val = 0;
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_ZOOM_IN, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Focus In err\n");
+			return CVI_FAILURE;
+		}
+
+		reg.val = step;
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_FOCUS_IN, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Focus In err\n");
+			return CVI_FAILURE;
+		}
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_APPLY, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Apply err\n");
+			return CVI_FAILURE;
+		}
+	} else {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "Not implement cb func\n");
+		return CVI_FAILURE;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_COMM_ISP_Motor_SetFocusOutCb(VI_PIPE ViPipe, CVI_U8 step)
+{
+	struct cvi_motor_regval reg;
+
+	if (ViPipe == 0) {
+		if (motor_fd == -1) {
+			motor_fd = open(DEVICE_NAME, O_RDWR);
+			if (motor_fd == -1) {
+				CVI_TRACE_LOG(CVI_DBG_ERR, "open motor device:%s err\n", DEVICE_NAME);
+				return CVI_FAILURE;
+			}
+		}
+		reg.val = 0;
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_ZOOM_OUT, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Focus Out err\n");
+			return CVI_FAILURE;
+		}
+
+		reg.val = step;
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_FOCUS_OUT, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Focus Out err\n");
+			return CVI_FAILURE;
+		}
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_APPLY, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Apply err\n");
+			return CVI_FAILURE;
+		}
+	} else {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "Not implement %d cb func\n", ViPipe);
+		return CVI_FAILURE;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_COMM_ISP_Motor_SetZoomSpeedCb(VI_PIPE ViPipe, CVI_U8 speed)
+{
+	struct cvi_motor_regval reg;
+
+	if (ViPipe == 0) {
+		if (motor_fd == -1) {
+			motor_fd = open(DEVICE_NAME, O_RDWR);
+			if (motor_fd == -1) {
+				CVI_TRACE_LOG(CVI_DBG_ERR, "open motor device:%s err\n", DEVICE_NAME);
+				return CVI_FAILURE;
+			}
+		}
+
+		reg.val = speed;
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_SET_ZOOM_SPEED, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Zoom Speed err\n");
+			return CVI_FAILURE;
+		}
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_APPLY, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Apply err\n");
+			return CVI_FAILURE;
+		}
+	} else {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "Not implement %d cb func\n", ViPipe);
+		return CVI_FAILURE;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_COMM_ISP_Motor_SetFocusSpeedCb(VI_PIPE ViPipe, CVI_U8 speed)
+{
+	struct cvi_motor_regval reg;
+
+	if (ViPipe == 0) {
+		if (motor_fd == -1) {
+			motor_fd = open(DEVICE_NAME, O_RDWR);
+			if (motor_fd == -1) {
+				CVI_TRACE_LOG(CVI_DBG_ERR, "open motor device:%s err\n", DEVICE_NAME);
+				return CVI_FAILURE;
+			}
+		}
+
+		reg.val = speed;
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_SET_FOCUS_SPEED, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Focus Speed err\n");
+			return CVI_FAILURE;
+		}
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_APPLY, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Apply err\n");
+			return CVI_FAILURE;
+		}
+	} else {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "Not implement %d cb func\n", ViPipe);
+		return CVI_FAILURE;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_COMM_ISP_Motor_SetZoomInCb(VI_PIPE ViPipe, CVI_U8 step)
+{
+	struct cvi_motor_regval reg;
+
+	if (ViPipe == 0) {
+		if (motor_fd == -1) {
+			motor_fd = open(DEVICE_NAME, O_RDWR);
+			if (motor_fd == -1) {
+				CVI_TRACE_LOG(CVI_DBG_ERR, "open motor device:%s err\n", DEVICE_NAME);
+				return CVI_FAILURE;
+			}
+		}
+		reg.val = 0;
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_FOCUS_IN, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Zoom In err\n");
+			return CVI_FAILURE;
+		}
+
+		reg.val = step;
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_ZOOM_IN, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Zoom In err\n");
+			return CVI_FAILURE;
+		}
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_APPLY, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Apply err\n");
+			return CVI_FAILURE;
+		}
+	} else {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "Not implement %d cb func\n", ViPipe);
+		return CVI_FAILURE;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_COMM_ISP_Motor_SetZoomOutCb(VI_PIPE ViPipe, CVI_U8 step)
+{
+	struct cvi_motor_regval reg;
+
+	if (ViPipe == 0) {
+		if (motor_fd == -1) {
+			motor_fd = open(DEVICE_NAME, O_RDWR);
+			if (motor_fd == -1) {
+				CVI_TRACE_LOG(CVI_DBG_ERR, "open motor device:%s err\n", DEVICE_NAME);
+				return CVI_FAILURE;
+			}
+		}
+		reg.val = 0;
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_FOCUS_OUT, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Focus Out err\n");
+			return CVI_FAILURE;
+		}
+
+		reg.val = step;
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_ZOOM_OUT, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Zoom Out err\n");
+			return CVI_FAILURE;
+		}
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_APPLY, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Apply err\n");
+			return CVI_FAILURE;
+		}
+	} else {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "Not implement %d cb func\n", ViPipe);
+		return CVI_FAILURE;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_COMM_ISP_Motor_SetZoomAndFocusCb(VI_PIPE ViPipe, AF_DIRECTION eDirz, AF_DIRECTION eDirf, CVI_U8 zoomStep, CVI_U8 focusStep)
+{
+	struct cvi_motor_regval reg;
+	CVI_U32 zoom_dir_cmd;
+	CVI_U32 focus_dir_cmd;
+
+	if (ViPipe == 0) {
+		if (motor_fd == -1) {
+			motor_fd = open(DEVICE_NAME, O_RDWR);
+			if (motor_fd == -1) {
+				CVI_TRACE_LOG(CVI_DBG_ERR, "open motor device:%s err\n", DEVICE_NAME);
+				return CVI_FAILURE;
+			}
+		}
+
+		reg.val = zoomStep;
+
+		if (eDirz == AF_DIR_FAR)
+			zoom_dir_cmd = CVI_MOTOR_IOC_ZOOM_IN;
+		else
+			zoom_dir_cmd = CVI_MOTOR_IOC_ZOOM_OUT;
+
+		if (ioctl(motor_fd, zoom_dir_cmd, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Zoom In/Out err\n");
+			return CVI_FAILURE;
+		}
+
+		reg.val = focusStep;
+
+		if (eDirf == AF_DIR_FAR)
+			focus_dir_cmd = CVI_MOTOR_IOC_FOCUS_IN;
+		else
+			focus_dir_cmd = CVI_MOTOR_IOC_FOCUS_OUT;
+
+		if (ioctl(motor_fd, focus_dir_cmd, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Focus Out err\n");
+			return CVI_FAILURE;
+		}
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_APPLY, &reg) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Apply err\n");
+			return CVI_FAILURE;
+		}
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 SAMPLE_COMM_ISP_Motor_GetLensInfoCb(VI_PIPE ViPipe, ISP_AF_LEN_INFO_S *info)
+{
+	if (ViPipe == 0) {
+		if (motor_fd == -1) {
+			motor_fd = open(DEVICE_NAME, O_RDWR);
+			if (motor_fd == -1) {
+				CVI_TRACE_LOG(CVI_DBG_ERR, "open motor device:%s err\n", DEVICE_NAME);
+				return CVI_FAILURE;
+			}
+		}
+
+		if (ioctl(motor_fd, CVI_MOTOR_IOC_GET_INFO, info) < 0) {
+			CVI_TRACE_LOG(CVI_DBG_ERR, "Get Info err\n");
+			return CVI_FAILURE;
+		}
+	} else {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "Not implement %d cb func\n", ViPipe);
+		return CVI_FAILURE;
+	}
+
+	return CVI_SUCCESS;
+}
+
+
 
 void callback_FPS(int fps)
 {
@@ -148,11 +446,16 @@ out:
 	return s32Ret;
 }
 
-CVI_S32 SAMPLE_COMM_ISP_GetIspAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, ISP_PUB_ATTR_S *pstPubAttr)
+CVI_S32 SAMPLE_COMM_ISP_GetIspAttrBySns(CVI_SNS_TYPE_E enSnsType, ISP_PUB_ATTR_S *pstPubAttr)
 {
 	CVI_S32 s32Ret = CVI_SUCCESS;
 	PIC_SIZE_E enPicSize;
 	SIZE_S stSize;
+
+	CVI_S32 dev_num = SAMPLE_COMM_VI_GetDevNumBySnsMode(enSnsType);
+	if (cvi_sns_getispattr(dev_num, &gstSensorCfg) != CVI_SUCCESS) {
+		CVI_TRACE_LOG(CVI_DBG_ERR, "cvi_sns_getispattr failed\n");
+	}
 
 	memcpy(pstPubAttr, &ISP_PUB_ATTR_SAMPLE, sizeof(ISP_PUB_ATTR_S));
 
@@ -164,236 +467,11 @@ CVI_S32 SAMPLE_COMM_ISP_GetIspAttrBySns(SAMPLE_SNS_TYPE_E enSnsType, ISP_PUB_ATT
 	pstPubAttr->stWndRect.u32Width = stSize.u32Width;
 	pstPubAttr->stWndRect.u32Height = stSize.u32Height;
 
-	// WDR mode
-	if (enSnsType >= SAMPLE_SNS_TYPE_LINEAR_BUTT)
-		pstPubAttr->enWDRMode = WDR_MODE_2To1_LINE;
-
-	// FPS
-	switch (enSnsType) {
-	case SMS_SC020HGS_MIPI_400P_120FPS_10BIT:
-	case SMS_SC035GS_MIPI_480P_120FPS_12BIT:
-	case SMS_SC035GS_1L_MIPI_480P_120FPS_10BIT:
-	case SMS_SC035HGS_MIPI_480P_120FPS_12BIT:
-	case OV_OV6211_MIPI_400P_120FPS_10BIT:
-	case OV_OV7251_MIPI_480P_120FPS_10BIT:
-		pstPubAttr->f32FrameRate = 120;
-		break;
-	case SONY_IMX900_MIPI_3M_70FPS_12BIT_COLOR:
-	case SONY_IMX900_MIPI_3M_70FPS_12BIT_MONO:
-		pstPubAttr->f32FrameRate = 70;
-	break;
-	case SONY_IMX307_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX307_SUBLVDS_2M_60FPS_12BIT:
-	case SONY_IMX327_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX335_MIPI_2M_60FPS_10BIT:
-	case SONY_IMX335_MIPI_4M_60FPS_10BIT:
-	case SONY_IMX335_MIPI_5M_60FPS_10BIT:
-	case SONY_IMX347_MIPI_4M_60FPS_12BIT:
-	case SONY_IMX415_MIPI_2M_60FPS_12BIT:
-	case LONTIUM_MIPI_LT6911_1M_60FPS_8BIT:
-	case LONTIUM_MIPI_LT6911_2M_60FPS_8BIT:
-	case LONTIUM_MIPI_LT6911_8M_60FPS_8BIT:
-	case GCORE_GC8613_MIPI_8M_60FPS_10BIT:
-	case SMS_SC233HGS_MIPI_2M_60FPS_10BIT:
-	case SMS_SC233HGS_MIPI_2M_60FPS_10BIT_WDR2TO1:
-		pstPubAttr->f32FrameRate = 60;
-		break;
-	case NUC_NC021_MIPI_2M_50FPS_8BIT:
-		pstPubAttr->f32FrameRate = 50;
-		break;
-	case TECHPOINT_TP2850_MIPI_2M_30FPS_8BIT:
-	case TECHPOINT_TP2850_MIPI_4M_30FPS_8BIT:
-	case SONY_IMX334_MIPI_8M_30FPS_12BIT:
-	case SONY_IMX334_MIPI_8M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX347_MIPI_4M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX585_MIPI_8M_30FPS_12BIT:
-	case OV_OS04A10_MIPI_4M_1440P_30FPS_12BIT:
-	case SONY_IMX412_MIPI_12M_30FPS_12BIT:
-	case SONY_IMX412_MIPI_12M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX412_MIPI_8M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX415_MIPI_8M_30FPS_10BIT:
-	case OV_OS08B10_MIPI_8M_30FPS_10BIT:
-	case OV_OS08B10_MIPI_8M_30FPS_10BIT_WDR2TO1:
-	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
-	case GCORE_GC8613_MIPI_8M_30FPS_10BIT:
-	case GCORE_GC8613_MIPI_8M_30FPS_10BIT_WDR2TO1:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT_MASTER:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT_SLAVE:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT_MASTER:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT_SLAVE:
-		pstPubAttr->f32FrameRate = 30;
-		break;
-	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
-	case OV_OS04E10_SLAVE_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
-		pstPubAttr->f32FrameRate = 20;
-		break;
-	case GCORE_GC2145_MIPI_2M_12FPS_8BIT:
-		pstPubAttr->f32FrameRate = 12;
-		break;
-	case SONY_IMX327_MIPI_1M_30FPS_10BIT:
-	case SONY_IMX327_MIPI_1M_30FPS_10BIT_WDR2TO1:
-		pstPubAttr->f32FrameRate = 10;
-		break;
-	case OV_OS05A20_MIPI_1944P_15FPS_2L_12BIT:
-	case OV_OV9282_MASTER_MIPI_800P_15FPS_2L_10BIT:
-	case OV_OV9282_SLAVE_MIPI_800P_15FPS_2L_10BIT:
-		pstPubAttr->f32FrameRate = 15;
-		break;
-	default:
-		pstPubAttr->f32FrameRate = 25;
-		break;
-	}
-
-	switch (enSnsType) {
-	case SOI_K06_MIPI_4M_25FPS_10BIT:
-	case SONY_IMX415_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX415_MIPI_4M_25FPS_12BIT:
-	case SONY_IMX415_MIPI_5M_25FPS_12BIT:
-	case SONY_IMX415_MIPI_8M_25FPS_12BIT:
-	case SONY_IMX415_MIPI_8M_30FPS_10BIT:
-		pstPubAttr->enBayer = BAYER_GBRG;
-		break;
-	case OV_OV2736_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case OV_OV2736_MIPI_2M_30FPS_12BIT:
-		pstPubAttr->enBayer = BAYER_BGRGI;
-		break;
-	// Sony
-	case BOARD_FULL_SIZE_MIPI_30FPS_12BIT:
-	case BOARD_MAX_SIZE_MIPI_30FPS_12BIT:
-	case SONY_IMX307_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_SLAVE_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_SLAVE_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_2L_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_2L_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_SUBLVDS_2M_30FPS_12BIT:
-	case SONY_IMX307_SUBLVDS_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX307_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX307_SUBLVDS_2M_60FPS_12BIT:
-	case SONY_IMX327_MIPI_1M_30FPS_10BIT:
-	case SONY_IMX327_MIPI_1M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX327_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_SLAVE_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_SLAVE_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_2L_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_2L_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_SUBLVDS_2M_30FPS_12BIT:
-	case SONY_IMX327_SUBLVDS_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX327_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX334_MIPI_8M_30FPS_12BIT:
-	case SONY_IMX334_MIPI_8M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_4M_30FPS_12BIT:
-	case SONY_IMX335_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_2L_MIPI_4M_30FPS_10BIT:
-	case SONY_IMX335_MIPI_4M_1600P_30FPS_12BIT:
-	case SONY_IMX335_MIPI_4M_1600P_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_5M_30FPS_12BIT:
-	case SONY_IMX335_MIPI_5M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_2M_60FPS_10BIT:
-	case SONY_IMX335_MIPI_4M_60FPS_10BIT:
-	case SONY_IMX335_MIPI_5M_60FPS_10BIT:
-	case SONY_IMX347_MIPI_4M_60FPS_12BIT:
-	case SONY_IMX347_MIPI_4M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX385_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX385_MIPI_2M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX412_MIPI_12M_30FPS_12BIT:
-	case SONY_IMX412_MIPI_12M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX412_MIPI_8M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX585_MIPI_8M_30FPS_12BIT:
-	case SONY_IMX585_MIPI_8M_25FPS_12BIT_WDR2TO1:
-	case SONY_IMX900_MIPI_3M_70FPS_12BIT_COLOR:
-	case SONY_IMX900_MIPI_3M_70FPS_12BIT_MONO:
-	// GalaxyCore
-	case GCORE_GC02M1_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC1054_MIPI_1M_30FPS_10BIT:
-	case GCORE_GC2053_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2053_SLAVE_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2053_1L_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case GCORE_GC2093_SLAVE_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_SLAVE_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case GCORE_GC4023_MIPI_4M_30FPS_10BIT:
-	case GCORE_GC8613_MIPI_8M_30FPS_10BIT:
-	case GCORE_GC8613_MIPI_8M_30FPS_10BIT_WDR2TO1:
-	case GCORE_GC8613_MIPI_8M_60FPS_10BIT:
-		pstPubAttr->enBayer = BAYER_RGGB;
-		break;
-	case GCORE_GC4653_MIPI_4M_30FPS_10BIT:
-	case GCORE_GC4653_SLAVE_MIPI_4M_30FPS_10BIT:
-	case TECHPOINT_TP2850_MIPI_2M_30FPS_8BIT:
-	case TECHPOINT_TP2850_MIPI_4M_30FPS_8BIT:
-	case ONSEMI_AR2020_20M_25FPS_10BIT:
-		pstPubAttr->enBayer = BAYER_GRBG;
-		break;
-#ifdef ARCH_CV182X
-	case SOI_F23_MIPI_2M_30FPS_10BIT:
-		pstPubAttr->enBayer = BAYER_BGRGI;
-	break;
-#endif
-	default:
-		pstPubAttr->enBayer = BAYER_BGGR;
-		break;
-	};
-
-	//Lane num
-	switch (enSnsType) {
-	case OV_OS04A10_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_MASTER_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_SLAVE_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_MASTER_MIPI_4M_1440P_2L_10BIT_WDR2TO1:
-	case OV_OS04A10_SLAVE_MIPI_4M_1440P_2L_10BIT_WDR2TO1:
-	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT:
-	case OV_OS04E10_SALVE_MIPI_4M_30FPS_2L_10BIT:
-	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
-	case OV_OS04E10_SLAVE_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
-	case OV_OS05A20_MIPI_1944P_15FPS_2L_12BIT:
-	case OV_OV9282_MASTER_MIPI_800P_15FPS_2L_10BIT:
-	case OV_OV9282_SLAVE_MIPI_800P_15FPS_2L_10BIT:
-	case PIXELPLUS_PR2100_2M_2CH_2L_25FPS_8BIT:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT_SLAVE:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT_MASTER:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT:
-	case SMS_SC500AI_2L_MIPI_5M_30FPS_10BIT:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT_MASTER:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT_SLAVE:
-		pstPubAttr->u8LaneNum = 2;
-		break;
-	default:
-		pstPubAttr->u8LaneNum = 4;
-		break;
-	}
-
-	//enable master : 1 slave : 0
-	switch (enSnsType) {
-	case OV_OS04A10_SLAVE_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_SLAVE_MIPI_4M_1440P_2L_10BIT_WDR2TO1:
-	case OV_OS04E10_SALVE_MIPI_4M_30FPS_2L_10BIT:
-	case OV_OS04E10_SLAVE_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
-	case OV_OV9282_SLAVE_MIPI_800P_15FPS_2L_10BIT:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT_SLAVE:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT_SLAVE:
-		pstPubAttr->u8EnableMaster = 0;
-		break;
-	case OV_OS04A10_MASTER_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_MASTER_MIPI_4M_1440P_2L_10BIT_WDR2TO1:
-	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT:
-	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
-	case OV_OV9282_MASTER_MIPI_800P_15FPS_2L_10BIT:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT_MASTER:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT_MASTER:
-		pstPubAttr->u8EnableMaster = 1;
-		break;
-	default:
-		pstPubAttr->u8EnableMaster = 2;
-		break;
-	}
+	pstPubAttr->enWDRMode = gstSensorCfg.sns_cfg.enWDRMode[dev_num];
+	pstPubAttr->enBayer = (ISP_BAYER_FORMAT_E)gstSensorCfg.sns_cfg.enBayerFormat[dev_num];
+	pstPubAttr->f32FrameRate = gstSensorCfg.sns_cfg.f32FrameRate[dev_num];
+	pstPubAttr->u8LaneNum = gstSensorCfg.sns_cfg.u8LaneNumber[dev_num];
+	pstPubAttr->u8EnableMaster = gstSensorCfg.sns_cfg.u8EnMasterMode[dev_num];
 
 	return s32Ret;
 }
@@ -508,9 +586,25 @@ CVI_S32 SAMPLE_COMM_ISP_Aflib_Callback(ISP_DEV IspDev)
 	ALG_LIB_S stAfLib;
 	CVI_S32 s32Ret = 0;
 
+	//register af lib
 	stAfLib.s32Id = IspDev;
 	strncpy(stAfLib.acLibName, CVI_AF_LIB_NAME, sizeof(stAfLib.acLibName));
 	s32Ret = CVI_AF_Register(IspDev, &stAfLib);
+
+	//register control motor cb func if you use sophgo af algo
+	//you can implement control motor cb func by yourself
+	//use sophgo cb func for example
+	ISP_AF_MOTOR_FUNC_S motorCb;
+
+	motorCb.pfn_af_set_zoom_in = SAMPLE_COMM_ISP_Motor_SetZoomInCb;
+	motorCb.pfn_af_set_zoom_out = SAMPLE_COMM_ISP_Motor_SetZoomOutCb;
+	motorCb.pfn_af_set_zoom_speed = SAMPLE_COMM_ISP_Motor_SetZoomSpeedCb;
+	motorCb.pfn_af_set_focus_in = SAMPLE_COMM_ISP_Motor_SetFocusInCb;
+	motorCb.pfn_af_set_focus_out = SAMPLE_COMM_ISP_Motor_SetFocusOutCb;
+	motorCb.pfn_af_set_focus_speed = SAMPLE_COMM_ISP_Motor_SetFocusSpeedCb;
+	motorCb.pfn_af_set_zoom_focus = SAMPLE_COMM_ISP_Motor_SetZoomAndFocusCb;
+	motorCb.pfn_af_get_len_info = SAMPLE_COMM_ISP_Motor_GetLensInfoCb;
+	CVI_AF_MOTOR_Register(IspDev, &motorCb);
 
 	if (s32Ret != CVI_SUCCESS) {
 		printf("AF Algo register failed!, error: %d\n", s32Ret);
@@ -524,6 +618,10 @@ CVI_S32 SAMPLE_COMM_ISP_Aflib_UnCallback(ISP_DEV IspDev)
 	CVI_S32 s32Ret = 0;
 	ALG_LIB_S stAfLib;
 
+	ISP_AF_MOTOR_FUNC_S motorCb;
+
+	CVI_AF_MOTOR_UnRegister(IspDev, &motorCb);
+
 	stAfLib.s32Id = IspDev;
 	strncpy(stAfLib.acLibName, CVI_AF_LIB_NAME, sizeof(stAfLib.acLibName));
 	s32Ret = CVI_AF_UnRegister(IspDev, &stAfLib);
@@ -535,7 +633,7 @@ CVI_S32 SAMPLE_COMM_ISP_Aflib_UnCallback(ISP_DEV IspDev)
 }
 
 
-CVI_S32 SAMPLE_COMM_ISP_SetSnsObj(CVI_U32 u32SnsId, SAMPLE_SNS_TYPE_E enSnsType)
+CVI_S32 SAMPLE_COMM_ISP_SetSnsObj(CVI_U32 u32SnsId, CVI_SNS_TYPE_E enSnsType)
 {
 	if (u32SnsId >= ARRAY_SIZE(g_enSnsType))
 		return CVI_FAILURE;
@@ -554,568 +652,27 @@ CVI_S32 SAMPLE_COMM_ISP_SetSnsInit(CVI_U32 u32SnsId, CVI_U8 u8HwSync)
 	return CVI_SUCCESS;
 }
 
-CVI_VOID *SAMPLE_COMM_GetSnsObj(SAMPLE_SNS_TYPE_E enSnsType)
+CVI_VOID *SAMPLE_COMM_GetSnsObj(CVI_SNS_TYPE_E enSnsType)
 {
 	CVI_VOID *pSnsObj;
 
-	switch (enSnsType) {
-#if defined(SENSOR_BRIGATES_BG0808)
-	case BRIGATES_BG0808_MIPI_2M_30FPS_10BIT:
-	case BRIGATES_BG0808_MIPI_2M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsBG0808_Obj;
-		break;
-#endif
-#if defined(SENSOR_GCORE_GC02M1)
-	case GCORE_GC02M1_MIPI_2M_30FPS_10BIT:
-		return &stSnsGc02m1_Obj;
-#endif
-#if defined(SENSOR_GCORE_GC1054)
-	case GCORE_GC1054_MIPI_1M_30FPS_10BIT:
-		return &stSnsGc1054_Obj;
-#endif
-#if defined(SENSOR_GCORE_GC2053)
-	case GCORE_GC2053_MIPI_2M_30FPS_10BIT:
-		return &stSnsGc2053_Obj;
-#endif
-#if defined(SENSOR_GCORE_GC2053_SLAVE)
-	case GCORE_GC2053_SLAVE_MIPI_2M_30FPS_10BIT:
-		return &stSnsGc2053_Slave_Obj;
-#endif
-#if defined(SENSOR_GCORE_GC2053_1L)
-	case GCORE_GC2053_1L_MIPI_2M_30FPS_10BIT:
-		pSnsObj = &stSnsGc2053_1l_Obj;
-		break;
-#endif
-#if defined(SENSOR_GCORE_GC2093)
-	case GCORE_GC2093_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_MIPI_2M_30FPS_10BIT_WDR2TO1:
-		return &stSnsGc2093_Obj;
-#endif
-#if defined(SENSOR_GCORE_GC2093_SLAVE)
-	case GCORE_GC2093_SLAVE_MIPI_2M_30FPS_10BIT:
-	case GCORE_GC2093_SLAVE_MIPI_2M_30FPS_10BIT_WDR2TO1:
-		return &stSnsGc2093_Slave_Obj;
-#endif
-#if defined(SENSOR_GCORE_GC2145)
-	case GCORE_GC2145_MIPI_2M_12FPS_8BIT:
-		return &stSnsGc2145_Obj;
-#endif
-#if defined(SENSOR_GCORE_GC4023)
-	case GCORE_GC4023_MIPI_4M_30FPS_10BIT:
-		return &stSnsGc4023_Obj;
-#endif
-#if defined(SENSOR_GCORE_GC4653)
-	case GCORE_GC4653_MIPI_4M_30FPS_10BIT:
-		return &stSnsGc4653_Obj;
-#endif
-#if defined(SENSOR_GCORE_GC4653_SLAVE)
-	case GCORE_GC4653_SLAVE_MIPI_4M_30FPS_10BIT:
-		return &stSnsGc4653_Slave_Obj;
-#endif
-#if defined(SENSOR_GCORE_GC8613)
-	case GCORE_GC8613_MIPI_8M_30FPS_10BIT:
-	case GCORE_GC8613_MIPI_8M_30FPS_10BIT_WDR2TO1:
-	case GCORE_GC8613_MIPI_8M_60FPS_10BIT:
-		pSnsObj = &stSnsGc8613_Obj;
-		break;
-#endif
-#if defined(SENSOR_NEXTCHIP_N5)
-	case NEXTCHIP_N5_2M_25FPS_8BIT:
-	case NEXTCHIP_N5_1M_2CH_25FPS_8BIT:
-		pSnsObj = &stSnsN5_Obj;
-		break;
-#endif
-#if defined(SENSOR_NEXTCHIP_N6)
-	case NEXTCHIP_N6_2M_4CH_25FPS_8BIT:
-		pSnsObj = &stSnsN6_Obj;
-		break;
-#endif
-#if defined(SENSOR_ONSEMI_AR2020)
-	case ONSEMI_AR2020_20M_25FPS_10BIT:
-		pSnsObj = &stSnsAR2020_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS02D10)
-	case OV_OS02D10_MIPI_2M_30FPS_10BIT:
-		pSnsObj = &stSnsOs02d10_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS02D10_SLAVE)
-	case OV_OS02D10_SLAVE_MIPI_2M_30FPS_10BIT:
-		pSnsObj = &stSnsOs02d10_Slave_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS02K10_SLAVE)
-	case OV_OS02K10_SLAVE_MIPI_2M_30FPS_12BIT:
-		pSnsObj = &stSnsOs02k10_Slave_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS04A10)
-	case OV_OS04A10_MIPI_4M_1440P_30FPS_12BIT:
-	case OV_OS04A10_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_MIPI_4M_1440P_30FPS_10BIT_WDR2TO1:
-	case OV_OS04A10_MASTER_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_SLAVE_MIPI_4M_1440P_2L_10BIT:
-	case OV_OS04A10_MASTER_MIPI_4M_1440P_2L_10BIT_WDR2TO1:
-	case OV_OS04A10_SLAVE_MIPI_4M_1440P_2L_10BIT_WDR2TO1:
-		pSnsObj = &stSnsOs04a10_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS04C10)
-	case OV_OS04C10_MIPI_4M_30FPS_12BIT:
-	case OV_OS04C10_MIPI_4M_1440P_30FPS_12BIT:
-	case OV_OS04C10_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case OV_OS04C10_MIPI_4M_1440P_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsOs04c10_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS04C10_SLAVE)
-	case OV_OS04C10_SLAVE_MIPI_4M_30FPS_12BIT:
-	case OV_OS04C10_SLAVE_MIPI_4M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsOs04c10_Slave_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS04E10)
-	case OV_OS04E10_MIPI_4M_30FPS_12BIT:
-	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT:
-	case OV_OS04E10_SALVE_MIPI_4M_30FPS_2L_10BIT:
-	case OV_OS04E10_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case OV_OS04E10_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
-	case OV_OS04E10_SLAVE_MIPI_4M_30FPS_2L_10BIT_WDR2TO1:
-		pSnsObj = &stSnsOs04e10_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS05A20)
-	case OV_OS05A20_MIPI_1944P_15FPS_2L_12BIT:
-		pSnsObj = &stSnsOs05a20_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS08A20)
-	case OV_OS08A20_MIPI_4M_30FPS_10BIT:
-	case OV_OS08A20_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case OV_OS08A20_MIPI_5M_30FPS_10BIT:
-	case OV_OS08A20_MIPI_5M_30FPS_10BIT_WDR2TO1:
-	case OV_OS08A20_MIPI_8M_30FPS_10BIT:
-	case OV_OS08A20_MIPI_8M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsOs08a20_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS08A20_SLAVE)
-	case OV_OS08A20_SLAVE_MIPI_4M_30FPS_10BIT:
-	case OV_OS08A20_SLAVE_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case OV_OS08A20_SLAVE_MIPI_5M_30FPS_10BIT:
-	case OV_OS08A20_SLAVE_MIPI_5M_30FPS_10BIT_WDR2TO1:
-	case OV_OS08A20_SLAVE_MIPI_8M_30FPS_10BIT:
-	case OV_OS08A20_SLAVE_MIPI_8M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsOs08a20_Slave_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OS08B10)
-	case OV_OS08B10_MIPI_8M_30FPS_10BIT:
-	case OV_OS08B10_MIPI_8M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsOs08b10_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OV4689)
-	case OV_OV4689_MIPI_4M_30FPS_10BIT:
-		pSnsObj = &stSnsOv4689_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OV6211)
-	case OV_OV6211_MIPI_400P_120FPS_10BIT:
-		pSnsObj = &stSnsOv6211_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OV7251)
-	case OV_OV7251_MIPI_480P_120FPS_10BIT:
-		pSnsObj = &stSnsOv7251_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OV9282)
-	case OV_OV9282_MASTER_MIPI_800P_15FPS_2L_10BIT:
-	case OV_OV9282_SLAVE_MIPI_800P_15FPS_2L_10BIT:
-		pSnsObj = &stSnsOv9282_Obj;
-		break;
-#endif
-#if defined(SENSOR_OV_OV2736)
-	case OV_OV2736_MIPI_2M_30FPS_12BIT:
-	case OV_OV2736_MIPI_2M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsOv2736_Obj;
-		break;
-#endif
-#if defined(SENSOR_PICO_384)
-	case PICO384_THERMAL_384X288:
-		pSnsObj = &stSnsPICO384_Obj;
-		break;
-#endif
-#if defined(SENSOR_PICO_640)
-	case PICO640_THERMAL_479P:
-		pSnsObj = &stSnsPICO640_Obj;
-		break;
-#endif
-#if defined(SENSOR_PIXELPLUS_PR2020)
-	case PIXELPLUS_PR2020_1M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_1M_30FPS_8BIT:
-	case PIXELPLUS_PR2020_2M_25FPS_8BIT:
-	case PIXELPLUS_PR2020_2M_30FPS_8BIT:
-		pSnsObj = &stSnsPR2020_Obj;
-		break;
-#endif
-#if defined(SENSOR_PIXELPLUS_PR2100)
-	case PIXELPLUS_PR2100_2M_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_2CH_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_2CH_2L_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_4CH_25FPS_8BIT:
-	case PIXELPLUS_PR2100_2M_4CH_30FPS_8BIT:
-		pSnsObj = &stSnsPR2100_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC020HGS)
-	case SMS_SC020HGS_MIPI_400P_120FPS_10BIT:
-		pSnsObj = &stSnsSC020HGS_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC035GS)
-	case SMS_SC035GS_MIPI_480P_120FPS_12BIT:
-		pSnsObj = &stSnsSC035GS_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC035GS_1L)
-	case SMS_SC035GS_1L_MIPI_480P_120FPS_10BIT:
-		pSnsObj = &stSnsSC035GS_1L_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC035HGS)
-	case SMS_SC035HGS_MIPI_480P_120FPS_12BIT:
-		pSnsObj = &stSnsSC035HGS_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC200AI)
-	case SMS_SC200AI_MIPI_2M_30FPS_10BIT:
-	case SMS_SC200AI_MIPI_2M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsSC200AI_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC233HGS)
-	case SMS_SC233HGS_MIPI_2M_60FPS_10BIT:
-	case SMS_SC233HGS_MIPI_2M_60FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsSC233HGS_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC301IOT)
-	case SMS_SC301IOT_MIPI_3M_30FPS_10BIT:
-		pSnsObj = &stSnsSC301IOT_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC401AI)
-	case SMS_SC401AI_MIPI_4M_30FPS_10BIT:
-	case SMS_SC401AI_MIPI_3M_30FPS_10BIT:
-		pSnsObj = &stSnsSC401AI_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC438AI)
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT_MASTER:
-	case SMS_SC438AI_MIPI_4M_30FPS_10BIT_SLAVE:
-		pSnsObj = &stSnsSC438AI_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC500AI)
-	case SMS_SC500AI_MIPI_5M_30FPS_10BIT:
-	case SMS_SC500AI_MIPI_5M_30FPS_10BIT_WDR2TO1:
-	case SMS_SC500AI_MIPI_5M_60FPS_10BIT:
-	case SMS_SC500AI_2L_MIPI_5M_30FPS_10BIT:
-	case SMS_SC500AI_MIPI_4M_30FPS_10BIT:
-	case SMS_SC500AI_MIPI_4M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsSC500AI_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC501AI_2L)
-	case SMS_SC501AI_2L_MIPI_5M_30FPS_10BIT:
-		pSnsObj = &stSnsSC501AI_2L_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC531AI_2L)
-	case SMS_SC531AI_2L_MIPI_5M_30FPS_10BIT:
-		pSnsObj = &stSnsSC531AI_2L_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC850SL)
-	case SMS_SC850SL_MIPI_8M_30FPS_12BIT:
-	case SMS_SC850SL_MIPI_8M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsSC850SL_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC1330)
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT_MASTER:
-	case SMS_SC1330_MIPI_1M_30FPS_10BIT_SLAVE:
-		pSnsObj = &stSnsSC1330_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC3332)
-	case SMS_SC3332_MIPI_3M_30FPS_10BIT:
-		pSnsObj = &stSnsSC3332_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC3335)
-	case SMS_SC3335_MIPI_3M_30FPS_10BIT:
-		pSnsObj = &stSnsSC3335_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC3335_SLAVE)
-	case SMS_SC3335_SLAVE_MIPI_3M_30FPS_10BIT:
-		pSnsObj = &stSnsSC3335_Slave_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC3336)
-	case SMS_SC3336_MIPI_3M_30FPS_10BIT:
-		pSnsObj = &stSnsSC3336_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC2335)
-	case SMS_SC2335_MIPI_2M_30FPS_10BIT:
-		pSnsObj = &stSnsSC2335_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC4210)
-	case SMS_SC4210_MIPI_4M_30FPS_12BIT:
-	case SMS_SC4210_MIPI_4M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsSC4210_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC4336)
-	case SMS_SC4336_MIPI_4M_30FPS_10BIT:
-		pSnsObj = &stSnsSC4336_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC4336P)
-	case SMS_SC4336P_MIPI_4M_30FPS_10BIT:
-		pSnsObj = &stSnsSC4336P_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC4336P_SLAVE)
-	case SMS_SC4336P_SLAVE_MIPI_4M_30FPS_10BIT:
-		pSnsObj = &stSnsSC4336P_SLAVE_Obj;
-		break;
-#endif
-#if defined(SENSOR_SMS_SC8238)
-	case SMS_SC8238_MIPI_8M_30FPS_10BIT:
-	case SMS_SC8238_MIPI_8M_15FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsSC8238_Obj;
-		break;
-#endif
-#if defined(SENSOR_SOI_F23)
-	case SOI_F23_MIPI_2M_30FPS_10BIT:
-		pSnsObj = &stSnsF23_Obj;
-		break;
-#endif
-#if defined(SENSOR_SOI_F35)
-	case SOI_F35_MIPI_2M_30FPS_10BIT:
-	case SOI_F35_MIPI_2M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsF35_Obj;
-		break;
-#endif
-#if defined(SENSOR_SOI_F35_SLAVE)
-	case SOI_F35_SLAVE_MIPI_2M_30FPS_10BIT:
-	case SOI_F35_SLAVE_MIPI_2M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsF35_Slave_Obj;
-		break;
-#endif
-#if defined(SENSOR_SOI_F37P)
-	case SOI_F37P_MIPI_2M_30FPS_10BIT:
-		pSnsObj = &stSnsF37P_Obj;
-		break;
-#endif
-#if defined(SENSOR_SOI_H65)
-	case SOI_H65_MIPI_1M_30FPS_10BIT:
-		pSnsObj = &stSnsH65_Obj;
-		break;
-#endif
-#if defined(SENSOR_SOI_K06)
-	case SOI_K06_MIPI_4M_25FPS_10BIT:
-		return &stSnsK06_Obj;
-#endif
-#if defined(SENSOR_SOI_Q03)
-	case SOI_Q03_MIPI_3M_30FPS_10BIT:
-		pSnsObj = &stSnsQ03_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX290_2L)
-	case SONY_IMX290_MIPI_1M_30FPS_12BIT:
-	case SONY_IMX290_MIPI_2M_60FPS_12BIT:
-		pSnsObj = &stSnsImx290_2l_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX307)
-	case SONY_IMX307_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX307_MIPI_2M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx307_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX307_SLAVE)
-	case SONY_IMX307_SLAVE_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_SLAVE_MIPI_2M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx307_Slave_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX307_2L)
-	case SONY_IMX307_2L_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX307_2L_MIPI_2M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx307_2l_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX307_SUBLVDS)
-	case SONY_IMX307_SUBLVDS_2M_30FPS_12BIT:
-	case SONY_IMX307_SUBLVDS_2M_60FPS_12BIT:
-	case SONY_IMX307_SUBLVDS_2M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx307_Sublvds_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX327)
-	case SONY_IMX327_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX327_MIPI_2M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx327_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX327_SLAVE)
-	case SONY_IMX327_SLAVE_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_SLAVE_MIPI_2M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx327_Slave_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX327_2L)
-	case SONY_IMX327_2L_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX327_2L_MIPI_2M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx327_2l_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX327_FPGA)
-	case BOARD_FULL_SIZE_MIPI_30FPS_12BIT:
-	case BOARD_MAX_SIZE_MIPI_30FPS_12BIT:
-	case SONY_IMX327_MIPI_1M_30FPS_10BIT:
-	case SONY_IMX327_MIPI_1M_30FPS_10BIT_WDR2TO1:
-		pSnsObj = &stSnsImx327_fpga_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX327_SUBLVDS)
-	case SONY_IMX327_SUBLVDS_2M_30FPS_12BIT:
-	case SONY_IMX327_SUBLVDS_2M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx327_Sublvds_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX334)
-	case SONY_IMX334_MIPI_8M_30FPS_12BIT:
-	case SONY_IMX334_MIPI_8M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx334_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX335)
-	case SONY_IMX335_MIPI_2M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_4M_30FPS_12BIT:
-	case SONY_IMX335_MIPI_4M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_2L_MIPI_4M_30FPS_10BIT:
-	case SONY_IMX335_MIPI_4M_1600P_30FPS_12BIT:
-	case SONY_IMX335_MIPI_4M_1600P_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_5M_30FPS_12BIT:
-	case SONY_IMX335_MIPI_5M_30FPS_10BIT_WDR2TO1:
-	case SONY_IMX335_MIPI_2M_60FPS_10BIT:
-	case SONY_IMX335_MIPI_4M_60FPS_10BIT:
-	case SONY_IMX335_MIPI_5M_60FPS_10BIT:
-		pSnsObj = &stSnsImx335_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX347)
-	case SONY_IMX347_MIPI_4M_60FPS_12BIT:
-	case SONY_IMX347_MIPI_4M_30FPS_12BIT_WDR2TO1:
-		return &stSnsImx347_Obj;
-#endif
-#if defined(SENSOR_SONY_IMX385)
-	case SONY_IMX385_MIPI_2M_30FPS_12BIT:
-	case SONY_IMX385_MIPI_2M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx385_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX412)
-	case SONY_IMX412_MIPI_12M_30FPS_12BIT:
-	case SONY_IMX412_MIPI_12M_30FPS_12BIT_WDR2TO1:
-	case SONY_IMX412_MIPI_8M_30FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx412_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX415)
-	case SONY_IMX415_MIPI_2M_60FPS_12BIT:
-	case SONY_IMX415_MIPI_4M_25FPS_12BIT:
-	case SONY_IMX415_MIPI_5M_25FPS_12BIT:
-	case SONY_IMX415_MIPI_8M_25FPS_12BIT:
-	case SONY_IMX415_MIPI_8M_30FPS_10BIT:
-		pSnsObj = &stSnsImx415_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX585)
-	case SONY_IMX585_MIPI_8M_30FPS_12BIT:
-	case SONY_IMX585_MIPI_8M_25FPS_12BIT_WDR2TO1:
-		pSnsObj = &stSnsImx585_Obj;
-		break;
-#endif
-#if defined(SENSOR_SONY_IMX900)
-	case SONY_IMX900_MIPI_3M_70FPS_12BIT_COLOR:
-	case SONY_IMX900_MIPI_3M_70FPS_12BIT_MONO:
-		pSnsObj = &stSnsImx900_Obj;
-		break;
-#endif
-#if defined(SENSOR_TECHPOINT_TP2850)
-	case TECHPOINT_TP2850_MIPI_2M_30FPS_8BIT:
-	case TECHPOINT_TP2850_MIPI_4M_30FPS_8BIT:
-		pSnsObj = &stSnsTP2850_Obj;
-		break;
-#endif
-#if defined(SENSOR_TECHPOINT_TP2860)
-	case TECHPOINT_TP2860_MIPI_2M_25FPS_8BIT:
-		pSnsObj = &stSnsTP2860_Obj;
-		break;
-#endif
-#if defined(SENSOR_VIVO_MCS369)
-	case VIVO_MCS369_2M_30FPS_12BIT:
-		pSnsObj = &stSnsMCS369_Obj;
-		break;
-#endif
-#if defined(SENSOR_VIVO_MCS369Q)
-	case VIVO_MCS369Q_4M_30FPS_12BIT:
-		pSnsObj = &stSnsMCS369Q_Obj;
-		break;
-#endif
-#if defined(SENSOR_VIVO_MM308M2)
-	case VIVO_MM308M2_2M_25FPS_8BIT:
-		pSnsObj = &stSnsMM308M2_Obj;
-		break;
-#endif
-#if defined(SENSOR_LONTIUM_LT6911)
-	case LONTIUM_MIPI_LT6911_1M_60FPS_8BIT:
-	case LONTIUM_MIPI_LT6911_2M_60FPS_8BIT:
-	case LONTIUM_MIPI_LT6911_8M_60FPS_8BIT:
-		pSnsObj = &stSnsLT6911_Obj;
-		break;
-#endif
-#if defined(SENSOR_NUC_NC021)
-	case NUC_NC021_MIPI_2M_50FPS_8BIT:
-		pSnsObj = &stSnsNC021_Obj;
-		break;
-#endif
-	default:
-		pSnsObj = CVI_NULL;
+	CVI_S32 dev_num = SAMPLE_COMM_VI_GetDevNumBySnsMode(enSnsType);
+
+	if (cvi_sns_getsnsobj(dev_num, &gstSensorCfg) != CVI_SUCCESS) {
 		CVI_TRACE_LOG(CVI_DBG_ERR, "get sensor_%d object failed !! check menuconfig select!\n", enSnsType);
-		break;
+		return NULL;
 	}
+	pSnsObj = gstSensorCfg.sns_cfg.pstSnsObj[dev_num];
 
 	return pSnsObj;
 }
 
 CVI_VOID *SAMPLE_COMM_ISP_GetSnsObj(CVI_U32 u32SnsId)
 {
-	SAMPLE_SNS_TYPE_E enSnsType;
+	CVI_SNS_TYPE_E enSnsType;
+
+	if (u32SnsId >= gstSensorCfg.sns_ini_cfg.devNum)
+		return CVI_NULL;
 
 	enSnsType = g_enSnsType[u32SnsId];
 	return SAMPLE_COMM_GetSnsObj(enSnsType);
@@ -1182,7 +739,6 @@ CVI_S32 SAMPLE_COMM_ISP_SetSensorMode(SAMPLE_VI_CONFIG_S *pstViConfig)
 	CVI_S32 s32Ret = CVI_SUCCESS, i;
 	CVI_U32 u32SnsId;
 	VI_PIPE ViPipe;
-	WDR_MODE_E wdrMode;
 	ISP_PUB_ATTR_S stPubAttr;
 	ISP_SENSOR_EXP_FUNC_S stSnsrSensorFunc;
 	ISP_CMOS_SENSOR_IMAGE_MODE_S stSnsrMode;
@@ -1192,7 +748,6 @@ CVI_S32 SAMPLE_COMM_ISP_SetSensorMode(SAMPLE_VI_CONFIG_S *pstViConfig)
 	for (i = 0; i < pstViConfig->s32WorkingViNum; i++) {
 		pstViInfo = &pstViConfig->astViInfo[i];
 		ViPipe = pstViInfo->stPipeInfo.aPipe[0];
-		wdrMode = pstViInfo->stDevInfo.enWDRMode;
 		u32SnsId = pstViInfo->stSnsInfo.s32SnsId;
 
 		pstSnsObj = (ISP_SNS_OBJ_S *)SAMPLE_COMM_ISP_GetSnsObj(u32SnsId);
@@ -1205,10 +760,12 @@ CVI_S32 SAMPLE_COMM_ISP_SetSensorMode(SAMPLE_VI_CONFIG_S *pstViConfig)
 		stSnsrMode.f32Fps = stPubAttr.f32FrameRate;
 		stSnsrMode.u8LaneNum = stPubAttr.u8LaneNum;
 		stSnsrMode.u8EnableMaster = stPubAttr.u8EnableMaster;
+		pstViInfo->stDevInfo.enWDRMode = stPubAttr.enWDRMode;
 		printf("sensor_type %d, lane_num %d, master mode, %d\n", pstViInfo->stSnsInfo.enSnsType,
 				stSnsrMode.u8LaneNum, stSnsrMode.u8EnableMaster);
 		printf("stSnsrMode.u16Width %d stSnsrMode.u16Height %d %f wdrMode %d pstSnsObj %p\n",
-				stSnsrMode.u16Width, stSnsrMode.u16Height, stSnsrMode.f32Fps, wdrMode, pstSnsObj);
+				stSnsrMode.u16Width, stSnsrMode.u16Height, stSnsrMode.f32Fps,
+				stPubAttr.enWDRMode, pstSnsObj);
 		pstSnsObj->pfnExpSensorCb(&stSnsrSensorFunc);
 
 		if (stSnsrSensorFunc.pfn_cmos_set_image_mode) {
@@ -1220,7 +777,7 @@ CVI_S32 SAMPLE_COMM_ISP_SetSensorMode(SAMPLE_VI_CONFIG_S *pstViConfig)
 		}
 
 		if (stSnsrSensorFunc.pfn_cmos_set_wdr_mode) {
-			s32Ret = stSnsrSensorFunc.pfn_cmos_set_wdr_mode(ViPipe, wdrMode);
+			s32Ret = stSnsrSensorFunc.pfn_cmos_set_wdr_mode(ViPipe, stPubAttr.enWDRMode);
 			if (s32Ret != CVI_SUCCESS) {
 				CVI_TRACE_LOG(CVI_DBG_ERR, "sensor set wdr mode failed!\n");
 				return s32Ret;
@@ -1230,7 +787,7 @@ CVI_S32 SAMPLE_COMM_ISP_SetSensorMode(SAMPLE_VI_CONFIG_S *pstViConfig)
 	return s32Ret;
 }
 
-static SNS_BDG_MUX_MODE_E SAMPLE_COMM_ISP_GetSnsBdgMode(SAMPLE_SNS_TYPE_E enSnsType)
+static SNS_BDG_MUX_MODE_E SAMPLE_COMM_ISP_GetSnsBdgMode(CVI_SNS_TYPE_E enSnsType)
 {
 	VI_DEV_ATTR_S       stViDevAttr;
 	SNS_BDG_MUX_MODE_E  MuxMode;
@@ -1261,7 +818,7 @@ CVI_S32 SAMPLE_COMM_ISP_Sensor_Regiter_callback(ISP_DEV IspDev, CVI_U32 u32SnsId
 						CVI_S32 s32I2cAddr)
 {
 	CVI_S32 s32Ret = -1;
-	SAMPLE_SNS_TYPE_E enSnsType = g_enSnsType[u32SnsId];
+	CVI_SNS_TYPE_E enSnsType = g_enSnsType[u32SnsId];
 	ALG_LIB_S stAeLib;
 	ALG_LIB_S stAwbLib;
 	const ISP_SNS_OBJ_S *pstSnsObj;

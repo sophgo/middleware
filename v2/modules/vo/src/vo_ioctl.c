@@ -459,3 +459,23 @@ int vo_sdk_release_wbcframe(int fd, struct vo_wbc_frame_cfg *cfg)
 {
 	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_RELEASE_WBCFRAME);
 }
+
+int vo_sdk_attach_layer_vb_pool(int fd, struct vo_layer_vb_pool_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_ATTACH_LAYER_VBPOOL);
+}
+
+int vo_sdk_detach_layer_vb_pool(int fd, struct vo_layer_vb_pool_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_DETACH_LAYER_VBPOOL);
+}
+
+int vo_sdk_attach_wbc_vb_pool(int fd, struct vo_wbc_vb_pool_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_ATTACH_WBC_VBPOOL);
+}
+
+int vo_sdk_detach_wbc_vb_pool(int fd, struct vo_wbc_vb_pool_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_DETACH_WBC_VBPOOL);
+}

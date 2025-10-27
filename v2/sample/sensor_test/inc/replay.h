@@ -30,6 +30,7 @@ extern "C" {
 #include "cvi_buffer.h"
 #include "cvi_ae_comm.h"
 #include "cvi_awb_comm.h"
+#include "cvi_af_comm.h"
 #include "cvi_comm_isp.h"
 #include "cvi_comm_sns.h"
 #include "cvi_ae.h"

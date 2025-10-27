@@ -72,7 +72,6 @@ static int set_dev_num(int fd, int dev_num)
 	memset(&val, 0, sizeof(struct v4l2_ext_controls));
 
 	if (fd > 0) {
-		// test set ext ctrl
 		control.id = VI_IOCTL_SET_DEV_NUM;
 		control.value = dev_num;
 		val.count = 1;
@@ -84,6 +83,27 @@ static int set_dev_num(int fd, int dev_num)
 		}
 	}
 
+	return ret;
+}
+
+static int put_pipe_dump(int fd, int dev_num)
+{
+	struct v4l2_ext_controls val;
+	struct v4l2_ext_control control;
+	int ret = 0;
+	memset(&val, 0, sizeof(struct v4l2_ext_controls));
+
+	if (fd > 0) {
+		control.id = VI_IOCTL_PUT_PIPE_DUMP;
+		control.value = dev_num;
+		val.count = 1;
+		val.controls = &control;
+		if ((ret = ioctl(fd, VIDIOC_S_EXT_CTRLS, &val)) < 0) {
+			printf("%s faild\n", __func__);
+		} else {
+			printf("dev_%d %s success\n", dev_num, __func__);
+		}
+	}
 	return ret;
 }
 
@@ -456,6 +476,8 @@ static int stream_on(int dev)
 			return -1;
 		}
 	}
+
+	put_pipe_dump(fd, dev);
 
 	// stream on
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;

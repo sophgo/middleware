@@ -2271,3 +2271,85 @@ CVI_S32 CVI_VO_ReleaseWbcFrame(VO_WBC VoWbc, const VIDEO_FRAME_INFO_S *pstVideoF
 
 	return CVI_SUCCESS;
 }
+
+CVI_S32 CVI_VO_AttachLayerVbPool(VO_LAYER VoLayer, VB_POOL u32VbPool)
+{
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_layer_vb_pool_cfg cfg;
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoLayer = VoLayer;
+	cfg.u32VbPool = u32VbPool;
+	s32Ret = vo_sdk_attach_layer_vb_pool(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Attach VbPool(%d) fail\n", VoLayer, u32VbPool);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_DetachLayerVbPool(VO_LAYER VoLayer)
+{
+	CHECK_VIDEO_LAYER_VALID(VoLayer);
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_layer_vb_pool_cfg cfg;
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoLayer = VoLayer;
+	s32Ret = vo_sdk_detach_layer_vb_pool(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoLayer(%d) Detach VbPool fail\n", VoLayer);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_AttachWbcVbPool(VO_WBC VoWbc, VB_POOL u32VbPool)
+{
+	CHECK_VO_WBC_VALID(VoWbc);
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_wbc_vb_pool_cfg cfg;
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoWbc = VoWbc;
+	cfg.u32VbPool = u32VbPool;
+	s32Ret = vo_sdk_attach_wbc_vb_pool(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoWbc(%d) Attach VbPool(%d) fail\n", VoWbc, u32VbPool);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_DetachWbcVbPool(VO_WBC VoWbc)
+{
+	CHECK_VO_WBC_VALID(VoWbc);
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_wbc_vb_pool_cfg cfg;
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoWbc = VoWbc;
+	s32Ret = vo_sdk_detach_wbc_vb_pool(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoWbc(%d) Detach VbPool fail\n", VoWbc);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}

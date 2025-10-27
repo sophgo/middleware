@@ -857,7 +857,8 @@ CVI_S32 SAMPLE_COMM_VDEC_Start(vdecChnCtx *pvdchnCtx)
 	pstChnAttr->u32StreamBufSize = ALIGN(psvdattr->u32Width * psvdattr->u32Height, 0x4000);
 	printf("u32StreamBufSize = 0x%X\n", pstChnAttr->u32StreamBufSize);
 	pstChnAttr->u32FrameBufCnt = psvdattr->u32FrameBufCnt;
-	pstChnAttr->u8ReorderEnable = CVI_TRUE;
+	pstChnAttr->u8ReorderEnable = psvdattr->u8ReorderEnable;
+    pstChnAttr->u8AsyncGetframe = psvdattr->u8AsyncGetframe;
 
 	if (psvdattr->enType == PT_JPEG || psvdattr->enType == PT_MJPEG) {
 		pstChnAttr->enMode = VIDEO_MODE_FRAME;

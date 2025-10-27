@@ -801,10 +801,8 @@ static CVI_S32 basic()
 		CVI_VB_Exit();
 		return s32Ret;
 	}
-	// BLK_left =CVI_VB_PhysAddr2Handle(stVideoFrameInLeft.stVFrame.u64PhyAddr[0]);
-	// BLK_right =CVI_VB_PhysAddr2Handle(stVideoFrameInRight.stVFrame.u64PhyAddr[0]);
-	// CVI_VB_ReleaseBlock(BLK_left);
-	// CVI_VB_ReleaseBlock(BLK_right);
+	CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(stVideoFrameInLeft.stVFrame.u64PhyAddr[0]));
+	CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(stVideoFrameInRight.stVFrame.u64PhyAddr[0]));
 
 	//get frame
 	if(grp_attr.bIsBtcostOut){
@@ -1184,6 +1182,7 @@ static CVI_S32 basic_loop()
 		CVI_VB_Exit();
 		return s32Ret;
 	}
+
 	while (1)
 	{
 		s32Ret = CVI_DPU_SendFrame(DpuGrp,&stVideoFrameInLeft,&stVideoFrameInRight,TIMEOUT_GET_FRAME);
@@ -1203,10 +1202,6 @@ static CVI_S32 basic_loop()
 			CVI_VB_Exit();
 			return s32Ret;
 		}
-		// BLK_left =CVI_VB_PhysAddr2Handle(stVideoFrameInLeft.stVFrame.u64PhyAddr[0]);
-		// BLK_right =CVI_VB_PhysAddr2Handle(stVideoFrameInRight.stVFrame.u64PhyAddr[0]);
-		// CVI_VB_ReleaseBlock(BLK_left);
-		// CVI_VB_ReleaseBlock(BLK_right);
 
 		//get frame
 		if(grp_attr.bIsBtcostOut){
@@ -1239,6 +1234,9 @@ static CVI_S32 basic_loop()
 		times++;
 		DPU_UT_PRT("***CVI_DPU_GetChnFrame Success(%d)***\n",times);
 	}
+
+	CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(stVideoFrameInLeft.stVFrame.u64PhyAddr[0]));
+	CVI_VB_ReleaseBlock(CVI_VB_PhysAddr2Handle(stVideoFrameInRight.stVFrame.u64PhyAddr[0]));
 
 	if (grp_attr.bIsBtcostOut) {
 		DpuChn=0;

@@ -101,6 +101,10 @@ static optionExt long_option_ext[] = {
 		"output pixel format. 0: do not specify, 1: NV12, 2: NV21"},
 	{{"circle_send", optional_argument, NULL, 0},	ARG_INT,	  0,   1,
 		"loop read input bitstream send to decode. 0: noy loop, 1: loop"},
+    {{"reorder_enable", optional_argument, NULL, 0}, ARG_INT, 0, 1,
+        "0: Decode order, 1: Display order"},
+    {{"async_getframe", optional_argument, NULL, 0}, ARG_INT, 0, 1,
+        "0: sync getframe, 1: async getframe"},
 	{{"help",      no_argument, NULL, 'h'},       ARG_STRING, 0,   0,
 		"help"},
 	{{NULL, 0, NULL, 0}, ARG_INT, 0, 0, ""}
@@ -324,6 +328,9 @@ static CVI_S32 vdecInitAttr(
 	psvdattr->u32Height = u32MaxHeight;
 	psvdattr->enMode = VIDEO_MODE_FRAME;
 	psvdattr->enPixelFormat = enPixelFormat;
+    psvdattr->u8ReorderEnable = pvdcic->u8ReorderEnable;
+    psvdattr->u8AsyncGetframe = pvdcic->u8AsyncGetframe;
+
 	if (enType == PT_JPEG || enType == PT_MJPEG) {
 		psvdattr->stSampleVdecPicture.u32Alpha = 255;
 		psvdattr->enMode = VIDEO_MODE_STREAM;
@@ -648,8 +655,10 @@ CVI_S32 parseDecArgv(vdecInputCfg *pic, CVI_S32 argc, char **argv)
 	memset(pic, 0x0, sizeof(vdecInputCfg));
 
 	pic->u32NumAllChns = 1;
-	pvdcic->s32getframe_timeout = -1;//blcok mode
-	pvdcic->s32sendstream_timeout = -1;//blcok mode
+	pvdcic->s32getframe_timeout = -1;       // block mode
+	pvdcic->s32sendstream_timeout = -1;     // block mode
+    pvdcic->u8ReorderEnable = CVI_TRUE;     // Display order
+    pvdcic->u8AsyncGetframe = CVI_TRUE;     // Async GetFrame
 
 	for (idx = 0; idx < MAX_VDEC_OPTIONS; idx++) {
 		if (long_option_ext[idx].opt.name == NULL)
@@ -741,7 +750,11 @@ CVI_S32 parseDecArgv(vdecInputCfg *pic, CVI_S32 argc, char **argv)
 				pvdcic->s32PixelFormat = arg.ival;
 			} else if (!strcmp(long_options[idx].name, "circle_send")) {
 				pvdcic->u32CircleSend = arg.ival;
-			} else {
+			} else if (!strcmp(long_options[idx].name, "reorder_enable")) {
+                pvdcic->u8ReorderEnable = arg.ival;
+            } else if (!strcmp(long_options[idx].name, "async_getframe")) {
+                pvdcic->u8AsyncGetframe = arg.ival;
+            } else {
 				printf("not exist name = %s\n", long_options[idx].name);
 				printVdecHelp(argv);
 				return -1;

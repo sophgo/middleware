@@ -12,6 +12,7 @@
 #include <cvi_type.h>
 #include <cvi_common.h>
 #include <cvi_comm_video.h>
+#include <cvi_comm_vb.h>
 
 #ifdef __cplusplus
 #if __cplusplus
@@ -19,21 +20,22 @@ extern "C" {
 #endif
 #endif /* End of #ifdef __cplusplus */
 
-#define VO_GAMMA_NODENUM 65
-#define MAX_VO_PINS 32
+#define VO_GAMMA_NODENUM 65	/* Number of nodes in gamma correction table */
+
+#define MAX_VO_PINS 32		/* Maximum number of VO pins */
 
 /* VO video output interface type */
 typedef enum _VO_INTF_TYPE_E {
-	VO_INTF_BT656 = (0x01L << 7),
-	VO_INTF_BT1120 = (0x01L << 8),
-	VO_INTF_PARALLEL_RGB = (0x01L << 9),
-	VO_INTF_SERIAL_RGB = (0x01L << 10),
-	VO_INTF_I80 = (0x01L << 11),
-	VO_INTF_HW_MCU = (0x01L << 12),
-	VO_INTF_MIPI = (0x01L << 13),
-	VO_INTF_LVDS = (0x01L << 14),
-	VO_INTF_HDMI = (0x01L << 15),
-	VO_INTF_BUTT
+	VO_INTF_BT656 = (0x01L << 7),        /* BT.656 interface type */
+	VO_INTF_BT1120 = (0x01L << 8),       /* BT.1120 interface type */
+	VO_INTF_PARALLEL_RGB = (0x01L << 9),  /* Parallel RGB interface type */
+	VO_INTF_SERIAL_RGB = (0x01L << 10),   /* Serial RGB interface type */
+	VO_INTF_I80 = (0x01L << 11),         /* Intel 8080 interface type */
+	VO_INTF_HW_MCU = (0x01L << 12),      /* Hardware MCU interface type */
+	VO_INTF_MIPI = (0x01L << 13),        /* MIPI interface type */
+	VO_INTF_LVDS = (0x01L << 14),        /* LVDS interface type */
+	VO_INTF_HDMI = (0x01L << 15),        /* HDMI interface type */
+	VO_INTF_BUTT                         /* Invalid interface type */
 } VO_INTF_TYPE_E;
 
 /* VO video output sync type */
@@ -117,31 +119,35 @@ typedef struct _VO_SYNC_INFO_S {
 } VO_SYNC_INFO_S;
 
 typedef enum _VO_MAC_BT_MUX_E {
-	VO_MUX_BT_VS = 0,
-	VO_MUX_BT_HS,
-	VO_MUX_BT_HDE,
-	VO_MUX_BT_DATA0,
-	VO_MUX_BT_DATA1,
-	VO_MUX_BT_DATA2,
-	VO_MUX_BT_DATA3,
-	VO_MUX_BT_DATA4,
-	VO_MUX_BT_DATA5,
-	VO_MUX_BT_DATA6,
-	VO_MUX_BT_DATA7,
-	VO_MUX_BT_DATA8,
-	VO_MUX_BT_DATA9,
-	VO_MUX_BT_DATA10,
-	VO_MUX_BT_DATA11,
-	VO_MUX_BT_DATA12,
-	VO_MUX_BT_DATA13,
-	VO_MUX_BT_DATA14,
-	VO_MUX_BT_DATA15,
-	VO_MUX_TG_HS_TILE = 30,
-	VO_MUX_TG_VS_TILE,
-	VO_MUX_BT_CLK,
-	VO_BT_MUX_MAX,
+	VO_MUX_BT_VS = 0,       /* BT vertical sync signal */
+	VO_MUX_BT_HS,          /* BT horizontal sync signal */
+	VO_MUX_BT_HDE,        /* BT horizontal data enable */
+	VO_MUX_BT_DATA0,      /* BT data bit 0 */
+	VO_MUX_BT_DATA1,      /* BT data bit 1 */
+	VO_MUX_BT_DATA2,      /* BT data bit 2 */
+	VO_MUX_BT_DATA3,      /* BT data bit 3 */
+	VO_MUX_BT_DATA4,      /* BT data bit 4 */
+	VO_MUX_BT_DATA5,      /* BT data bit 5 */
+	VO_MUX_BT_DATA6,      /* BT data bit 6 */
+	VO_MUX_BT_DATA7,      /* BT data bit 7 */
+	VO_MUX_BT_DATA8,      /* BT data bit 8 */
+	VO_MUX_BT_DATA9,      /* BT data bit 9 */
+	VO_MUX_BT_DATA10,     /* BT data bit 10 */
+	VO_MUX_BT_DATA11,     /* BT data bit 11 */
+	VO_MUX_BT_DATA12,     /* BT data bit 12 */
+	VO_MUX_BT_DATA13,     /* BT data bit 13 */
+	VO_MUX_BT_DATA14,     /* BT data bit 14 */
+	VO_MUX_BT_DATA15,     /* BT data bit 15 */
+	VO_MUX_TG_HS_TILE = 30, /* Tile mode horizontal sync */
+	VO_MUX_TG_VS_TILE,     /* Tile mode vertical sync */
+	VO_MUX_BT_CLK,        /* BT clock signal */
+	VO_BT_MUX_MAX,        /* Maximum BT mux value */
 }VO_MAC_BT_MUX_E;
 
+/* Video output MAC data selection enumeration
+ * Used to configure the data source selection for MAC interface
+ * Each value represents a specific data source or signal path
+ */
 typedef enum _VO_MAC_D_SEL {
 	VO_VIVO_CLK  = 0,
 	VO_VIV1_CLK  = 1,
@@ -175,32 +181,34 @@ typedef enum _VO_MAC_D_SEL {
 	VO_PAD_MAX,
 }VO_MAC_D_SEL_E;
 
+/* Structure for VO D remap configuration */
 struct VO_D_REMAP {
-	VO_MAC_D_SEL_E sel;
-	VO_MAC_BT_MUX_E mux;
+	VO_MAC_D_SEL_E sel;  /* MAC data selection */
+	VO_MAC_BT_MUX_E mux; /* BT multiplexer configuration */
 };
 
 typedef enum _VO_BT_MODE_E {
-	VO_BT_MODE_656 = 0,
-	VO_BT_MODE_1120,
-	VO_BT_MODE_601,
-	VO_BT_MODE_MAX
+	VO_BT_MODE_656 = 0,    /* BT.656 mode */
+	VO_BT_MODE_1120,       /* BT.1120 mode */
+	VO_BT_MODE_601,        /* BT.601 mode */
+	VO_BT_MODE_MAX         /* Maximum BT mode value */
 } VO_BT_MODE_E;
 
 typedef enum _VO_BT_DATA_SEQ_E {
-	VO_BT_DATA_SEQ0 = 0,
-	VO_BT_DATA_SEQ1,
-	VO_BT_DATA_SEQ2,
-	VO_BT_DATA_SEQ3,
+	VO_BT_DATA_SEQ0 = 0,   /* BT data sequence 0 */
+	VO_BT_DATA_SEQ1,       /* BT data sequence 1 */
+	VO_BT_DATA_SEQ2,       /* BT data sequence 2 */
+	VO_BT_DATA_SEQ3,       /* BT data sequence 3 */
 } VO_BT_DATA_SEQ_E;
 
+/* Structure for VO BT attributes */
 typedef struct _VO_BT_ATTR_S {
-	CVI_U8 pin_num;
-	CVI_BOOL bt_clk_inv;
-	CVI_BOOL bt_vs_inv;
-	CVI_BOOL bt_hs_inv;
-	VO_BT_DATA_SEQ_E data_seq;
-	struct VO_D_REMAP d_pins[MAX_VO_PINS];
+	CVI_U8 pin_num;           /* Number of BT pins */
+	CVI_BOOL bt_clk_inv;      /* BT clock inversion flag */
+	CVI_BOOL bt_vs_inv;       /* BT vertical sync inversion flag */
+	CVI_BOOL bt_hs_inv;       /* BT horizontal sync inversion flag */
+	VO_BT_DATA_SEQ_E data_seq; /* BT data sequence */
+	struct VO_D_REMAP d_pins[MAX_VO_PINS]; /* BT pin remapping configuration */
 } VO_BT_ATTR_S;
 
 /*
@@ -217,25 +225,25 @@ typedef struct _VO_PUB_ATTR_S {
 } VO_PUB_ATTR_S;
 
 typedef enum _VO_LVDS_MODE_E {
-	VO_LVDS_MODE_JEIDA = 0,
-	VO_LVDS_MODE_VESA,
-	VO_LVDS_MODE_MAX,
+	VO_LVDS_MODE_JEIDA = 0,    /* JEIDA mode */
+	VO_LVDS_MODE_VESA,          /* VESA mode */
+	VO_LVDS_MODE_MAX,           /* Maximum LVDS mode value */
 } VO_LVDS_MODE_E;
 
 typedef enum _VO_LVDS_OUT_BIT_E {
-	VO_LVDS_OUT_6BIT = 0,
-	VO_LVDS_OUT_8BIT,
-	VO_LVDS_OUT_10BIT,
-	VO_LVDS_OUT_MAX,
+	VO_LVDS_OUT_6BIT = 0,    /* 6-bit output */
+	VO_LVDS_OUT_8BIT,         /* 8-bit output */
+	VO_LVDS_OUT_10BIT,        /* 10-bit output */
+	VO_LVDS_OUT_MAX,          /* Maximum output bit value */
 } VO_LVDS_OUT_BIT_E;
 
 typedef enum _VO_LVDS_LANE_ID {
-	VO_LVDS_LANE_CLK = 0,
-	VO_LVDS_LANE_0,
-	VO_LVDS_LANE_1,
-	VO_LVDS_LANE_2,
-	VO_LVDS_LANE_3,
-	VO_LVDS_LANE_MAX,
+	VO_LVDS_LANE_CLK = 0,     /* LVDS clock lane */
+	VO_LVDS_LANE_0,           /* LVDS data lane 0 */
+	VO_LVDS_LANE_1,           /* LVDS data lane 1 */
+	VO_LVDS_LANE_2,           /* LVDS data lane 2 */
+	VO_LVDS_LANE_3,           /* LVDS data lane 3 */
+	VO_LVDS_LANE_MAX,         /* Maximum LVDS lane value */
 } VO_LVDS_LANE_ID;
 
 /* Define LVDS's config
@@ -257,21 +265,16 @@ typedef struct _VO_LVDS_ATTR_S {
 } VO_LVDS_ATTR_S;
 
 typedef enum _VO_CSC_MATRIX_E {
-	VO_CSC_MATRIX_IDENTITY = 0,
-
-	VO_CSC_MATRIX_601_LIMIT_YUV2RGB,
-	VO_CSC_MATRIX_601_FULL_YUV2RGB,
-
-	VO_CSC_MATRIX_709_LIMIT_YUV2RGB,
-	VO_CSC_MATRIX_709_FULL_YUV2RGB,
-
-	VO_CSC_MATRIX_601_LIMIT_RGB2YUV,
-	VO_CSC_MATRIX_601_FULL_RGB2YUV,
-
-	VO_CSC_MATRIX_709_LIMIT_RGB2YUV,
-	VO_CSC_MATRIX_709_FULL_RGB2YUV,
-
-	VO_CSC_MATRIX_BUTT
+	VO_CSC_MATRIX_IDENTITY = 0,             /* Identity matrix */
+	VO_CSC_MATRIX_601_LIMIT_YUV2RGB,        /* BT.601 limited range YUV to RGB */
+	VO_CSC_MATRIX_601_FULL_YUV2RGB,         /* BT.601 full range YUV to RGB */
+	VO_CSC_MATRIX_709_LIMIT_YUV2RGB,        /* BT.709 limited range YUV to RGB */
+	VO_CSC_MATRIX_709_FULL_YUV2RGB,         /* BT.709 full range YUV to RGB */
+	VO_CSC_MATRIX_601_LIMIT_RGB2YUV,        /* BT.601 limited range RGB to YUV */
+	VO_CSC_MATRIX_601_FULL_RGB2YUV,         /* BT.601 full range RGB to YUV */
+	VO_CSC_MATRIX_709_LIMIT_RGB2YUV,        /* BT.709 limited range RGB to YUV */
+	VO_CSC_MATRIX_709_FULL_RGB2YUV,         /* BT.709 full range RGB to YUV */
+	VO_CSC_MATRIX_BUTT                      /* Invalid matrix type */
 } VO_CSC_MATRIX_E;
 
 /*
@@ -281,8 +284,9 @@ typedef struct _VO_CSC_S {
 	VO_CSC_MATRIX_E enCscMatrix;
 } VO_CSC_S;
 
+/* Structure for VO HDMI parameters */
 typedef struct _VO_HDMI_PARAM_S {
-	VO_CSC_S stHDMICSC;
+	VO_CSC_S stHDMICSC;          /* HDMI CSC parameters */
 } VO_HDMI_PARAM_S;
 
 /*
@@ -325,6 +329,7 @@ typedef enum _VO_CHN_ZOOM_TYPE {
 	VO_CHN_ZOOM_IN_BUTT,
 } VO_CHN_ZOOM_TYPE;
 
+/* Structure for VO channel zoom ratio */
 typedef struct _VO_CHN_ZOOM_RATIO {
 	/* RW; range: [0, 1000]; u32Xratio = x * 1000 / W, x means start point to be zoomed, W means channel's width. */
 	CVI_U32 u32Xratio;
@@ -336,6 +341,7 @@ typedef struct _VO_CHN_ZOOM_RATIO {
 	CVI_U32 u32HeightRatio;
 } VO_CHN_ZOOM_RATIO;
 
+/* Structure for VO channel zoom attributes */
 typedef struct _VO_CHN_ZOOM_ATTR_S {
 	VO_CHN_ZOOM_TYPE enZoomType; /* RW; choose the type of zoom in */
 	union {
@@ -350,11 +356,11 @@ typedef struct _VO_CHN_BORDER_ATTR_S {
 } VO_CHN_BORDER_ATTR_S;
 
 typedef enum _VO_CHN_MIRROR_TYPE {
-	VO_CHN_MIRROR_NONE = 0,
-	VO_CHN_MIRROR_HOR = 1,
-	VO_CHN_MIRROR_VER = 2,
-	VO_CHN_MIRROR_BOTH = 3,
-	VO_CHN_MIRROR_BUTT
+	VO_CHN_MIRROR_NONE = 0,  /* No mirroring */
+	VO_CHN_MIRROR_HOR = 1,   /* Horizontal mirroring */
+	VO_CHN_MIRROR_VER = 2,   /* Vertical mirroring */
+	VO_CHN_MIRROR_BOTH = 3,  /* Both horizontal and vertical mirroring */
+	VO_CHN_MIRROR_BUTT       /* Invalid mirror type */
 } VO_CHN_MIRROR_TYPE;
 
 /*
@@ -394,36 +400,39 @@ typedef struct _VO_WBC_SRC_S {
 } VO_WBC_SRC_S;
 
 typedef struct _VO_GAMMA_INFO_S {
-	VO_DEV s32VoDev;
-	CVI_BOOL enable;
-	CVI_BOOL osd_apply;
-	CVI_U32 value[VO_GAMMA_NODENUM];
+	VO_DEV s32VoDev;             /* VO device ID */
+	CVI_BOOL enable;             /* Gamma enable flag */
+	CVI_BOOL osd_apply;          /* OSD gamma apply flag */
+	CVI_U32 value[VO_GAMMA_NODENUM];  /* Gamma values */
 } VO_GAMMA_INFO_S;
 
+/* Structure for VO binary information */
 typedef struct _VO_BIN_INFO_S {
-	VO_GAMMA_INFO_S gamma_info;
-	CVI_U32 guard_magic;
+	VO_GAMMA_INFO_S gamma_info;   /* Gamma information */
+	CVI_U32 guard_magic;         /* Guard magic number */
 } VO_BIN_INFO_S;
 
 typedef enum _VO_PATTERN_MODE {
-	VO_PAT_OFF = 0,
-	VO_PAT_SNOW,
-	VO_PAT_AUTO,
-	VO_PAT_RED,
-	VO_PAT_GREEN,
-	VO_PAT_BLUE,
-	VO_PAT_COLORBAR,
-	VO_PAT_GRAY_GRAD_H,
-	VO_PAT_GRAY_GRAD_V,
-	VO_PAT_BLACK,
-	VO_PAT_MAX,
+	VO_PAT_OFF = 0,         /* Pattern off */
+	VO_PAT_SNOW,            /* Snow pattern */
+	VO_PAT_AUTO,            /* Auto pattern */
+	VO_PAT_RED,             /* Red pattern */
+	VO_PAT_GREEN,           /* Green pattern */
+	VO_PAT_BLUE,            /* Blue pattern */
+	VO_PAT_COLORBAR,        /* Color bar pattern */
+	VO_PAT_GRAY_GRAD_H,     /* Horizontal gray gradient pattern */
+	VO_PAT_GRAY_GRAD_V,     /* Vertical gray gradient pattern */
+	VO_PAT_BLACK,           /* Black pattern */
+	VO_PAT_MAX,             /* Maximum pattern value */
 } VO_PATTERN_MODE;
 
+/* Function pointer type for VO device power management operations */
 typedef CVI_S32(*pfnVoDevPmOps)(void *pvData);
 
+/* Structure for VO power management operations */
 typedef struct _VO_PM_OPS_S {
-	pfnVoDevPmOps pfnPanelSuspend;
-	pfnVoDevPmOps pfnPanelResume;
+	pfnVoDevPmOps pfnPanelSuspend;  /* Panel suspend operation */
+	pfnVoDevPmOps pfnPanelResume;   /* Panel resume operation */
 } VO_PM_OPS_S;
 
 #ifdef __cplusplus

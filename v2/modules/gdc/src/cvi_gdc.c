@@ -757,3 +757,27 @@ CVI_S32 CVI_GDC_UpdateMeshCoordinate(char *bindName,
 
 	return CVI_SUCCESS;
 }
+
+CVI_S32 CVI_GDC_AttachVbPool(MMF_CHN_S *pChn, VB_POOL u32VbPool)
+{
+	MOD_CHECK_NULL_PTR(CVI_ID_GDC, pChn);
+	CVI_S32 fd = get_ldc_fd();
+	struct ldc_vb_pool_cfg cfg;
+
+	cfg.Chn = *pChn;
+	cfg.VbPool = u32VbPool;
+
+	return gdc_attach_vbpool(fd, &cfg);
+}
+
+CVI_S32 CVI_GDC_DetachVbPool(MMF_CHN_S *pChn)
+{
+	MOD_CHECK_NULL_PTR(CVI_ID_GDC, pChn);
+	CVI_S32 fd = get_ldc_fd();
+	struct ldc_vb_pool_cfg cfg;
+
+	cfg.Chn = *pChn;
+	cfg.VbPool = -1;
+
+	return gdc_detach_vbpool(fd, &cfg);
+}

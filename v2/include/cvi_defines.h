@@ -22,7 +22,6 @@ extern "C" {
 #define __ATHENA2__
 #endif
 
-#define CVI_CHIP_TEST  0x0
 
 #define CVIU01 0x1
 #define CVIU02 0x2
@@ -198,66 +197,66 @@ enum ENUM_CHIP_ID {
 #define JPEGD_MIN_HEIGHT        8
 
 /* For Region */
-#define RGN_MIN_WIDTH             2
-#define RGN_MIN_HEIGHT            2
+#define RGN_MIN_WIDTH             2             /* minimum width of region */
+#define RGN_MIN_HEIGHT            2             /* minimum height of region */
 
-#define RGN_COVER_MAX_WIDTH       2880
-#define RGN_COVER_MAX_HEIGHT      4096
-#define RGN_COVER_MIN_X           0
-#define RGN_COVER_MIN_Y           0
-#define RGN_COVER_MAX_X           (RGN_COVER_MAX_WIDTH - RGN_MIN_WIDTH)
-#define RGN_COVER_MAX_Y           (RGN_COVER_MAX_HEIGHT - RGN_MIN_HEIGHT)
+#define RGN_COVER_MAX_WIDTH       2880          /* maximum width of COVER region */
+#define RGN_COVER_MAX_HEIGHT      4096          /* maximum height of COVER region */
+#define RGN_COVER_MIN_X           0             /* minimum X coordinate of start position of COVER region */
+#define RGN_COVER_MIN_Y           0             /* minimum Y coordinate of start position of COVER region */
+#define RGN_COVER_MAX_X           (RGN_COVER_MAX_WIDTH - RGN_MIN_WIDTH)    /* maximum X coordinate of start position of COVER region */
+#define RGN_COVER_MAX_Y           (RGN_COVER_MAX_HEIGHT - RGN_MIN_HEIGHT)  /* maximum Y coordinate of start position of COVER region */
 
-#define RGN_COVEREX_MAX_NUM       4
-#define RGN_COVEREX_MAX_WIDTH     2880
-#define RGN_COVEREX_MAX_HEIGHT    4096
-#define RGN_COVEREX_MIN_X         0
-#define RGN_COVEREX_MIN_Y         0
-#define RGN_COVEREX_MAX_X         (RGN_COVEREX_MAX_WIDTH - RGN_MIN_WIDTH)
-#define RGN_COVEREX_MAX_Y         (RGN_COVEREX_MAX_HEIGHT - RGN_MIN_HEIGHT)
+#define RGN_COVEREX_MAX_NUM       4             /* maximum number of COVEREX region */
+#define RGN_COVEREX_MAX_WIDTH     2880          /* maximum width of COVEREX region */
+#define RGN_COVEREX_MAX_HEIGHT    4096          /* maximum height of COVEREX region */
+#define RGN_COVEREX_MIN_X         0             /* minimum X coordinate of start position of COVEREX region */
+#define RGN_COVEREX_MIN_Y         0             /* minimum Y coordinate of start position of COVEREX region */
+#define RGN_COVEREX_MAX_X         (RGN_COVEREX_MAX_WIDTH - RGN_MIN_WIDTH)  /* maximum X coordinate of start position of COVEREX region */
+#define RGN_COVEREX_MAX_Y         (RGN_COVEREX_MAX_HEIGHT - RGN_MIN_HEIGHT) /* maximum Y coordinate of start position of COVEREX region */
 
-#define RGN_OVERLAY_MAX_WIDTH     2880
-#define RGN_OVERLAY_MAX_HEIGHT    4096
-#define RGN_OVERLAY_MIN_X         0
-#define RGN_OVERLAY_MIN_Y         0
-#define RGN_OVERLAY_MAX_X         (RGN_OVERLAY_MAX_WIDTH - RGN_MIN_WIDTH)
-#define RGN_OVERLAY_MAX_Y         (RGN_OVERLAY_MAX_HEIGHT - RGN_MIN_HEIGHT)
+#define RGN_OVERLAY_MAX_WIDTH     2880          /* maximum width of OVERLAY region */
+#define RGN_OVERLAY_MAX_HEIGHT    4096          /* maximum height of OVERLAY region */
+#define RGN_OVERLAY_MIN_X         0             /* minimum X coordinate of start position of OVERLAY region */
+#define RGN_OVERLAY_MIN_Y         0             /* minimum Y coordinate of start position of OVERLAY region */
+#define RGN_OVERLAY_MAX_X         (RGN_OVERLAY_MAX_WIDTH - RGN_MIN_WIDTH)  /* maximum X coordinate of start position of OVERLAY region */
+#define RGN_OVERLAY_MAX_Y         (RGN_OVERLAY_MAX_HEIGHT - RGN_MIN_HEIGHT) /* maximum Y coordinate of start position of OVERLAY region */
 
-#define RGN_OVERLAYEX_MAX_WIDTH   2880
-#define RGN_OVERLAYEX_MAX_HEIGHT  4096
-#define RGN_OVERLAYEX_MIN_X       0
-#define RGN_OVERLAYEX_MIN_Y       0
-#define RGN_OVERLAYEX_MAX_X       (RGN_OVERLAYEX_MAX_WIDTH - RGN_MIN_WIDTH)
-#define RGN_OVERLAYEX_MAX_Y       (RGN_OVERLAYEX_MAX_HEIGHT - RGN_MIN_HEIGHT)
+#define RGN_OVERLAYEX_MAX_WIDTH   2880          /* maximum width of OVERLAYEX region */
+#define RGN_OVERLAYEX_MAX_HEIGHT  4096          /* maximum height of OVERLAYEX region */
+#define RGN_OVERLAYEX_MIN_X       0             /* minimum X coordinate of start position of OVERLAYEX region */
+#define RGN_OVERLAYEX_MIN_Y       0             /* minimum Y coordinate of start position of OVERLAYEX region */
+#define RGN_OVERLAYEX_MAX_X       (RGN_OVERLAYEX_MAX_WIDTH - RGN_MIN_WIDTH)    /* maximum X coordinate of start position of OVERLAYEX region */
+#define RGN_OVERLAYEX_MAX_Y       (RGN_OVERLAYEX_MAX_HEIGHT - RGN_MIN_HEIGHT)  /* maximum Y coordinate of start position of OVERLAYEX region */
 
-#define RGN_MOSAIC_MAX_NUM        8
-#define RGN_MOSAIC_X_ALIGN        4
-#define RGN_MOSAIC_Y_ALIGN        2
-#define RGN_MOSAIC_WIDTH_ALIGN    4
-#define RGN_MOSAIC_HEIGHT_ALIGN   4
+#define RGN_MOSAIC_MAX_NUM        8             /* maximum number of MOSAIC region */
+#define RGN_MOSAIC_X_ALIGN        4             /* alignment X coordinate of MOSAIC region */
+#define RGN_MOSAIC_Y_ALIGN        2             /* alignment Y coordinate of MOSAIC region */
+#define RGN_MOSAIC_WIDTH_ALIGN    4             /* alignment width of MOSAIC region */
+#define RGN_MOSAIC_HEIGHT_ALIGN   4             /* alignment height of MOSAIC region */
 
-#define RGN_MOSAIC_MIN_WIDTH      8
-#define RGN_MOSAIC_MIN_HEIGHT     8
-#define RGN_MOSAIC_MAX_WIDTH      2880
-#define RGN_MOSAIC_MAX_HEIGHT     4096
-#define RGN_MOSAIC_MIN_X          0
-#define RGN_MOSAIC_MIN_Y          0
-#define RGN_MOSAIC_MAX_X          (RGN_MOSAIC_MAX_WIDTH - RGN_MOSAIC_MIN_WIDTH)
-#define RGN_MOSAIC_MAX_Y          (RGN_MOSAIC_MAX_HEIGHT - RGN_MOSAIC_MIN_HEIGHT)
+#define RGN_MOSAIC_MIN_WIDTH      8             /* minimum width of MOSAIC region */
+#define RGN_MOSAIC_MIN_HEIGHT     8             /* minimum height of MOSAIC region */
+#define RGN_MOSAIC_MAX_WIDTH      2880          /* maximum width of MOSAIC region */
+#define RGN_MOSAIC_MAX_HEIGHT     4096          /* maximum height of MOSAIC region */
+#define RGN_MOSAIC_MIN_X          0             /* minimum X coordinate of start position of MOSAIC region */
+#define RGN_MOSAIC_MIN_Y          0             /* minimum Y coordinate of start position of MOSAIC region */
+#define RGN_MOSAIC_MAX_X          (RGN_MOSAIC_MAX_WIDTH - RGN_MOSAIC_MIN_WIDTH)   /* maximum X coordinate of start position of MOSAIC region */
+#define RGN_MOSAIC_MAX_Y          (RGN_MOSAIC_MAX_HEIGHT - RGN_MOSAIC_MIN_HEIGHT) /* maximum Y coordinate of start position of MOSAIC region */
 
 // vpss rgn define
-#define RGN_MAX_LAYER_VPSS        2
-#define RGN_ODEC_LAYER_VPSS       0
-#define RGN_NORMAL_LAYER_VPSS     1
-#define RGN_MAX_NUM_VPSS          8
-#define RGN_EX_MAX_NUM_VPSS       16
-#define RGN_EX_MAX_WIDTH          2880
+#define RGN_MAX_LAYER_VPSS        2             /* maximum number of region layer of VPSS */
+#define RGN_ODEC_LAYER_VPSS       0             /* ODEC region layer of VPSS */
+#define RGN_NORMAL_LAYER_VPSS     1             /* NORMAL region layer of VPSS */
+#define RGN_MAX_NUM_VPSS          8             /* maximum number of region of VPSS */
+#define RGN_EX_MAX_NUM_VPSS       16            /* maximum number of extended region of VPSS */
+#define RGN_EX_MAX_WIDTH          2880          /* maximum width of extended region */
 
 // vo rgn define
-#define RGN_MAX_NUM_VO            8
+#define RGN_MAX_NUM_VO            8             /* maximum number of region of VO */
 
-#define RGN_MAX_BUF_NUM           2
-#define RGN_MAX_NUM               108
+#define RGN_MAX_BUF_NUM           2             /* maximum number of buffer of region */
+#define RGN_MAX_NUM               108           /* maximum number of region */
 
 /*************************************/
 #define VENC_MAX_SSE_NUM            8
@@ -336,40 +335,40 @@ enum ENUM_CHIP_ID {
 #define CVI_VI_CHN_1_BUF                   (2 + CVI_VI_VPSS_EXTRA_BUF) /* Buffer size for channel 1 */
 #define CVI_VI_CHN_2_BUF                   (2 + CVI_VI_VPSS_EXTRA_BUF) /* Buffer size for channel 2 */
 #define CVI_VI_CHN_3_BUF                   (2 + CVI_VI_VPSS_EXTRA_BUF) /* Buffer size for channel 3 */
-#define CVI_VI_BUF                         (CVI_VI_CHN_0_BUF + CVI_VI_CHN_1_BUF + CVI_VI_CHN_2_BUF + CVI_VI_CHN_3_BUF) 
+#define CVI_VI_BUF                         (CVI_VI_CHN_0_BUF + CVI_VI_CHN_1_BUF + CVI_VI_CHN_2_BUF + CVI_VI_CHN_3_BUF)
 											/* Total buffer size for all channels */
 
 /* For VO */
-#define VO_MAX_DEV_NUM				2
-#define VO_HDMI_DEVICE				1
-#define VO_MAX_VIDEO_LAYER_IN_DEV		1
-#define VO_MAX_GRAPHIC_LAYER_IN_DEV		3
-#define VO_MAX_VIDEO_LAYER_NUM			(VO_MAX_DEV_NUM * VO_MAX_VIDEO_LAYER_IN_DEV)
-#define VO_MAX_GRAPHIC_LAYER_NUM		(VO_MAX_DEV_NUM * VO_MAX_GRAPHIC_LAYER_IN_DEV)
-#define VO_MAX_LAYER_NUM			(VO_MAX_VIDEO_LAYER_NUM + VO_MAX_GRAPHIC_LAYER_NUM)
-#define VO_LAYER_V0				0
-#define VO_LAYER_V1				1
-#define VO_LAYER_G0				2
-#define VO_LAYER_G1				3
-#define VO_LAYER_G2				4
-#define VO_LAYER_G3				5
-#define VO_LAYER_G4				6
-#define VO_LAYER_G5				7
-#define VO_MAX_CHN_NUM				64
-#define VO_MIN_CHN_WIDTH			32
-#define VO_MIN_CHN_HEIGHT			32
-#define VO_CHN_THRESHOLD			2
-#define VO_CHN_WORKQ				1
-#define VO_MAX_CHN_DEPTH			8
-#define VO_MAX_CHN_SCALE			16
-#define VO_MAX_CHN_ZOOM_RATIO			1000
-#define VO_MAX_CHN_BORDER_WIDTH			14
-#define VO_MIN_LAYER_TOLERATE			1
-#define VO_MAX_LAYER_TOLERATE			100000
-#define VO_MAX_LAYER_DEPTH			8
-#define VO_MAX_WBC_NUM				1
-#define VO_WBC_WORKQ				2
-#define VO_WBC_DONEQ				1
+#define VO_MAX_DEV_NUM				2		/* maximum number of devices */
+#define VO_HDMI_DEVICE				1		/* HDMI device identifier */
+#define VO_MAX_VIDEO_LAYER_IN_DEV		1	/* maximum number of video layers per device */
+#define VO_MAX_GRAPHIC_LAYER_IN_DEV		3	/* maximum number of graphic layers per device */
+#define VO_MAX_VIDEO_LAYER_NUM			(VO_MAX_DEV_NUM * VO_MAX_VIDEO_LAYER_IN_DEV)	/* maximum total number of video layers */
+#define VO_MAX_GRAPHIC_LAYER_NUM		(VO_MAX_DEV_NUM * VO_MAX_GRAPHIC_LAYER_IN_DEV)	/* maximum total number of graphic layers */
+#define VO_MAX_LAYER_NUM			(VO_MAX_VIDEO_LAYER_NUM + VO_MAX_GRAPHIC_LAYER_NUM)	/* maximum total number of layers */
+#define VO_LAYER_V0				0			/* video layer 0 */
+#define VO_LAYER_V1				1			/* video layer 1 */
+#define VO_LAYER_G0				2			/* graphic layer 0 */
+#define VO_LAYER_G1				3			/* graphic layer 1 */
+#define VO_LAYER_G2				4			/* graphic layer 2 */
+#define VO_LAYER_G3				5			/* graphic layer 3 */
+#define VO_LAYER_G4				6			/* graphic layer 4 */
+#define VO_LAYER_G5				7			/* graphic layer 5 */
+#define VO_MAX_CHN_NUM				64		/* maximum number of channels */
+#define VO_MIN_CHN_WIDTH			32		/* minimum channel width */
+#define VO_MIN_CHN_HEIGHT			32		/* minimum channel height */
+#define VO_CHN_THRESHOLD			2		/* channel threshold */
+#define VO_CHN_WORKQ				1		/* number of channel work queues */
+#define VO_MAX_CHN_DEPTH			8		/* maximum channel depth */
+#define VO_MAX_CHN_SCALE			16		/* maximum channel scaling factor */
+#define VO_MAX_CHN_ZOOM_RATIO			1000	/* maximum channel zoom ratio (per thousand) */
+#define VO_MAX_CHN_BORDER_WIDTH			14		/* maximum channel border width */
+#define VO_MIN_LAYER_TOLERATE			1		/* minimum layer tolerance */
+#define VO_MAX_LAYER_TOLERATE			100000	/* maximum layer tolerance */
+#define VO_MAX_LAYER_DEPTH			8		/* maximum layer depth */
+#define VO_MAX_WBC_NUM				1		/* maximum write-back channel number */
+#define VO_WBC_WORKQ				2		/* number of write-back channel work queues */
+#define VO_WBC_DONEQ				1		/* number of write-back channel done queues */
 
 /* For AUDIO */
 #define AI_DEV_MAX_NUM          1       /* max dev num of input/output devices */

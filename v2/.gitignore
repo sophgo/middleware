@@ -48,6 +48,11 @@ sample/hdmi/sample_hdmi
 sample/sample_panel/sample_panel
 sample/sample_panel/lt9611/lt9611
 sample/fb/sample_fb
+sample/DPC_cali/dpc_cali
+sample/stitch_calibration/stitich_calibration
+sample/tde/sample_tde
+self_test/audio/include/cvi_audio_vqe.h
+self_test/audio/include/cvi_resampler_api.h
 
 self_test/cvi_test/cvi_test
 self_test/cvi_test/res
@@ -90,6 +95,13 @@ self_test/vi_ut/vi_ut_client
 self_test/hdmi_ut/hdmi_ut
 self_test/tde_ut/tde_ut
 self_test/ispv4l2_ut/ispv4l2_ut
+self_test/audio/include/cvi_audio_vqe.h
+self_test/audio/include/cvi_resampler_api.h
+self_test/gdc_ut/gdc_ut
+self_test/vivo_slt/lt9611
+self_test/vivo_slt/sample_hdmi
+self_test/vivo_slt/sample_panel
+self_test/vivo_slt/vivo_slt
 
 modules/venc/vc/jpeg/driver/bm_jpg_test
 modules/venc/vc/jpeg/driver/bmjpuapi/bmjpegdec
@@ -108,4 +120,8 @@ tool/framedump/vpss_chn_dump
 .vscode/settings.json
 
 modules/isp
+component/SensorSupportList
 
+include/3rd/
+include/isp/
+include/sensor_cfg.h

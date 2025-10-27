@@ -78,7 +78,7 @@ CVI_S32 vo_getIndexBinParam(enum CVI_BIN_SECTION_ID id, CVI_U8 *buf,
 		return CVI_FAILURE;
 	}
 
-	ret = vo_getBinParam_autogen(id - CVI_BIN_ID_ISP0, buf, pst, indexOffset);
+	ret = vo_getBinParam_autogen(id, buf, pst, indexOffset);
 
 	return ret;
 }

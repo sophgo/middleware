@@ -33,6 +33,7 @@ enum VI_IOCTL {
 	VI_IOCTL_POST_STS_GET,
 	VI_IOCTL_POST_STS_PUT,
 	VI_IOCTL_USR_PIC_CFG,
+	VI_IOCTL_RESIZE_YUV_PATH,
 	VI_IOCTL_USR_PIC_ONOFF,
 	VI_IOCTL_USR_PIC_PUT,
 	VI_IOCTL_AE_CFG,
@@ -190,6 +191,13 @@ struct dis_info_s {
 	__u8   sensor_num;
 	__u32  frm_num;
 	struct crop_size_s dis_i;
+};
+
+struct resize_yuv_path_cfg_s {
+	VI_PIPE ViPipe;
+	__u32 max_width;
+	__u32 max_height;
+	struct crop_size_s crop_cfg;
 };
 
 struct vi_chn_rot_cfg {

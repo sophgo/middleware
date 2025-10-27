@@ -90,6 +90,7 @@ typedef struct _VDEC_CHN_ATTR_S {
 	COMPRESS_MODE_E enCompressMode; /* RW; compress mode */
 	CVI_U8 u8CommandQueueDepth; /* RW; command queue depth [0,4]*/
 	CVI_U8 u8ReorderEnable;
+    CVI_U8 u8AsyncGetframe;  /* RW; async get frame flag */
 	union {
 		VDEC_ATTR_VIDEO_S
 		stVdecVideoAttr; /* structure with video ( h264/h265) */
@@ -160,6 +161,7 @@ typedef struct _VDEC_CHN_STATUS_S {
 	CVI_S32 u32LeftStreamBytes; /* R; left stream bytes waiting for decode */
 	CVI_S32 u32LeftStreamFrames; /* R; left frames waiting for decode,only valid for VIDEO_MODE_FRAME */
 	CVI_S32 u32LeftPics; /* R; pics waiting for output */
+	CVI_U32 u32EmptyStreamBufSzie;
 	CVI_BOOL bStartRecvStream; /* R; had started recv stream? */
 	CVI_U32 u32RecvStreamFrames; /* R; how many frames of stream has been received. valid when send by frame. */
 	CVI_U32 u32DecodeStreamFrames; /* R; how many frames of stream has been decoded. valid when send by frame. */

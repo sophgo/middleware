@@ -31,7 +31,7 @@ COMM_OBJ := $(COMM_SRC:%.c=%.o)
 
 TARGET = vi_ut
 TARGET_CLNT = vi_ut_client
-LIBS = -lvi -lvpss $(ISP_LIB) -lsys $(SNS_LIB) -lmisc -lcvi_bin -lvo
+LIBS = -lvi -lvpss $(ISP_LIB) -lsys $(SNS_LIB) -lmisc -lcvi_bin -lvo -lgdc
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 DEFS += -DRPC_MULTI_PROCESS
 endif

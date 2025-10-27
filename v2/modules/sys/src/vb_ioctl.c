@@ -92,6 +92,11 @@ int vb_ioctl_create_pool(int fd, struct vb_pool_cfg *cfg)
 	VB_CTRL_PTR(fd, cfg, VB_IOCTL_CREATE_POOL);
 }
 
+int vb_ioctl_create_ex_pool(int fd, struct vb_pool_ex_cfg *cfg)
+{
+	VB_CTRL_PTR(fd, cfg, VB_IOCTL_CREATE_EX_POOL);
+}
+
 int vb_ioctl_destroy_pool(int fd, VB_POOL poolId)
 {
 	VB_CTRL_S_VALUE(fd, poolId, VB_IOCTL_DESTROY_POOL);
