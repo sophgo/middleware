@@ -110,6 +110,7 @@ int load_meshdata(const char *path, MESH_DATA_ALL_S *pmeshdata,
 		memset(&pmeshdata->slice_info, 0, sizeof(pmeshdata->slice_info));
 		CVI_TRACE_GDC(CVI_DBG_INFO, "slice magic invalid, use default slice info\n");
 	}
+	pmeshdata->bfixpoint = info[28];
 
 	int _nbr_mesh_y = pmeshdata->mesh_vercnt; // for roi, not for whole image
 	int _nbr_mesh_x = pmeshdata->mesh_horcnt;

@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <cvi_comm_video.h>
-#include <linux/spi/spidev.h>
+//#include <linux/spi/spidev.h>
 #include "cvi_sns_ctrl.h"
 #include "n6_cmos_ex.h"
 #include <pthread.h>

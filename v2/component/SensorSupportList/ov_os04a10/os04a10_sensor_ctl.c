@@ -15,6 +15,8 @@ const CVI_U32 os04a10_data_byte = 1;
 ISP_SNS_MIRRORFLIP_TYPE_E g_aeOs04a10_MirrorFip_Initial[VI_MAX_PIPE_NUM] = {
 	ISP_SNS_MIRROR, ISP_SNS_MIRROR, ISP_SNS_MIRROR, ISP_SNS_MIRROR};
 
+#define OS04A10_MASTER_FSYNC_MODE 1
+
 int os04a10_i2c_init(VI_PIPE ViPipe)
 {
 	return sensor_i2c_init(ViPipe, (CVI_U8)g_aunOs04a10_BusInfo[ViPipe].s8I2cDev,
@@ -1163,13 +1165,19 @@ static void os04a10_linear_1520p30_10BIT_2L_master_init(VI_PIPE ViPipe)
 	os04a10_write_register(ViPipe, 0x58d8, 0xff);//
 	os04a10_write_register(ViPipe, 0x58d9, 0xff);//
 	os04a10_write_register(ViPipe, 0x3834, 0xf0);//;[7:4]
+#if OS04A10_MASTER_FSYNC_MODE
+	os04a10_write_register(ViPipe, 0x3002, 0x0f);//FSYNC o_en
+	os04a10_write_register(ViPipe, 0x3008, 0x00);//
+	os04a10_write_register(ViPipe, 0x3009, 0x04);
+#else
 	os04a10_write_register(ViPipe, 0x3002, 0x80);//;VSYNC o_en
 	os04a10_write_register(ViPipe, 0x3008, 0x00);//
 	os04a10_write_register(ViPipe, 0x3009, 0x02);//
+#endif
 	os04a10_write_register(ViPipe, 0x3818, 0x00);//
-	os04a10_write_register(ViPipe, 0x3819, 0x08);//;vsync_start at row #8
+	os04a10_write_register(ViPipe, 0x3819, 0x08);//;sync_start at row #8
 	os04a10_write_register(ViPipe, 0x381a, 0x00);//
-	os04a10_write_register(ViPipe, 0x381b, 0x10);//;vsync_end at row #16
+	os04a10_write_register(ViPipe, 0x381b, 0x10);//;sync_end at row #16
 
 	os04a10_default_reg_init(ViPipe);
 	os04a10_write_register(ViPipe, 0x0100, 0x01);

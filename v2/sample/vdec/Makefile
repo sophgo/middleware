@@ -59,7 +59,8 @@ $(SDIR)/%.o: $(SDIR)/%.c
 $(TARGET): $(COMM_OBJ) $(VDEC_OBJS) $(OBJS) $(MW_LIB)/libvdec.a $(MW_LIB)/libsys.a
 	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(VDEC_OBJS) $(COMM_OBJ) -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
-
+	@cp $@ $(INSTALL_MW_DIR)/
+	@echo "Installed $@ to $(INSTALL_MW_DIR)"
 $(TARGET_WITH_ASAN): $(COMM_OBJ) $(VDEC_OBJS) $(OBJS)
 	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(VDEC_OBJS) $(COMM_OBJ) -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS_WITH_ASAN)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)

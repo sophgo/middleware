@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+export PATH=$PATH:/opt/sophon/middleware/bin
+# 更新动态链接库缓存
+ldconfig
+
+exit 0

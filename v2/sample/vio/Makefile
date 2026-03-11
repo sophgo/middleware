@@ -57,7 +57,8 @@ $(TARGET): $(COMM_OBJ) $(OBJS) $(ISP_OBJ) $(MW_LIB)/libsys.a $(MW_LIB)/libvi.a $
 	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(COMM_OBJS) -lsys $(MW_LIB)/libsys.a $(MW_LIB)/libvi.a $(MW_LIB)/libvpss.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
 	@echo ${MW_LIBS} "#######################"
-
+	@cp $@ $(INSTALL_MW_DIR)/
+	@echo "Installed $@ to $(INSTALL_MW_DIR)"
 clean:
 	@rm -f $(OBJS) $(DEPS) $(COMM_OBJ) $(COMM_DEPS) $(TARGET)
 

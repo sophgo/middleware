@@ -929,7 +929,7 @@ static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 	CMOS_CHECK_POINTER(pstRxAttr);
 	CMOS_CHECK_POINTER(pstRxAttrSrc);
 
-	memcpy(pstRxAttr, &imx412_rx_attr, sizeof(*pstRxAttr));
+	memcpy(pstRxAttr, pstRxAttrSrc, sizeof(*pstRxAttr));
 
 	pstRxAttr->img_size.start_x = g_astImx412_mode[pstSnsState->u8ImgMode].astImg[0].stWndRect.s32X;
 	pstRxAttr->img_size.start_y = g_astImx412_mode[pstSnsState->u8ImgMode].astImg[0].stWndRect.s32Y;
@@ -1069,6 +1069,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	IMX412_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	IMX412_SENSOR_RESET_CTX(ViPipe);
+	g_aeImx412_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)

@@ -92,6 +92,7 @@ build_config:
     - brigates_bg0808
     - cvsens_cv2003
     - gcore_gc02m1
+    - gcore_gc0308
     - gcore_gc1054
     - gcore_gc2053
     - gcore_gc2053_slave
@@ -100,11 +101,14 @@ build_config:
     - gcore_gc2145
     - gcore_gc4023
     - gcore_gc4653
+    - gcore_gc4683
     - gcore_gc8613
+    - imgds_mis40c1
     - nextchip_n5
     - nextchip_n6
     - nuc_nc021
     - onsemi_ar2020
+    - ov_os02g10
     - ov_os04a10
     - ov_os04c10
     - ov_os04e10
@@ -132,20 +136,27 @@ build_config:
     - sms_sc500ai
     - sms_sc501ai_2L
     - sms_sc531ai_2L
+    - sms_sc533hai
+    - sms_sc535hai
     - sms_sc635ai
     - sms_sc831hai
     - sms_sc1330
+    - sms_sc1336_1L
+    - sms_sc1346_1L
+    - sms_sc1346_1L_slave
     - sms_sc3332
     - sms_sc3335
     - sms_sc3336
     - sms_sc2335
     - sms_sc4336
     - sms_sc4336p
+    - sms_sc202l
     - soi_f23
     - soi_f35
     - soi_f37p
     - soi_k06
     - soi_q03
+    - sony_imx135
     - sony_imx307
     - sony_imx307_slave
     - sony_imx307_2L
@@ -154,10 +165,13 @@ build_config:
     - sony_imx327_2L
     - sony_imx327_fpga
     - sony_imx327_sublvds
+    - sony_imx334
     - sony_imx335
+    - sony_imx376
     - sony_imx412
     - sony_imx415
     - sony_imx585
+    - sony_imx662
     - sony_imx675
     - sony_imx678
     - sony_imx900
@@ -172,6 +186,7 @@ source_file:
   - brigates_bg0808/*.c ? <CONFIG_SENSOR_BRIGATES_BG0808>
   - cvsens_cv2003/*.c ? <CONFIG_SENSOR_CVSENS_CV2003>
   - gcore_gc02m1/*.c ? <CONFIG_SENSOR_GCORE_GC02M1>
+  - gcore_gc0308/*.c ? <CONFIG_SENSOR_GCORE_GC0308>
   - gcore_gc1054/*.c ? <CONFIG_SENSOR_GCORE_GC1054>
   - gcore_gc2053/*.c ? <CONFIG_SENSOR_GCORE_GC2053>
   - gcore_gc2053_slave/*.c ? <CONFIG_SENSOR_GCORE_GC2053_SLAVE>
@@ -180,11 +195,14 @@ source_file:
   - gcore_gc2145/*.c ? <CONFIG_SENSOR_GCORE_GC2145>
   - gcore_gc4023/*.c ? <CONFIG_SENSOR_GCORE_GC4023>
   - gcore_gc4653/*.c ? <CONFIG_SENSOR_GCORE_GC4653>
+  - gcore_gc4683/*.c ? <CONFIG_SENSOR_GCORE_GC4683>
   - gcore_gc8613/*.c ? <CONFIG_SENSOR_GCORE_GC8613>
+  - imgds_mis40c1/*.c ? <CONFIG_SENSOR_IMGDS_MIS40C1>
   - nextchip_n5/*.c ? <CONFIG_SENSOR_NEXTCHIP_N5>
   - nextchip_n6/*.c ? <CONFIG_SENSOR_NEXTCHIP_N6>
   - nuc_nc021/*.c ? <CONFIG_SENSOR_NUC_NC021>
   - onsemi_ar2020/*.c ? <CONFIG_SENSOR_ONSEMI_AR2020>
+  - ov_os02g10/*.c ? <CONFIG_SENSOR_OV_OS02G10>
   - ov_os04a10/*.c ? <CONFIG_SENSOR_OV_OS04A10>
   - ov_os04c10/*.c ? <CONFIG_SENSOR_OV_OS04C10>
   - ov_os04e10/*.c ? <CONFIG_SENSOR_OV_OS04E10>
@@ -212,20 +230,27 @@ source_file:
   - sms_sc500ai/*.c ? <CONFIG_SENSOR_SMS_SC500AI>
   - sms_sc501ai_2L/*.c ? <CONFIG_SENSOR_SMS_SC501AI_2L>
   - sms_sc531ai_2L/*.c ? <CONFIG_SENSOR_SMS_SC531AI_2L>
+  - sms_sc533hai/*.c ? <CONFIG_SENSOR_SMS_SC533HAI>
+  - sms_sc535hai/*.c ? <CONFIG_SENSOR_SMS_SC535HAI>
   - sms_sc635ai/*.c ? <CONFIG_SENSOR_SMS_SC635AI>
   - sms_sc831hai/*.c ? <CONFIG_SENSOR_SMS_SC831HAI>
   - sms_sc1330/*.c ? <CONFIG_SENSOR_SMS_SC1330>
+  - sms_sc1336_1L/*.c ? <CONFIG_SENSOR_SMS_SC1336_1L>
+  - sms_sc1346_1L/*.c ? <CONFIG_SENSOR_SMS_SC1346_1L>
+  - sms_sc1346_1L_slave/*.c ? <CONFIG_SENSOR_SMS_SC1346_1L_SLAVE>
   - sms_sc3332/*.c ? <CONFIG_SENSOR_SMS_SC3332>
   - sms_sc3335/*.c ? <CONFIG_SENSOR_SMS_SC3335>
   - sms_sc3336/*.c ? <CONFIG_SENSOR_SMS_SC3336>
   - sms_sc2335/*.c ? <CONFIG_SENSOR_SMS_SC2335>
   - sms_sc4336/*.c ? <CONFIG_SENSOR_SMS_SC4336>
   - sms_sc4336p/*.c ? <CONFIG_SENSOR_SMS_SC4336P>
+  - sms_sc202l/*.c ? <CONFIG_SENSOR_SMS_SC202L>
   - soi_f23/*.c ? <CONFIG_SENSOR_SOI_F23>
   - soi_f35/*.c ? <CONFIG_SENSOR_SOI_F35>
   - soi_f37p/*.c ? <CONFIG_SENSOR_SOI_F37P>
   - soi_k06/*.c ? <CONFIG_SENSOR_SOI_K06>
   - soi_q03/*.c ? <CONFIG_SENSOR_SOI_Q03>
+  - sony_imx135/*.c ? <CONFIG_SENSOR_SONY_IMX135>
   - sony_imx307/*.c ? <CONFIG_SENSOR_SONY_IMX307>
   - sony_imx307_slave/*.c ? <CONFIG_SENSOR_SONY_IMX307_SLAVE>
   - sony_imx307_2L/*.c ? <CONFIG_SENSOR_SONY_IMX307_2L>
@@ -235,11 +260,13 @@ source_file:
   - sony_imx327_fpga/*.c ? <CONFIG_SENSOR_SONY_IMX327_FPGA>
   - sony_imx327_sublvds/*.c ? <CONFIG_SENSOR_SONY_IMX327_SUBLVDS>
   - sony_imx335/*.c ? <CONFIG_SENSOR_SONY_IMX335>
+  - sony_imx376/*.c ? <CONFIG_SENSOR_SONY_IMX376>
   - sony_imx412/*.c ? <CONFIG_SENSOR_SONY_IMX412>
   - sony_imx415/*.c ? <CONFIG_SENSOR_SONY_IMX415>
   - sony_imx585/*.c ? <CONFIG_SENSOR_SONY_IMX585>
+  - sony_imx662/*.c ? <CONFIG_SENSOR_SONY_IMX662>
   - sony_imx675/*.c ? <CONFIG_SENSOR_SONY_IMX675>
-  - sony_imx678/*.c ? <CONFIG_SENSOR_SONY_IMX675>
+  - sony_imx678/*.c ? <CONFIG_SENSOR_SONY_IMX678>
   - sony_imx900/*.c ? <CONFIG_SENSOR_SONY_IMX900>
   - techpoint_tp2860/*.c ? <CONFIG_SENSOR_TECHPOINT_TP2860>
   - lontium_lt6911/*.c ? <CONFIG_SENSOR_LONTIUM_LT6911>

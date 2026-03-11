@@ -43,7 +43,8 @@ $(SDIR)/%.o: $(SDIR)/%.c
 $(TARGET): $(COMM_OBJ) $(OBJS) $(ISP_OBJ) $(MW_LIB)/libsys.a
 	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(COMM_OBJS) -lsys $(MW_LIB)/libsys.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
-
+	@cp $@ $(INSTALL_MW_DIR)/
+	@echo "Installed $@ to $(INSTALL_MW_DIR)"
 clean:
 	@rm -f $(OBJS) $(DEPS) $(COMM_OBJ) $(COMM_DEPS) $(TARGET)
 

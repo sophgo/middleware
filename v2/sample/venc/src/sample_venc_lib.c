@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <errno.h>
 #include <sys/select.h>
 #include <assert.h>
 #include <sys/prctl.h>
@@ -2612,13 +2613,35 @@ static CVI_S32 SAMPLE_VENC_StartGetStream(vencChnCtx *pvecc, CVI_S32 s32ChnIdx)
 	pvecc->chnStat = CHN_STAT_START;
 	pvecc->nextChnStat = CHN_STAT_START;
 
+	CVI_S32 ret;
 	if (pvecc->chnIc.bind_mode == VENC_BIND_DISABLE) {
-		pthread_create(&gs_VencSendTask[s32ChnIdx], &attr,
+		ret = pthread_create(&gs_VencSendTask[s32ChnIdx], &attr,
 						SAMPLE_VENC_SendVencFrameProc, (CVI_VOID *)pvecc);
 	}
 	else {
-		pthread_create(&gs_VencSendTask[s32ChnIdx], &attr,
+		ret = pthread_create(&gs_VencSendTask[s32ChnIdx], &attr,
 						_SAMPLE_VENC_BindGetStreamProc, (CVI_VOID *)pvecc);
+	}
+
+	if (ret == EPERM) {
+		printf("[VENC] Failed to create RT thread (EPERM), retrying with normal priority...\n");
+		pthread_attr_destroy(&attr);
+		pthread_attr_init(&attr);
+		if (pvecc->chnIc.bind_mode == VENC_BIND_DISABLE) {
+			ret = pthread_create(&gs_VencSendTask[s32ChnIdx], &attr,
+							SAMPLE_VENC_SendVencFrameProc, (CVI_VOID *)pvecc);
+		}
+		else {
+			ret = pthread_create(&gs_VencSendTask[s32ChnIdx], &attr,
+							_SAMPLE_VENC_BindGetStreamProc, (CVI_VOID *)pvecc);
+		}
+	}
+
+	pthread_attr_destroy(&attr);
+
+	if (ret != 0) {
+		printf("[VENC] pthread_create failed, error: %d, %s\n", ret, strerror(ret));
+		return CVI_FAILURE;
 	}
 
 	return CVI_SUCCESS;

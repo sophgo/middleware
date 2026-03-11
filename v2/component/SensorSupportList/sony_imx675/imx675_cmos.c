@@ -76,13 +76,17 @@ static CVI_S32 cmos_get_wdr_size(VI_PIPE ViPipe, ISP_SNS_ISP_INFO_S *pstIspCfg);
 #define IMX675_HOLD_ADDR		0x3001
 #define IMX675_SHR0_ADDR		0x3050 //Shutter setting of LEF
 #define IMX675_SHR1_ADDR		0x3054
-#define IMX675_GAIN_ADDR		0x3070
-#define IMX675_GAIN1_ADDR		0x3072
+#define IMX675_GAIN_ADDR_L		0x3070
+#define IMX675_GAIN_ADDR_H		0x3071
+#define IMX675_GAIN1_ADDR_L		0x3072
+#define IMX675_GAIN1_ADDR_H		0x3073
 #define IMX675_HCG_ADDR			0x3030
+#define IMX675_HCG1_ADDR		0x3031
 #define IMX675_VMAX_ADDR		0x3028 //Number of vertical lines per 1 Frame
 #define IMX675_RHS1_ADDR		0x3060 //Readout timing setting of SEF1
 #define IMX675_TABLE_END		0xffff
 
+#define IMX675_RES_IS_4M(w, h)      ((w) <= 2560 && (h) <= 1440)
 #define IMX675_RES_IS_5M(w, h)      ((w) <= 2560 && (h) <= 1944)
 
 static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSnsDft)
@@ -129,8 +133,8 @@ static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSns
 	switch (pstSnsState->enWDRMode) {
 	default:
 	case WDR_MODE_NONE:   /*linear mode*/
-		pstAeSnsDft->f32Fps = g_astImx675_mode[IMX675_MODE_5M30].f32MaxFps;
-		pstAeSnsDft->f32MinFps = g_astImx675_mode[IMX675_MODE_5M30].f32MinFps;
+		pstAeSnsDft->f32Fps = g_astImx675_mode[pstSnsState->u8ImgMode].f32MaxFps;
+		pstAeSnsDft->f32MinFps = g_astImx675_mode[pstSnsState->u8ImgMode].f32MinFps;
 		pstAeSnsDft->au8HistThresh[0] = 0xd;
 		pstAeSnsDft->au8HistThresh[1] = 0x28;
 		pstAeSnsDft->au8HistThresh[2] = 0x60;
@@ -247,6 +251,17 @@ static CVI_S32 cmos_fps_set(VI_PIPE ViPipe, CVI_FLOAT f32Fps, AE_SENSOR_DEFAULT_
 		}
 		u32VMAX = (u32VMAX > IMX675_FULL_LINES_MAX) ? IMX675_FULL_LINES_MAX : u32VMAX;
 		break;
+
+	case IMX675_MODE_4M30:
+		if ((f32Fps <= f32MaxFps) && (f32Fps >= f32MinFps)) {
+			u32VMAX = u32Vts * f32MaxFps / DIV_0_TO_1_FLOAT(f32Fps);
+		} else {
+			CVI_TRACE_SNS(CVI_DBG_ERR, "Unsupport Fps: %f\n", f32Fps);
+			return CVI_FAILURE;
+		}
+		u32VMAX = (u32VMAX > IMX675_FULL_LINES_MAX) ? IMX675_FULL_LINES_MAX : u32VMAX;
+		break;
+
 	default:
 		CVI_TRACE_SNS(CVI_DBG_INFO, "Unsupport sensor mode: %d\n", pstSnsState->u8ImgMode);
 		return CVI_FAILURE;
@@ -264,7 +279,7 @@ static CVI_S32 cmos_fps_set(VI_PIPE ViPipe, CVI_FLOAT f32Fps, AE_SENSOR_DEFAULT_
 
 	if (WDR_MODE_2To1_LINE == pstSnsState->enWDRMode) {
 		pstSnsState->u32FLStd = u32VMAX * 2;
-		g_astImx675_State[ViPipe].u32RHS1_MAX = (u32VMAX - g_astImx675_State[ViPipe].u32BRL) * 2 - 12;
+		g_astImx675_State[ViPipe].u32RHS1_MAX = (g_astImx675_State[ViPipe].u32BRL) * 2;
 
 	} else {
 		pstSnsState->u32FLStd = u32VMAX;
@@ -478,36 +493,37 @@ static CVI_S32 cmos_gains_update(VI_PIPE ViPipe, CVI_U32 *pu32Again, CVI_U32 *pu
 			/* hcg bit[0]*/
 			u32HCG = u32HCG | 0x1;
 			u32Again = u32Again - 26;
-		}
+		} else {
+			u32HCG = u32HCG & 0x00;
+			}
 		u32Tmp = u32Again + u32Dgain;
-		pstSnsRegsInfo->astI2cData[LINEAR_GAIN].u32Data = (u32Tmp & 0xFF);
+		pstSnsRegsInfo->astI2cData[LINEAR_GAIN_L].u32Data = (u32Tmp & 0xFF);
+		pstSnsRegsInfo->astI2cData[LINEAR_GAIN_H].u32Data = (u32Tmp & 0x700) >> 8;
 		pstSnsRegsInfo->astI2cData[LINEAR_HCG].u32Data = (u32HCG & 0xFF);
 	} else {
 		/* DOL mode */
 		if (u16Mode == SNS_GAIN_MODE_WDR_2F) {
-			/* don't support gain conversion in this mode. */
+
 			u32Again = pu32Again[1];
 			u32Dgain = pu32Dgain[1];
 
+			if (u32Again >= 30) {
+				/* hcg bit[0]*/
+				u32HCG = u32HCG | 0x1;
+				u32Again = u32Again - 26;
+			} else {
+				u32HCG = u32HCG & 0x00;
+			}
+
 			u32Tmp = u32Again + u32Dgain;
 			if (u32Tmp > 0xFF) {
 				u32Tmp = 0xFF;
 			}
-			if (u32HCG > 0xFF) {
-				u32HCG = 0xFF;
-			}
-			pstSnsRegsInfo->astI2cData[DOL2_GAIN].u32Data = (u32Tmp & 0xFF);
+
+			pstSnsRegsInfo->astI2cData[DOL2_GAIN_L].u32Data = (u32Tmp & 0xFF);
+			pstSnsRegsInfo->astI2cData[DOL2_GAIN_H].u32Data = (u32Tmp & 0x700) >> 8;
 			pstSnsRegsInfo->astI2cData[DOL2_HCG].u32Data = (u32HCG & 0xFF);
 
-			u32Again = pu32Again[0];
-			u32Dgain = pu32Dgain[0];
-
-			u32Tmp = u32Again + u32Dgain;
-			if (u32Tmp > 0xFF) {
-				u32Tmp = 0xFF;
-			}
-			pstSnsRegsInfo->astI2cData[DOL2_GAIN1].u32Data = (u32Tmp & 0xFF);
-		} else if (u16Mode == SNS_GAIN_MODE_SHARE) {
 			u32Again = pu32Again[0];
 			u32Dgain = pu32Dgain[0];
 
@@ -515,16 +531,37 @@ static CVI_S32 cmos_gains_update(VI_PIPE ViPipe, CVI_U32 *pu32Again, CVI_U32 *pu
 				/* hcg bit[0]*/
 				u32HCG = u32HCG | 0x1;
 				u32Again = u32Again - 26;
+			} else {
+				u32HCG = u32HCG & 0x00;
 			}
 
 			u32Tmp = u32Again + u32Dgain;
 			if (u32Tmp > 0xFF) {
 				u32Tmp = 0xFF;
 			}
-			if (u32HCG > 0xFF) {
-				u32HCG = 0xFF;
+			pstSnsRegsInfo->astI2cData[DOL2_GAIN1_L].u32Data = (u32Tmp & 0xFF);
+			pstSnsRegsInfo->astI2cData[DOL2_GAIN1_H].u32Data = (u32Tmp & 0x700) >> 8;
+			pstSnsRegsInfo->astI2cData[DOL2_HCG1].u32Data = (u32HCG & 0xFF);
+		} else if (u16Mode == SNS_GAIN_MODE_SHARE) {
+		/* don't support gain conversion in this mode. */
+			u32Again = pu32Again[0];
+			u32Dgain = pu32Dgain[0];
+
+			if (u32Again >= 30) {
+				/* hcg bit[0]*/
+				u32HCG = u32HCG | 0x1;
+				u32Again = u32Again - 26;
+			} else {
+				u32HCG = u32HCG & 0x00;
 			}
-			pstSnsRegsInfo->astI2cData[DOL2_GAIN].u32Data = (u32Tmp & 0xFF);
+
+			u32Tmp = u32Again + u32Dgain;
+			if (u32Tmp > 0xFF) {
+				u32Tmp = 0xFF;
+			}
+
+			pstSnsRegsInfo->astI2cData[DOL2_GAIN_L].u32Data = (u32Tmp & 0xFF);
+			pstSnsRegsInfo->astI2cData[DOL2_GAIN_H].u32Data = (u32Tmp & 0x700) >> 8;
 			pstSnsRegsInfo->astI2cData[DOL2_HCG].u32Data = (u32HCG & 0xFF);
 		}
 	}
@@ -726,6 +763,7 @@ static CVI_S32 cmos_set_wdr_mode(VI_PIPE ViPipe, CVI_U8 u8Mode)
 		if (pstSnsState->u8ImgMode == IMX675_MODE_5M25_WDR) {
 			pstSnsState->u32FLStd = g_astImx675_mode[pstSnsState->u8ImgMode].u32VtsDef * 2;
 			g_astImx675_State[ViPipe].u32BRL  = g_astImx675_mode[pstSnsState->u8ImgMode].u16BRL;
+			g_au16Imx675_GainMode[ViPipe] = SNS_GAIN_MODE_WDR_2F;
 			CVI_TRACE_SNS(CVI_DBG_INFO, "WDR_MODE_2To1_LINE 5M\n");
 		}
 		break;
@@ -807,10 +845,14 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 			pstI2c_data[DOL2_SHR0_1].u32RegAddr = IMX675_SHR0_ADDR + 1;
 			pstI2c_data[DOL2_SHR0_2].u32RegAddr = IMX675_SHR0_ADDR + 2;
 
-			pstI2c_data[DOL2_GAIN].u32RegAddr = IMX675_GAIN_ADDR;
+			pstI2c_data[DOL2_GAIN_L].u32RegAddr = IMX675_GAIN_ADDR_L;
+			pstI2c_data[DOL2_GAIN_H].u32RegAddr = IMX675_GAIN_ADDR_H;
 			pstI2c_data[DOL2_HCG].u32RegAddr = IMX675_HCG_ADDR;
 			pstI2c_data[DOL2_HCG].u32Data = 0;
-			pstI2c_data[DOL2_GAIN1].u32RegAddr = IMX675_GAIN1_ADDR;
+			pstI2c_data[DOL2_HCG1].u32RegAddr = IMX675_HCG1_ADDR;
+			pstI2c_data[DOL2_HCG1].u32Data = 0;
+			pstI2c_data[DOL2_GAIN1_L].u32RegAddr = IMX675_GAIN1_ADDR_L;
+			pstI2c_data[DOL2_GAIN1_H].u32RegAddr = IMX675_GAIN1_ADDR_H;
 			pstI2c_data[DOL2_RHS1_0].u32RegAddr = IMX675_RHS1_ADDR;
 			pstI2c_data[DOL2_RHS1_1].u32RegAddr = IMX675_RHS1_ADDR + 1;
 			pstI2c_data[DOL2_RHS1_2].u32RegAddr = IMX675_RHS1_ADDR + 2;
@@ -830,7 +872,8 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 			pstI2c_data[LINEAR_SHR0_0].u32RegAddr = IMX675_SHR0_ADDR;
 			pstI2c_data[LINEAR_SHR0_1].u32RegAddr = IMX675_SHR0_ADDR + 1;
 			pstI2c_data[LINEAR_SHR0_2].u32RegAddr = IMX675_SHR0_ADDR + 2;
-			pstI2c_data[LINEAR_GAIN].u32RegAddr = IMX675_GAIN_ADDR;
+			pstI2c_data[LINEAR_GAIN_L].u32RegAddr = IMX675_GAIN_ADDR_L;
+			pstI2c_data[LINEAR_GAIN_H].u32RegAddr = IMX675_GAIN_ADDR_H;
 			pstI2c_data[LINEAR_HCG].u32RegAddr = IMX675_HCG_ADDR;
 			pstI2c_data[LINEAR_HCG].u32Data = 0;
 			pstI2c_data[LINEAR_VMAX_0].u32RegAddr = IMX675_VMAX_ADDR;
@@ -896,7 +939,9 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 
 	if (pstSensorImageMode->f32Fps <= 30) {
 		if (pstSnsState->enWDRMode == WDR_MODE_NONE) {
-			if (IMX675_RES_IS_5M(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height)) {
+			if (IMX675_RES_IS_4M(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height)) {
+				u8SensorImageMode = IMX675_MODE_4M30;
+			} else if (IMX675_RES_IS_5M(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height)) {
 				u8SensorImageMode = IMX675_MODE_5M30;
 			} else {
 				CVI_TRACE_SNS(CVI_DBG_ERR, "Not support! Width:%d, Height:%d, Fps:%f, WDRMode:%d\n",
@@ -1118,6 +1163,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	IMX675_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	IMX675_SENSOR_RESET_CTX(ViPipe);
+	g_aeImx675_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)

@@ -178,6 +178,7 @@ static void sc831hai_linear_2160p30_master_init(VI_PIPE ViPipe)
 	sc831hai_write_register(ViPipe, 0x334c, 0x10);
 	sc831hai_write_register(ViPipe, 0x335d, 0x60);
 	sc831hai_write_register(ViPipe, 0x3364, 0x5e);
+	sc831hai_write_register(ViPipe, 0x3366, 0x01);
 	sc831hai_write_register(ViPipe, 0x3367, 0x04);
 	sc831hai_write_register(ViPipe, 0x338f, 0x80);
 	sc831hai_write_register(ViPipe, 0x3390, 0x01);
@@ -252,6 +253,7 @@ static void sc831hai_linear_2160p30_master_init(VI_PIPE ViPipe)
 	sc831hai_write_register(ViPipe, 0x36ec, 0x43);
 	sc831hai_write_register(ViPipe, 0x36ed, 0x3a);
 	sc831hai_write_register(ViPipe, 0x370f, 0x01);
+	sc831hai_write_register(ViPipe, 0x3721, 0x6c);
 	sc831hai_write_register(ViPipe, 0x3724, 0xe5);
 	sc831hai_write_register(ViPipe, 0x3725, 0xa8);
 	sc831hai_write_register(ViPipe, 0x3727, 0x14);
@@ -283,6 +285,9 @@ static void sc831hai_linear_2160p30_master_init(VI_PIPE ViPipe)
 	sc831hai_write_register(ViPipe, 0x450d, 0x0b);
 	sc831hai_write_register(ViPipe, 0x4800, 0x24);
 	sc831hai_write_register(ViPipe, 0x5000, 0x0e);
+	sc831hai_write_register(ViPipe, 0x5503, 0x02);
+	sc831hai_write_register(ViPipe, 0x550f, 0x1c);
+	sc831hai_write_register(ViPipe, 0x5510, 0x28);
 	sc831hai_write_register(ViPipe, 0x575c, 0x10);
 	sc831hai_write_register(ViPipe, 0x575d, 0x08);
 	sc831hai_write_register(ViPipe, 0x5780, 0x76);
@@ -357,6 +362,7 @@ static void sc831hai_linear_2160p30_slave_init(VI_PIPE ViPipe)
 	sc831hai_write_register(ViPipe, 0x334c, 0x10);
 	sc831hai_write_register(ViPipe, 0x335d, 0x60);
 	sc831hai_write_register(ViPipe, 0x3364, 0x5e);
+	sc831hai_write_register(ViPipe, 0x3366, 0x01);
 	sc831hai_write_register(ViPipe, 0x3367, 0x04);
 	sc831hai_write_register(ViPipe, 0x338f, 0x80);
 	sc831hai_write_register(ViPipe, 0x3390, 0x01);
@@ -431,6 +437,7 @@ static void sc831hai_linear_2160p30_slave_init(VI_PIPE ViPipe)
 	sc831hai_write_register(ViPipe, 0x36ec, 0x43);
 	sc831hai_write_register(ViPipe, 0x36ed, 0x3a);
 	sc831hai_write_register(ViPipe, 0x370f, 0x01);
+	sc831hai_write_register(ViPipe, 0x3721, 0x6c);
 	sc831hai_write_register(ViPipe, 0x3724, 0xe5);
 	sc831hai_write_register(ViPipe, 0x3725, 0xa8);
 	sc831hai_write_register(ViPipe, 0x3727, 0x14);
@@ -462,6 +469,9 @@ static void sc831hai_linear_2160p30_slave_init(VI_PIPE ViPipe)
 	sc831hai_write_register(ViPipe, 0x450d, 0x0b);
 	sc831hai_write_register(ViPipe, 0x4800, 0x24);
 	sc831hai_write_register(ViPipe, 0x5000, 0x0e);
+	sc831hai_write_register(ViPipe, 0x5503, 0x02);
+	sc831hai_write_register(ViPipe, 0x550f, 0x1c);
+	sc831hai_write_register(ViPipe, 0x5510, 0x28);
 	sc831hai_write_register(ViPipe, 0x575c, 0x10);
 	sc831hai_write_register(ViPipe, 0x575d, 0x08);
 	sc831hai_write_register(ViPipe, 0x5780, 0x76);

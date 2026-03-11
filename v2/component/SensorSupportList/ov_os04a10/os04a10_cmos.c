@@ -1102,10 +1102,10 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 			pstI2c_data[WDR2_LAUNCH_1].u8DelayFrmNum = 0;
 			pstI2c_data[WDR2_HCG_0].u32RegAddr = OS04A10_HCG_ADDR1;
 			pstI2c_data[WDR2_HCG_0].bvblankUpdate = CVI_TRUE;
-			pstI2c_data[WDR2_HCG_0].u8DelayFrmNum = 3;
+			pstI2c_data[WDR2_HCG_0].u8DelayFrmNum = 2;
 			pstI2c_data[WDR2_HCG_1].u32RegAddr = OS04A10_HCG_ADDR2;
 			pstI2c_data[WDR2_HCG_1].bvblankUpdate = CVI_TRUE;
-			pstI2c_data[WDR2_HCG_1].u8DelayFrmNum = 3;
+			pstI2c_data[WDR2_HCG_1].u8DelayFrmNum = 2;
 			break;
 		default:
 			pstI2c_data[LINEAR_HOLD_START].u32RegAddr = OS04A10_HOLD_3208;
@@ -1129,10 +1129,10 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 			pstI2c_data[LINEAR_LAUNCH_1].u8DelayFrmNum = 0;
 			pstI2c_data[LINEAR_HCG_0].u32RegAddr = OS04A10_HCG_ADDR1;
 			pstI2c_data[LINEAR_HCG_0].bvblankUpdate = CVI_TRUE;
-			pstI2c_data[LINEAR_HCG_0].u8DelayFrmNum = 3;
+			pstI2c_data[LINEAR_HCG_0].u8DelayFrmNum = 2;
 			pstI2c_data[LINEAR_HCG_1].u32RegAddr = OS04A10_HCG_ADDR2;
 			pstI2c_data[LINEAR_HCG_1].bvblankUpdate = CVI_TRUE;
-			pstI2c_data[LINEAR_HCG_1].u8DelayFrmNum = 3;
+			pstI2c_data[LINEAR_HCG_1].u8DelayFrmNum = 2;
 			break;
 		}
 		pstSnsState->bSyncInit = CVI_TRUE;
@@ -1450,6 +1450,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	OS04A10_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	OS04A10_SENSOR_RESET_CTX(ViPipe);
+	g_aeOs04a10_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)
@@ -1544,6 +1545,11 @@ static CVI_S32 sensor_set_init(VI_PIPE ViPipe, ISP_INIT_ATTR_S *pstInitAttr)
 	return CVI_SUCCESS;
 }
 
+static CVI_S32 sensor_probe(VI_PIPE ViPipe)
+{
+	return os04a10_probe(ViPipe);
+}
+
 ISP_SNS_OBJ_S stSnsOs04a10_Obj = {
 	.pfnRegisterCallback    = sensor_register_callback,
 	.pfnUnRegisterCallback  = sensor_unregister_callback,
@@ -1559,5 +1565,6 @@ ISP_SNS_OBJ_S stSnsOs04a10_Obj = {
 	.pfnGetRxAttr		= sensor_rx_attr,
 	.pfnExpSensorCb		= cmos_init_sensor_exp_function,
 	.pfnExpAeCb		= cmos_init_ae_exp_function,
+	.pfnSnsProbe            = sensor_probe,
 };
 

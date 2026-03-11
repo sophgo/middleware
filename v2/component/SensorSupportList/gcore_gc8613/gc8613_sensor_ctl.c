@@ -6,8 +6,7 @@
 
 #define GC8613_CHIP_ID_ADDR_H 0x03f0
 #define GC8613_CHIP_ID_ADDR_L 0x03f1
-#define GC8613_MIRROR_ADDR	0x0063
-#define GC8613_FLIP_ADDR	0x022c
+
 
 static void gc8613_linear_2m30_init(VI_PIPE ViPipe);
 static void gc8613_linear_8m30_init(VI_PIPE ViPipe);
@@ -80,35 +79,6 @@ void gc8613_default_reg_init(VI_PIPE ViPipe)
 	}
 }
 
-void gc8613_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFlip)
-{
-	CVI_U8 u8Flip = 0;
-	CVI_U8 u8Mirror = 0;
-
-	switch (eSnsMirrorFlip) {
-	case ISP_SNS_NORMAL:
-		u8Mirror = 0;
-		u8Flip = 0;
-		break;
-	case ISP_SNS_MIRROR:
-		u8Mirror = 0x05;
-		u8Flip = 0;
-		break;
-	case ISP_SNS_FLIP:
-		u8Mirror = 0x02;
-		u8Flip = 0x01;
-		break;
-	case ISP_SNS_MIRROR_FLIP:
-		u8Mirror = 0x05;
-		u8Flip = 0x01;
-		break;
-	default:
-		return;
-	}
-
-	gc8613_write_register(ViPipe, GC8613_MIRROR_ADDR, u8Mirror);
-	gc8613_write_register(ViPipe, GC8613_FLIP_ADDR, u8Flip);
-}
 
 int gc8613_probe(VI_PIPE ViPipe)
 {
@@ -200,11 +170,11 @@ static void gc8613_linear_8m60_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x034b, 0x88);
 	gc8613_write_register(ViPipe, 0x034f, 0xf0);
 	gc8613_write_register(ViPipe, 0x0094, 0x0f);
-	gc8613_write_register(ViPipe, 0x0095, 0x00);
+	gc8613_write_register(ViPipe, 0x0095, 0x08);
 	gc8613_write_register(ViPipe, 0x0096, 0x08);
-	gc8613_write_register(ViPipe, 0x0097, 0x70);
-	gc8613_write_register(ViPipe, 0x0099, 0x0c);
-	gc8613_write_register(ViPipe, 0x009b, 0x0c);
+	gc8613_write_register(ViPipe, 0x0097, 0x78);
+	gc8613_write_register(ViPipe, 0x0099, 0x04);
+	gc8613_write_register(ViPipe, 0x009b, 0x04);
 	gc8613_write_register(ViPipe, 0x060c, 0x06);
 	gc8613_write_register(ViPipe, 0x060e, 0x20);
 	gc8613_write_register(ViPipe, 0x060f, 0x0f);
@@ -298,7 +268,7 @@ static void gc8613_linear_8m60_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x0185, 0x01);
 	gc8613_write_register(ViPipe, 0x0180, 0x46);
 	gc8613_write_register(ViPipe, 0x0106, 0x38);
-	gc8613_write_register(ViPipe, 0x010d, 0xc0);
+	gc8613_write_register(ViPipe, 0x010d, 0xca);
 	gc8613_write_register(ViPipe, 0x010e, 0x12);
 	gc8613_write_register(ViPipe, 0x0113, 0x02);
 	gc8613_write_register(ViPipe, 0x0114, 0x03);
@@ -389,6 +359,7 @@ static void gc8613_linear_8m30_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x061e, 0x78);
 	gc8613_write_register(ViPipe, 0x061f, 0x05);
 	gc8613_write_register(ViPipe, 0x0a21, 0x10);
+	gc8613_write_register(ViPipe, 0x0a30, 0x00);
 	gc8613_write_register(ViPipe, 0x0a31, 0xdf);
 	gc8613_write_register(ViPipe, 0x0a34, 0x40);
 	gc8613_write_register(ViPipe, 0x0a35, 0x08);
@@ -412,11 +383,11 @@ static void gc8613_linear_8m30_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x034b, 0x88);
 	gc8613_write_register(ViPipe, 0x034f, 0xf0);
 	gc8613_write_register(ViPipe, 0x0094, 0x0f);
-	gc8613_write_register(ViPipe, 0x0095, 0x00);
+	gc8613_write_register(ViPipe, 0x0095, 0x08);
 	gc8613_write_register(ViPipe, 0x0096, 0x08);
-	gc8613_write_register(ViPipe, 0x0097, 0x70);
-	gc8613_write_register(ViPipe, 0x0099, 0x0c);
-	gc8613_write_register(ViPipe, 0x009b, 0x0c);
+	gc8613_write_register(ViPipe, 0x0097, 0x78);
+	gc8613_write_register(ViPipe, 0x0099, 0x00);
+	gc8613_write_register(ViPipe, 0x009b, 0x00);
 	gc8613_write_register(ViPipe, 0x060c, 0x06);
 	gc8613_write_register(ViPipe, 0x060e, 0x20);
 	gc8613_write_register(ViPipe, 0x060f, 0x0f);
@@ -462,6 +433,13 @@ static void gc8613_linear_8m30_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x1447, 0x75);
 	gc8613_write_register(ViPipe, 0x1470, 0x10);
 	gc8613_write_register(ViPipe, 0x1471, 0x13);
+	gc8613_write_register(ViPipe, 0x0122, 0x0b);
+	gc8613_write_register(ViPipe, 0x0123, 0x30);
+	gc8613_write_register(ViPipe, 0x0124, 0x0b);
+	gc8613_write_register(ViPipe, 0x0126, 0x09);
+	gc8613_write_register(ViPipe, 0x0129, 0x0b);
+	gc8613_write_register(ViPipe, 0x012a, 0x16);
+	gc8613_write_register(ViPipe, 0x012b, 0x0a);
 	gc8613_write_register(ViPipe, 0x1438, 0x00);
 	gc8613_write_register(ViPipe, 0x143a, 0x00);
 	gc8613_write_register(ViPipe, 0x024b, 0x02);
@@ -482,6 +460,7 @@ static void gc8613_linear_8m30_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x0202, 0x01);
 	gc8613_write_register(ViPipe, 0x0203, 0x27);
 	gc8613_write_register(ViPipe, 0x061a, 0x02);
+
 	gc8613_write_register(ViPipe, 0x03fe, 0x00);
 	gc8613_write_register(ViPipe, 0x0106, 0x78);
 	gc8613_write_register(ViPipe, 0x0136, 0x00);
@@ -489,11 +468,10 @@ static void gc8613_linear_8m30_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x0185, 0x01);
 	gc8613_write_register(ViPipe, 0x0180, 0x46);
 	gc8613_write_register(ViPipe, 0x0106, 0x38);
-	gc8613_write_register(ViPipe, 0x010d, 0xc0);
+	gc8613_write_register(ViPipe, 0x010d, 0xca);
 	gc8613_write_register(ViPipe, 0x010e, 0x12);
 	gc8613_write_register(ViPipe, 0x0113, 0x02);
 	gc8613_write_register(ViPipe, 0x0114, 0x03);
-	gc8613_write_register(ViPipe, 0x0115, 0x12);
 	gc8613_write_register(ViPipe, 0x0100, 0x09);
 	gc8613_write_register(ViPipe, 0x0004, 0x0f);
 	gc8613_write_register(ViPipe, 0x0219, 0x47);
@@ -516,7 +494,7 @@ static void gc8613_linear_8m30_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x0718, 0xc8);
 	gc8613_write_register(ViPipe, 0x071d, 0xdc);
 	gc8613_write_register(ViPipe, 0x071e, 0x05);
-	//otp   autoload
+
 	gc8613_write_register(ViPipe, 0x031f, 0x01);
 	gc8613_write_register(ViPipe, 0x031f, 0x00);
 	gc8613_write_register(ViPipe, 0x0a67, 0x80);
@@ -545,7 +523,6 @@ static void gc8613_linear_8m30_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x0a75, 0x41);
 	gc8613_write_register(ViPipe, 0x0a70, 0x03);
 	gc8613_write_register(ViPipe, 0x0a5a, 0x80);
-	gc8613_write_register(ViPipe, 0x0129, 0x0a);
 	delay_ms(20);
 	gc8613_write_register(ViPipe, 0x0089, 0x02);
 	gc8613_write_register(ViPipe, 0x05be, 0x01);
@@ -597,11 +574,11 @@ static void gc8613_linear_8m25_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x034b, 0x88);
 	gc8613_write_register(ViPipe, 0x034f, 0xf0);
 	gc8613_write_register(ViPipe, 0x0094, 0x0f);
-	gc8613_write_register(ViPipe, 0x0095, 0x00);
+	gc8613_write_register(ViPipe, 0x0095, 0x08);
 	gc8613_write_register(ViPipe, 0x0096, 0x08);
-	gc8613_write_register(ViPipe, 0x0097, 0x70);
-	gc8613_write_register(ViPipe, 0x0099, 0x0c);
-	gc8613_write_register(ViPipe, 0x009b, 0x0c);
+	gc8613_write_register(ViPipe, 0x0097, 0x78);
+	gc8613_write_register(ViPipe, 0x0099, 0x04);
+	gc8613_write_register(ViPipe, 0x009b, 0x04);
 	gc8613_write_register(ViPipe, 0x060c, 0x06);
 	gc8613_write_register(ViPipe, 0x060e, 0x20);
 	gc8613_write_register(ViPipe, 0x060f, 0x0f);
@@ -674,7 +651,7 @@ static void gc8613_linear_8m25_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x0185, 0x01);
 	gc8613_write_register(ViPipe, 0x0180, 0x46);
 	gc8613_write_register(ViPipe, 0x0106, 0x38);
-	gc8613_write_register(ViPipe, 0x010d, 0xc0);
+	gc8613_write_register(ViPipe, 0x010d, 0xca);
 	gc8613_write_register(ViPipe, 0x010e, 0x12);
 	gc8613_write_register(ViPipe, 0x0113, 0x02);
 	gc8613_write_register(ViPipe, 0x0114, 0x03);
@@ -978,11 +955,11 @@ static void gc8613_wdr_8m30_2to1_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x034b, 0x88);
 	gc8613_write_register(ViPipe, 0x034f, 0xf0);
 	gc8613_write_register(ViPipe, 0x0094, 0x0f);
-	gc8613_write_register(ViPipe, 0x0095, 0x00);
+	gc8613_write_register(ViPipe, 0x0095, 0x08);
 	gc8613_write_register(ViPipe, 0x0096, 0x08);
-	gc8613_write_register(ViPipe, 0x0097, 0x70);
-	gc8613_write_register(ViPipe, 0x0099, 0x0c);
-	gc8613_write_register(ViPipe, 0x009b, 0x0c);
+	gc8613_write_register(ViPipe, 0x0097, 0x78);
+	gc8613_write_register(ViPipe, 0x0099, 0x04);
+	gc8613_write_register(ViPipe, 0x009b, 0x04);
 	gc8613_write_register(ViPipe, 0x060c, 0x06);
 	gc8613_write_register(ViPipe, 0x060e, 0x20);
 	gc8613_write_register(ViPipe, 0x060f, 0x0f);
@@ -1081,7 +1058,7 @@ static void gc8613_wdr_8m30_2to1_init(VI_PIPE ViPipe)
 	gc8613_write_register(ViPipe, 0x0185, 0x01);
 	gc8613_write_register(ViPipe, 0x0180, 0x46);
 	gc8613_write_register(ViPipe, 0x0106, 0x38);
-	gc8613_write_register(ViPipe, 0x010d, 0xc0);
+	gc8613_write_register(ViPipe, 0x010d, 0xca);
 	gc8613_write_register(ViPipe, 0x010e, 0x12);
 	gc8613_write_register(ViPipe, 0x0113, 0x02);
 	gc8613_write_register(ViPipe, 0x0114, 0x03);

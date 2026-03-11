@@ -138,12 +138,12 @@ static int write_yuv(FILE *out_f, VIDEO_FRAME_S stVFrame)
 	CVI_S32 c_w_shift, c_h_shift; // chroma width/height shift
 	CVI_U8 *w_ptr;
 
-	printf("u32Width = %d, u32Height = %d\n",
-			stVFrame.u32Width, stVFrame.u32Height);
-	printf("u32Stride[0] = %d, u32Stride[1] = %d, u32Stride[2] = %d\n",
-			stVFrame.u32Stride[0], stVFrame.u32Stride[1], stVFrame.u32Stride[2]);
-	printf("u32Length[0] = %d, u32Length[1] = %d, u32Length[2] = %d\n",
-			stVFrame.u32Length[0], stVFrame.u32Length[1], stVFrame.u32Length[2]);
+	// printf("u32Width = %d, u32Height = %d\n",
+	// 		stVFrame.u32Width, stVFrame.u32Height);
+	// printf("u32Stride[0] = %d, u32Stride[1] = %d, u32Stride[2] = %d\n",
+	// 		stVFrame.u32Stride[0], stVFrame.u32Stride[1], stVFrame.u32Stride[2]);
+	// printf("u32Length[0] = %d, u32Length[1] = %d, u32Length[2] = %d\n",
+	// 		stVFrame.u32Length[0], stVFrame.u32Length[1], stVFrame.u32Length[2]);
 
 	get_chroma_size_shift_factor(stVFrame.enPixelFormat, &c_w_shift, &c_h_shift);
 
@@ -577,6 +577,7 @@ CVI_VOID *SAMPLE_COMM_VDEC_SendStream(CVI_VOID *pArgs)
 			pstVdecThreadParam->inFileName,
 			pstVdecThreadParam->s32MinBufSize);
 
+circle_decode:
 	pu8OriginBuf = malloc(pstVdecThreadParam->s32MinBufSize);
 	if (pu8OriginBuf == NULL) {
 		printf("chn %d can't alloc %d in send stream thread!\n",
@@ -613,17 +614,10 @@ CVI_VOID *SAMPLE_COMM_VDEC_SendStream(CVI_VOID *pArgs)
 			}
 		}
 
-		// 2. parse the bitstream to get complete frame
+		// 2. read to EOF
 		if (s32RemainBufferLen == 0) {
-			if (pstVdecThreadParam->bCircleSend == CVI_TRUE) {
-				s32UsedBytes = 0;
-				fseek(fpStrm, s32UsedBytes, SEEK_SET);
-				s32RemainBufferLen = fread(pu8Buf, 1, pstVdecThreadParam->s32MinBufSize, fpStrm);
-				pu8Buf = pu8OriginBuf;
-			} else {
 				bDecodeEnd = CVI_TRUE;
 				printf("decode end\n");
-			}
 		} else {
 			if (!jpeg_perf_test || bSendFirstFrame == CVI_FALSE) {
 				if (pstVdecThreadParam->s32StreamMode == VIDEO_MODE_FRAME) {
@@ -681,7 +675,7 @@ CVI_VOID *SAMPLE_COMM_VDEC_SendStream(CVI_VOID *pArgs)
 		}
 
 SendAgain:
-		if (bDecodeEnd == CVI_TRUE) {
+		if (bDecodeEnd == CVI_TRUE && !pstVdecThreadParam->bCircleSend) {
 			if (pstVdecThreadParam->enType == PT_MJPEG || pstVdecThreadParam->enType == PT_JPEG) {
 				break;
 			}
@@ -714,6 +708,19 @@ SendAgain:
 		usleep(pstVdecThreadParam->s32IntervalTime);
 	}
 
+	if (pstVdecThreadParam->bCircleSend == CVI_TRUE) {
+		s32UsedBytes = 0;
+		bDecodeEnd = CVI_FALSE;
+		bSendFirstFrame = CVI_FALSE;
+		fseek(fpStrm, s32UsedBytes, SEEK_SET);
+		s32RemainBufferLen = 0;
+		if (pu8OriginBuf != CVI_NULL) {
+			free(pu8OriginBuf);
+			pu8OriginBuf = CVI_NULL;
+		}
+		goto circle_decode;
+	}
+
 	// close output file or md5 context
 	if (pstVdecThreadParam->enType == PT_JPEG || pstVdecThreadParam->enType == PT_MJPEG) {
 		if (pstVdecThreadParam->pDumpFile != CVI_NULL) {
@@ -739,11 +746,7 @@ SendAgain:
 	pstVdecThreadParam->bFileEnd = CVI_TRUE;
 	printf("File end in chn[%d]\n", pstVdecThreadParam->s32ChnId);
 
-	fflush(stdout);
-	if (pu8OriginBuf != CVI_NULL) {
-		free(pu8OriginBuf);
-		pu8OriginBuf = CVI_NULL;
-	}
+
 	fclose(fpStrm);
 
 	return (CVI_VOID *)CVI_SUCCESS;
@@ -805,13 +808,27 @@ CVI_VOID SAMPLE_COMM_VDEC_StartSendStream(VDEC_THREAD_PARAM_S *pstVdecSend,
 {
 	struct sched_param param;
 	pthread_attr_t attr;
+	CVI_S32 ret;
 
 	param.sched_priority = 80;
 	pthread_attr_init(&attr);
 	pthread_attr_setschedpolicy(&attr, SCHED_RR);
 	pthread_attr_setschedparam(&attr, &param);
 	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-	pthread_create(pVdecThread, &attr, SAMPLE_COMM_VDEC_SendStream, (CVI_VOID *)pstVdecSend);
+	ret = pthread_create(pVdecThread, &attr, SAMPLE_COMM_VDEC_SendStream, (CVI_VOID *)pstVdecSend);
+
+	if (ret == EPERM) {
+		SAMPLE_PRT("Failed to create RT thread (EPERM), retrying with normal priority...\n");
+		pthread_attr_destroy(&attr);
+		pthread_attr_init(&attr);
+		ret = pthread_create(pVdecThread, &attr, SAMPLE_COMM_VDEC_SendStream, (CVI_VOID *)pstVdecSend);
+	}
+
+	pthread_attr_destroy(&attr);
+
+	if (ret != 0) {
+		SAMPLE_PRT("pthread_create failed, error: %d, %s\n", ret, strerror(ret));
+	}
 }
 
 CVI_VOID SAMPLE_COMM_VDEC_StopSendStream(VDEC_THREAD_PARAM_S *pstVdecSend, pthread_t *pVdecThread)

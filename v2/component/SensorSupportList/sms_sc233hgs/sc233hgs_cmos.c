@@ -22,8 +22,9 @@
 #define SC233HGS_ID 233
 #define SENSOR_SC233HGS_WIDTH 1920
 #define SENSOR_SC233HGS_HEIGHT 1080
-#define SC233HGS_I2C_ADDR 0x32
-#define SC233HGS_I2C_ADDR_IS_VALID(addr)	((addr) == SC233HGS_I2C_ADDR)
+#define SC233HGS_I2C_ADDR_1 0x32
+#define SC233HGS_I2C_ADDR_2 0x30
+#define SC233HGS_I2C_ADDR_IS_VALID(addr)      ((addr) == SC233HGS_I2C_ADDR_1 || (addr) == SC233HGS_I2C_ADDR_2)
 /****************************************************************************
  * global variables                                                            *
  ****************************************************************************/
@@ -45,6 +46,8 @@ ISP_SNS_COMMADDR_U g_aunSC233HGS_AddrInfo[VI_MAX_PIPE_NUM] = {
 	[0] = { .s8I2cAddr = 0},
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
 };
+
+ISP_SNS_MIRRORFLIP_TYPE_E g_aeSC233HGS_MirrorFip[VI_MAX_PIPE_NUM] = {0};
 
 CVI_U16 g_au16SC233HGS_GainMode[VI_MAX_PIPE_NUM] = {0};
 CVI_U16 g_au16SC233HGS_L2SMode[VI_MAX_PIPE_NUM] = {0};
@@ -74,11 +77,9 @@ static CVI_S32 cmos_get_wdr_size(VI_PIPE ViPipe, ISP_SNS_ISP_INFO_S *pstIspCfg);
 #define SC233HGS_SHS1_1_ADDR		0x3E01
 #define SC233HGS_SHS1_2_ADDR		0x3E02
 
-#ifdef SC233HGS_WDR
 #define SC233HGS_SHS2_0_ADDR		0x3E30
 #define SC233HGS_SHS2_1_ADDR		0x3E31
 #define SC233HGS_SHS2_2_ADDR		0x3E32
-#endif
 
 #define SC233HGS_AGAIN1_ADDR		0x3E08
 #define SC233HGS_AGAIN2_ADDR		0x3E09
@@ -90,6 +91,8 @@ static CVI_S32 cmos_get_wdr_size(VI_PIPE ViPipe, ISP_SNS_ISP_INFO_S *pstIspCfg);
 #define SC233HGS_TABLE_END			0xFFFF
 
 #define SC233HGS_RES_IS_1080P(w, h)      ((w) <= 1920 && (h) <= 1080)
+#define SC233HGS_FPS_IS_60(fps)      ((fps) <= 60)
+#define SC233HGS_FPS_IS_120(fps)      ((fps) <= 120)
 
 static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSnsDft)
 {
@@ -107,7 +110,8 @@ static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSns
 	pstAeSnsDft->u32FullLinesStd = pstSnsState->u32FLStd;
 	pstAeSnsDft->u32FlickerFreq = 50 * 256;
 	pstAeSnsDft->u32FullLinesMax = SC233HGS_FULL_LINES_MAX;
-	pstAeSnsDft->u32HmaxTimes = (1000000) / (pstSnsState->u32FLStd * 60);
+	pstAeSnsDft->u32HmaxTimes = (1000000) / (pstSnsState->u32FLStd *
+		g_astSC233HGS_mode[pstSnsState->u8ImgMode].f32MaxFps);
 
 	pstAeSnsDft->stIntTimeAccu.enAccuType = AE_ACCURACY_LINEAR;
 	pstAeSnsDft->stIntTimeAccu.f32Accuracy = 1;
@@ -124,7 +128,8 @@ static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSns
 	pstAeSnsDft->u32MaxISPDgainTarget = 2 << pstAeSnsDft->u32ISPDgainShift;
 
 	if (g_au32LinesPer500ms[ViPipe] == 0)
-		pstAeSnsDft->u32LinesPer500ms = pstSnsState->u32FLStd * 60 / 2;
+		pstAeSnsDft->u32LinesPer500ms = pstSnsState->u32FLStd *
+			g_astSC233HGS_mode[pstSnsState->u8ImgMode].f32MaxFps / 2;
 	else
 		pstAeSnsDft->u32LinesPer500ms = g_au32LinesPer500ms[ViPipe];
 	pstAeSnsDft->u32SnsStableFrame = 0;
@@ -168,7 +173,7 @@ static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSns
 		pstAeSnsDft->u32MaxIntTimeTarget = pstAeSnsDft->u32MaxIntTime;
 		pstAeSnsDft->u32MinIntTimeTarget = pstAeSnsDft->u32MinIntTime;
 		break;
-#ifdef SC233HGS_WDR
+
 	case WDR_MODE_2To1_LINE:
 		pstAeSnsDft->f32Fps = g_astSC233HGS_mode[SC233HGS_MODE_1080P60_WDR].f32MaxFps;
 		pstAeSnsDft->f32MinFps = g_astSC233HGS_mode[SC233HGS_MODE_1080P60_WDR].f32MinFps;
@@ -212,7 +217,6 @@ static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSns
 #endif
 		}
 		break;
-#endif
 	}
 
 	return CVI_SUCCESS;
@@ -240,7 +244,6 @@ static CVI_S32 cmos_fps_set(VI_PIPE ViPipe, CVI_FLOAT f32Fps, AE_SENSOR_DEFAULT_
 	u16MaxSexpReg = g_astSC233HGS_mode[pstSnsState->u8ImgMode].u16SexpMaxReg;
 
 	switch (pstSnsState->u8ImgMode) {
-#ifdef SC233HGS_WDR
 	case SC233HGS_MODE_1080P60_WDR:
 		if ((f32Fps <= f32MaxFps) && (f32Fps >= f32MinFps)) {
 			u32VMAX = u32Vts * f32MaxFps / DIV_0_TO_1_FLOAT(f32Fps);
@@ -251,8 +254,8 @@ static CVI_S32 cmos_fps_set(VI_PIPE ViPipe, CVI_FLOAT f32Fps, AE_SENSOR_DEFAULT_
 		}
 		u32VMAX = (u32VMAX > SC233HGS_FULL_LINES_MAX_2TO1_WDR) ? SC233HGS_FULL_LINES_MAX_2TO1_WDR : u32VMAX;
 		break;
-#endif
 	case SC233HGS_MODE_1080P60:
+	case SC233HGS_MODE_1080P120:
 		if ((f32Fps <= f32MaxFps) && (f32Fps >= f32MinFps)) {
 			u32VMAX = u32Vts * f32MaxFps / DIV_0_TO_1_FLOAT(f32Fps);
 		} else {
@@ -277,8 +280,6 @@ static CVI_S32 cmos_fps_set(VI_PIPE ViPipe, CVI_FLOAT f32Fps, AE_SENSOR_DEFAULT_
 	} else {
 		pstSnsRegsInfo->astI2cData[WDR2_VMAX_0_ADDR].u32Data = ((u32VMAX & 0xFF00) >> 8);
 		pstSnsRegsInfo->astI2cData[WDR2_VMAX_1_ADDR].u32Data = (u32VMAX & 0xFF);
-		// pstSnsRegsInfo->astI2cData[WDR2_MAXSEXP_0_ADDR].u32Data = ((u16MaxSexpReg & 0xFF00) >> 8);
-		// pstSnsRegsInfo->astI2cData[WDR2_MAXSEXP_1_ADDR].u32Data = u16MaxSexpReg & 0xFF;
 	}
 
 	pstAeSnsDft->f32Fps = f32Fps;
@@ -304,7 +305,6 @@ static CVI_S32 cmos_inttime_update(VI_PIPE ViPipe, CVI_U32 *u32IntTime)
 	pstSnsRegsInfo = &pstSnsState->astSyncInfo[0].snsCfg;
 
 	if (WDR_MODE_2To1_LINE == pstSnsState->enWDRMode) {
-#ifdef SC233HGS_WDR
 		CVI_U32 u32ShortIntTime = u32IntTime[0];
 		CVI_U32 u32LongIntTime = u32IntTime[1];
 		CVI_U16 u16SexpReg, u16LexpReg;
@@ -344,7 +344,6 @@ static CVI_S32 cmos_inttime_update(VI_PIPE ViPipe, CVI_U32 *u32IntTime)
 		pstSnsRegsInfo->astI2cData[WDR2_SHS2_2_ADDR].u32Data = (u16SexpReg & 0xF) << 4;
 		/* update isp */
 		cmos_get_wdr_size(ViPipe, &pstSnsState->astSyncInfo[0].ispCfg);
-#endif
 	} else {
 		// printf("---------------------------- into inttime_update ----------------------------\n");
 
@@ -694,7 +693,6 @@ static CVI_S32 cmos_get_inttime_max(VI_PIPE ViPipe, CVI_U16 u16ManRatioEnable, C
 				(g_astSC233HGS_State[ViPipe].u32Sexp_MAX * 2) : u32IntTimeMaxTmp;
 	u32IntTimeMaxTmp  = (!u32IntTimeMaxTmp) ? u32ShortTimeMinLimit : u32IntTimeMaxTmp;
 
-#ifdef SC233HGS_WDR
 	if (pstSnsState->enWDRMode == WDR_MODE_2To1_LINE) {
 		/* [TODO] Convert to 1-line unit */
 		u32IntTimeMaxTmp = (u32IntTimeMaxTmp - 1) / 2;
@@ -710,7 +708,6 @@ static CVI_S32 cmos_get_inttime_max(VI_PIPE ViPipe, CVI_U16 u16ManRatioEnable, C
 		CVI_TRACE_SNS(CVI_DBG_DEBUG, "ViPipe = %d ratio = %d, (%d, %d)\n", ViPipe, au32Ratio[0],
 				u32IntTimeMaxTmp, u32ShortTimeMinLimit);
 	}
-#endif
 
 	return CVI_SUCCESS;
 }
@@ -826,22 +823,24 @@ static CVI_S32 cmos_set_wdr_mode(VI_PIPE ViPipe, CVI_U8 u8Mode)
 
 	switch (u8Mode) {
 	case WDR_MODE_NONE:
-		if (pstSnsState->u8ImgMode == SC233HGS_MODE_1080P60_WDR)
+		if (pstSnsState->u8ImgMode == SC233HGS_MODE_1080P60_WDR) {
 			pstSnsState->u8ImgMode = SC233HGS_MODE_1080P60;
+		}
 		pstSnsState->enWDRMode = WDR_MODE_NONE;
 		pstSnsState->u32FLStd = g_astSC233HGS_mode[pstSnsState->u8ImgMode].u32VtsDef;
 		CVI_TRACE_SNS(CVI_DBG_INFO, "linear mode\n");
 		break;
-
-#ifdef SC233HGS_WDR
 	case WDR_MODE_2To1_LINE:
-		if (pstSnsState->u8ImgMode == SC233HGS_MODE_1080P60)
+		if (pstSnsState->u8ImgMode == SC233HGS_MODE_1080P60) {
 			pstSnsState->u8ImgMode = SC233HGS_MODE_1080P60_WDR;
+		} else {
+			CVI_TRACE_SNS(CVI_DBG_ERR, "Unsupport sensor mode!\n");
+			return CVI_FAILURE;
+		}
 		pstSnsState->enWDRMode = WDR_MODE_2To1_LINE;
 		pstSnsState->u32FLStd = g_astSC233HGS_mode[pstSnsState->u8ImgMode].u32VtsDef;
-		CVI_TRACE_SNS(CVI_DBG_INFO, "2to1 line WDR 1080p mode(60fps->30fps)\n");
+		CVI_TRACE_SNS(CVI_DBG_INFO, "wdr mode\n");
 		break;
-#endif
 	default:
 		CVI_TRACE_SNS(CVI_DBG_ERR, "NOT support this mode!\n");
 		return CVI_FAILURE;
@@ -926,7 +925,6 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 
 		//DOL 2t1 Mode Regs
 		switch (pstSnsState->enWDRMode) {
-#ifdef SC233HGS_WDR
 		case WDR_MODE_2To1_LINE:
 			//WDR Mode Regs
 			pstI2c_data[WDR2_SHS1_0_ADDR].u32RegAddr = SC233HGS_SHS1_0_ADDR;
@@ -945,10 +943,7 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 			pstI2c_data[WDR2_DGAIN2_1_ADDR].u32RegAddr = SC233HGS_DGAIN2_ADDR + 1;
 			pstI2c_data[WDR2_VMAX_0_ADDR].u32RegAddr = SC233HGS_VMAX_ADDR;
 			pstI2c_data[WDR2_VMAX_1_ADDR].u32RegAddr = SC233HGS_VMAX_ADDR + 1;
-			// pstI2c_data[WDR2_MAXSEXP_0_ADDR].u32RegAddr = SC233HGS_MAXSEXP_ADDR;
-			// pstI2c_data[WDR2_MAXSEXP_1_ADDR].u32RegAddr = SC233HGS_MAXSEXP_ADDR + 1;
 			break;
-#endif
 		default:
 			//Linear Mode Regs
 			pstI2c_data[LINEAR_SHS1_0_ADDR].u32RegAddr = SC233HGS_SHS1_0_ADDR;
@@ -1007,39 +1002,25 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 	u8SensorImageMode = pstSnsState->u8ImgMode;
 	pstSnsState->bSyncInit = CVI_FALSE;
 
-	if (pstSensorImageMode->f32Fps <= 60) {
-		if (pstSnsState->enWDRMode == WDR_MODE_NONE) {
-			if (SC233HGS_RES_IS_1080P(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height)) {
-				u8SensorImageMode = SC233HGS_MODE_1080P60;
-			} else {
-				CVI_TRACE_SNS(CVI_DBG_ERR, "Not support! Width:%d, Height:%d, Fps:%f, WDRMode:%d\n",
-				       pstSensorImageMode->u16Width,
-				       pstSensorImageMode->u16Height,
-				       pstSensorImageMode->f32Fps,
-				       pstSnsState->enWDRMode);
-				return CVI_FAILURE;
-			}
-		} else if (pstSnsState->enWDRMode == WDR_MODE_2To1_LINE) {
-			if (SC233HGS_RES_IS_1080P(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height)) {
-				u8SensorImageMode = SC233HGS_MODE_1080P60_WDR;
-			} else {
-				CVI_TRACE_SNS(CVI_DBG_ERR, "Not support! Width:%d, Height:%d, Fps:%f, WDRMode:%d\n",
-				       pstSensorImageMode->u16Width,
-				       pstSensorImageMode->u16Height,
-				       pstSensorImageMode->f32Fps,
-				       pstSnsState->enWDRMode);
-				return CVI_FAILURE;
-			}
+	if (pstSnsState->enWDRMode == WDR_MODE_NONE) {
+		if (SC233HGS_RES_IS_1080P(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height) &&
+				SC233HGS_FPS_IS_60(pstSensorImageMode->f32Fps)) {
+					u8SensorImageMode = SC233HGS_MODE_1080P60;
+		} else if (SC233HGS_RES_IS_1080P(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height) &&
+				SC233HGS_FPS_IS_120(pstSensorImageMode->f32Fps)) {
+					u8SensorImageMode = SC233HGS_MODE_1080P120;
 		} else {
-			CVI_TRACE_SNS(CVI_DBG_ERR, "Not support! Width:%d, Height:%d, Fps:%f, WDRMode:%d\n",
-			       pstSensorImageMode->u16Width,
-			       pstSensorImageMode->u16Height,
-			       pstSensorImageMode->f32Fps,
-			       pstSnsState->enWDRMode);
-			return CVI_FAILURE;
+			goto UnsupportMode;
 		}
 	} else {
+		if (SC233HGS_RES_IS_1080P(pstSensorImageMode->u16Width, pstSensorImageMode->u16Height) &&
+				SC233HGS_FPS_IS_60(pstSensorImageMode->f32Fps)) {
+					u8SensorImageMode = SC233HGS_MODE_1080P60;
+		} else {
+			goto UnsupportMode;
+		}
 	}
+
 
 	if ((pstSnsState->bInit == CVI_TRUE) && (u8SensorImageMode == pstSnsState->u8ImgMode)) {
 		/* Don't need to switch SensorImageMode */
@@ -1049,6 +1030,27 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 	pstSnsState->u8ImgMode = u8SensorImageMode;
 
 	return CVI_SUCCESS;
+
+UnsupportMode:
+	CVI_TRACE_SNS(CVI_DBG_ERR, "Not support! Width:%d, Height:%d, Fps:%f, WDRMode:%d\n",
+		pstSensorImageMode->u16Width,
+		pstSensorImageMode->u16Height,
+		pstSensorImageMode->f32Fps,
+		pstSnsState->enWDRMode);
+	return CVI_FAILURE;
+}
+
+static CVI_VOID sensor_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFlip)
+{
+	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+
+	SC233HGS_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	CMOS_CHECK_POINTER_VOID(pstSnsState);
+	/* Apply the setting on the fly  */
+	if (pstSnsState->bInit == CVI_TRUE && g_aeSC233HGS_MirrorFip[ViPipe] != eSnsMirrorFlip) {
+		sc233hgs_mirror_flip(ViPipe, eSnsMirrorFlip);
+		g_aeSC233HGS_MirrorFip[ViPipe] = eSnsMirrorFlip;
+	}
 }
 
 static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
@@ -1097,6 +1099,12 @@ static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 
 	if (pstSnsState->enWDRMode == WDR_MODE_NONE) {
 		pstRxAttr->mipi_attr.wdr_mode = CVI_MIPI_WDR_MODE_NONE;
+		if (SC233HGS_MODE_1080P120 == pstSnsState->u8ImgMode) {
+			pstRxAttr->mclk.freq = CAMPLL_FREQ_27M;
+			pstRxAttr->mac_clk = RX_MAC_CLK_600M;
+		}
+	} else if (pstSnsState->enWDRMode == WDR_MODE_2To1_LINE) {
+		pstRxAttr->mipi_attr.wdr_mode = CVI_MIPI_WDR_MODE_VC;
 	}
 	pstRxAttrSrc = CVI_NULL;
 	return CVI_SUCCESS;
@@ -1181,7 +1189,7 @@ static CVI_VOID sensor_patch_i2c_addr(VI_PIPE ViPipe, CVI_S32 s32I2cAddr)
 		g_aunSC233HGS_AddrInfo[ViPipe].s8I2cAddr = s32I2cAddr;
 	else {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "I2C addr input error ,please check [0x%x]\n", s32I2cAddr);
-		g_aunSC233HGS_AddrInfo[ViPipe].s8I2cAddr = SC233HGS_I2C_ADDR;
+		g_aunSC233HGS_AddrInfo[ViPipe].s8I2cAddr = SC233HGS_I2C_ADDR_1;
 	}
 }
 
@@ -1220,6 +1228,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	SC233HGS_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	SC233HGS_SENSOR_RESET_CTX(ViPipe);
+	g_aeSC233HGS_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)
@@ -1319,7 +1328,7 @@ ISP_SNS_OBJ_S stSnsSC233HGS_Obj = {
 	.pfnUnRegisterCallback  = sensor_unregister_callback,
 	.pfnStandby             = sc233hgs_standby,
 	.pfnRestart             = sc233hgs_restart,
-	.pfnMirrorFlip          = sc233hgs_mirror_flip,
+	.pfnMirrorFlip          = sensor_mirror_flip,
 	.pfnWriteReg            = sc233hgs_write_register,
 	.pfnReadReg             = sc233hgs_read_register,
 	.pfnSetBusInfo          = sc233hgs_set_bus_info,

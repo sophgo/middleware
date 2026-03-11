@@ -408,22 +408,22 @@ enum ENUM_CHIP_ID {
 #define GDC_PROC_JOB_INFO_NUM      (500) /* gdc proc job max num  */
 
 /* For DPU */
-#define DPU_ALIGN                   16
-#define DPU_IP_NUM              	1
-#define DPU_MAX_GRP_NUM        		8
-#define DPU_MAX_CHN_NUM        		2
-#define DPU_PIPE_IN_NUM      		2
-#define DPU_PIPE_OUT_NUM     		2
-#define DPU_MIN_IMAGE_WIDTH         64
-#define DPU_MIN_IMAGE_HEIGHT        64
-#define DPU_MAX_IMAGE_WIDTH         1920
-#define DPU_MAX_IMAGE_HEIGHT        1080
-#define DPU_WAITQ_DEPTH_IN        	2
-#define DPU_WORKQ_DEPTH_IN        	1
-#define DPU_DONEQ_DEPTH_IN        	1
-#define DPU_WAITQ_DEPTH_OUT        	1
-#define DPU_WORKQ_DEPTH_OUT        	1
-#define DPU_DONEQ_DEPTH_OUT        	2
+#define DPU_ALIGN                   16   /* memory alignment in bytes */
+#define DPU_IP_NUM              	1    /* number of DPU IPs */
+#define DPU_MAX_GRP_NUM        		8    /* maximum DPU group count */
+#define DPU_MAX_CHN_NUM        		2    /* maximum DPU channel count */
+#define DPU_PIPE_IN_NUM      		2    /* input pipe num */
+#define DPU_PIPE_OUT_NUM     		2    /* output pipe num */
+#define DPU_MIN_IMAGE_WIDTH         64   /* minimum input image width in pixel */
+#define DPU_MIN_IMAGE_HEIGHT        64   /* minimum input image height in pixels */
+#define DPU_MAX_IMAGE_WIDTH         1920 /* maximum input image width in pixels */
+#define DPU_MAX_IMAGE_HEIGHT        1080 /* maximum input image height in pixels */
+#define DPU_WAITQ_DEPTH_IN        	2    /* input wait queue depth */
+#define DPU_WORKQ_DEPTH_IN        	1    /* input done queue depth */
+#define DPU_DONEQ_DEPTH_IN        	1    /* input done queue depth */
+#define DPU_WAITQ_DEPTH_OUT        	1    /* output wait queue depth */
+#define DPU_WORKQ_DEPTH_OUT        	1    /* output work queue depth */
+#define DPU_DONEQ_DEPTH_OUT        	2    /* output done queue depth */
 
 /* For STITCH*/
 #define STITCH_MAX_SRC_NUM         4

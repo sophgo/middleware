@@ -50,6 +50,7 @@ typedef struct _MESH_DATA_ALL_S {
 	enum grid_info_mode grid_mode;
 	SLICE_INFO_S slice_info;
 	float *_pmapx, *_pmapy;
+	bool bfixpoint;
 } MESH_DATA_ALL_S;
 
 typedef struct _MESH_DATA_EIS_S {

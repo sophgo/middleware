@@ -41,7 +41,7 @@
 #define SENSORNAME_SIZE 27
 #define BIN_GERRIT_SIZE 20
 #define PQBINVERSION_SIZE 4
-#define PQBINVERSION "V1.3"  // The latest version, it will write to pqbin file
+#define PQBINVERSION "V1.4"  // The latest version, it will write to pqbin file
 #define PQBINCREATE_MODE_SIZE 1
 #define SUPPORT_VI_MAX_PIPE_NUM 8
 

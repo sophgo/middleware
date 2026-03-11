@@ -103,6 +103,9 @@ endif
 
 uninstall:
 	@rm $(DESTDIR) -rf
+	@rm -rf pkg_root/opt/sophon/middleware
+	@rm -rf pkg_root/etc/ld.so.conf.d/middleware.conf
+	@rm -rf middleware_1.0.0_arm64.deb
 
 package:
 	$(call package_mw,tmp)
@@ -111,6 +114,23 @@ package:
 	@echo $(KERNEL_INC)
 	@tar fcz $(DESTDIR)/kernel_header.tar.gz -C $(KERNEL_INC) ./
 	@rm tmp -r
+
+packdeb:
+	@mkdir -p pkg_root/opt/sophon/middleware/lib
+	@mkdir -p pkg_root/opt/sophon/middleware/bin
+	@mkdir -p pkg_root/opt/sophon/middleware/lib/3rd
+
+	@cp -a lib/*.so pkg_root/opt/sophon/middleware/lib/
+	@cp -a lib/*.a pkg_root/opt/sophon/middleware/lib/
+	@cp -a lib/3rd/*.so pkg_root/opt/sophon/middleware/lib/3rd/
+	@cp -a lib/3rd/*.a pkg_root/opt/sophon/middleware/lib/3rd/
+	@rsync -av --progress sample/install/bin/* pkg_root/opt/sophon/middleware/bin/
+	@cp -af $(MW_INC)  pkg_root/opt/sophon/middleware/
+	@mkdir -p pkg_root/etc/ld.so.conf.d
+	@echo "/opt/sophon/middleware/lib" > pkg_root/etc/ld.so.conf.d/middleware.conf
+	@echo "/opt/sophon/middleware/lib/3rd" >> pkg_root/etc/ld.so.conf.d/middleware.conf
+	dpkg-deb --build pkg_root middleware_1.0.0_arm64.deb
+
 	@echo "package done"
 endif
 clean:
@@ -127,3 +147,5 @@ endif
 	@make -C component/SensorSupportList/ clean
 	@rm -rf self_test/dl_daemon/build
 	@rm -f $(MW_INC)/sensor_cfg.h
+	@rm -f pkg_root/opt
+	@rm -rf middleware_1.0.0_arm64.deb

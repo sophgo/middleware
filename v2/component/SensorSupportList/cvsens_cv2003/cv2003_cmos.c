@@ -849,6 +849,21 @@ static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 	pstRxAttr->img_size.max_width = g_astCV2003_mode[pstSnsState->u8ImgMode].astImg[0].stMaxSize.u32Width;
 	pstRxAttr->img_size.max_height = g_astCV2003_mode[pstSnsState->u8ImgMode].astImg[0].stMaxSize.u32Height;
 
+	pstRxAttr->sns_resume_i2c_info.i2c_base_info.i2c_dev = g_aunCV2003_BusInfo[ViPipe].s8I2cDev;
+	pstRxAttr->sns_resume_i2c_info.i2c_base_info.dev_addr = g_aunCV2003_AddrInfo[ViPipe].s8I2cAddr;
+	pstRxAttr->sns_resume_i2c_info.i2c_base_info.addr_bytes = cv2003_addr_byte;
+	pstRxAttr->sns_resume_i2c_info.i2c_base_info.data_bytes = cv2003_data_byte;
+	pstRxAttr->sns_resume_i2c_info.i2c_base_info.suspend_seq_length = 1;
+	pstRxAttr->sns_resume_i2c_info.i2c_base_info.resume_seq_length = 2;
+
+	pstRxAttr->sns_resume_i2c_info.sns_suspend_info[0].addr = 0x3000;
+	pstRxAttr->sns_resume_i2c_info.sns_suspend_info[0].data = 0x1;
+
+	pstRxAttr->sns_resume_i2c_info.sns_resume_info[0].addr = 0x3000;
+	pstRxAttr->sns_resume_i2c_info.sns_resume_info[0].data = 0x1;
+	pstRxAttr->sns_resume_i2c_info.sns_resume_info[1].addr = 0x3000;
+	pstRxAttr->sns_resume_i2c_info.sns_resume_info[1].data = 0x0;
+
 	if (pstSnsState->enWDRMode == WDR_MODE_NONE) {
 		pstRxAttr->mipi_attr.wdr_mode = CVI_MIPI_WDR_MODE_NONE;
 	} else {
@@ -978,6 +993,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	CV2003_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	CV2003_SENSOR_RESET_CTX(ViPipe);
+	g_aeCV2003_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)

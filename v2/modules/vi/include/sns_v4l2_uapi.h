@@ -13,7 +13,7 @@ typedef struct sns_i2c_info {
 }sns_i2c_info_t;
 struct reg_info {
 	__u16 address;
-	__u8 val;
+	__u16 val;
 };
 typedef struct sns_sync_info {
 	__u32 num_of_regs;

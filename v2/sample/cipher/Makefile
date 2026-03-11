@@ -43,6 +43,8 @@ $(SDIR)/%.o: $(SDIR)/%.c
 $(TARGET): $(OBJS) $(LIB_DEP)
 	@$(CXX) -o $@ $(OBJS) $(ELFFLAGS) $(ldflags-y)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CC))] $(notdir $@)
+	@cp $@ $(INSTALL_MW_DIR)/
+	@echo "Installed $@ to $(INSTALL_MW_DIR)"
 
 clean:
 	@rm -f $(OBJS) $(DEPS) $(TARGET)

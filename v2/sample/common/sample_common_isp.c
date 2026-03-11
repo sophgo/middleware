@@ -409,6 +409,16 @@ CVI_S32 SAMPLE_COMM_ISP_Run(CVI_U8 IspDev)
 	pthread_attr_setschedparam(&attr, &param);
 	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
 	s32Ret = pthread_create(&g_IspPid[IspDev], &attr, SAMPLE_COMM_ISP_Thread, arg);
+
+	if (s32Ret == EPERM) {
+		CVI_TRACE_LOG(CVI_DBG_WARN, "Failed to create RT thread (EPERM), retrying with normal priority...\r\n");
+		pthread_attr_destroy(&attr);
+		pthread_attr_init(&attr);
+		s32Ret = pthread_create(&g_IspPid[IspDev], &attr, SAMPLE_COMM_ISP_Thread, arg);
+	}
+
+	pthread_attr_destroy(&attr);
+
 	if (s32Ret != 0) {
 		CVI_TRACE_LOG(CVI_DBG_ERR, "create isp running thread failed!, error: %d, %s\r\n",
 					s32Ret, strerror(s32Ret));

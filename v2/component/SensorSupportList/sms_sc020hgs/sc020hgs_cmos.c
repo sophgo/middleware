@@ -45,6 +45,8 @@ ISP_SNS_COMMADDR_U g_aunSC020HGS_AddrInfo[VI_MAX_PIPE_NUM] = {
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
 };
 
+ISP_SNS_MIRRORFLIP_TYPE_E g_aeSc020hgs_MirrorFip[VI_MAX_PIPE_NUM] = {0};
+
 CVI_U16 g_au16SC020HGS_GainMode[VI_MAX_PIPE_NUM] = {0};
 CVI_U16 g_au16SC020HGS_L2SMode[VI_MAX_PIPE_NUM] = {0};
 
@@ -666,6 +668,19 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 	return CVI_SUCCESS;
 }
 
+static CVI_VOID sensor_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFlip)
+{
+	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+
+	SC020HGS_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	CMOS_CHECK_POINTER_VOID(pstSnsState);
+	/* Apply the setting on the fly  */
+	if (pstSnsState->bInit == CVI_TRUE && g_aeSc020hgs_MirrorFip[ViPipe] != eSnsMirrorFlip) {
+		sc020hgs_mirror_flip(ViPipe, eSnsMirrorFlip);
+		g_aeSc020hgs_MirrorFip[ViPipe] = eSnsMirrorFlip;
+	}
+}
+
 static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 {
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
@@ -836,6 +851,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	SC020HGS_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	SC020HGS_SENSOR_RESET_CTX(ViPipe);
+	g_aeSc020hgs_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)
@@ -935,7 +951,7 @@ ISP_SNS_OBJ_S stSnsSC020HGS_Obj = {
 	.pfnUnRegisterCallback  = sensor_unregister_callback,
 	.pfnStandby             = sc020hgs_standby,
 	.pfnRestart             = sc020hgs_restart,
-	.pfnMirrorFlip          = sc020hgs_mirror_flip,
+	.pfnMirrorFlip          = sensor_mirror_flip,
 	.pfnWriteReg            = sc020hgs_write_register,
 	.pfnReadReg             = sc020hgs_read_register,
 	.pfnSetBusInfo          = sc020hgs_set_bus_info,

@@ -25,6 +25,8 @@ extern "C" {
 #define BT_DEMUX_NUM	4
 /* Number of MIPI demultiplexers */
 #define MIPI_DEMUX_NUM	4
+/* Maximum number of sensor IIC devices */
+#define MAX_SNS_IIC_NUM	5
 
 /* Basic image size structure */
 struct img_size_s {
@@ -274,6 +276,29 @@ enum bt_demux_mode_e {
 	BT_DEMUX_4,				/* 4-channel demux */
 };
 
+/* I2C device attributes structure */
+struct sns_i2c_attr {
+	unsigned char	i2c_dev;		/* I2C device index */
+	unsigned char	dev_addr;		/* I2C device address */
+	unsigned short	addr_bytes;		/* I2C address bytes */
+	unsigned short	data_bytes;		/* I2C data bytes */
+	int suspend_seq_length;		/* I2C suspend sequence length */
+	int resume_seq_length;		/* I2C resume sequence length */
+};
+
+/* I2C address and data sequence structure */
+struct addr_data_seq {
+	int addr;				/* I2C address */
+	int data;				/* I2C data */
+};
+
+/* I2C device information structure */
+struct sns_ctrl_info {
+	struct sns_i2c_attr i2c_base_info;						/* I2C base attributes */
+	struct addr_data_seq sns_suspend_info[MAX_SNS_IIC_NUM];	/* I2C suspend sequence */
+	struct addr_data_seq sns_resume_info[MAX_SNS_IIC_NUM];	/* I2C resume sequence */
+};
+
 /* BT demux sync structure */
 struct bt_demux_sync_s {
 	unsigned char		sav_vld;		/* SAV valid flag */
@@ -322,6 +347,7 @@ struct combo_dev_attr_s {
 	unsigned int				cif_mode;			/* CIF mode */
 	struct img_size_s			img_size;			/* Image size configuration */
 	struct manual_wdr_attr_s	wdr_manu;			/* Manual WDR configuration */
+	struct sns_ctrl_info		sns_resume_i2c_info;/* I2C resume information */
 };
 
 /* Clock edge enumeration */

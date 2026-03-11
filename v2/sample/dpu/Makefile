@@ -47,7 +47,8 @@ $(SDIR)/%.o: $(SDIR)/%.c
 $(TARGET):  $(COMM_OBJ) $(OBJS) $(MW_LIB)/libdpu.a $(MW_LIB)/libsys.a $(MW_LIB)/libgdc.a
 	@$(CXX) -o $@ -Wl,--start-group $(OBJS) $(COMM_OBJ) $(MW_LIB)/libdpu.a $(MW_LIB)/libsys.a $(MW_LIB)/libgdc.a -Wl,--end-group $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
-
+	@cp $@ $(INSTALL_MW_DIR)/
+	@echo "Installed $@ to $(INSTALL_MW_DIR)"
 clean:
 	@rm -f $(OBJS) $(DEPS) $(COMM_OBJ) $(COMM_DEPS) $(TARGET)
 

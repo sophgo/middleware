@@ -4,6 +4,7 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -2246,13 +2247,29 @@ static CVI_S32 gdc_test_mix(void)
 		snprintf(param[i].identity.Name, sizeof(param[i].identity.Name), "job_mix_%d", i);
 		param[i].identity.syncIo = CVI_FALSE;
 
-		rc = pthread_create(&tid, NULL, test_gdc_async_thread, &param[i]);
+		rc = pthread_create(&tid, &attr, test_gdc_async_thread, &param[i]);
+
+		if (rc == EPERM) {
+			GDC_UT_PRT("Failed to create RT thread (EPERM), retrying with normal priority...\n");
+			pthread_attr_destroy(&attr);
+			pthread_attr_init(&attr);
+			rc = pthread_create(&tid, &attr, test_gdc_async_thread, &param[i]);
+			pthread_attr_destroy(&attr);
+			pthread_attr_init(&attr);
+			pthread_attr_setschedpolicy(&attr, SCHED_RR);
+			pthread_attr_setschedparam(&attr, &t_param);
+			pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+		}
+
 		if (rc < 0) {
-			GDC_UT_PRT("rc is %d, threads create fail\n", rc);
+			GDC_UT_PRT("rc is %d, threads create fail, error: %s\n", rc, strerror(rc));
 			perror("Fail:");
+			pthread_attr_destroy(&attr);
 			return CVI_FAILURE;
 		}
 	}
+
+	pthread_attr_destroy(&attr);
 
 	do {
 		for (i = 0; i < 4; i++) {

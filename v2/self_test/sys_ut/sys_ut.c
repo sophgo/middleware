@@ -82,11 +82,11 @@ static CVI_S32 sys_flush_test(CVI_VOID)
 	CVI_S32 pattern = 0x37;
 	CVI_S32 s32Ret = CVI_SUCCESS;
 
-	if (CVI_SYS_IonAlloc(&u64PhySrc, &pVirAddrSrc, "sys_test_src", u32BufLen) != CVI_SUCCESS) {
+	if (CVI_SYS_IonAlloc_Cached(&u64PhySrc, &pVirAddrSrc, "sys_test_src", u32BufLen) != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonAlloc NG.\n");
 		return CVI_FAILURE;
 	}
-	if (CVI_SYS_IonAlloc(&u64PhyDst, &pVirAddrDst, "sys_test_dst", u32BufLen) != CVI_SUCCESS) {
+	if (CVI_SYS_IonAlloc_Cached(&u64PhyDst, &pVirAddrDst, "sys_test_dst", u32BufLen) != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonAlloc NG.\n");
 		CVI_SYS_IonFree(u64PhySrc, pVirAddrSrc);
 		return CVI_FAILURE;
@@ -125,11 +125,11 @@ static CVI_S32 sys_invalidate_test(CVI_VOID)
 	CVI_U32 i;
 	CVI_S32 s32Ret = CVI_SUCCESS;
 
-	if (CVI_SYS_IonAlloc(&u64PhySrc, &pVirAddrSrc, "sys_test_src", u32BufLen) != CVI_SUCCESS) {
+	if (CVI_SYS_IonAlloc_Cached(&u64PhySrc, &pVirAddrSrc, "sys_test_src", u32BufLen) != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonAlloc NG.\n");
 		return CVI_FAILURE;
 	}
-	if (CVI_SYS_IonAlloc(&u64PhyDst, &pVirAddrDst, "sys_test_dst", u32BufLen) != CVI_SUCCESS) {
+	if (CVI_SYS_IonAlloc_Cached(&u64PhyDst, &pVirAddrDst, "sys_test_dst", u32BufLen) != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonAlloc NG.\n");
 		CVI_SYS_IonFree(u64PhySrc, pVirAddrSrc);
 		return CVI_FAILURE;
@@ -146,6 +146,12 @@ static CVI_S32 sys_invalidate_test(CVI_VOID)
 		}
 
 	if (CVI_SYS_IonFlushCache(u64PhySrc, pVirAddrSrc, u32BufLen) != CVI_SUCCESS) {
+		SYS_UT_PRT("CVI_SYS_IonFlushCache NG.\n");
+		s32Ret = CVI_FAILURE;
+		goto exit;
+	}
+
+	if (CVI_SYS_IonFlushCache(u64PhyDst, pVirAddrDst, u32BufLen) != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonFlushCache NG.\n");
 		s32Ret = CVI_FAILURE;
 		goto exit;
@@ -188,20 +194,20 @@ CVI_S32 _cdma_test_1d(void)
 	struct timespec time[2];
 	long duration = 0;
 
-	s32Ret = CVI_SYS_IonAlloc(&u64PhySrc, &pVirSrc, "sys_test_src", u32Len);
+	s32Ret = CVI_SYS_IonAlloc_Cached(&u64PhySrc, &pVirSrc, "sys_test_src", u32Len);
 	if (s32Ret != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonAlloc src faild.\n");
 		return s32Ret;
 	}
-	memset(pVirSrc, 0x5a, u32Len);
-	CVI_SYS_IonFlushCache(u64PhySrc, pVirSrc, u32Len);
-
-	s32Ret = CVI_SYS_IonAlloc(&u64PhyDst, &pVirDst, "sys_test_dst", u32Len);
+	s32Ret = CVI_SYS_IonAlloc_Cached(&u64PhyDst, &pVirDst, "sys_test_dst", u32Len);
 	if (s32Ret != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonAlloc dst faild.\n");
 		goto exit0;
 	}
 	memset(pVirDst, 0, u32Len);
+	memset(pVirSrc, 0x5a, u32Len);
+	CVI_SYS_IonFlushCache(u64PhySrc, pVirSrc, u32Len);
+	CVI_SYS_IonFlushCache(u64PhyDst, pVirDst, u32Len);
 
 	clock_gettime(CLOCK_MONOTONIC, &time[0]);
 	s32Ret = CVI_SYS_CDMACopy(u64PhyDst, u64PhySrc, u32Len);
@@ -240,7 +246,7 @@ CVI_S32 _cdma_test_2d(void)
 	long duration = 0;
 	CVI_CDMA_2D_S cdmaParam = {0};
 
-	s32Ret = CVI_SYS_IonAlloc(&u64PhySrc, &pVirSrc, "sys_test_src", u32Len);
+	s32Ret = CVI_SYS_IonAlloc_Cached(&u64PhySrc, &pVirSrc, "sys_test_src", u32Len);
 	if (s32Ret != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonAlloc src faild.\n");
 		return s32Ret;
@@ -248,13 +254,15 @@ CVI_S32 _cdma_test_2d(void)
 	memset(pVirSrc, 0x5b, u32Len);
 	CVI_SYS_IonFlushCache(u64PhySrc, pVirSrc, u32Len);
 
-	s32Ret = CVI_SYS_IonAlloc(&u64PhyDst, &pVirDst, "sys_test_dst", u32Len);
+	s32Ret = CVI_SYS_IonAlloc_Cached(&u64PhyDst, &pVirDst, "sys_test_dst", u32Len);
 	if (s32Ret != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonAlloc dst faild.\n");
 		goto exit0;
 	}
 
 	memset(pVirDst, 0, u32Len);
+	CVI_SYS_IonFlushCache(u64PhyDst, pVirDst, u32Len);
+
 	cdmaParam.u64PhyAddrSrc = u64PhySrc;
 	cdmaParam.u64PhyAddrDst = u64PhyDst;
 	cdmaParam.u16Width = u16Width;
@@ -301,7 +309,7 @@ void *_cdma_thread_run(void *arg)
 
 	UNUSED(arg);
 
-	s32Ret = CVI_SYS_IonAlloc(&u64PhySrc, &pVirSrc, "sys_test_src", u32Len);
+	s32Ret = CVI_SYS_IonAlloc_Cached(&u64PhySrc, &pVirSrc, "sys_test_src", u32Len);
 	if (s32Ret != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonAlloc src faild.\n");
 		return NULL;
@@ -309,13 +317,15 @@ void *_cdma_thread_run(void *arg)
 	memset(pVirSrc, 0x6a, u32Len);
 	CVI_SYS_IonFlushCache(u64PhySrc, pVirSrc, u32Len);
 
-	s32Ret = CVI_SYS_IonAlloc(&u64PhyDst, &pVirDst, "sys_test_dst", u32Len);
+	s32Ret = CVI_SYS_IonAlloc_Cached(&u64PhyDst, &pVirDst, "sys_test_dst", u32Len);
 	if (s32Ret != CVI_SUCCESS) {
 		SYS_UT_PRT("CVI_SYS_IonAlloc dst faild.\n");
 		goto exit0;
 	}
 
 	memset(pVirDst, 0, u32Len);
+	CVI_SYS_IonFlushCache(u64PhyDst, pVirDst, u32Len);
+
 	cdmaParam.u64PhyAddrSrc = u64PhySrc;
 	cdmaParam.u64PhyAddrDst = u64PhyDst;
 	cdmaParam.u16Width = u16Width;

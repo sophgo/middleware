@@ -17,8 +17,8 @@ static const GC8613_MODE_S g_astGc8613_mode[GC8613_MODE_NUM] = {
 		.name = "8M30",
 		.astImg[0] = {
 			.stSnsSize = {
-				.u32Width = 3840,
-				.u32Height = 2160,
+				.u32Width = 3848,
+				.u32Height = 2168,
 			},
 			.stWndRect = {
 				.s32X = 0,
@@ -27,8 +27,8 @@ static const GC8613_MODE_S g_astGc8613_mode[GC8613_MODE_NUM] = {
 				.u32Height = 2160,
 			},
 			.stMaxSize = {
-				.u32Width = 3840,
-				.u32Height = 2160,
+				.u32Width = 3848,
+				.u32Height = 2168,
 			},
 		},
 		.f32MaxFps = 30,
@@ -58,8 +58,8 @@ static const GC8613_MODE_S g_astGc8613_mode[GC8613_MODE_NUM] = {
 		.name = "8M25",
 		.astImg[0] = {
 			.stSnsSize = {
-				.u32Width = 3840,
-				.u32Height = 2160,
+				.u32Width = 3848,
+				.u32Height = 2168,
 			},
 			.stWndRect = {
 				.s32X = 0,
@@ -68,8 +68,8 @@ static const GC8613_MODE_S g_astGc8613_mode[GC8613_MODE_NUM] = {
 				.u32Height = 2160,
 			},
 			.stMaxSize = {
-				.u32Width = 3840,
-				.u32Height = 2160,
+				.u32Width = 3848,
+				.u32Height = 2168,
 			},
 		},
 		.f32MaxFps = 25,
@@ -140,8 +140,8 @@ static const GC8613_MODE_S g_astGc8613_mode[GC8613_MODE_NUM] = {
 		.name = "8M60",
 		.astImg[0] = {
 			.stSnsSize = {
-				.u32Width = 3840,
-				.u32Height = 2160,
+				.u32Width = 3848,
+				.u32Height = 2168,
 			},
 			.stWndRect = {
 				.s32X = 0,
@@ -150,8 +150,8 @@ static const GC8613_MODE_S g_astGc8613_mode[GC8613_MODE_NUM] = {
 				.u32Height = 2160,
 			},
 			.stMaxSize = {
-				.u32Width = 3840,
-				.u32Height = 2160,
+				.u32Width = 3848,
+				.u32Height = 2168,
 			},
 		},
 		.f32MaxFps = 60,
@@ -182,8 +182,8 @@ static const GC8613_MODE_S g_astGc8613_mode[GC8613_MODE_NUM] = {
 		/* sef */
 		.astImg[0] = {
 			.stSnsSize = {
-				.u32Width = 3840,
-				.u32Height = 2160,
+				.u32Width = 3848,
+				.u32Height = 2168,
 			},
 			.stWndRect = {
 				.s32X = 0,
@@ -192,15 +192,15 @@ static const GC8613_MODE_S g_astGc8613_mode[GC8613_MODE_NUM] = {
 				.u32Height = 2160,
 			},
 			.stMaxSize = {
-				.u32Width = 3840,
-				.u32Height = 2160,
+				.u32Width = 3848,
+				.u32Height = 2168,
 			},
 		},
 		/* lef */
 		.astImg[1] = {
 			.stSnsSize = {
-				.u32Width = 3840,
-				.u32Height = 2160,
+				.u32Width = 3848,
+				.u32Height = 2168,
 			},
 			.stWndRect = {
 				.s32X = 0,
@@ -209,8 +209,8 @@ static const GC8613_MODE_S g_astGc8613_mode[GC8613_MODE_NUM] = {
 				.u32Height = 2160,
 			},
 			.stMaxSize = {
-				.u32Width = 3840,
-				.u32Height = 2160,
+				.u32Width = 3848,
+				.u32Height = 2168,
 			},
 		},
 		.f32MaxFps = 30,

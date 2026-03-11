@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+# 删除ldconfig配置
+rm -f /etc/ld.so.conf.d/middleware.conf
+ldconfig
+
+exit 0

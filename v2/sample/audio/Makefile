@@ -198,6 +198,8 @@ endif
 sample_audio: $(TEST_OBJ)
 	@$(CXX) -o $@ $(TEST_OBJ) $(ELFFLAGS) $(STATIC_FLAG) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
+	@cp $@ $(INSTALL_MW_DIR)/
+	@echo "Installed $@ to $(INSTALL_MW_DIR)"
 
 sample_audio_asan: $(TEST_OBJ)
 	@$(CXX) -o $@ $(TEST_OBJ) $(ELFFLAGS) $(EXTRA_LDFLAGS_WITH_ASAN) $(EXTRA_LDFLAGS)

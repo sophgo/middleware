@@ -14,7 +14,7 @@ static void os04e10_linear_2048X2048_p30_2L_SLAVE_init(VI_PIPE ViPipe);
 const CVI_U32 os04e10_addr_byte = 2;
 const CVI_U32 os04e10_data_byte = 1;
 ISP_SNS_MIRRORFLIP_TYPE_E g_aeOs04e10_MirrorFip_Initial[VI_MAX_PIPE_NUM] = {
-	ISP_SNS_MIRROR, ISP_SNS_MIRROR, ISP_SNS_MIRROR, ISP_SNS_MIRROR};
+	ISP_SNS_NORMAL, ISP_SNS_NORMAL, ISP_SNS_NORMAL, ISP_SNS_NORMAL};
 
 int os04e10_i2c_init(VI_PIPE ViPipe)
 {
@@ -79,10 +79,17 @@ ISP_SNS_MIRRORFLIP_TYPE_E ae04e10SnsMirrorFlipMap[ISP_SNS_BUTT][ISP_SNS_BUTT] = 
 	{ISP_SNS_MIRROR_FLIP, ISP_SNS_FLIP, ISP_SNS_MIRROR, ISP_SNS_NORMAL}
 };
 
-#define OS04E10_ORIEN_ADDR (0x3820)
+#define OS04E10_ORIEN_ADDR (0x3820)  /* FORMAT1 register */
+#define OS04E10_ANALOG_FLIP_ADDR (0x3716)  /* REG16 register */
+/* 0x3820 Bit[3]: Horizontal mirror (0=mirror, 1=normal)
+ *       Bit[4]: Vertical flip (1=flip)
+ *       Bit[5]: Vertical BLC flip (1=flip, used when vertical flip is enabled)
+ * 0x3716 Bit[5]: Analog flip (0=flip, 1=normal, inverted logic)
+ */
 void os04e10_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFlip)
 {
 	CVI_U8 val = 0;
+	CVI_U8 val_reg16 = 0;
 	CVI_U32 i = 0;
 
 	for (i = 0; i < ISP_SNS_BUTT; i++) {
@@ -93,20 +100,33 @@ void os04e10_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFli
 	}
 
 	val = os04e10_read_register(ViPipe, OS04E10_ORIEN_ADDR);
-	val &= ~(0x3 << 1);
+	val_reg16 = os04e10_read_register(ViPipe, OS04E10_ANALOG_FLIP_ADDR);
+
+	/* Clear Bit[3], Bit[4] and Bit[5] in 0x3820 */
+	val &= ~((0x1 << 3) | (0x1 << 4) | (0x1 << 5));
+	/* Clear Bit[5] in 0x3716, will set it based on flip state */
+	val_reg16 &= ~(0x1 << 5);
 
 	switch (eSnsMirrorFlip) {
 	case ISP_SNS_NORMAL:
+		/* Normal orientation: Bit[3]=1 (normal), Bit[4]=0 (no flip), Bit[5]=0 (no BLC flip), 0x3716 Bit[5]=1 (normal) */
+		val |= (0x1 << 3);
+		val_reg16 |= (0x1 << 5);
 		break;
 	case ISP_SNS_MIRROR:
-		val |= 0x1<<1;
+		/* Horizontal mirror: Bit[3]=0 (mirror), Bit[4]=0 (no flip), Bit[5]=0 (no BLC flip), 0x3716 Bit[5]=1 (normal) */
+		/* Bit[3] already cleared */
+		val_reg16 |= (0x1 << 5);
 		break;
 	case ISP_SNS_FLIP:
-		val |= 0x1<<2;
+		/* Vertical flip: Bit[3]=1 (normal), Bit[4]=1 (flip), Bit[5]=1 (BLC flip), 0x3716 Bit[5]=0 (flip) */
+		val |= (0x1 << 3) | (0x1 << 4) | (0x1 << 5);
+		/* Bit[5] already cleared (0 = flip) */
 		break;
 	case ISP_SNS_MIRROR_FLIP:
-		val |= 0x1<<1;
-		val |= 0x1<<2;
+		/* Mirror + Flip: Bit[3]=0 (mirror), Bit[4]=1 (flip), Bit[5]=1 (BLC flip), 0x3716 Bit[5]=0 (flip) */
+		val |= (0x1 << 4) | (0x1 << 5);
+		/* Bit[5] already cleared (0 = flip) */
 		break;
 	default:
 		return;
@@ -114,6 +134,7 @@ void os04e10_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFli
 
 	os04e10_standby(ViPipe);
 	os04e10_write_register(ViPipe, OS04E10_ORIEN_ADDR, val);
+	os04e10_write_register(ViPipe, OS04E10_ANALOG_FLIP_ADDR, val_reg16);
 	usleep(1000*100);
 	os04e10_restart(ViPipe);
 }
@@ -121,11 +142,13 @@ void os04e10_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFli
 #define OS04E10_CHIP_ID_ADDR_H		0x300A
 #define OS04E10_CHIP_ID_ADDR_M		0x300B
 #define OS04E10_CHIP_ID_ADDR_L		0x300C
-#define OS04E10_CHIP_ID			0x530641
+#define OS04E10_CHIP_ID_1			0x530641
+#define OS04E10_CHIP_ID_2			0x530445
 
 int os04e10_probe(VI_PIPE ViPipe)
 {
 	int nVal, nVal2, nVal3;
+	CVI_U32 chip_id;
 
 	usleep(500);
 	if (os04e10_i2c_init(ViPipe) != CVI_SUCCESS)
@@ -139,7 +162,9 @@ int os04e10_probe(VI_PIPE ViPipe)
 		return nVal;
 	}
 
-	if ((((nVal & 0xFF) << 16) | ((nVal2 & 0xFF) << 8) | (nVal3 & 0xFF)) != OS04E10_CHIP_ID) {
+	chip_id = ((nVal & 0xFF) << 16) | ((nVal2 & 0xFF) << 8) | (nVal3 & 0xFF);
+
+	if (chip_id != OS04E10_CHIP_ID_1 && chip_id != OS04E10_CHIP_ID_2) {
 		CVI_TRACE_SNS(CVI_DBG_ERR, "Sensor ID Mismatch! Use the wrong sensor??\n");
 		return CVI_FAILURE;
 	}

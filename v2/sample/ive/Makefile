@@ -29,5 +29,7 @@ all: $(TARGET)
 $(SDIR)/%: $(SDIR)/%.c
 	@$(CXX) -o $(subst .o,,$(notdir $@)) $^ $(CXXFLAGS) $(EXTRA_CFLAGS) $(ELFFLAGS) $(LD_FLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
+	@cp $(subst .o,,$(notdir $@)) $(INSTALL_MW_DIR)/
+	@echo "Installed $(subst .o,,$(notdir $@)) to $(INSTALL_MW_DIR)"
 clean:
 	@rm -f $(OBJS) $(notdir $(TARGET))

@@ -49,3 +49,12 @@
      extern ISP_SNS_OBJ_S stSnsCV2003_Obj;
      #define CVSENS_CV2003_MIPI_2M_1080P_30FPS_10BIT 0X44003340
      ```
+
+7. **./CViTEK_Sensor_Support_List/source/sensor_support_list.rst**
+   - 用于更新传感器支持列表文档，记录传感器的详细信息。
+   - 包含传感器的制造商、型号、成像区域尺寸、像素尺寸、宽高比、分辨率、接口、帧率、输出模式、同步模式、封装形式、生产状态等信息。
+   - 使用 Sphinx 生成 PDF 文档，用于向用户展示支持的传感器列表。
+
+## 许可证
+
+本项目基于 [BSD 2-Clause License](LICENSE) 许可证开源。
