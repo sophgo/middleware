@@ -18,6 +18,7 @@
 #include "cvi_vpss.h"
 #include "cvi_vo.h"
 #include "cvi_region.h"
+#include "cvi_venc.h"
 #include "hashmap.h"
 #include "rgn_ioctl.h"
 #include "cvi_comm_osdc.h"
@@ -37,6 +38,7 @@ STAILQ_HEAD(rgn_canvas_q, rgn_canvas) canvas_q;
 
 static CVI_S32 rgn_fd = -1;
 static pthread_mutex_t rgn_fd_lock = PTHREAD_MUTEX_INITIALIZER;
+static CVI_U32	abGrpEnable[VPSS_MAX_GRP_NUM] = {999};
 
 
 
@@ -160,9 +162,20 @@ CVI_S32 CVI_RGN_SetBitMap(RGN_HANDLE Handle, const BITMAP_S *pstBitmap)
 CVI_S32 CVI_RGN_AttachToChn(RGN_HANDLE Handle, const MMF_CHN_S *pstChn, const RGN_CHN_ATTR_S *pstChnAttr)
 {
 	CVI_S32 fd = -1, s32Ret;
+	VPSS_GRP	VpssGrp = 0;
+	VPSS_GRP_ATTR_S	stVpssGrpAttr = {0};
+	VPSS_CHN_ATTR_S	stVpssChnAttr = {0};
+	PIXEL_FORMAT_E	pixelFormat = PIXEL_FORMAT_NV21;
+	SIZE_S stSize = {1920, 1080};
+	MMF_CHN_S stChn = {0};
 
 	MOD_CHECK_NULL_PTR(CVI_ID_RGN, pstChn);
 	MOD_CHECK_NULL_PTR(CVI_ID_RGN, pstChnAttr);
+
+	if (pstChn->enModId != CVI_ID_JPEGE && pstChn->enModId != CVI_ID_VPSS && pstChn->enModId != CVI_ID_VO) {
+		CVI_TRACE_RGN(CVI_DBG_ERR, "Unsupported module attach to RGN!\n");
+		return CVI_ERR_RGN_ILLEGAL_PARAM;
+	}
 
 #ifdef __CV180X__
 	if (pstChn->enModId == CVI_ID_VO) {
@@ -170,10 +183,67 @@ CVI_S32 CVI_RGN_AttachToChn(RGN_HANDLE Handle, const MMF_CHN_S *pstChn, const RG
 		return CVI_ERR_RGN_ILLEGAL_PARAM;
 	}
 #endif
+	if (pstChn->enModId == CVI_ID_JPEGE) {
+		stVpssGrpAttr.stFrameRate.s32SrcFrameRate    = -1;
+		stVpssGrpAttr.stFrameRate.s32DstFrameRate    = -1;
+		stVpssGrpAttr.enPixelFormat		     = pixelFormat;
+		stVpssGrpAttr.u32MaxW			     = stSize.u32Width;
+		stVpssGrpAttr.u32MaxH			     = stSize.u32Height;
+
+		stVpssChnAttr.u32Width		    = stSize.u32Width;
+		stVpssChnAttr.u32Height		    = stSize.u32Height;
+		stVpssChnAttr.enVideoFormat		    = VIDEO_FORMAT_LINEAR;
+		stVpssChnAttr.enPixelFormat		    = pixelFormat;
+		stVpssChnAttr.stFrameRate.s32SrcFrameRate = 30;
+		stVpssChnAttr.stFrameRate.s32DstFrameRate = 30;
+		stVpssChnAttr.u32Depth		    = 1;
+		stVpssChnAttr.bMirror			    = CVI_FALSE;
+		stVpssChnAttr.bFlip			    = CVI_FALSE;
+
+		/*start vpss*/
+		VpssGrp = CVI_VPSS_GetAvailableGrp();
+
+		stChn.enModId = CVI_ID_VPSS;
+		stChn.s32DevId = VpssGrp;
+		stChn.s32ChnId = 0;
+
+		abGrpEnable[VpssGrp] = Handle;
+
+		s32Ret = CVI_VPSS_CreateGrp(VpssGrp,  &stVpssGrpAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			CVI_TRACE_RGN(CVI_DBG_ERR, "CVI_VPSS_CreateGrp(grp:%d) failed with %#x!\n", VpssGrp, s32Ret);
+			return CVI_FAILURE;
+		}
+
+		s32Ret = CVI_VPSS_SetChnAttr(VpssGrp, 0, &stVpssChnAttr);
+		if (s32Ret != CVI_SUCCESS) {
+			CVI_TRACE_RGN(CVI_DBG_ERR, "CVI_VPSS_SetChnAttr failed with %#x\n", s32Ret);
+			return CVI_FAILURE;
+		}
+
+		s32Ret = CVI_VPSS_EnableChn(VpssGrp, 0);
+
+		if (s32Ret != CVI_SUCCESS) {
+			CVI_TRACE_RGN(CVI_DBG_ERR, "CVI_VPSS_EnableChn failed with %#x\n", s32Ret);
+			return CVI_FAILURE;
+		}
+
+		s32Ret = CVI_VPSS_StartGrp(VpssGrp);
+		if (s32Ret != CVI_SUCCESS) {
+			CVI_TRACE_RGN(CVI_DBG_ERR, "start vpss group failed. s32Ret: 0x%x !\n", s32Ret);
+			return s32Ret;
+		}
+
+		CVI_VENC_SetRgnAttachInfo(pstChn->s32ChnId, stChn.s32DevId, stChn.s32ChnId, CVI_TRUE);
+	} else {
+		stChn.enModId = pstChn->enModId;
+		stChn.s32DevId = pstChn->s32DevId;
+		stChn.s32ChnId = pstChn->s32ChnId;
+	}
 
 	// Driver control
 	fd = get_rgn_fd();
-	s32Ret = rgn_attach_to_chn(fd, Handle, pstChn, pstChnAttr);
+	s32Ret = rgn_attach_to_chn(fd, Handle, &stChn, pstChnAttr);
 	if (s32Ret != CVI_SUCCESS) {
 		CVI_TRACE_RGN(CVI_DBG_ERR, "Attach RGN to channel fail.\n");
 		return s32Ret;
@@ -184,8 +254,7 @@ CVI_S32 CVI_RGN_AttachToChn(RGN_HANDLE Handle, const MMF_CHN_S *pstChn, const RG
 CVI_S32 CVI_RGN_DetachFromChn(RGN_HANDLE Handle, const MMF_CHN_S *pstChn)
 {
 	CVI_S32 fd = -1, s32Ret;
-
-	MOD_CHECK_NULL_PTR(CVI_ID_RGN, pstChn);
+	MMF_CHN_S stChn = {0};
 
 #ifdef __CV180X__
 	if (pstChn->enModId == CVI_ID_VO) {
@@ -194,14 +263,58 @@ CVI_S32 CVI_RGN_DetachFromChn(RGN_HANDLE Handle, const MMF_CHN_S *pstChn)
 	}
 #endif
 
+	if (pstChn->enModId != CVI_ID_JPEGE && pstChn->enModId != CVI_ID_VPSS && pstChn->enModId != CVI_ID_VO) {
+		CVI_TRACE_RGN(CVI_DBG_ERR, "Unsupported module attach to RGN!\n");
+		return CVI_ERR_RGN_ILLEGAL_PARAM;
+	}
+
+	if (pstChn->enModId == CVI_ID_JPEGE) {
+		for (CVI_S32 i = 0; i < VPSS_MAX_GRP_NUM; i++) {
+			if (abGrpEnable[i] == Handle) {
+				stChn.enModId = CVI_ID_VPSS;
+				stChn.s32DevId = i;
+				stChn.s32ChnId = 0;
+				abGrpEnable[i] = 999;
+				break;
+			}
+		}
+	} else {
+		stChn.enModId = pstChn->enModId;
+		stChn.s32DevId = pstChn->s32DevId;
+		stChn.s32ChnId = pstChn->s32ChnId;
+	}
+
 	// Driver control
 	fd = get_rgn_fd();
-	s32Ret = rgn_detach_from_chn(fd, Handle, pstChn);
+	s32Ret = rgn_detach_from_chn(fd, Handle, &stChn);
 	if (s32Ret != CVI_SUCCESS) {
 		CVI_TRACE_RGN(CVI_DBG_ERR, "Detach RGN from channel fail.\n");
 		return s32Ret;
 	}
 
+	if (pstChn->enModId == CVI_ID_JPEGE) {
+		CVI_VENC_SetRgnAttachInfo(pstChn->s32ChnId, stChn.s32DevId, stChn.s32ChnId, CVI_FALSE);
+
+		s32Ret = CVI_VPSS_DisableChn(stChn.s32DevId, stChn.s32ChnId);
+		if (s32Ret != CVI_SUCCESS) {
+			CVI_TRACE_RGN(CVI_DBG_ERR, "Vpss stop Grp %d channel %d failed! Please check param\n",
+			stChn.s32DevId, stChn.s32ChnId);
+			return CVI_FAILURE;
+		}
+
+
+		s32Ret = CVI_VPSS_StopGrp(stChn.s32DevId);
+		if (s32Ret != CVI_SUCCESS) {
+			CVI_TRACE_RGN(CVI_DBG_ERR, "Vpss Stop Grp %d failed! Please check param\n", stChn.s32DevId);
+			return CVI_FAILURE;
+		}
+
+		s32Ret = CVI_VPSS_DestroyGrp(stChn.s32DevId);
+		if (s32Ret != CVI_SUCCESS) {
+			CVI_TRACE_RGN(CVI_DBG_ERR, "Vpss Destroy Grp %d failed! Please check\n", stChn.s32DevId);
+			return CVI_FAILURE;
+		}
+	}
 	return CVI_SUCCESS;
 }
 

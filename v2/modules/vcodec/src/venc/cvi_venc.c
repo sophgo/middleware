@@ -325,8 +325,63 @@ CVI_S32 CVI_VENC_InsertUserData(VENC_CHN VeChn, CVI_U8 *pu8Data, CVI_U32 u32Len)
 	return CVI_FAILURE;
 }
 
+#include "cvi_vpss.h"
+
+struct RGN_ATTACH_INFO_S {
+	CVI_U32 VpssGrpId;
+	CVI_U32 VpssChnId;
+	CVI_BOOL AttachFlag;
+};
+
+static struct RGN_ATTACH_INFO_S RgnAttachInfo[VENC_MAX_CHN_NUM] = {0};
+CVI_S32 CVI_VENC_SetRgnAttachInfo(VENC_CHN VeChn, CVI_U32 VpssGrpId, CVI_U32 VpssChnId, CVI_BOOL AttachFlag)
+{
+	if (VeChn < 0 || (s32VencFd[VeChn] < 0 )) {
+		printf("venc chn : %d not ready\n", VeChn);
+		return CVI_ERR_VENC_INVALID_CHNID;
+	}
+
+	RgnAttachInfo[VeChn].VpssGrpId = VpssGrpId;
+	RgnAttachInfo[VeChn].VpssChnId = VpssChnId;
+	RgnAttachInfo[VeChn].AttachFlag = AttachFlag;
+
+	return CVI_SUCCESS;
+}
+
+static CVI_S32 YuvOverlayOsd(CVI_U32 VpssGrpId, CVI_U32 VpssChnId, VIDEO_FRAME_INFO_S *pstFrame)
+{
+	VPSS_CHN_ATTR_S vpss_chn_attr;
+	VPSS_GRP_ATTR_S vpss_grp_attr;
+
+	CVI_VPSS_GetGrpAttr(VpssGrpId, &vpss_grp_attr);
+	vpss_grp_attr.u32MaxW = pstFrame->stVFrame.u32Width;
+	vpss_grp_attr.u32MaxH = pstFrame->stVFrame.u32Height;
+	vpss_grp_attr.enPixelFormat = pstFrame->stVFrame.enPixelFormat;
+	CVI_VPSS_SetGrpAttr(VpssGrpId, &vpss_grp_attr);
+
+	CVI_VPSS_GetChnAttr(VpssGrpId, VpssChnId, &vpss_chn_attr);
+	vpss_chn_attr.u32Width = pstFrame->stVFrame.u32Width;
+	vpss_chn_attr.u32Height = pstFrame->stVFrame.u32Height;
+	vpss_chn_attr.enPixelFormat = pstFrame->stVFrame.enPixelFormat;
+	CVI_VPSS_SetChnAttr(VpssGrpId, VpssChnId, &vpss_chn_attr);
+
+	if (CVI_SUCCESS != CVI_VPSS_SendFrame(VpssGrpId, pstFrame, 1000)) {
+		printf("CVI_VPSS_SendFrame fail\n");
+		return CVI_FAILURE;
+	}
+
+	if (CVI_SUCCESS != CVI_VPSS_GetChnFrame(VpssGrpId, VpssChnId, pstFrame, 1000)) {
+		printf("CVI_VPSS_GetChnFrame fail\n");
+		return CVI_FAILURE;
+	}
+
+	return CVI_SUCCESS;
+}
+
 CVI_S32 CVI_VENC_SendFrame(VENC_CHN VeChn, const VIDEO_FRAME_INFO_S *pstFrame, CVI_S32 s32MilliSec)
 {
+	CVI_S32 ret = CVI_FAILURE;
+
     if (VeChn < 0 || (s32VencFd[VeChn] < 0 && openDevice(VeChn) != CVI_SUCCESS)) {
 		printf("openDevice fail\n");
 		return CVI_ERR_VENC_INVALID_CHNID;
@@ -337,13 +392,26 @@ CVI_S32 CVI_VENC_SendFrame(VENC_CHN VeChn, const VIDEO_FRAME_INFO_S *pstFrame, C
 	}
 
 	if (s32VencFd[VeChn] > 0) {
+		VIDEO_FRAME_INFO_S  FrameInfo;
 		VIDEO_FRAME_INFO_EX_S stFrameEx, *pstFrameEx = &stFrameEx;
 
-		pstFrameEx->pstFrame = pstFrame;
 		pstFrameEx->s32MilliSec = s32MilliSec;
-		return ioctl(s32VencFd[VeChn], CVI_VC_VENC_SEND_FRAME, pstFrameEx);
+		if (RgnAttachInfo[VeChn].AttachFlag == CVI_TRUE) {
+			FrameInfo = *pstFrame;
+			ret = YuvOverlayOsd(RgnAttachInfo[VeChn].VpssGrpId, RgnAttachInfo[VeChn].VpssChnId, &FrameInfo);
+			if (CVI_SUCCESS != ret) {
+				printf("%s, YuvOverlayOsd fail\n", __func__);
+				return ret;
+			}
+			pstFrameEx->pstFrame = &FrameInfo;
+			ret = ioctl(s32VencFd[VeChn], CVI_VC_VENC_SEND_FRAME, pstFrameEx);
+			CVI_VPSS_ReleaseChnFrame(RgnAttachInfo[VeChn].VpssGrpId, RgnAttachInfo[VeChn].VpssChnId, &FrameInfo);
+		} else {
+			pstFrameEx->pstFrame = pstFrame;
+			ret = ioctl(s32VencFd[VeChn], CVI_VC_VENC_SEND_FRAME, pstFrameEx);
+		}
 	}
-	return CVI_FAILURE;
+	return ret;
 }
 
 CVI_S32 CVI_VENC_SendFrameEx(VENC_CHN VeChn, const USER_FRAME_INFO_S *pstFrame, CVI_S32 s32MilliSec)

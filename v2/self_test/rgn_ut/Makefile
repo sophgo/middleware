@@ -12,7 +12,7 @@ OBJS = $(SRCS:.c=.o)
 DEPS = $(SRCS:.c=.d)
 
 TARGET = rgn_ut
-LIBS =$(ISP_LIB) -lsys $(SNS_LIB) -lmisc -lvpss -lvo -lrgn -lsys
+LIBS =$(ISP_LIB) -lsys $(SNS_LIB) -lmisc -lvpss -lvo -lrgn -lsys  -lvenc
 
 ifeq ($(MULTI_PROCESS_SUPPORT), 1)
 DEFS += -DRPC_MULTI_PROCESS

@@ -53,7 +53,7 @@ EXTRA_CFLAGS += -ffunction-sections -fdata-sections
 EXTRA_LDFLAGS += $(LIBS) -pthread -lm -latomic
 
 # ELFFLAGS +=  -march=rv64imafdcvxthead -mcmodel=medany -mabi=lp64dv
-LD_FLAGS = -lvdec -lsys -lvenc -pthread -static
+LD_FLAGS = -lrgn -lvdec -lvenc -lvpss -lsys -pthread -static
 
 all : $(JPG_DRV_ENC_TEST) $(JPG_DRV_DEC_TEST) $(H264_DRV_TEST) $(H265_DRV_TEST) $(CVI_API_TEST) $(MULTI_PROCESS_ENC_TEST) $(MULTI_PROCESS_DEC_TEST) $(MULTI_PROCESS_CHANNELS_ENC_TEST) $(MULTI_PROCESS_CHANNELS_DEC_TEST)
 

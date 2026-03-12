@@ -787,6 +787,7 @@ CVI_S32 CVI_VENC_GetSearchWindow(VENC_CHN VeChn, VENC_SEARCH_WINDOW_S *pstVencSe
 CVI_S32 CVI_VENC_SetExternBuf(VENC_CHN VeChn, const VENC_EXTERN_BUF_S *pstVencExternBuf);
 CVI_S32 CVI_VENC_AllocPhysicalMemory(VENC_PHYS_BUF_S *pstPhysBuf);
 CVI_S32 CVI_VENC_FreePhysicalMemory(const VENC_PHYS_BUF_S *pstPhysBuf);
+CVI_S32 CVI_VENC_SetRgnAttachInfo(VENC_CHN VeChn, CVI_U32 VpssGrpId, CVI_U32 VpssChnId, CVI_BOOL AttachFlag);
 
 #define CVI_H264_PROFILE_DEFAULT	H264E_PROFILE_HIGH
 #define CVI_H264_PROFILE_MIN		0
