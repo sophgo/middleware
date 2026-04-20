@@ -95,6 +95,9 @@ static CVI_S32 cmos_get_wdr_size(VI_PIPE ViPipe, ISP_SNS_ISP_INFO_S *pstIspCfg);
 #define GC8613_VMAX_L_ADDR		0x0341 //vmax
 #define GC8613_VMAX_H_ADDR		0x0340 //bit[15:8]
 
+#define GC8613_MIRROR_ADDR	0x0063
+#define GC8613_FLIP_ADDR	0x022c
+
 #define GC8613_WINDOW_HEIGHT	0x0888 // 34a 34b
 
 /*****Gc8613 Size*****/
@@ -811,6 +814,8 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 			pstI2c_data[LINEAR_MAG_3].u32RegAddr = GC8613_GAIN_MAG3_ADDR;
 			pstI2c_data[LINEAR_VMAX_L].u32RegAddr = GC8613_VMAX_L_ADDR;
 			pstI2c_data[LINEAR_VMAX_H].u32RegAddr = GC8613_VMAX_H_ADDR;
+			pstI2c_data[LINEAR_FLIP].u32RegAddr = GC8613_FLIP_ADDR;
+			pstI2c_data[LINEAR_MIRROR].u32RegAddr = GC8613_MIRROR_ADDR;
 			pstCfg0->ispCfg.u8DelayFrmNum = 0;
 			break;
 		}
@@ -903,6 +908,7 @@ static CVI_S32 cmos_get_sns_regs_info(VI_PIPE ViPipe, ISP_SNS_SYNC_INFO_S *pstSn
 		/* check update isp crop or not */
 		pstCfg0->ispCfg.need_update = (sensor_cmp_wdr_size(&pstCfg0->ispCfg, &pstCfg1->ispCfg) ?
 				CVI_TRUE : CVI_FALSE);
+		pstCfg0->ispCfg.u8DelayFrmNum = 1;
 	}
 
 	pstSnsRegsInfo->bConfig = CVI_FALSE;
@@ -984,13 +990,60 @@ unsupport_mode:
 
 static CVI_VOID sensor_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFlip)
 {
+
+	CVI_U8 start_x = 0;
+	CVI_U8 start_y = 0;
+	CVI_U8 u8Flip = 0;
+	CVI_U8 u8Mirror = 0;
+
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+	ISP_SNS_REGS_INFO_S *pstSnsRegsInfo = CVI_NULL;
+	ISP_SNS_ISP_INFO_S *pstIspCfg0 = CVI_NULL;
 
 	GC8613_SENSOR_GET_CTX(ViPipe, pstSnsState);
 	CMOS_CHECK_POINTER_VOID(pstSnsState);
+
+	pstSnsRegsInfo = &pstSnsState->astSyncInfo[0].snsCfg;
+	pstIspCfg0 = &pstSnsState->astSyncInfo[0].ispCfg;
+
+	/* Apply the setting on the fly  */
 	if (pstSnsState->bInit == CVI_TRUE && g_aeGc8613_MirrorFip[ViPipe] != eSnsMirrorFlip) {
-		gc8613_mirror_flip(ViPipe, eSnsMirrorFlip);
+
+		switch (eSnsMirrorFlip) {
+		case ISP_SNS_NORMAL:
+			u8Mirror = 0;
+			u8Flip = 0;
+			break;
+		case ISP_SNS_MIRROR:
+			u8Mirror = 0x05;
+			u8Flip = 0;
+			break;
+		case ISP_SNS_FLIP:
+			u8Mirror = 0x02;
+			u8Flip = 0x01;
+			break;
+		case ISP_SNS_MIRROR_FLIP:
+			u8Mirror = 0x05;
+			u8Flip = 0x01;
+			start_x = 1;
+			start_y = 1;
+			break;
+		default:
+			return;
+		}
+
+		if (pstSnsState->enWDRMode == WDR_MODE_NONE) {
+			pstSnsRegsInfo->astI2cData[LINEAR_MIRROR].u32Data = u8Mirror;
+			pstSnsRegsInfo->astI2cData[LINEAR_MIRROR].bDropFrm = 1;
+			pstSnsRegsInfo->astI2cData[LINEAR_MIRROR].u8DropFrmNum = 2;
+			pstSnsRegsInfo->astI2cData[LINEAR_FLIP].u32Data = u8Flip;
+			pstSnsRegsInfo->astI2cData[LINEAR_FLIP].bDropFrm = 1;
+			pstSnsRegsInfo->astI2cData[LINEAR_FLIP].u8DropFrmNum = 2;
+		}
 		g_aeGc8613_MirrorFip[ViPipe] = eSnsMirrorFlip;
+		pstIspCfg0->img_size[0].stWndRect.s32X = start_x;
+		pstIspCfg0->img_size[0].stWndRect.s32Y = start_y;
+
 	}
 }
 
@@ -1168,6 +1221,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	GC8613_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	GC8613_SENSOR_RESET_CTX(ViPipe);
+	g_aeGc8613_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)

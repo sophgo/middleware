@@ -3,6 +3,9 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <ctype.h>
+#include <sched.h>
+#include <errno.h>
+#include <unistd.h>
 #include "cvi_gdc.h"
 
 #define UT_INFO(_case, _func, _flags)			\
@@ -168,9 +171,20 @@ static void _isp_thread_test(void)
 	pthread_attr_setschedparam(&attr, &param);
 	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
 	s32Ret = pthread_create(&thread, &attr, (void *)vi_event_thread, NULL);
+
+	if (s32Ret == EPERM) {
+		VI_UT_PRT("Failed to create RT thread (EPERM), retrying with normal priority...\r\n");
+		pthread_attr_destroy(&attr);
+		pthread_attr_init(&attr);
+		s32Ret = pthread_create(&thread, &attr, (void *)vi_event_thread, NULL);
+	}
+
+	pthread_attr_destroy(&attr);
+
 	if (s32Ret != 0) {
 		VI_UT_PRT("create vi event thread failed!, error: %d, %s\r\n",
 					s32Ret, strerror(s32Ret));
+		return;
 	}
 	pthread_join(thread, NULL);
 }
@@ -1852,7 +1866,15 @@ int main(int argc, char *argv[])
 	UNUSED(argc);
 	UNUSED(argv);
 
-	system("stty erase ^H");
+	struct sched_param main_param;
+	main_param.sched_priority = 50;
+	if (sched_setscheduler(0, SCHED_RR, &main_param) == -1) {
+		VI_UT_PRT("cannot set main process RT priority: %s\n", strerror(errno));
+	}
+
+	if (isatty(STDIN_FILENO)) {
+		system("stty erase ^H");
+	}
 
 	vi_ut_ctx.pid = -1;
 

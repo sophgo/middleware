@@ -1,0 +1,9 @@
+Package: middleware
+Version: 1.0.0
+Architecture: arm64
+Maintainer: sophgo
+Description: Middleware API libraries
+Essential: no
+Section: libs
+Priority: optional
+Depends: libc6 (>= 2.15)

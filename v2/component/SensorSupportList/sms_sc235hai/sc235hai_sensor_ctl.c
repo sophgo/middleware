@@ -7,6 +7,7 @@
 static void sc235hai_1l_linear_1080p15_init(VI_PIPE ViPipe);
 static void sc235hai_1l_slave_linear_1080p15_init(VI_PIPE ViPipe);
 static void sc235hai_2l_linear_1080p15_init(VI_PIPE ViPipe);
+static void sc235hai_2l_linear_1080p30_init(VI_PIPE ViPipe);
 static void sc235hai_2l_slave_linear_1080p15_init(VI_PIPE ViPipe);
 
 const CVI_U8 sc235hai_i2c_addr   = 0x32;        /* I2C Address of SC235HAI */
@@ -145,6 +146,8 @@ void sc235hai_init(VI_PIPE ViPipe)
 				sc235hai_2l_slave_linear_1080p15_init(ViPipe);
 			} else if (u8ImgMode == SC235HAI_MODE_1080P15_1L_SLAVE) {
 				sc235hai_1l_slave_linear_1080p15_init(ViPipe);
+			} else if (u8ImgMode == SC235HAI_MODE_1080P30_2L) {
+				sc235hai_2l_linear_1080p30_init(ViPipe);
 			}
 		}else if (enWDRMode == WDR_MODE_2To1_LINE) {
 			CVI_TRACE_SNS(CVI_DBG_ERR, "not support wdr mode\n");
@@ -592,6 +595,144 @@ static void sc235hai_2l_linear_1080p15_init(VI_PIPE ViPipe)
 	sc235hai_write_register(ViPipe, 0x0100, 0x01);
 	delay_ms(50);
 	printf("ViPipe:%d,===sc235hai 1080P 15fps 10bit 2LINE Init OK!===\n", ViPipe);
+
+}
+
+static void sc235hai_2l_linear_1080p30_init(VI_PIPE ViPipe)
+{
+	sc235hai_write_register(ViPipe, 0x0103,0x01);
+	sc235hai_write_register(ViPipe, 0x36e9,0x80);
+	sc235hai_write_register(ViPipe, 0x37f9,0x80);
+	sc235hai_write_register(ViPipe, 0x301f,0x02);
+	sc235hai_write_register(ViPipe, 0x3058,0x21);
+	sc235hai_write_register(ViPipe, 0x3059,0x53);
+	sc235hai_write_register(ViPipe, 0x305a,0x40);
+	sc235hai_write_register(ViPipe, 0x320c,0x08);//2200
+	sc235hai_write_register(ViPipe, 0x320d,0x98);
+	sc235hai_write_register(ViPipe, 0x320e,0x08);//2250
+	sc235hai_write_register(ViPipe, 0x320f,0xca);
+	sc235hai_write_register(ViPipe, 0x3250,0x00);
+	sc235hai_write_register(ViPipe, 0x3301,0x0a);
+	sc235hai_write_register(ViPipe, 0x3302,0x20);
+	sc235hai_write_register(ViPipe, 0x3304,0x90);
+	sc235hai_write_register(ViPipe, 0x3305,0x00);
+	sc235hai_write_register(ViPipe, 0x3306,0x78);
+	sc235hai_write_register(ViPipe, 0x3309,0xd0);
+	sc235hai_write_register(ViPipe, 0x330b,0xe8);
+	sc235hai_write_register(ViPipe, 0x330d,0x08);
+	sc235hai_write_register(ViPipe, 0x331c,0x04);
+	sc235hai_write_register(ViPipe, 0x331e,0x81);
+	sc235hai_write_register(ViPipe, 0x331f,0xc1);
+	sc235hai_write_register(ViPipe, 0x3323,0x06);
+	sc235hai_write_register(ViPipe, 0x3333,0x10);
+	sc235hai_write_register(ViPipe, 0x3334,0x40);
+	sc235hai_write_register(ViPipe, 0x3364,0x5e);
+	sc235hai_write_register(ViPipe, 0x336c,0x8c);
+	sc235hai_write_register(ViPipe, 0x337f,0x13);
+	sc235hai_write_register(ViPipe, 0x338f,0x80);
+	sc235hai_write_register(ViPipe, 0x3390,0x08);
+	sc235hai_write_register(ViPipe, 0x3391,0x18);
+	sc235hai_write_register(ViPipe, 0x3392,0xb8);
+	sc235hai_write_register(ViPipe, 0x3393,0x0e);
+	sc235hai_write_register(ViPipe, 0x3394,0x14);
+	sc235hai_write_register(ViPipe, 0x3395,0x10);
+	sc235hai_write_register(ViPipe, 0x3396,0x88);
+	sc235hai_write_register(ViPipe, 0x3397,0x98);
+	sc235hai_write_register(ViPipe, 0x3398,0xf8);
+	sc235hai_write_register(ViPipe, 0x3399,0x0a);
+	sc235hai_write_register(ViPipe, 0x339a,0x0e);
+	sc235hai_write_register(ViPipe, 0x339b,0x10);
+	sc235hai_write_register(ViPipe, 0x339c,0x14);
+	sc235hai_write_register(ViPipe, 0x33ae,0x80);
+	sc235hai_write_register(ViPipe, 0x33af,0xc0);
+	sc235hai_write_register(ViPipe, 0x33b2,0x50);
+	sc235hai_write_register(ViPipe, 0x33b3,0x08);
+	sc235hai_write_register(ViPipe, 0x33f8,0x00);
+	sc235hai_write_register(ViPipe, 0x33f9,0x78);
+	sc235hai_write_register(ViPipe, 0x33fa,0x00);
+	sc235hai_write_register(ViPipe, 0x33fb,0x78);
+	sc235hai_write_register(ViPipe, 0x33fc,0x48);
+	sc235hai_write_register(ViPipe, 0x33fd,0x78);
+	sc235hai_write_register(ViPipe, 0x349f,0x03);
+	sc235hai_write_register(ViPipe, 0x34a6,0x40);
+	sc235hai_write_register(ViPipe, 0x34a7,0x58);
+	sc235hai_write_register(ViPipe, 0x34a8,0x08);
+	sc235hai_write_register(ViPipe, 0x34a9,0x0c);
+	sc235hai_write_register(ViPipe, 0x34f8,0x78);
+	sc235hai_write_register(ViPipe, 0x34f9,0x18);
+	sc235hai_write_register(ViPipe, 0x3619,0x20);
+	sc235hai_write_register(ViPipe, 0x361a,0x90);
+	sc235hai_write_register(ViPipe, 0x3633,0x44);
+	sc235hai_write_register(ViPipe, 0x3637,0x5c);
+	sc235hai_write_register(ViPipe, 0x363c,0xc0);
+	sc235hai_write_register(ViPipe, 0x363d,0x02);
+	sc235hai_write_register(ViPipe, 0x3660,0x80);
+	sc235hai_write_register(ViPipe, 0x3661,0x81);
+	sc235hai_write_register(ViPipe, 0x3662,0x8f);
+	sc235hai_write_register(ViPipe, 0x3663,0x81);
+	sc235hai_write_register(ViPipe, 0x3664,0x81);
+	sc235hai_write_register(ViPipe, 0x3665,0x82);
+	sc235hai_write_register(ViPipe, 0x3666,0x8f);
+	sc235hai_write_register(ViPipe, 0x3667,0x08);
+	sc235hai_write_register(ViPipe, 0x3668,0x80);
+	sc235hai_write_register(ViPipe, 0x3669,0x88);
+	sc235hai_write_register(ViPipe, 0x366a,0x98);
+	sc235hai_write_register(ViPipe, 0x366b,0xb8);
+	sc235hai_write_register(ViPipe, 0x366c,0xf8);
+	sc235hai_write_register(ViPipe, 0x3670,0xc2);
+	sc235hai_write_register(ViPipe, 0x3671,0xc2);
+	sc235hai_write_register(ViPipe, 0x3672,0x98);
+	sc235hai_write_register(ViPipe, 0x3680,0x43);
+	sc235hai_write_register(ViPipe, 0x3681,0x54);
+	sc235hai_write_register(ViPipe, 0x3682,0x54);
+	sc235hai_write_register(ViPipe, 0x36c0,0x80);
+	sc235hai_write_register(ViPipe, 0x36c1,0x88);
+	sc235hai_write_register(ViPipe, 0x36c8,0x88);
+	sc235hai_write_register(ViPipe, 0x36c9,0xb8);
+	sc235hai_write_register(ViPipe, 0x3718,0x04);
+	sc235hai_write_register(ViPipe, 0x3722,0x8b);
+	sc235hai_write_register(ViPipe, 0x3724,0xd1);
+	sc235hai_write_register(ViPipe, 0x3741,0x08);
+	sc235hai_write_register(ViPipe, 0x3770,0x17);
+	sc235hai_write_register(ViPipe, 0x3771,0x9b);
+	sc235hai_write_register(ViPipe, 0x3772,0x9b);
+	sc235hai_write_register(ViPipe, 0x37c0,0x88);
+	sc235hai_write_register(ViPipe, 0x37c1,0xb8);
+	sc235hai_write_register(ViPipe, 0x3902,0xc0);
+	sc235hai_write_register(ViPipe, 0x3903,0x40);
+	sc235hai_write_register(ViPipe, 0x3909,0x00);
+	sc235hai_write_register(ViPipe, 0x391f,0x41);
+	sc235hai_write_register(ViPipe, 0x3926,0xe0);
+	sc235hai_write_register(ViPipe, 0x3933,0x80);
+	sc235hai_write_register(ViPipe, 0x3934,0x02);
+	sc235hai_write_register(ViPipe, 0x3937,0x6f);
+	sc235hai_write_register(ViPipe, 0x3e00,0x00);
+	sc235hai_write_register(ViPipe, 0x3e01,0x8b);
+	sc235hai_write_register(ViPipe, 0x3e02,0xf0);
+	sc235hai_write_register(ViPipe, 0x3e08,0x00);
+	sc235hai_write_register(ViPipe, 0x4509,0x20);
+	sc235hai_write_register(ViPipe, 0x450d,0x07);
+	sc235hai_write_register(ViPipe, 0x5780,0x76);
+	sc235hai_write_register(ViPipe, 0x5784,0x10);
+	sc235hai_write_register(ViPipe, 0x5787,0x0a);
+	sc235hai_write_register(ViPipe, 0x5788,0x0a);
+	sc235hai_write_register(ViPipe, 0x5789,0x08);
+	sc235hai_write_register(ViPipe, 0x578a,0x0a);
+	sc235hai_write_register(ViPipe, 0x578b,0x0a);
+	sc235hai_write_register(ViPipe, 0x578c,0x08);
+	sc235hai_write_register(ViPipe, 0x578d,0x40);
+	sc235hai_write_register(ViPipe, 0x5792,0x04);
+	sc235hai_write_register(ViPipe, 0x5795,0x04);
+	sc235hai_write_register(ViPipe, 0x57ac,0x00);
+	sc235hai_write_register(ViPipe, 0x57ad,0x00);
+	sc235hai_write_register(ViPipe, 0x36e9,0x24);
+	sc235hai_write_register(ViPipe, 0x37f9,0x24);
+	sc235hai_write_register(ViPipe, 0x0100,0x01);
+
+	sc235hai_default_reg_init(ViPipe);
+	sc235hai_write_register(ViPipe, 0x0100, 0x01);
+	delay_ms(50);
+	printf("ViPipe:%d,===sc235hai 1080P 30fps 10bit 2LINE Init OK!===\n", ViPipe);
 
 }
 

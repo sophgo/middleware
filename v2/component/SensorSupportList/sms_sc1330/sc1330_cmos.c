@@ -49,6 +49,8 @@ ISP_SNS_COMMADDR_U g_aunSC1330_AddrInfo[VI_MAX_PIPE_NUM] = {
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
 };
 
+ISP_SNS_MIRRORFLIP_TYPE_E g_aeSC1330_MirrorFip[VI_MAX_PIPE_NUM] = {0};
+
 CVI_U16 g_au16SC1330_GainMode[VI_MAX_PIPE_NUM] = {0};
 CVI_U16 g_au16SC1330_L2SMode[VI_MAX_PIPE_NUM] = {0};
 
@@ -830,6 +832,19 @@ ERROR:
 	return CVI_FAILURE;
 }
 
+static CVI_VOID sensor_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFlip)
+{
+	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+
+	SC1330_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	CMOS_CHECK_POINTER_VOID(pstSnsState);
+	/* Apply the setting on the fly  */
+	if (pstSnsState->bInit == CVI_TRUE && g_aeSC1330_MirrorFip[ViPipe] != eSnsMirrorFlip) {
+		sc1330_mirror_flip(ViPipe, eSnsMirrorFlip);
+		g_aeSC1330_MirrorFip[ViPipe] = eSnsMirrorFlip;
+	}
+}
+
 static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 {
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
@@ -1013,6 +1028,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	SC1330_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	SC1330_SENSOR_RESET_CTX(ViPipe);
+	g_aeSC1330_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)
@@ -1112,7 +1128,7 @@ ISP_SNS_OBJ_S stSnsSC1330_Obj = {
 	.pfnUnRegisterCallback  = sensor_unregister_callback,
 	.pfnStandby             = sc1330_standby,
 	.pfnRestart             = sc1330_restart,
-	.pfnMirrorFlip          = sc1330_mirror_flip,
+	.pfnMirrorFlip          = sensor_mirror_flip,
 	.pfnWriteReg            = sc1330_write_register,
 	.pfnReadReg             = sc1330_read_register,
 	.pfnSetBusInfo          = sc1336_set_bus_info,

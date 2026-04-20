@@ -26,6 +26,22 @@ typedef struct _SNS_ATTR_S {
 	CVI_U16 u16Step;		/* Step value for adjustment */
 } SNS_ATTR_S;
 
+ // Enum type for AHD modes
+typedef enum _SNS_AHD_MODE_E {
+	AHD_MODE_NONE,				// No AHD mode selected
+	AHD_MODE_1280X720H_NTSC,	// 1280x720 resolution, NTSC format
+	AHD_MODE_1280X720H_PAL,		// 1280x720 resolution, PAL format
+	AHD_MODE_1280X720P25,		// 1280x720 resolution, 25 frames per second
+	AHD_MODE_1280X720P30,		// 1280x720 resolution, 30 frames per second
+	AHD_MODE_1280X720P50,		// 1280x720 resolution, 50 frames per second
+	AHD_MODE_1280X720P60,		// 1280x720 resolution, 60 frames per second
+	AHD_MODE_1920X1080P25,		// 1920x1080 resolution, 25 frames per second
+	AHD_MODE_1920X1080P30,		// 1920x1080 resolution, 30 frames per second
+	AHD_MODE_2304X1296P25,		// 2304x1296 resolution, 25 frames per second
+	AHD_MODE_2304X1296P30,		// 2304x1296 resolution, 30 frames per second
+	AHD_MODE_BUIT,				// Reserved or undefined mode
+} SNS_AHD_MODE_S;
+
 /* Extended sensor attribute structure for 32-bit parameters */
 typedef struct _SNS_ATTR_LARGE_S {
 	CVI_U32	u32Min;			/* Minimum value */

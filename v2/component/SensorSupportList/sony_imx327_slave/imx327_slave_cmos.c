@@ -637,8 +637,10 @@ static CVI_S32 cmos_get_isp_default(VI_PIPE ViPipe, ISP_CMOS_DEFAULT_S *pstDef)
 
 	memset(pstDef, 0, sizeof(ISP_CMOS_DEFAULT_S));
 
+#if defined (F10) || defined (F18)
 	memcpy(pstDef->stNoiseCalibration.CalibrationCoef,
 		&g_stIspNoiseCalibratio, sizeof(ISP_CMOS_NOISE_CALIBRATION_S));
+#endif
 
 	return CVI_SUCCESS;
 }
@@ -1108,6 +1110,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	IMX327_SLAVE_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	IMX327_SLAVE_SENSOR_RESET_CTX(ViPipe);
+	g_aeImx327_Slave_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)

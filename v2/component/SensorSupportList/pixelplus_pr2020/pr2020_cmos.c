@@ -161,7 +161,7 @@ static CVI_S32 sensor_rx_attr(VI_PIPE ViPipe, SNS_COMBO_DEV_ATTR_S *pstRxAttr)
 	pstRxAttr->img_size.max_height = g_astPr2020_mode[pstSnsState->u8ImgMode].astImg[0].stMaxSize.u32Height;
 
 	for (int i = 0; i < TTL_PIN_FUNC_NUM; i++) {
-		CVI_TRACE_SNS(CVI_DBG_ERR, "get rx funcid[%d] : %d\n", i, pstRxAttr->ttl_attr.func[i]);
+		CVI_TRACE_SNS(CVI_DBG_DEBUG, "get rx funcid[%d] : %d\n", i, pstRxAttr->ttl_attr.func[i]);
 	}
 
 	pstRxAttrSrc = CVI_NULL;
@@ -190,10 +190,10 @@ static CVI_S32 sensor_patch_rx_attr(VI_PIPE ViPipe, RX_INIT_ATTR_S *pstRxInitAtt
 		return CVI_SUCCESS;
 
 	pstRxAttr->devno = pstRxInitAttr->MipiDev;
-	CVI_TRACE_SNS(CVI_DBG_ERR, "Sensor [%d] use Mipi Dev[%d]\n", ViPipe, pstRxInitAttr->MipiDev);
+	CVI_TRACE_SNS(CVI_DBG_DEBUG, "Sensor [%d] use Mipi Dev[%d]\n", ViPipe, pstRxInitAttr->MipiDev);
 	if (pstRxAttr->input_mode == INPUT_MODE_BT656_9B) {
 		for (i = 0; i < TTL_PIN_FUNC_NUM; i++) {
-			CVI_TRACE_SNS(CVI_DBG_ERR, "Input funcid[%d] : %d\n", i, pstRxInitAttr->as16FuncId[i]);
+			CVI_TRACE_SNS(CVI_DBG_DEBUG, "Input funcid[%d] : %d\n", i, pstRxInitAttr->as16FuncId[i]);
 			pstRxAttr->ttl_attr.func[i] = pstRxInitAttr->as16FuncId[i];
 		}
 	}
@@ -320,6 +320,22 @@ static CVI_S32 sensor_unregister_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, A
 	return CVI_SUCCESS;
 }
 
+static CVI_S32 cmos_init_ahd_function(SNS_AHD_OBJ_S *pstAhdFuncs)
+{
+	CMOS_CHECK_POINTER(pstAhdFuncs);
+
+	memset(pstAhdFuncs, 0, sizeof(SNS_AHD_OBJ_S));
+
+    pstAhdFuncs->pfnAhdInit = AHD_PR2020_Init;
+    pstAhdFuncs->pfnAhdDeinit = AHD_PR2020_Deinit;
+    pstAhdFuncs->pfnGetAhdMode = AHD_PR2020_get_mode;
+    pstAhdFuncs->pfnSetAhdMode = AHD_PR2020_set_mode;
+    pstAhdFuncs->pfnSetAhdBusInfo = AHD_PR2020_set_bus_info;
+    pstAhdFuncs->pfnDetectAhdStatus = AHD_PR2020_detect_status;
+
+	return CVI_SUCCESS;
+}
+
 ISP_SNS_OBJ_S stSnsPR2020_Obj = {
 	.pfnRegisterCallback    = sensor_register_callback,
 	.pfnUnRegisterCallback  = sensor_unregister_callback,
@@ -336,5 +352,6 @@ ISP_SNS_OBJ_S stSnsPR2020_Obj = {
 	.pfnExpSensorCb         = cmos_init_sensor_exp_function,
 	.pfnExpAeCb             = CVI_NULL,
 	.pfnSnsProbe            = CVI_NULL,
+	.pfnAHDCb               = cmos_init_ahd_function,
 };
 

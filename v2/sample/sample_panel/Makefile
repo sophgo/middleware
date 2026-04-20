@@ -36,7 +36,8 @@ $(SDIR)/%.o: $(SDIR)/%.c
 $(TARGET): $(OBJS) $(MW_LIB)/libvo.a $(MW_LIB)/libsys.a $(MW_LIB)/libmipi_tx.a
 	@$(CXX) -o $@ $(OBJS) $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CC))] $(notdir $@)
-
+	@cp $@ $(INSTALL_MW_DIR)/
+	@echo "Installed $@ to $(INSTALL_MW_DIR)"
 lt9611:
 	cd $(SDIR)/lt9611;make clean;make
 

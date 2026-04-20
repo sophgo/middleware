@@ -8,48 +8,16 @@
 
 const CVI_U32 pr2020_addr_byte = 1;
 const CVI_U32 pr2020_data_byte = 1;
-static pthread_t g_pr2020_thid;
-static PR2020_MODE_E signal_type = PR2020_MODE_NONE;
+static CVI_U32 detect_cnt = 0;
+//static int g_fd[VI_MAX_PIPE_NUM] = {[0 ... (VI_MAX_PIPE_NUM - 1)] = -1};
 
-#define PR2020_AUTO_DETECT 0
+int pr2020_gpio_init(VI_PIPE ViPipe)
+{
+	(void) ViPipe;
 
-/*gpio*/
-enum CVI_GPIO_NUM_E {
-CVI_GPIOD_00 = 404,
-CVI_GPIOD_01,   CVI_GPIOD_02,   CVI_GPIOD_03,   CVI_GPIOD_04,   CVI_GPIOD_05,
-CVI_GPIOD_06,   CVI_GPIOD_07,   CVI_GPIOD_08,   CVI_GPIOD_09,   CVI_GPIOD_10,
-CVI_GPIOD_11,
-CVI_GPIOC_00 = 416,
-CVI_GPIOC_01,   CVI_GPIOC_02,   CVI_GPIOC_03,   CVI_GPIOC_04,   CVI_GPIOC_05,
-CVI_GPIOC_06,   CVI_GPIOC_07,   CVI_GPIOC_08,   CVI_GPIOC_09,   CVI_GPIOC_10,
-CVI_GPIOC_11,   CVI_GPIOC_12,   CVI_GPIOC_13,   CVI_GPIOC_14,   CVI_GPIOC_15,
-CVI_GPIOC_16,   CVI_GPIOC_17,   CVI_GPIOC_18,   CVI_GPIOC_19,   CVI_GPIOC_20,
-CVI_GPIOC_21,   CVI_GPIOC_22,   CVI_GPIOC_23,   CVI_GPIOC_24,   CVI_GPIOC_25,
-CVI_GPIOC_26,   CVI_GPIOC_27,   CVI_GPIOC_28,   CVI_GPIOC_29,   CVI_GPIOC_30,
-CVI_GPIOC_31,
-CVI_GPIOB_00 = 448,
-CVI_GPIOB_01,   CVI_GPIOB_02,   CVI_GPIOB_03,   CVI_GPIOB_04,   CVI_GPIOB_05,
-CVI_GPIOB_06,   CVI_GPIOB_07,   CVI_GPIOB_08,   CVI_GPIOB_09,   CVI_GPIOB_10,
-CVI_GPIOB_11,   CVI_GPIOB_12,   CVI_GPIOB_13,   CVI_GPIOB_14,   CVI_GPIOB_15,
-CVI_GPIOB_16,   CVI_GPIOB_17,   CVI_GPIOB_18,   CVI_GPIOB_19,   CVI_GPIOB_20,
-CVI_GPIOB_21,   CVI_GPIOB_22,   CVI_GPIOB_23,   CVI_GPIOB_24,   CVI_GPIOB_25,
-CVI_GPIOB_26,   CVI_GPIOB_27,   CVI_GPIOB_28,   CVI_GPIOB_29,   CVI_GPIOB_30,
-CVI_GPIOB_31,
-CVI_GPIOA_00 = 480,
-CVI_GPIOA_01,   CVI_GPIOA_02,   CVI_GPIOA_03,   CVI_GPIOA_04,   CVI_GPIOA_05,
-CVI_GPIOA_06,   CVI_GPIOA_07,   CVI_GPIOA_08,   CVI_GPIOA_09,   CVI_GPIOA_10,
-CVI_GPIOA_11,   CVI_GPIOA_12,   CVI_GPIOA_13,   CVI_GPIOA_14,   CVI_GPIOA_15,
-CVI_GPIOA_16,   CVI_GPIOA_17,   CVI_GPIOA_18,   CVI_GPIOA_19,   CVI_GPIOA_20,
-CVI_GPIOA_21,   CVI_GPIOA_22,   CVI_GPIOA_23,   CVI_GPIOA_24,   CVI_GPIOA_25,
-CVI_GPIOA_26,   CVI_GPIOA_27,   CVI_GPIOA_28,   CVI_GPIOA_29,   CVI_GPIOA_30,
-CVI_GPIOA_31,
-};
 
-#define CVI_GPIO_MIN CVI_GPIOD_00
-#define CVI_GPIO_MAX CVI_GPIOA_31
-
-#define SYSFS_GPIO_DIR "/sys/class/gpio"
-#define MAX_BUF 64
+	return CVI_SUCCESS;
+}
 
 int pr2020_i2c_init(VI_PIPE ViPipe)
 {
@@ -344,6 +312,7 @@ void pr2020_set_cvbs_ntsc_60(VI_PIPE ViPipe)
 	pr2020_write_register(ViPipe, 0x54, 0x0e);
 	pr2020_write_register(ViPipe, 0xff, 0x01);
 	pr2020_write_register(ViPipe, 0x54, 0x0f);
+	printf("ViPipe:%d,==SET PR2020 CVBS_NTSC OK!===\n", ViPipe);
 }
 
 void pr2020_set_cvbs_pal_50(VI_PIPE ViPipe)
@@ -576,6 +545,7 @@ void pr2020_set_cvbs_pal_50(VI_PIPE ViPipe)
 	pr2020_write_register(ViPipe, 0x54, 0x0e);
 	pr2020_write_register(ViPipe, 0xff, 0x01);
 	pr2020_write_register(ViPipe, 0x54, 0x0f);
+	printf("ViPipe:%d,==SET PR2020 CVBS_PAL OK!===\n", ViPipe);
 }
 
 void pr2020_set_720p_25(VI_PIPE ViPipe)
@@ -808,6 +778,20 @@ void pr2020_set_720p_25(VI_PIPE ViPipe)
 	pr2020_write_register(ViPipe, 0x54, 0x0e);
 	pr2020_write_register(ViPipe, 0xff, 0x01);
 	pr2020_write_register(ViPipe, 0x54, 0x0f);
+
+	//add for AHD setting
+	pr2020_write_register(ViPipe, 0xFF, 0x00);
+	pr2020_write_register(ViPipe, 0xD0, 0x30);
+	pr2020_write_register(ViPipe, 0xD1, 0x08);
+	pr2020_write_register(ViPipe, 0xD2, 0x21);
+	pr2020_write_register(ViPipe, 0xD3, 0x00);
+	pr2020_write_register(ViPipe, 0xD8, 0x37);
+	pr2020_write_register(ViPipe, 0xD9, 0x08);
+
+	pr2020_write_register(ViPipe, 0xFF, 0x01);
+	pr2020_write_register(ViPipe, 0x00, 0xE4);//no-video data, 0xe4: black, 0xe5: blue
+
+	printf("ViPipe:%d,===PR2020 720P 25fps 8bit Init OK!===\n", ViPipe);
 }
 
 void pr2020_set_720p_30(VI_PIPE ViPipe)
@@ -1040,6 +1024,20 @@ void pr2020_set_720p_30(VI_PIPE ViPipe)
 	pr2020_write_register(ViPipe, 0x54, 0x0e);
 	pr2020_write_register(ViPipe, 0xff, 0x01);
 	pr2020_write_register(ViPipe, 0x54, 0x0f);
+
+	//add for AHD setting
+	pr2020_write_register(ViPipe, 0xFF, 0x00);
+	pr2020_write_register(ViPipe, 0xD0, 0x30);
+	pr2020_write_register(ViPipe, 0xD1, 0x08);
+	pr2020_write_register(ViPipe, 0xD2, 0x21);
+	pr2020_write_register(ViPipe, 0xD3, 0x00);
+	pr2020_write_register(ViPipe, 0xD8, 0x37);
+	pr2020_write_register(ViPipe, 0xD9, 0x08);
+
+	pr2020_write_register(ViPipe, 0xFF, 0x01);
+	pr2020_write_register(ViPipe, 0x00, 0xE4);//no-video data, 0xe4: black, 0xe5: blue
+
+	printf("ViPipe:%d,===PR2020 720P 30fps 8bit Init OK!===\n", ViPipe);
 }
 
 void pr2020_set_1080p_25(VI_PIPE ViPipe)
@@ -1273,6 +1271,20 @@ void pr2020_set_1080p_25(VI_PIPE ViPipe)
 	pr2020_write_register(ViPipe, 0x54, 0x0e);
 	pr2020_write_register(ViPipe, 0xff, 0x01);
 	pr2020_write_register(ViPipe, 0x54, 0x0f);
+
+	//add for AHD setting
+	pr2020_write_register(ViPipe, 0xFF, 0x00);
+	pr2020_write_register(ViPipe, 0xD0, 0x30);
+	pr2020_write_register(ViPipe, 0xD1, 0x08);
+	pr2020_write_register(ViPipe, 0xD2, 0x21);
+	pr2020_write_register(ViPipe, 0xD3, 0x00);
+	pr2020_write_register(ViPipe, 0xD8, 0x37);
+	pr2020_write_register(ViPipe, 0xD9, 0x08);
+
+	pr2020_write_register(ViPipe, 0xFF, 0x01);
+	pr2020_write_register(ViPipe, 0x00, 0xE4);//no-video data, 0xe4: black, 0xe5: blue
+
+	printf("ViPipe:%d,===PR2020 1080P 25fps 8bit Init OK!===\n", ViPipe);
 }
 
 void pr2020_set_1080p_30(VI_PIPE ViPipe)
@@ -1505,181 +1517,210 @@ void pr2020_set_1080p_30(VI_PIPE ViPipe)
 	pr2020_write_register(ViPipe, 0x54, 0x0e);
 	pr2020_write_register(ViPipe, 0xff, 0x01);
 	pr2020_write_register(ViPipe, 0x54, 0x0f);
+
+	//add for AHD setting
+	pr2020_write_register(ViPipe, 0xFF, 0x00);
+	pr2020_write_register(ViPipe, 0xD0, 0x30);
+	pr2020_write_register(ViPipe, 0xD1, 0x08);
+	pr2020_write_register(ViPipe, 0xD2, 0x21);
+	pr2020_write_register(ViPipe, 0xD3, 0x00);
+	pr2020_write_register(ViPipe, 0xD8, 0x37);
+	pr2020_write_register(ViPipe, 0xD9, 0x08);
+
+	pr2020_write_register(ViPipe, 0xFF, 0x01);
+	pr2020_write_register(ViPipe, 0x00, 0xE4);//no-video data, 0xe4: black, 0xe5: blue
+
+	printf("ViPipe:%d,===PR2020 1080P 30fps 8bit Init OK!===\n", ViPipe);
 }
-
-#if (PR2020_AUTO_DETECT)
-void pr2000_chip_init(VI_PIPE ViPipe)
-{
-	CVI_U8 lockstatus = 0;
-	CVI_U8 detvideo = 0;
-	CVI_U8 temp = 0;
-
-	lockstatus = pr2020_read_register(ViPipe, 0x01);
-	detvideo = pr2020_read_register(ViPipe, 0x00);
-	temp = pr2020_read_register(ViPipe, 0x10);
-	CVI_TRACE_SNS(CVI_DBG_INFO, "detvideo = 0x%2x, lockstatus = 0x%2x, signal_type = %d, temp = 0x%2x!!!\n",
-			detvideo, lockstatus, signal_type, temp);
-	if (((lockstatus & 0x18) == 0x18) && ((detvideo & 0x08) == 0x08)) { //camera plug in
-		//for test start
-		if ((detvideo & 0x03) == 0x00) { //NTSC
-			if (signal_type != PR2020_MODE_720H_NTSC) {//shold set reg again
-				pr2020_write_register(ViPipe, 0xff, 0x00);
-				temp = pr2020_read_register(ViPipe, 0x11);
-				if (temp != 0x00)
-					pr2020_write_register(ViPipe, 0x11, 0x00);
-				delay_ms(200);
-				pr2020_set_cvbs_ntsc_60(ViPipe);
-				signal_type = PR2020_MODE_720H_NTSC;
-				CVI_TRACE_SNS(CVI_DBG_INFO, "pr2020 download NTSC reg!\n");
-			}
-		} else if ((detvideo & 0x03) == 0x01) { //PAL
-			if (signal_type != PR2020_MODE_720H_PAL) {//shold set reg again
-				pr2020_write_register(ViPipe, 0xff, 0x00);
-				temp = pr2020_read_register(ViPipe, 0x11);
-				if (temp != 0x00)
-					pr2020_write_register(ViPipe, 0x11, 0x00);
-				delay_ms(200);
-				pr2020_set_cvbs_pal_50(ViPipe);
-				signal_type = PR2020_MODE_720H_PAL;
-				CVI_TRACE_SNS(CVI_DBG_INFO, "pr2020 download PAL reg!\n");
-			}
-		} else if ((detvideo & 0x03) == 0x02) { //720p
-			if ((detvideo & 0x30) == 0x00) { //25fps
-				if (signal_type != PR2020_MODE_720P_25) { //shold set reg again
-					pr2020_write_register(ViPipe, 0xff, 0x00);
-					temp = pr2020_read_register(ViPipe, 0x11);
-					if (temp != 0x00)
-						pr2020_write_register(ViPipe, 0x11, 0x00);
-					delay_ms(200);
-					pr2020_set_720p_25(ViPipe);
-					signal_type = PR2020_MODE_720P_25;
-					CVI_TRACE_SNS(CVI_DBG_INFO, "pr2020 download 720P 25fps reg!\n");
-				}
-			} else if ((detvideo & 0x30) == 0x10) { //30fps
-				if (signal_type != PR2020_MODE_720P_30) { //shold set reg again
-					pr2020_write_register(ViPipe, 0xff, 0x00);
-					temp = pr2020_read_register(ViPipe, 0x11);
-					if (temp != 0x00)
-						pr2020_write_register(ViPipe, 0x11, 0x00);
-					delay_ms(200);
-					pr2020_set_720p_30(ViPipe);
-					signal_type = PR2020_MODE_720P_30;
-					CVI_TRACE_SNS(CVI_DBG_INFO, "pr2020 download 720P 30fps reg!\n");
-				}
-			} else if ((detvideo & 0x30) == 0x20) { //50fps
-				signal_type = PR2020_MODE_NONE;
-				CVI_TRACE_SNS(CVI_DBG_INFO, "detect video fmt is 720P 50fps\n");
-			} else if ((detvideo & 0x30) == 0x30) { //60fps
-				signal_type = PR2020_MODE_NONE;
-				CVI_TRACE_SNS(CVI_DBG_INFO, "detect video fmt is 720P 60fps\n");
-			}
-		} else if ((detvideo & 0x03) == 0x03) { //1080p
-			if ((detvideo & 0x30) == 0x00) { //25fps
-				if (signal_type != PR2020_MODE_1080P_25) { //shold set reg again
-					pr2020_write_register(ViPipe, 0xff, 0x00);
-					temp = pr2020_read_register(ViPipe, 0x11);
-					if (temp != 0x00)
-						pr2020_write_register(ViPipe, 0x11, 0x00);
-					delay_ms(200);
-					pr2020_set_1080p_25(ViPipe);
-					signal_type = PR2020_MODE_1080P_25;
-					CVI_TRACE_SNS(CVI_DBG_INFO, "pr2020 download full hd 1080p 25fps reg!\n");
-				}
-			} else if ((detvideo & 0x30) == 0x10) { //30fps
-				if (signal_type != PR2020_MODE_1080P_30) { //shold set reg again
-					pr2020_write_register(ViPipe, 0xff, 0x00);
-					temp = pr2020_read_register(ViPipe, 0x11);
-					if (temp != 0x00)
-						pr2020_write_register(ViPipe, 0x11, 0x00);
-					delay_ms(200);
-					pr2020_set_1080p_30(ViPipe);
-					signal_type = PR2020_MODE_1080P_30;
-					CVI_TRACE_SNS(CVI_DBG_INFO, "pr2020 download full hd 1080p 30fps reg!\n");
-				}
-			}
-		} else {
-			CVI_TRACE_SNS(CVI_DBG_INFO, "detect nothing!!!\n");
-			signal_type = PR2020_MODE_NONE;
-		}
-		pr2020_write_register(ViPipe, 0xff, 0x00);
-
-	} else {
-		pr2020_write_register(ViPipe, 0xff, 0x00);
-		pr2020_write_register(ViPipe, 0x11, 0x00);
-		signal_type = PR2020_MODE_NONE;
-		CVI_TRACE_SNS(CVI_DBG_INFO, "pr2020 has no signal!\n");
-	}
-}
-
-static void *pr2020_device_auto_detect(void *arg)
-{
-	VI_PIPE ViPipe = *(CVI_U8 *)arg;
-	PR2020_MODE_E signal_type_old = signal_type;
-
-	free(arg);
-	while (1) {
-		delay_ms(500); //500ms
-		pr2000_chip_init(ViPipe); //do it day and night
-		if (signal_type_old != signal_type) {
-			signal_type_old = signal_type;
-			CVI_VI_Trig_AHD(ViPipe, 1);
-		}
-	}
-	return NULL;
-}
-#endif
 
 void pr2020_init(VI_PIPE ViPipe)
 {
-	if (pr2020_i2c_init(ViPipe) != CVI_SUCCESS) {
-		CVI_TRACE_SNS(CVI_DBG_ERR, "PR2020 i2c init fail\n");
-		return;
-	}
-
-	//check sensor chip id
-	pr2020_write_register(ViPipe, 0xff, 0x00);
-	if (((pr2020_read_register(ViPipe, 0xfc) << 8) | (pr2020_read_register(ViPipe, 0xfd))) != 0x2000) {
-		CVI_TRACE_SNS(CVI_DBG_ERR, "read PR2020 chip id fail\n");
-		return;
-	}
-
-	CVI_TRACE_SNS(CVI_DBG_ERR, "Loading Pixelplus PR2020 sensor\n");
-
-	pr2020_write_register(ViPipe, 0xff, 0x00);//reset
-	pr2020_write_register(ViPipe, 0x11, 0x00);
-
-	pr2020_fw_init(ViPipe);
-
-	signal_type = g_pastPr2020[ViPipe]->u8ImgMode;
-	if (signal_type == PR2020_MODE_720P_25) {
-		pr2020_set_720p_25(ViPipe);
-	} else if (signal_type == PR2020_MODE_720P_30) {
-		pr2020_set_720p_30(ViPipe);
-	} else if (signal_type == PR2020_MODE_1080P_25) {
-		pr2020_set_1080p_25(ViPipe);
-	} else if (signal_type == PR2020_MODE_1080P_30) {
-		pr2020_set_1080p_30(ViPipe);
-	}
-	CVI_TRACE_SNS(CVI_DBG_ERR, "signal_type=%d\n", signal_type);
-	//wait for signal to stabilize
-	delay_ms(800);
-	pr2020_write_register(ViPipe, 0xff, 0x00);//page0
-#if PR2020_AUTO_DETECT
-	CVI_U8 *arg = malloc(sizeof(*arg));
-
-	*arg = ViPipe;
-	if (pthread_create(&g_pr2020_thid, NULL, pr2020_device_auto_detect, arg) != 0) {
-		CVI_TRACE_SNS(CVI_DBG_ERR, "PR2020 auto detect function fail!\n");
-	}
-#endif
+	(void)ViPipe;
+	return;
 }
 
 void pr2020_exit(VI_PIPE ViPipe)
 {
 	CVI_TRACE_SNS(CVI_DBG_INFO, "Exit Pixelplus PR2020 Sensor\n");
-
-	if (g_pr2020_thid)
-		pthread_kill(g_pr2020_thid, SIGQUIT);
-
 	pr2020_i2c_exit(ViPipe);
 }
+
+CVI_S32 AHD_PR2020_set_mode(VI_PIPE ViPipe, CVI_S32 mode)
+{
+	pr2020_write_register(ViPipe, 0xff, 0x00);//reset
+	pr2020_write_register(ViPipe, 0x11, 0x00);
+	switch (mode) {
+
+	case AHD_MODE_1280X720P60:
+		pr2020_set_cvbs_ntsc_60(ViPipe);
+		break;
+	case AHD_MODE_1280X720P50:
+		pr2020_set_cvbs_pal_50(ViPipe);
+		break;
+	case AHD_MODE_1280X720P25:
+		pr2020_set_720p_25(ViPipe);
+		break;
+	case AHD_MODE_1280X720P30:
+		pr2020_set_720p_30(ViPipe);
+		break;
+	case AHD_MODE_1920X1080P25:
+		pr2020_set_1080p_25(ViPipe);
+		break;
+	case AHD_MODE_1920X1080P30:
+		pr2020_set_1080p_30(ViPipe);
+		break;
+	default:
+		break;
+	}
+	return CVI_SUCCESS;
+}
+
+CVI_S32 AHD_PR2020_get_mode(VI_PIPE ViPipe)
+{
+	CVI_U8 lockstatus = 0;
+	CVI_U8 detvideo = 0;
+	CVI_U8 temp = 0;
+	SNS_AHD_MODE_S signal_type = AHD_MODE_NONE;
+	pr2020_write_register(ViPipe, 0xff, 0x00);//reset
+	// pr2020_write_register(ViPipe, 0x11, 0x00);
+	lockstatus = pr2020_read_register(ViPipe, 0x01);
+	detvideo = pr2020_read_register(ViPipe, 0x00);
+	temp = pr2020_read_register(ViPipe, 0x10);
+	CVI_TRACE_SNS(CVI_DBG_INFO, "detvideo = 0x%2x, lockstatus = 0x%2x, temp = 0x%2x, page = 0x%2x!!!\n",
+			detvideo, lockstatus, temp, pr2020_read_register(ViPipe, 0xff));
+	if (((lockstatus & 0x18) == 0x18) && ((detvideo & 0x08) == 0x08)) { //camera plug in
+		//for test start
+		if ((detvideo & 0x03) == 0x00) { //NTSC
+				signal_type = AHD_MODE_1280X720H_NTSC;
+		} else if ((detvideo & 0x03) == 0x01) { //PAL
+				signal_type = AHD_MODE_1280X720H_PAL;
+		} else if ((detvideo & 0x03) == 0x02) { //720p
+			if ((detvideo & 0x30) == 0x00) { //25fps
+				signal_type = AHD_MODE_1280X720P25;
+			} else if ((detvideo & 0x30) == 0x10) { //30fps
+				signal_type = AHD_MODE_1280X720P30;
+			} else if ((detvideo & 0x30) == 0x20) { //50fps
+				signal_type = AHD_MODE_NONE;
+			} else if ((detvideo & 0x30) == 0x30) { //60fps
+				signal_type = AHD_MODE_NONE;
+			}
+		} else if ((detvideo & 0x03) == 0x03) { //1080p
+			if ((detvideo & 0x30) == 0x00) { //25fps
+				signal_type = AHD_MODE_1920X1080P25;
+			} else if ((detvideo & 0x30) == 0x10) { //30fps
+				signal_type = AHD_MODE_1920X1080P30;
+			}
+		} else {
+			CVI_TRACE_SNS(CVI_DBG_ERR, "detect nothing!!!\n");
+			signal_type = AHD_MODE_NONE;
+			return signal_type;
+		}
+		pr2020_write_register(ViPipe, 0xff, 0x00);
+		temp = pr2020_read_register(ViPipe, 0x11);
+		if (temp != 0x00)
+			pr2020_write_register(ViPipe, 0x11, 0x00);
+#if 0
+		//for test end
+		//read camera plug and signal state
+		//mdelay(100);
+		CVI_TRACE_SNS(CVI_DBG_INFO, "pr2020 read reg 0x%2x, 0x%2x, 0x%2x, 0x%2x, 0x%2x\n",
+				pr2020_read_register(ViPipe, 0xff),
+				pr2020_read_register(ViPipe, 0x00),
+				pr2020_read_register(ViPipe, 0x01),
+				pr2020_read_register(ViPipe, 0x10),
+				pr2020_read_register(ViPipe, 0x11));
+
+#endif
+	} else {
+		pr2020_write_register(ViPipe, 0xff, 0x00);
+		pr2020_write_register(ViPipe, 0x11, 0x00);
+		signal_type = AHD_MODE_NONE;
+		CVI_TRACE_SNS(CVI_DBG_INFO, "pr2020 has no signal!\n");
+	}
+	return signal_type;
+}
+
+CVI_S32 AHD_PR2020_set_bus_info(VI_PIPE ViPipe, CVI_S32 astI2cDev)
+{
+	if (ViPipe > VI_MAX_PIPE_NUM - 1) {
+		CVI_TRACE_SNS(CVI_DBG_ERR, "invalid vipipe !!\n");
+		return CVI_FAILURE;
+	}
+	g_aunPr2020_BusInfo[ViPipe].s8I2cDev = astI2cDev;
+	return CVI_SUCCESS;
+}
+
+CVI_S32 AHD_PR2020_detect_status(VI_PIPE ViPipe, CVI_S32 ahdOldType, CVI_S32 *ahdType)
+{
+	if (ViPipe > VI_MAX_PIPE_NUM - 1) {
+		CVI_TRACE_SNS(CVI_DBG_ERR, "invalid vipipe !!\n");
+		return CVI_FAILURE;
+	}
+	CVI_S32 signal_type = -1;
+
+	usleep(100 * 1000);
+
+	signal_type = AHD_PR2020_get_mode(ViPipe);
+	if (ahdOldType == signal_type) {
+		detect_cnt = 0;
+		return CVI_FAILURE;
+	}
+	if (ahdOldType != signal_type && detect_cnt < 3) {
+		detect_cnt++;
+		return CVI_FAILURE;
+	}
+	*ahdType = signal_type;
+
+	return CVI_SUCCESS;
+}
+
+int AHD_PR2020_Init(VI_PIPE ViPipe, bool isFirstInit)
+{
+	CVI_U32 chip_id = 0;
+	if (isFirstInit) {
+		if (pr2020_gpio_init(ViPipe) != CVI_SUCCESS) {
+			CVI_TRACE_SNS(CVI_DBG_ERR, "PR2020 gpio init fail\n");
+			return CVI_FAILURE;
+		}
+	}
+
+	delay_ms(20);
+
+	if (pr2020_i2c_init(ViPipe) != CVI_SUCCESS) {
+		CVI_TRACE_SNS(CVI_DBG_ERR, "PR2020 i2c init fail,please check i2c_id !!\n");
+		return CVI_FAILURE;
+	}
+
+	// check sensor chip id
+	pr2020_write_register(ViPipe, 0xff, 0x00);
+	chip_id = (pr2020_read_register(ViPipe, 0xfc) << 8) | (pr2020_read_register(ViPipe, 0xfd));
+	if (chip_id != 0x2000) {
+		CVI_TRACE_SNS(CVI_DBG_ERR, "vipipe[%d] read PR2020 chip id fail,read=%d\n", ViPipe, chip_id);
+		return CVI_FAILURE;
+	}
+
+	if (isFirstInit) {
+		printf("\nLoading Pixelplus PR2020 sensor\n");
+		pr2020_write_register(ViPipe, 0xff, 0x00);//reset
+		pr2020_write_register(ViPipe, 0x11, 0x00);
+		pr2020_fw_init(ViPipe);
+		// delay_ms(400);
+	}
+	return CVI_SUCCESS;
+}
+
+int AHD_PR2020_Deinit(VI_PIPE ViPipe)
+{
+	(void)ViPipe;
+	return CVI_SUCCESS;
+}
+
+SNS_AHD_OBJ_S stAhdPr2020Obj =
+{
+    .pfnAhdInit = AHD_PR2020_Init,
+    .pfnAhdDeinit = AHD_PR2020_Deinit,
+    .pfnGetAhdMode = AHD_PR2020_get_mode,
+    .pfnSetAhdMode = AHD_PR2020_set_mode,
+    .pfnSetAhdBusInfo = AHD_PR2020_set_bus_info,
+    .pfnDetectAhdStatus = AHD_PR2020_detect_status,
+};

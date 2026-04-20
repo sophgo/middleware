@@ -339,8 +339,6 @@ CVI_S32 SAMPLE_COMM_VI_GetChnAttrBySns(CVI_SNS_TYPE_E enSnsType, VI_CHN_ATTR_S *
 	memcpy(pstChnAttr, &CHN_ATTR_420_SDR8, sizeof(VI_CHN_ATTR_S));
 
 	SAMPLE_COMM_VI_GetDevAttrBySns(enSnsType, &stViDevAttr);
-	if (stViDevAttr.enInputDataType == VI_DATA_TYPE_YUV)
-		pstChnAttr->enPixelFormat = PIXEL_FORMAT_YUV_PLANAR_422;
 
 	pstChnAttr->stSize.u32Width = stViDevAttr.stSize.u32Width;
 	pstChnAttr->stSize.u32Height = stViDevAttr.stSize.u32Height;
@@ -1928,6 +1926,12 @@ CVI_S32 SAMPLE_COMM_VI_ParseIni(SAMPLE_INI_CFG_S *pstIniCfg)
 #define INI_DEF_PATH	"/mnt/system/usr/bin/sensor_cfg.ini"
 
 	memcpy(pstIniCfg, &stDefIniCfg, sizeof(*pstIniCfg));
+	for (int i = 0; i < VI_MAX_DEV_NUM; i++) {
+		for (int j = 0; j < MIPI_LANE_NUM + 1; j++) {
+			pstIniCfg->as16LaneId[i][j] = -1;
+		}
+	}
+
 	if (g_snsCfgPath[0] != 0) {
 		SAMPLE_PRT("Parse %s\n", g_snsCfgPath);
 		ret = ini_parse(g_snsCfgPath, parse_handler, pstIniCfg);

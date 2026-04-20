@@ -21,8 +21,8 @@
 //[sensorName3 27]  + [sensorName4 27] + [sensorName5 27]  + [sensorName6 27]  + [sensorName7 27]  + [sensorName8 27]
 //[isp branch 20] + [version 4] + [generate mode - A:auto M:Manual 1]
 
-#define PQBIN_VERSION_CHECK_V13 "V1.3"	// The lowest version used for verification
-										// v1.3 newly added index of pqbin
+#define PQBIN_VERSION_CHECK "V1.4"	// The lowest version used for verification
+									// v1.3 newly added index of pqbin, v1.4 Latest modify 
 #define DESC_SIZE 624
 #define BIN_MD5_SIZE 50
 #define PQBIN_RESERVE_SIZE 50
@@ -203,7 +203,7 @@ static CVI_S32 get_bin_Info_from_buf(CVI_U8 *buf, struct BIN_BUF_INFO *pstBufInf
 	pstBufInfo->u32BinParaSize = u32BinSize;
 	pstBufInfo->u32IndexParaSize = u32IndexSize;
 	pstBufInfo->u32ParaTotalSize = u32BinSize + u32IndexSize;
-	if (strncmp(pstBufInfo->achBinVersion, PQBIN_VERSION_CHECK_V13, PQBINVERSION_SIZE) >= 0) {
+	if (strncmp(pstBufInfo->achBinVersion, PQBIN_VERSION_CHECK, PQBINVERSION_SIZE) >= 0) {
 		snprintf(pstBufInfo->achTotalParaMD5Value, MD5_STRING_LEN, "%s",
 					(CVI_CHAR *)(buf + u32DataLen - MD5_STRING_LEN));
 
@@ -341,7 +341,7 @@ static CVI_S32 _getBinNameImp(CVI_CHAR *binName)
 
 static CVI_BOOL check_bin_file_is_new_version(CVI_CHAR *pchVersion)
 {
-	if (strncmp(pchVersion, PQBIN_VERSION_CHECK_V13, strlen(PQBIN_VERSION_CHECK_V13)) >= 0) {
+	if (strncmp(pchVersion, PQBIN_VERSION_CHECK, strlen(PQBIN_VERSION_CHECK)) >= 0) {
 		return CVI_TRUE;
 	} else {
 		return CVI_FALSE;
@@ -365,7 +365,7 @@ static CVI_S32 check_bin_file_validity(CVI_U8 *buf, CVI_U32 u32DataLen)
 	get_bin_Info_from_buf(buf, pstBufInfo, u32DataLen);
 
 	/*calcute md5 of buf.*/
-	if (strncmp(pstBufInfo->achBinVersion, PQBIN_VERSION_CHECK_V13, PQBINVERSION_SIZE) >= 0) {
+	if (strncmp(pstBufInfo->achBinVersion, PQBIN_VERSION_CHECK, PQBINVERSION_SIZE) >= 0) {
 		calcute_md5_value(buf, u32DataLen - MD5_STRING_LEN, au8Md5Value);
 		if (strncmp((char *)au8Md5Value, (char *)pstBufInfo->achTotalParaMD5Value,
 			MD5_STRING_LEN) != 0) {
@@ -376,7 +376,7 @@ static CVI_S32 check_bin_file_validity(CVI_U8 *buf, CVI_U32 u32DataLen)
 		ret = CVI_BIN_FILE_ERROR;
 		CVI_TRACE_SYS(LOG_ERR,
 			"The version of bin file is %s, cannot meet the minimum version %s!\n",
-			pstBufInfo->achBinVersion, PQBIN_VERSION_CHECK_V13);
+			pstBufInfo->achBinVersion, PQBIN_VERSION_CHECK);
 		goto FINISH_HANDLER;
 	}
 

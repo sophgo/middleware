@@ -22,8 +22,7 @@ static CVI_S32 sample_draw_line(cvi_tde_surface *dst_surface,
                         CVI_U32 num);
 int main(void)
 {
-    printf("run into samples\n");
-    CVI_S32 rc = 0;
+    CVI_S32 s32Ret = 0;
     const CVI_U32 surf_width = 256;
     const CVI_U32 surf_height = 256;
 	const CVI_U32 surf_fmt = CVI_TDE_COLOR_FORMAT_ARGB8888;
@@ -68,19 +67,22 @@ int main(void)
         {64, 0, 0, 128, 3, 0xff00}
     };
 
-	rc = sample_tde_init();
-	if (rc != CVI_SUCCESS) {
+	s32Ret = sample_tde_init();
+	if (s32Ret != CVI_SUCCESS) {
 		return CVI_FAILURE;
 	}
 
 	pixel_bytes = sample_tde_get_pixel_bytes_by_fmt(surf_fmt);
 
-    if (CVI_SYS_IonAlloc(&src_surface.phys_addr, (CVI_VOID**)&back_ground_vir, "sample_tde", surf_width * surf_height * pixel_bytes *2) != CVI_SUCCESS) {
-        return CVI_FAILURE;
+    if (CVI_SYS_IonAlloc(&src_surface.phys_addr, (CVI_VOID**)&back_ground_vir,
+		"sample_tde", surf_width * surf_height * pixel_bytes *2) != CVI_SUCCESS) {
+		sample_tde_exit();
+		return CVI_FAILURE;
     }
 
     if (back_ground_vir == NULL || src_surface.phys_addr == 0) {
-        return CVI_FAILURE;
+        s32Ret = CVI_FAILURE;
+		goto exit;
     }
 
 	sample_tde_create_surface(&src_surface, surf_fmt, surf_width, surf_height, surf_width * pixel_bytes);
@@ -97,14 +99,21 @@ int main(void)
     if (sample_fill_surface(&src_surface, &src_rect, fill_data) == CVI_SUCCESS) {
         cvi_save_bmp("sample_tde_back_ground.bmp", back_ground_vir, src_surface.width, src_surface.height,
             src_surface.stride, src_surface.color_format);
+    } else {
+        s32Ret = CVI_FAILURE;
+		goto exit;
     }
 
     // fill with blue color
 	fill_data = 0xFF0000; 	// blue
     if (sample_fill_surface(&dst_surface, &src_rect, fill_data) == CVI_SUCCESS) {
-        cvi_save_bmp("sample_tde_dst_surface.bmp", back_ground_vir + src_surface.stride * src_surface.height, src_surface.width,
+        cvi_save_bmp("sample_tde_dst_surface.bmp",
+			back_ground_vir + src_surface.stride * src_surface.height, src_surface.width,
             src_surface.height, src_surface.stride, src_surface.color_format);
-    }
+	} else {
+        s32Ret = CVI_FAILURE;
+		goto exit;
+	}
 
 
     src_rect.pos_x = 0;
@@ -119,9 +128,13 @@ int main(void)
 
     if (sample_quick_copy(&src_surface, &dst_surface, &src_rect, &dst_rect) == CVI_SUCCESS) {
         printf("quick copy success!\n");
-        cvi_save_bmp("sample_tde_quick_copy.bmp", back_ground_vir + src_surface.stride * src_surface.height, src_surface.width,
+        cvi_save_bmp("sample_tde_quick_copy.bmp",
+        back_ground_vir + src_surface.stride * src_surface.height, src_surface.width,
             src_surface.height, src_surface.stride, src_surface.color_format);
-    }
+	} else {
+        s32Ret = CVI_FAILURE;
+		goto exit;
+	}
 
     src_rect.pos_x = 0;
     src_rect.pos_y = 0;
@@ -135,39 +148,70 @@ int main(void)
 
     if (sample_quick_resize(&src_surface, &dst_surface, &src_rect, &dst_rect) == CVI_SUCCESS) {
         printf("quick resize success!\n");
-        cvi_save_bmp("sample_tde_quick_resize.bmp", back_ground_vir + src_surface.stride * src_surface.height, src_surface.width,
+        cvi_save_bmp("sample_tde_quick_resize.bmp",
+        back_ground_vir + src_surface.stride * src_surface.height, src_surface.width,
             src_surface.height, src_surface.stride, src_surface.color_format);
-    }
+	} else {
+        s32Ret = CVI_FAILURE;
+		goto exit;
+	}
 
     num = sizeof(lines) / sizeof(lines[0]);
     if (sample_draw_line(&dst_surface, lines, num) == CVI_SUCCESS) {
         printf("draw line success!\n");
-        cvi_save_bmp("sample_draw_line.bmp", back_ground_vir + src_surface.stride * src_surface.height, src_surface.width,
+        cvi_save_bmp("sample_draw_line.bmp",
+        back_ground_vir + src_surface.stride * src_surface.height, src_surface.width,
             src_surface.height, src_surface.stride, src_surface.color_format);
-    }
-    sample_tde_rotate();
-    sample_tde_draw_corner_box();
-    sample_tde_solid_draw();
-    sample_tde_bit_blit();
+	} else {
+        s32Ret = CVI_FAILURE;
+		goto exit;
+	}
+
+    s32Ret = sample_tde_rotate();
+	if (s32Ret) {
+		goto exit;
+	}
+
+    s32Ret = sample_tde_draw_corner_box();
+	if (s32Ret) {
+		goto exit;
+	}
+
+    s32Ret = sample_tde_solid_draw();
+	if (s32Ret) {
+		goto exit;
+	}
+
+    s32Ret = sample_tde_bit_blit();
+	if (s32Ret) {
+		goto exit;
+	}
+
+exit:
 
 	CVI_SYS_IonFree(src_surface.phys_addr, back_ground_vir);
 
 	sample_tde_exit();
 
-	return CVI_SUCCESS;
+	if (s32Ret == CVI_SUCCESS)
+		printf("SAMPLE_TDE exit success!\n");
+	else
+		printf("SAMPLE_TDE exit abnormally!\n");
+
+	return s32Ret;
 }
 
 CVI_S32 sample_tde_init(CVI_VOID)
 {
-	CVI_S32  rc;
+	CVI_S32  s32Ret;
 
-	rc = CVI_SYS_Init();
-	if (rc != CVI_SUCCESS) {
+	s32Ret = CVI_SYS_Init();
+	if (s32Ret != CVI_SUCCESS) {
 		return CVI_FAILURE;
 	}
 
-	rc = cvi_tde_open();
-	if (rc != CVI_SUCCESS) {
+	s32Ret = cvi_tde_open();
+	if (s32Ret != CVI_SUCCESS) {
 		return CVI_FAILURE;
 	}
 

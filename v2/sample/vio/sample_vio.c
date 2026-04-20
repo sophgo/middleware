@@ -551,6 +551,11 @@ CVI_S32 SAMPLE_VIO_VoRotation(void)
 	if (s32Ret != CVI_SUCCESS)
 		return s32Ret;
 
+	if (stViConfig.s32WorkingViNum > 1) {
+		SAMPLE_PRT("Only support single mode!\n");
+		return s32Ret;
+	}
+
 	/************************************************
 	 * step2:  Get input size
 	 ************************************************/
@@ -775,6 +780,11 @@ CVI_S32 SAMPLE_VIO_ViVpssAspectRatio(void)
 	s32Ret = SAMPLE_COMM_VI_IniToViCfg(&stIniCfg, &stViConfig);
 	if (s32Ret != CVI_SUCCESS)
 		return s32Ret;
+
+	if (stViConfig.s32WorkingViNum > 1) {
+		SAMPLE_PRT("Only support single mode!\n");
+		return s32Ret;
+	}
 
 	/************************************************
 	 * step2:  Get input size

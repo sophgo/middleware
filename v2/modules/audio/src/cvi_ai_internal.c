@@ -3,7 +3,7 @@
 #include "cvi_audio_interface_tinyalsa.h"
 #include "atomic.h"
 #include "volume_ctrl.h"
-
+#include <errno.h>
 
 ST_AI_INSTANCE gstAiInstance[CVI_MAX_AI_DEVICE_ID_NUM];
 
@@ -270,17 +270,25 @@ CVI_S32 CVI_AI_Enable(AUDIO_DEV AiDevId)
 	}
 
 	if (!_ain_instatnce->bThreadExist) {
+		int ret;
+
 		param.sched_priority = 99;
 		pthread_attr_init(&attr);
+		pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
 		pthread_attr_setschedpolicy(&attr, SCHED_RR);
 		pthread_attr_setschedparam(&attr, &param);
-		pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
 		_ain_instatnce->s32DevId = AiDevId;
-		pthread_create(&_ain_instatnce->AinThreadId,
+		ret = pthread_create(&_ain_instatnce->AinThreadId,
 			       &attr,
 			       (CVI_VOID * (*)(CVI_VOID *))AudioPrimaryInputThread,
 			       (void *)_ain_instatnce);
-
+		if (ret == EPERM) {  //because of ubuntu
+			printf("create AI SCHED_RR thread fail, change to SCHED_OTHER\n");
+			pthread_create(&_ain_instatnce->AinThreadId,
+			       NULL,
+			       (CVI_VOID * (*)(CVI_VOID *))AudioPrimaryInputThread,
+			       (void *)_ain_instatnce);
+		}
 		_ain_instatnce->bThreadExist = CVI_TRUE;
 		_ain_instatnce->bEnableAI = CVI_TRUE;
 		log_debug("AiDev:%d.--->success\n", AiDevId);

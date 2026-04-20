@@ -60,7 +60,8 @@ static CVI_S32 cmos_get_wdr_size(VI_PIPE ViPipe, ISP_SNS_ISP_INFO_S *pstIspCfg);
 static CVI_S32 cmos_get_ae_default(VI_PIPE ViPipe, AE_SENSOR_DEFAULT_S *pstAeSnsDft)
 {
 	(void) ViPipe;
-	(void) pstAeSnsDft;
+	pstAeSnsDft->f32Fps = 80;
+	pstAeSnsDft->f32MinFps = 25;
 
 	return CVI_SUCCESS;
 }

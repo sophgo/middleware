@@ -1625,23 +1625,45 @@ static int _get_region_all_mesh_data_memory(FISHEYE_REGION_ATTR *FISHEYE_REGION
 	//float scale_value = 1.0;
 
 	for (int i = 0; i < meshidx; i++) {
-		FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[0].xcor = pmeshinfo->pmesh_src[8 * i];
-		FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[0].ycor = pmeshinfo->pmesh_src[8 * i + 1];
-		FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[1].xcor = pmeshinfo->pmesh_src[8 * i + 2];
-		FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[1].ycor = pmeshinfo->pmesh_src[8 * i + 3];
-		FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[2].xcor = pmeshinfo->pmesh_src[8 * i + 4];
-		FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[2].ycor = pmeshinfo->pmesh_src[8 * i + 5];
-		FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[3].xcor = pmeshinfo->pmesh_src[8 * i + 6];
-		FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[3].ycor = pmeshinfo->pmesh_src[8 * i + 7];
+		if (pmeshinfo->bfixpoint) {
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[0].xcor = *(float*)&pmeshinfo->pmesh_src[8 * i];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[0].ycor = *(float*)&pmeshinfo->pmesh_src[8 * i + 1];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[1].xcor = *(float*)&pmeshinfo->pmesh_src[8 * i + 2];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[1].ycor = *(float*)&pmeshinfo->pmesh_src[8 * i + 3];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[2].xcor = *(float*)&pmeshinfo->pmesh_src[8 * i + 4];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[2].ycor = *(float*)&pmeshinfo->pmesh_src[8 * i + 5];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[3].xcor = *(float*)&pmeshinfo->pmesh_src[8 * i + 6];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[3].ycor = *(float*)&pmeshinfo->pmesh_src[8 * i + 7];
+		} else {
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[0].xcor = pmeshinfo->pmesh_src[8 * i];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[0].ycor = pmeshinfo->pmesh_src[8 * i + 1];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[1].xcor = pmeshinfo->pmesh_src[8 * i + 2];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[1].ycor = pmeshinfo->pmesh_src[8 * i + 3];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[2].xcor = pmeshinfo->pmesh_src[8 * i + 4];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[2].ycor = pmeshinfo->pmesh_src[8 * i + 5];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[3].xcor = pmeshinfo->pmesh_src[8 * i + 6];
+			FISHEYE_REGION[rgn].SrcRgnMeshInfo[i].knot[3].ycor = pmeshinfo->pmesh_src[8 * i + 7];
+		}
 #if WITHOUT_BIAS
-		FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[0].xcor = pmeshinfo->pmesh_dst[8 * i];
-		FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[0].ycor = pmeshinfo->pmesh_dst[8 * i + 1];
-		FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[1].xcor = pmeshinfo->pmesh_dst[8 * i + 2];
-		FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[1].ycor = pmeshinfo->pmesh_dst[8 * i + 3];
-		FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[2].xcor = pmeshinfo->pmesh_dst[8 * i + 4];
-		FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[2].ycor = pmeshinfo->pmesh_dst[8 * i + 5];
-		FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[3].xcor = pmeshinfo->pmesh_dst[8 * i + 6];
-		FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[3].ycor = pmeshinfo->pmesh_dst[8 * i + 7];
+		if (pmeshinfo->bfixpoint) {
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[0].xcor = *(float*)&pmeshinfo->pmesh_dst[8 * i];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[0].ycor = *(float*)&pmeshinfo->pmesh_dst[8 * i + 1];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[1].xcor = *(float*)&pmeshinfo->pmesh_dst[8 * i + 2];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[1].ycor = *(float*)&pmeshinfo->pmesh_dst[8 * i + 3];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[2].xcor = *(float*)&pmeshinfo->pmesh_dst[8 * i + 4];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[2].ycor = *(float*)&pmeshinfo->pmesh_dst[8 * i + 5];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[3].xcor = *(float*)&pmeshinfo->pmesh_dst[8 * i + 6];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[3].ycor = *(float*)&pmeshinfo->pmesh_dst[8 * i + 7];
+		} else {
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[0].xcor = pmeshinfo->pmesh_dst[8 * i];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[0].ycor = pmeshinfo->pmesh_dst[8 * i + 1];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[1].xcor = pmeshinfo->pmesh_dst[8 * i + 2];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[1].ycor = pmeshinfo->pmesh_dst[8 * i + 3];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[2].xcor = pmeshinfo->pmesh_dst[8 * i + 4];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[2].ycor = pmeshinfo->pmesh_dst[8 * i + 5];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[3].xcor = pmeshinfo->pmesh_dst[8 * i + 6];
+			FISHEYE_REGION[rgn].DstRgnMeshInfo[i].knot[3].ycor = pmeshinfo->pmesh_dst[8 * i + 7];
+		}
 #else
 		int x, y;
 
@@ -1668,8 +1690,13 @@ static int _get_region_all_mesh_data_memory(FISHEYE_REGION_ATTR *FISHEYE_REGION
 	// Construct node tied to each other.
 	int node_index = pmeshinfo->node_index;
 	for (int i = 0; i < node_index; i++) {
-		FISHEYE_REGION[rgn].SrcRgnNodeInfo[i].node.xcor = pmeshinfo->pnode_src[2 * i];
-		FISHEYE_REGION[rgn].SrcRgnNodeInfo[i].node.ycor = pmeshinfo->pnode_src[2 * i + 1];
+		if (pmeshinfo->bfixpoint) {
+			FISHEYE_REGION[rgn].SrcRgnNodeInfo[i].node.xcor = *(float*)&pmeshinfo->pnode_src[2 * i];
+			FISHEYE_REGION[rgn].SrcRgnNodeInfo[i].node.ycor = *(float*)&pmeshinfo->pnode_src[2 * i + 1];
+		} else {
+			FISHEYE_REGION[rgn].SrcRgnNodeInfo[i].node.xcor = pmeshinfo->pnode_src[2 * i];
+			FISHEYE_REGION[rgn].SrcRgnNodeInfo[i].node.ycor = pmeshinfo->pnode_src[2 * i + 1];
+		}
 		FISHEYE_REGION[rgn].SrcRgnNodeInfo[i].node.xbias = 0;
 		FISHEYE_REGION[rgn].SrcRgnNodeInfo[i].node.ybias = 0;
 		FISHEYE_REGION[rgn].SrcRgnNodeInfo[i].valid = true;
@@ -1678,8 +1705,13 @@ static int _get_region_all_mesh_data_memory(FISHEYE_REGION_ATTR *FISHEYE_REGION
 		FISHEYE_REGION[rgn].DstRgnNodeInfo[i].node.ybias = 0;
 		FISHEYE_REGION[rgn].DstRgnNodeInfo[i].valid = true;
 #if WITHOUT_BIAS
-		FISHEYE_REGION[rgn].DstRgnNodeInfo[i].node.xcor = pmeshinfo->pnode_dst[2 * i];
-		FISHEYE_REGION[rgn].DstRgnNodeInfo[i].node.ycor = pmeshinfo->pnode_dst[2 * i + 1];
+		if (pmeshinfo->bfixpoint) {
+			FISHEYE_REGION[rgn].DstRgnNodeInfo[i].node.xcor = *(float*)&pmeshinfo->pnode_dst[2 * i];
+			FISHEYE_REGION[rgn].DstRgnNodeInfo[i].node.ycor = *(float*)&pmeshinfo->pnode_dst[2 * i + 1];
+		} else {
+			FISHEYE_REGION[rgn].DstRgnNodeInfo[i].node.xcor = pmeshinfo->pnode_dst[2 * i];
+			FISHEYE_REGION[rgn].DstRgnNodeInfo[i].node.ycor = pmeshinfo->pnode_dst[2 * i + 1];
+		}
 #else
 		int x = pmeshinfo->pnode_dst[2 * i];
 		int y = pmeshinfo->pnode_dst[2 * i + 1];
@@ -2434,10 +2466,17 @@ static int generate_mesh_on_fisheye(const GRID_INFO_ATTR_S* pstGridInfoAttr, FIS
 
 		for (int mesh_idx = 0; mesh_idx < FISHEYE_CONFIG->TotalMeshNum; mesh_idx++) {
 			for (int knotidx = 0; knotidx < 4; knotidx++) {
-				dst_x_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_dst[8 * mesh_idx + 2 * knotidx + 0];
-				dst_y_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_dst[8 * mesh_idx + 2 * knotidx + 1];
-				src_x_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_src[8 * mesh_idx + 2 * knotidx + 0];
-				src_y_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_src[8 * mesh_idx + 2 * knotidx + 1];
+				if (g_MeshData[grid_idx].bfixpoint) {
+					dst_x_mesh_tbl[mesh_idx][knotidx] = *(float*)&g_MeshData[grid_idx].pmesh_dst[8 * mesh_idx + 2 * knotidx + 0];
+					dst_y_mesh_tbl[mesh_idx][knotidx] = *(float*)&g_MeshData[grid_idx].pmesh_dst[8 * mesh_idx + 2 * knotidx + 1];
+					src_x_mesh_tbl[mesh_idx][knotidx] = *(float*)&g_MeshData[grid_idx].pmesh_src[8 * mesh_idx + 2 * knotidx + 0];
+					src_y_mesh_tbl[mesh_idx][knotidx] = *(float*)&g_MeshData[grid_idx].pmesh_src[8 * mesh_idx + 2 * knotidx + 1];
+				} else {
+					dst_x_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_dst[8 * mesh_idx + 2 * knotidx + 0];
+					dst_y_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_dst[8 * mesh_idx + 2 * knotidx + 1];
+					src_x_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_src[8 * mesh_idx + 2 * knotidx + 0];
+					src_y_mesh_tbl[mesh_idx][knotidx] = (float)g_MeshData[grid_idx].pmesh_src[8 * mesh_idx + 2 * knotidx + 1];
+				}
 			}
 		}
 		break;
@@ -3461,6 +3500,12 @@ CVI_S32 CVI_GDC_GenLDCMesh(CVI_U32 u32Width, CVI_U32 u32Height, const LDC_ATTR_S
 	in_size.u32Height = u32Height;
 	out_size.u32Width = in_size.u32Width;
 	out_size.u32Height = in_size.u32Height;
+	if (pstLDCAttr->stGridInfoAttr.Enable) {
+		if (pstLDCAttr->stGridInfoAttr.grid_out.u32Width && pstLDCAttr->stGridInfoAttr.grid_out.u32Height) {
+			out_size.u32Width = pstLDCAttr->stGridInfoAttr.grid_out.u32Width;
+			out_size.u32Height = pstLDCAttr->stGridInfoAttr.grid_out.u32Height;
+		}
+	}
 
 	CVI_U8 idx = get_valid_tsk_mesh_by_name(name);
 	if (idx >= GDC_MAX_TSK_MESH) {

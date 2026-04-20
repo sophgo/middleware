@@ -217,17 +217,28 @@ static CVI_S32 vi_suspend_resume(SAMPLE_VI_CONFIG_S *pstViConfig)
 	struct sched_param param;
 	pthread_attr_t attr;
 
-	param.sched_priority = 80;
-
 	pthread_attr_init(&attr);
+
+	param.sched_priority = 80;
 	pthread_attr_setschedpolicy(&attr, SCHED_RR);
 	pthread_attr_setschedparam(&attr, &param);
 	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+
 	s32Ret = pthread_create(&vi_ut_ctx.inotify_thread, &attr, (void *)inotify_state_thread, pstViConfig);
+
+	if (s32Ret == EPERM) {
+		VI_UT_PRT("cannot create RT thread (EPERM), retrying with normal priority...\r\n");
+		pthread_attr_destroy(&attr);
+		pthread_attr_init(&attr);
+		s32Ret = pthread_create(&vi_ut_ctx.inotify_thread, &attr, (void *)inotify_state_thread, pstViConfig);
+	}
+
 	if (s32Ret != 0) {
 		VI_UT_PRT("create vi event thread failed!, error: %d, %s\r\n",
 					s32Ret, strerror(s32Ret));
 	}
+
+	pthread_attr_destroy(&attr);
 
 	return s32Ret;
 }

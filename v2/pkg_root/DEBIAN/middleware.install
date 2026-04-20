@@ -1,0 +1,4 @@
+# 声明安装映射
+opt/sophon/middleware/lib/*.so usr/lib
+opt/sophon/middleware/lib/*.a usr/lib
+usr/include/middleware usr/include

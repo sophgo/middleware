@@ -3,6 +3,7 @@
 #include <semaphore.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/prctl.h>
 #include <stdint.h>
@@ -186,6 +187,8 @@ CVI_S32 CVI_AO_Enable(AUDIO_DEV AoDevId)
 		pstAoInstance->s32PeriodMs * pstAoInstance->ao_attrs.enSamplerate / 1000;
 
 	if (!pstAoInstance->bThreadExist) {
+		int ret;
+
 		pstAoInstance->stThreadInfo.i32ExitPending = CVI_FALSE;
 		param.sched_priority = 99;
 		pthread_attr_init(&attr);
@@ -193,13 +196,18 @@ CVI_S32 CVI_AO_Enable(AUDIO_DEV AoDevId)
 		pthread_attr_setschedparam(&attr, &param);
 		pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
 		pstAoInstance->s32DevId = AoDevId;
-		pthread_create(&pstAoInstance->AoutThreadId, &attr,
+		ret = pthread_create(&pstAoInstance->AoutThreadId, &attr,
 			       (CVI_VOID * (*)(CVI_VOID *))AudioPrimaryOutputThread, (void *)pstAoInstance);
+		if (ret == EPERM) {  //because of ubuntu
+			printf("create AO SCHED_RR thread fail, change to SCHED_OTHER\n");
+			pthread_create(&pstAoInstance->AoutThreadId, NULL,
+			       (CVI_VOID * (*)(CVI_VOID *))AudioPrimaryOutputThread, (void *)pstAoInstance);
+		}
 		pstAoInstance->bThreadExist = CVI_TRUE;
 		pstAoInstance->bEnableAO = CVI_TRUE;
 		log_debug("AoDev:%d.--->success\n", AoDevId);
 	}
-	return 0;
+	return CVI_SUCCESS;
 }
 
 CVI_S32 CVI_AO_Disable(AUDIO_DEV AoDevId)

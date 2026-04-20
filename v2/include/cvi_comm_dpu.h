@@ -7,43 +7,46 @@
 
 typedef CVI_U64 DPU_HANLDE;
 
-
+/* Depth range of DPU */
 typedef enum _DPU_DISP_RANGE_E{
-	DPU_DISP_RANGE_DEFAULT = 0x0,
-	DPU_DISP_RANGE_16     = 0x1,
-	DPU_DISP_RANGE_32     = 0x2,
-	DPU_DISP_RANGE_48     = 0x3,
-	DPU_DISP_RANGE_64     = 0x4,
-	DPU_DISP_RANGE_80     = 0x5,
-	DPU_DISP_RANGE_96     = 0x6,
-	DPU_DISP_RANGE_112    = 0x7,
-	DPU_DISP_RANGE_128    = 0x8,
+	DPU_DISP_RANGE_DEFAULT = 0x0,			//default depth range
+	DPU_DISP_RANGE_16     = 0x1,			//depth range: 16 pixels
+	DPU_DISP_RANGE_32     = 0x2,			//depth range: 32 pixels
+	DPU_DISP_RANGE_48     = 0x3,			//depth range: 48 pixels
+	DPU_DISP_RANGE_64     = 0x4,			//depth range: 64 pixels
+	DPU_DISP_RANGE_80     = 0x5,			//depth range: 80 pixels
+	DPU_DISP_RANGE_96     = 0x6,			//depth range: 96 pixels
+	DPU_DISP_RANGE_112    = 0x7,			//depth range: 112 pixels
+	DPU_DISP_RANGE_128    = 0x8,			//depth range: 128 pixels
 	DPU_DISP_RANGE_BUTT
 }DPU_DISP_RANGE_E;
 
+/* Mask mode for DPU */
 typedef enum _DPU_MASK_MODE_E{
-	DPU_MASK_MODE_DEFAULT = 0x0,
-	DPU_MASK_MODE_1x1     = 0x1,
-	DPU_MASK_MODE_3x3     = 0x2,
-	DPU_MASK_MODE_5x5     = 0x3,
-	DPU_MASK_MODE_7x7     = 0x4,
+	DPU_MASK_MODE_DEFAULT = 0x0,			//default SAD filtering window
+	DPU_MASK_MODE_1x1     = 0x1,			//SAD window: 1x1
+	DPU_MASK_MODE_3x3     = 0x2,			//SAD window: 3x3
+	DPU_MASK_MODE_5x5     = 0x3,			//SAD window: 5x5
+	DPU_MASK_MODE_7x7     = 0x4,			//SAD window: 7x7
 	DPU_MASK_MODE_BUTT
 }DPU_MASK_MODE_E;
 
+/* Depth unit of DPU */
 typedef enum _DPU_DEPTH_UNIT_E{
-	DPU_DEPTH_UNIT_DEFAULT = 0x0,
-	DPU_DEPTH_UNIT_MM      = 0x1,
-	DPU_DEPTH_UNIT_CM      = 0x2,
-	DPU_DEPTH_UNIT_DM      = 0x3,
-	DPU_DEPTH_UNIT_M       = 0x4,
+	DPU_DEPTH_UNIT_DEFAULT = 0x0,			//default depth unit
+	DPU_DEPTH_UNIT_MM      = 0x1,			//depth unit: mm
+	DPU_DEPTH_UNIT_CM      = 0x2,			//depth unit: cm
+	DPU_DEPTH_UNIT_DM      = 0x3,			//depth unit: dm
+	DPU_DEPTH_UNIT_M       = 0x4,			//depth unit: m
 	DPU_DEPTH_UNIT_BUTT
 }DPU_DEPTH_UNIT_E;
 
+/* Direction of DCC cost aggregation for DPU */
 typedef enum _DPU_DCC_DIR_E{
-	DPU_DCC_DIR_DEFAULT  = 0x0,
-	DPU_DCC_DIR_A12      = 0x1,
-	DPU_DCC_DIR_A13      = 0x2,
-	DPU_DCC_DIR_A14      = 0x3,
+	DPU_DCC_DIR_DEFAULT  = 0x0,				//default dcc cost aggregation direction
+	DPU_DCC_DIR_A12      = 0x1,				//dcc cost aggregated along a1 + a2
+	DPU_DCC_DIR_A13      = 0x2,				//dcc cost aggregated along a1 + a3
+	DPU_DCC_DIR_A14      = 0x3,				//dcc cost aggregated along a1 + a4
 	DPU_DCC_DIR_BUTT
 }DPU_DCC_DIR_E;
 
@@ -60,7 +63,7 @@ typedef enum _DPU_MODE_E{
 	DPU_MODE_BUTT
 }DPU_MODE_E;
 
-
+/* Attributes of DPU group */
 typedef struct _DPU_GRP_ATTR_S {
 
 	SIZE_S stLeftImageSize;           //minSIze(64*64) maxSize(1920*1080)
@@ -87,8 +90,9 @@ typedef struct _DPU_GRP_ATTR_S {
 
 } DPU_GRP_ATTR_S;
 
+/* Attributes of DPU channel */
 typedef struct _DPU_CHN_ATTR_S {
-	SIZE_S stImgSize;
+	SIZE_S stImgSize;				//minSIze(64*64) maxSize(1920*1080)
 } DPU_CHN_ATTR_S;
 
 #endif

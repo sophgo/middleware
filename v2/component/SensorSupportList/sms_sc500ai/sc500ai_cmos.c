@@ -49,6 +49,8 @@ ISP_SNS_COMMADDR_U g_aunSC500AI_AddrInfo[VI_MAX_PIPE_NUM] = {
 	[1 ... VI_MAX_PIPE_NUM - 1] = { .s8I2cAddr = -1}
 };
 
+ISP_SNS_MIRRORFLIP_TYPE_E g_aeSC500AI_MirrorFip[VI_MAX_PIPE_NUM] = {0};
+
 CVI_U16 g_au16SC500AI_GainMode[VI_MAX_PIPE_NUM] = {0};
 CVI_U16 g_au16SC500AI_L2SMode[VI_MAX_PIPE_NUM] = {0};
 
@@ -1109,6 +1111,19 @@ static CVI_S32 cmos_set_image_mode(VI_PIPE ViPipe, ISP_CMOS_SENSOR_IMAGE_MODE_S 
 	return CVI_SUCCESS;
 }
 
+static CVI_VOID sensor_mirror_flip(VI_PIPE ViPipe, ISP_SNS_MIRRORFLIP_TYPE_E eSnsMirrorFlip)
+{
+	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
+
+	SC500AI_SENSOR_GET_CTX(ViPipe, pstSnsState);
+	CMOS_CHECK_POINTER_VOID(pstSnsState);
+	/* Apply the setting on the fly  */
+	if (pstSnsState->bInit == CVI_TRUE && g_aeSC500AI_MirrorFip[ViPipe] != eSnsMirrorFlip) {
+		sc500ai_mirror_flip(ViPipe, eSnsMirrorFlip);
+		g_aeSC500AI_MirrorFip[ViPipe] = eSnsMirrorFlip;
+	}
+}
+
 static CVI_VOID sensor_global_init(VI_PIPE ViPipe)
 {
 	ISP_SNS_STATE_S *pstSnsState = CVI_NULL;
@@ -1286,6 +1301,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	SC500AI_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	SC500AI_SENSOR_RESET_CTX(ViPipe);
+	g_aeSC500AI_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)
@@ -1385,7 +1401,7 @@ ISP_SNS_OBJ_S stSnsSC500AI_Obj = {
 	.pfnUnRegisterCallback  = sensor_unregister_callback,
 	.pfnStandby             = sc500ai_standby,
 	.pfnRestart             = sc500ai_restart,
-	.pfnMirrorFlip          = sc500ai_mirror_flip,
+	.pfnMirrorFlip          = sensor_mirror_flip,
 	.pfnWriteReg            = sc500ai_write_register,
 	.pfnReadReg             = sc500ai_read_register,
 	.pfnSetBusInfo          = sc500ai_set_bus_info,

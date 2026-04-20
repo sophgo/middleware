@@ -21,7 +21,7 @@
 #define DIV_0_TO_1(a)   ((0 == (a)) ? 1 : (a))
 #define DIV_0_TO_1_FLOAT(a) ((((a) < 1E-10) && ((a) > -1E-10)) ? 1 : (a))
 #define OS04E10_ID 0x530641
-#define OS04E10_I2C_ADDR_1 0x36
+#define OS04E10_I2C_ADDR_1 0x10
 #define OS04E10_I2C_ADDR_2 0x36
 #define OS04E10_I2C_ADDR_IS_VALID(addr)      ((addr) == OS04E10_I2C_ADDR_1 || (addr) == OS04E10_I2C_ADDR_2)
 
@@ -1083,6 +1083,7 @@ static CVI_VOID sensor_ctx_exit(VI_PIPE ViPipe)
 	OS04E10_SENSOR_GET_CTX(ViPipe, pastSnsStateCtx);
 	SENSOR_FREE(pastSnsStateCtx);
 	OS04E10_SENSOR_RESET_CTX(ViPipe);
+	g_aeOs04e10_MirrorFip[ViPipe] = ISP_SNS_NORMAL;
 }
 
 static CVI_S32 sensor_register_callback(VI_PIPE ViPipe, ALG_LIB_S *pstAeLib, ALG_LIB_S *pstAwbLib)
@@ -1177,6 +1178,11 @@ static CVI_S32 sensor_set_init(VI_PIPE ViPipe, ISP_INIT_ATTR_S *pstInitAttr)
 	return CVI_SUCCESS;
 }
 
+static CVI_S32 sensor_probe(VI_PIPE ViPipe)
+{
+	return os04e10_probe(ViPipe);
+}
+
 ISP_SNS_OBJ_S stSnsOs04e10_Obj = {
 	.pfnRegisterCallback    = sensor_register_callback,
 	.pfnUnRegisterCallback  = sensor_unregister_callback,
@@ -1192,5 +1198,6 @@ ISP_SNS_OBJ_S stSnsOs04e10_Obj = {
 	.pfnGetRxAttr		= sensor_rx_attr,
 	.pfnExpSensorCb		= cmos_init_sensor_exp_function,
 	.pfnExpAeCb		= cmos_init_ae_exp_function,
+	.pfnSnsProbe            = sensor_probe,
 };
 

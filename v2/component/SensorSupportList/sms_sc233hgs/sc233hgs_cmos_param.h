@@ -54,7 +54,47 @@ static const SC233HGS_MODE_S g_astSC233HGS_mode[SC233HGS_MODE_NUM] = {
 			.u32Step = 1,
 		},
 	},
-#ifdef SC233HGS_WDR
+		[SC233HGS_MODE_1080P120] = {
+		.name = "1080p120",
+		.astImg[0] = {
+			.stSnsSize = {
+				.u32Width = 1920,
+				.u32Height = 1080,
+			},
+			.stWndRect = {
+				.s32X = 0,
+				.s32Y = 0,
+				.u32Width = 1920,
+				.u32Height = 1080,
+			},
+			.stMaxSize = {
+				.u32Width = 1920,
+				.u32Height = 1200,
+			},
+		},
+		.f32MaxFps = 120,
+		.f32MinFps = 5,			/* u32VtsDef * f32MaxFps / 0x7F00*/
+		.u32HtsDef = 2160,
+		.u32VtsDef = 1250,
+		.stExp[0] = {
+			.u16Min = 1,
+			.u16Max = 1244,		/**u32VtsDef - 6*/
+			.u16Def = 1475,
+			.u16Step = 1,
+		},
+		.stAgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 16256,	/* 1024 * max total Again*/
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+		.stDgain[0] = {
+			.u32Min = 1024,
+			.u32Max = 15872,	/* 1024 * max total Dgain*/
+			.u32Def = 1024,
+			.u32Step = 1,
+		},
+	},
 	[SC233HGS_MODE_1080P60_WDR] = {
 		.name = "1080p60wdr",
 		.astImg[0] = {
@@ -119,7 +159,6 @@ static const SC233HGS_MODE_S g_astSC233HGS_mode[SC233HGS_MODE_NUM] = {
 			.u32Step = 1,
 		},
 	},
-#endif
 };
 /**TODO：mw*/
 static ISP_CMOS_NOISE_CALIBRATION_S g_stIspNoiseCalibratio = {.CalibrationCoef = {

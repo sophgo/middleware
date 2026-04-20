@@ -71,15 +71,18 @@ $(SDIR)/%.o: $(SDIR)/%.c
 $(TARGET_VENC) : $(COMM_OBJ) $(VENC_OBJS) $(OBJS) $(MW_LIB)/libvenc.a $(MW_LIB)/libsys.a
 	@$(CXX) -o $@ $(OBJS) $(VENC_OBJS) $(COMM_OBJ) $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CC))] $(notdir $@)
-
+	@cp $@ $(INSTALL_MW_DIR)/
+	@echo "Installed $@ to $(INSTALL_MW_DIR)"
 $(TARGET_VCODEC) : $(COMM_OBJ) $(VCODEC_OBJS) $(OBJS) $(MW_LIB)/libvenc.a $(MW_LIB)/libvdec.a $(MW_LIB)/libsys.a
 	@$(CXX) -o $@ $(OBJS) $(VCODEC_OBJS) $(COMM_OBJ) $(ELFFLAGS) $(EXTRA_LDFLAGS)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
-
+	@cp $@ $(INSTALL_MW_DIR)/
+	@echo "Installed $@ to $(INSTALL_MW_DIR)"
 $(TARGET_VENC_WITH_ASAN) : $(COMM_OBJ) $(VENC_OBJS) $(OBJS)
 	@$(CXX) -o $@ $(OBJS) $(VENC_OBJS) $(COMM_OBJ) $(ELFFLAGS) $(EXTRA_LDFLAGS_WITH_ASAN)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CC))] $(notdir $@)
-
+	@cp $@ $(INSTALL_MW_DIR)/
+	@echo "Installed $@ to $(INSTALL_MW_DIR)"
 $(TARGET_VCODEC_WITH_ASAN) : $(COMM_OBJ) $(VCODEC_OBJS) $(OBJS)
 	@$(CXX) -o $@ $(OBJS) $(VCODEC_OBJS) $(COMM_OBJ) $(ELFFLAGS) $(EXTRA_LDFLAGS_WITH_ASAN)
 	@echo -e $(BLUE)[LINK]$(END)[$(notdir $(CXX))] $(notdir $@)
