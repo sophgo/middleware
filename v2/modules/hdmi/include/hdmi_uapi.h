@@ -34,6 +34,7 @@ extern "C" {
 #define CVI_HDMI_SET_MOD_PARAM _IO('H', 0xa1)
 #define CVI_HDMI_GET_MOD_PARAM _IO('H', 0xa2)
 #define CVI_HDMI_SET_AUDIO_MUTE _IOW('H', 0xa3, CVI_BOOL)
+#define CVI_HDMI_SEND_AUDIO_FRAME _IOW('H', 0xa4, CVI_HDMI_AUDIO_FRAME_S)
 /* Internal use */
 
 #ifdef __cplusplus

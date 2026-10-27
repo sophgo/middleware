@@ -144,6 +144,43 @@ typedef enum _VO_MAC_BT_MUX_E {
 	VO_BT_MUX_MAX,        /* Maximum BT mux value */
 }VO_MAC_BT_MUX_E;
 
+/* VO RGB MAC multiplexer configuration enumeration
+ * Used to configure the RGB signal mapping for MAC interface
+ */
+typedef enum _VO_MAC_RGB_MUX_E {
+	VO_MUX_RGB_DATA0 = 0,      /* RGB data bit 0 */
+	VO_MUX_RGB_DATA1,       /* RGB data bit 1 */
+	VO_MUX_RGB_DATA2,       /* RGB data bit 2 */
+	VO_MUX_RGB_DATA3,       /* RGB data bit 3 */
+	VO_MUX_RGB_DATA4,       /* RGB data bit 4 */
+	VO_MUX_RGB_DATA5,       /* RGB data bit 5 */
+	VO_MUX_RGB_DATA6,       /* RGB data bit 6 */
+	VO_MUX_RGB_DATA7,       /* RGB data bit 7 */
+	VO_MUX_RGB_DATA8,       /* RGB data bit 8 */
+	VO_MUX_RGB_DATA9,       /* RGB data bit 9 */
+	VO_MUX_RGB_DATA10,      /* RGB data bit 10 */
+	VO_MUX_RGB_DATA11,      /* RGB data bit 11 */
+	VO_MUX_RGB_DATA12,      /* RGB data bit 12 */
+	VO_MUX_RGB_DATA13,      /* RGB data bit 13 */
+	VO_MUX_RGB_DATA14,      /* RGB data bit 14 */
+	VO_MUX_RGB_DATA15,      /* RGB data bit 15 */
+	VO_MUX_RGB_DATA16,      /* RGB data bit 16 */
+	VO_MUX_RGB_DATA17,      /* RGB data bit 17 */
+	VO_MUX_RGB_DATA18,      /* RGB data bit 18 */
+	VO_MUX_RGB_DATA19,      /* RGB data bit 19 */
+	VO_MUX_RGB_DATA20,      /* RGB data bit 20 */
+	VO_MUX_RGB_DATA21,      /* RGB data bit 21 */
+	VO_MUX_RGB_DATA22,      /* RGB data bit 22 */
+	VO_MUX_RGB_DATA23,      /* RGB data bit 23 */
+	VO_MUX_RGB_VS = 24,      /* RGB vertical sync signal */
+	VO_MUX_RGB_HS,          /* RGB horizontal sync signal */
+	VO_MUX_RGB_HDE,         /* RGB horizontal data enable */
+	VO_MUX_RGB_TG_HS_TILE = 30, /* Tile mode horizontal sync */
+	VO_MUX_RGB_TG_VS_TILE,     /* Tile mode vertical sync */
+	VO_MUX_RGB_CLK,         /* RGB clock signal */
+	VO_RGB_MUX_MAX,         /* Maximum RGB mux value */
+} VO_MAC_RGB_MUX_E;
+
 /* Video output MAC data selection enumeration
  * Used to configure the data source selection for MAC interface
  * Each value represents a specific data source or signal path
@@ -184,7 +221,7 @@ typedef enum _VO_MAC_D_SEL {
 /* Structure for VO D remap configuration */
 struct VO_D_REMAP {
 	VO_MAC_D_SEL_E sel;  /* MAC data selection */
-	VO_MAC_BT_MUX_E mux; /* BT multiplexer configuration */
+	CVI_U32 mux; /* BT multiplexer configuration */
 };
 
 typedef enum _VO_BT_MODE_E {
@@ -210,6 +247,12 @@ typedef struct _VO_BT_ATTR_S {
 	VO_BT_DATA_SEQ_E data_seq; /* BT data sequence */
 	struct VO_D_REMAP d_pins[MAX_VO_PINS]; /* BT pin remapping configuration */
 } VO_BT_ATTR_S;
+
+/* Structure for VO RGB attributes */
+typedef struct _VO_RGB_ATTR_S {
+	CVI_U8 pin_num;           /* Number of RGB pins */
+	struct VO_D_REMAP d_pins[MAX_VO_PINS]; /* RGB pin remapping configuration */
+} VO_RGB_ATTR_S;
 
 /*
  * u32BgColor: Background color of a device, in RGB format.

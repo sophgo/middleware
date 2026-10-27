@@ -25,9 +25,21 @@ typedef struct _PANEL_I2C_INSTR_S {
 	int data;
 } PANEL_I2C_INSTR_S;
 
+typedef struct _PANEL_I2C_INSTR_DEL_S {
+	int addr;
+	int data;
+	unsigned char delay;
+} PANEL_I2C_INSTR_DEL_S;
+
 extern PANEL_I2C_INSTR_S bt1120_1080p25_pt1000k_init_cmds[435];
 
 extern PANEL_I2C_INSTR_S bt656_720p25_pt1000k_init_cmds[261];
+
+extern PANEL_I2C_INSTR_DEL_S bt656_480p60_ms7024_init_cmds[125];
+extern PANEL_I2C_INSTR_DEL_S bt656_480p30_ms7024_init_cmds[125];
+extern PANEL_I2C_INSTR_DEL_S bt656_576p50_ms7024_init_cmds[125];
+extern PANEL_I2C_INSTR_DEL_S bt656_576p25_ms7024_init_cmds[125];
+extern PANEL_I2C_INSTR_DEL_S bt656_480p30_testpattern_ms7024_init_cmds[125];
 
 int panel_i2c_init(VO_DEV VoDev);
 

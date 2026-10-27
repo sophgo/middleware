@@ -623,4 +623,12 @@ typedef struct _CVI_HDMI_HW_SPEC {
 	CVI_HDMI_HW_PARAM hw_param[CVI_HDMI_HW_PARAM_NUM]; /* Hardware parameters */
 } CVI_HDMI_HW_SPEC;
 
+/* Structure for HDMI audio frame */
+typedef struct _CVI_HDMI_AUDIO_FRAME_S {
+	CVI_U32 u32Seq;        /* Frame sequence number */
+	CVI_U32 u32Len;        /* Frame data length in bytes */
+	CVI_U64 u64PhyAddr;    /* Physical address of audio data */
+	CVI_U64 u64VbBlk;      /* VB block handle (0 for CVI_SYS_IonAlloc) */
+} CVI_HDMI_AUDIO_FRAME_S;
+
 #endif

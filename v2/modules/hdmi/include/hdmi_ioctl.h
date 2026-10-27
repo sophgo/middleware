@@ -23,5 +23,6 @@ CVI_S32 _cvi_hdmi_set_hw_spec(CVI_S32 fd, const CVI_HDMI_HW_SPEC* hw_spec);
 CVI_S32 _cvi_hdmi_get_hw_spec(CVI_S32 fd, CVI_HDMI_HW_SPEC* hw_spec);
 CVI_S32 _cvi_hdmi_set_avmute(CVI_S32 fd,  const CVI_BOOL* avmute_en);
 CVI_S32 _cvi_hdmi_set_audio_mute(CVI_S32 fd, const CVI_BOOL* audio_mute_en);
+CVI_S32 _cvi_hdmi_send_audio_frame(CVI_S32 fd, const CVI_HDMI_AUDIO_FRAME_S* frame);
 
 #endif /* MODULES_HDMI_IOCTL_H_*/

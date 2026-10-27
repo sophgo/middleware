@@ -262,6 +262,10 @@ CVI_S32 SAMPLE_COMM_SYS_GetPicSize(PIC_SIZE_E enPicSize, SIZE_S *pstSize)
 		pstSize->u32Height = 480;
 		break;
 
+	case PIC_480x360:
+		pstSize->u32Width = 480;
+		pstSize->u32Height = 360;
+		break;
 	case PIC_479P:  /* 632 * 479 */
 		pstSize->u32Width  = 632;
 		pstSize->u32Height = 479;
@@ -881,6 +885,12 @@ CVI_S32 SAMPLE_COMM_VI_GetSizeBySensor(CVI_SNS_TYPE_E enMode, PIC_SIZE_E *penSiz
 	if (sns_cfg.u32ImageWigth[dev_num] == 352) {
 		if (sns_cfg.u32ImageHeight[dev_num] == 288) {
 			*penSize = PIC_CIF;
+			return s32Ret;
+		}
+	}
+	if (sns_cfg.u32ImageWigth[dev_num] == 480) {
+		if (sns_cfg.u32ImageHeight[dev_num] == 360) {
+			*penSize = PIC_480x360;
 			return s32Ret;
 		}
 	}

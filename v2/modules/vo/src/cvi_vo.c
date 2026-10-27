@@ -475,6 +475,55 @@ CVI_S32 CVI_VO_GetBTParam(VO_DEV VoDev, VO_BT_ATTR_S *pstBTParam)
 	return CVI_SUCCESS;
 }
 
+CVI_S32 CVI_VO_SetRGBParam(VO_DEV VoDev, const VO_RGB_ATTR_S *pstRGBParam)
+{
+	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstRGBParam);
+	CHECK_VO_DEV_VALID(VoDev);
+
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_rgb_param_cfg cfg;
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoDev = VoDev;
+	memcpy(&cfg.stRGBParam, pstRGBParam, sizeof(VO_RGB_ATTR_S));
+
+	s32Ret = vo_sdk_set_rgbparam(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) Set RGB param fail\n", VoDev);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}
+
+CVI_S32 CVI_VO_GetRGBParam(VO_DEV VoDev, VO_RGB_ATTR_S *pstRGBParam)
+{
+	MOD_CHECK_NULL_PTR(CVI_ID_VO, pstRGBParam);
+	CHECK_VO_DEV_VALID(VoDev);
+
+	CVI_S32 fd = -1, s32Ret;
+	struct vo_rgb_param_cfg cfg;
+
+	if (_check_vo_exist(&fd)) {
+		return CVI_ERR_VO_NOT_SUPPORT;
+	}
+
+	cfg.VoDev = VoDev;
+
+	s32Ret = vo_sdk_get_rgbparam(fd, &cfg);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_VO(CVI_DBG_ERR, "VoDev(%d) Get RGB param fail\n", VoDev);
+		return s32Ret;
+	}
+
+	memcpy(pstRGBParam, &cfg.stRGBParam, sizeof(VO_RGB_ATTR_S));
+
+	return CVI_SUCCESS;
+}
+
 
 CVI_S32 CVI_VO_Enable(VO_DEV VoDev)
 {

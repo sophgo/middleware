@@ -43,42 +43,122 @@ static struct option long_options[] = {
 	{NULL, 0, NULL, 0}
 };
 
-CVI_S32 AUDIO_MAP(CVI_HDMI_ATTR* attr, CVI_CHAR * filename, CVI_U64* pu64PhyAddr,
-				CVI_VOID ** ppVirAddr, const CVI_CHAR* strName)
+/* Audio send thread: send one frame, wait for playback duration, then send next */
+static volatile int g_audio_send_stop;
+static int g_audio_send_started;
+static pthread_t g_audio_send_tid;
+
+/*
+ * Convert 16-bit PCM to HDMI AHB DMA 32-bit format.
+ * Each 2-byte LE sample -> 32-bit word with audio in bits [23:8], bits [7:0] = 0.
+ */
+static void hdmi_pcm_16bit_to_dma(const short *src, unsigned int *dst,
+				   unsigned int num_samples)
 {
-	FILE *fd;
-	CVI_U32 u32Len;
-	struct stat statbuf;
+	while (num_samples--)
+		*dst++ = ((unsigned int)(unsigned short)(*src++)) << 8;
+}
 
-	fd=fopen(filename, "rb+");
-	if(fd==NULL){
-		perror("open");
-		return 1;
+/*
+ * Convert 24-bit packed PCM to HDMI AHB DMA 32-bit format.
+ * Each 3-byte LE sample -> 32-bit word with audio in bits [23:0].
+ */
+static void hdmi_pcm_24bit_to_dma(const unsigned char *src, unsigned int *dst,
+				   unsigned int num_samples)
+{
+	while (num_samples--) {
+		*dst++ = (unsigned int)src[0]
+		       | ((unsigned int)src[1] << 8)
+		       | ((unsigned int)src[2] << 16);
+		src += 3;
 	}
+}
 
-	stat(filename, &statbuf);
-	u32Len = statbuf.st_size;
-	SAMPLE_PRT("Audio File Length: %d\n", u32Len);
+static void *audio_send_thread(void *arg)
+{
+	CVI_HDMI_AUDIO_FRAME_S frame;
+	CVI_U32 seq = 0;
+	char *file = (char *)arg;
+	FILE *fp;
+	CVI_S32 channel = 2, period = 320, bitdepth = 24;
+	CVI_S32 period_size = period * channel * (bitdepth / 8);
+//	CVI_S32 sample_rate = 44100;
+	CVI_S32 read_size;
+	char *buf;
 
-	CVI_SYS_IonAlloc(pu64PhyAddr, ppVirAddr, strName, u32Len);
-
-	char *p = (char *)malloc(u32Len+1);
-	if(p == NULL)
-	{
-		fclose(fd);
-		return 0;
+	fp = fopen(file, "rb+");
+	if (fp == NULL) {
+		printf("open file fail\n");
+		return NULL;
 	}
+	buf = (char *)malloc(period_size);
+	/* Frame send to HDMI (convert PCM to AHB DMA 32-bit format) */
+	VB_POOL s_hdmiVbPool = VB_INVALID_POOLID;
+	CVI_U32 dmaFrameSize = period * channel * 4;
+	VB_BLK vbBlk = 0;
+	CVI_U64 phyAddr = 0;
+	CVI_VOID *virAddr;
 
-	fread(p,u32Len,1,fd);
-	memcpy(*ppVirAddr, p, u32Len);
+    /* Lazy-init: create a dedicated VB pool for HDMI DMA */
+	if (s_hdmiVbPool == VB_INVALID_POOLID) {
+		VB_POOL_CONFIG_S stPoolCfg;
 
-	attr->audio_start_paddr = *pu64PhyAddr;
-	attr->audio_stop_paddr = *pu64PhyAddr + u32Len;
-	SAMPLE_PRT("Start_addr:0x%lx, Stop_addr:0x%lx\n",attr->audio_start_paddr, attr->audio_stop_paddr);
-	SAMPLE_PRT("vaddr:%p\n", *ppVirAddr);
+		memset(&stPoolCfg, 0, sizeof(stPoolCfg));
+		stPoolCfg.u32BlkSize = dmaFrameSize;
+		stPoolCfg.u32BlkCnt = 50;
+		strncpy(stPoolCfg.acName, "hdmi_sample",
+				sizeof(stPoolCfg.acName) - 1);
+		s_hdmiVbPool = CVI_VB_CreatePool(&stPoolCfg);
+		printf("HDMI audio DMA pool: id=%d, blkSize=%u,"
+				"bitwidth=%d\n", s_hdmiVbPool, dmaFrameSize, bitdepth);
+	}
+	if (s_hdmiVbPool == VB_INVALID_POOLID)
+		printf("alloc vb clk fail\n");
 
-	free(p);
-	return 0;
+	while (!g_audio_send_stop) {
+		read_size = fread(buf, 1, period_size, fp);
+		if (read_size < period_size) {
+			fseek(fp, 0, SEEK_SET);
+			continue;
+		} else {
+			while (1) {
+				vbBlk = CVI_VB_GetBlock(s_hdmiVbPool, dmaFrameSize);
+				if (vbBlk == VB_INVALID_HANDLE) {
+					usleep(100000);
+					continue;
+				} else
+					break;
+			}
+			phyAddr = CVI_VB_Handle2PhysAddr(vbBlk);
+			virAddr = (CVI_VOID *)CVI_SYS_Mmap(phyAddr, dmaFrameSize);
+			if (!virAddr) {
+				CVI_VB_ReleaseBlock(vbBlk);
+				return NULL;
+			}
+
+			if (bitdepth == AUDIO_BIT_WIDTH_16) {
+				hdmi_pcm_16bit_to_dma((const short *)buf, (unsigned int *)virAddr, period * channel);
+			} else {
+				hdmi_pcm_24bit_to_dma((const unsigned char *)buf, (unsigned int *)virAddr, period * channel);
+			}
+
+			CVI_SYS_IonFlushCache(phyAddr, virAddr, dmaFrameSize);
+			CVI_SYS_Munmap(virAddr, dmaFrameSize);
+		}
+		memset(&frame, 0, sizeof(frame));
+		frame.u64PhyAddr = phyAddr;
+		frame.u32Len = dmaFrameSize;
+		frame.u64VbBlk = vbBlk;
+		frame.u32Seq = seq++;
+		if (CVI_HDMI_SendAudioFrame(&frame) != CVI_SUCCESS)
+			break;
+		CVI_VB_ReleaseBlock(vbBlk);
+		usleep(7000);
+	}
+	free(buf);
+	fclose(fp);
+
+	return NULL;
 }
 
 CVI_S32 Get_Attr()
@@ -152,7 +232,7 @@ CVI_S32 Get_Edid()
 		printf("Edid Raw Data:\n");
 		for(int i = 1; i <= 256; i++)
 		{
-			printf("%02X", edid_data.edid[i-1]);
+			printf("%02X \n", edid_data.edid[i-1]);
 			if(i%16 == 0)
 			{
 				printf("\n");
@@ -296,8 +376,8 @@ CVI_VOID SAMPLE_HDMI_Usage(CVI_CHAR *sPrgNm)
 	printf("\t   1  :  YUV444\n");
 	printf("\t   2  :  YUV422\n");
 	printf("Example 1 : ./sample_hdmi --Width 1920 --Height 1080 --FPS 60.00 --Pattern 1 --exit_flag 1\n");
-	printf("Example 2 : ./sample_hdmi --mcode 16 --pixel_clk 148500 --force_output 0 --pixel_repeat 0 --hdcp14_en 0 --csc_en 0 --audio_en 0 " \
-	       "--fmt_in 0 --fmt_out 0 --avmute 0 --audio_mute 0 --set_infoframe 0 --exit_flag 1 --audio_file ./audio.raw \n");
+	printf("Example 2 : ./sample_hdmi --mcode 16 --pixel_clk 148500 --force_output 0 --pixel_repeat 0 --hdcp14_en 0 --csc_en 0 --audio_en 1 " \
+	       "--fmt_in 0 --fmt_out 0 --avmute 0 --audio_mute 0 --set_infoframe 1 --exit_flag 1 --audio_file ./audio.raw \n");
 	printf("          (test pixel repeat should set set_infoframe = 1) \n");
 	printf("          (loopback test should set exit_flag = 0) \n");
 }
@@ -307,10 +387,7 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 	CVI_S32 s32Ret = CVI_FAILURE;
 	CVI_HDMI_ATTR setAttr;
 	CVI_HDMI_CALLBACK_FUNC callback_func;
-	CVI_U64 u64PhyAddr = 0;
-	CVI_VOID *pVirAddr;
 	CVI_CHAR* filename = "";
-	CVI_CHAR strName[] = "hdmi_sample";
 	CVI_S32 mcode = 0, pixel_clk = 0, hdcp14_en = 0, csc_en = 0, audio_en = 0, fmt_in = 0, fmt_out = 0, avmute = 0;
 	CVI_S32	audio_mute = 0, set_infoframe = 0, force_output = 0, pixel_repeat = 0, exit_flag = 0, opt = 0, option_index = 0;
 	CVI_S32	width = 0, height = 0, pattern = 0, mcode_temp = 0;
@@ -404,22 +481,6 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 	if(s32Ret){
 		printf("CVI_SYS_Init error\n");
 		return CVI_FAILURE;
-	}
-
-	if(audio_en){
-		if(!filename) {
-			printf("audio file is not set\n");
-			return CVI_FAILURE;
-		}
-		int ret = AUDIO_MAP(&setAttr, filename, &u64PhyAddr, &pVirAddr, strName);
-		if(ret){
-			printf("AUDIO MAP error\n");
-			if(u64PhyAddr || pVirAddr) {
-				CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
-				CVI_SYS_Exit();
-			}
-			return CVI_FAILURE;
-		}
 	}
 
 	s32Ret = Get_Edid();
@@ -564,11 +625,26 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 		printf("HDMI RegisterCallback error\n");
 		return CVI_FAILURE;
 	}
-
+	sleep(1);
+	g_audio_send_started = 0;
+	if (audio_en) {
+		if (pthread_create(&g_audio_send_tid, NULL, audio_send_thread, filename) == 0) {
+			g_audio_send_started = 1;
+			printf("HDMI audio send thread started (one frame, then next when done)\n");
+		} else {
+			printf("HDMI audio send thread create error\n");
+		}
+	}
+	/* When audio enabled: send one frame at init, then send next when previous duration elapsed */
+	sleep(15);/* wait for audio playback to start */
 	if(exit_flag){
 		printf("\n");
-		printf("-- Press Enter to Exit --\n");
-		getchar();
+
+		if (audio_en && g_audio_send_started) {
+			g_audio_send_stop = 1;
+			pthread_join(g_audio_send_tid, NULL);
+			g_audio_send_started = 0;
+		}
 
 		s32Ret = CVI_HDMI_UnRegisterCallback(&callback_func);
 		if(s32Ret){
@@ -583,9 +659,6 @@ CVI_S32 main(CVI_S32 argc, CVI_CHAR *argv[])
 		s32Ret = CVI_HDMI_DeInit();
 		if (s32Ret != CVI_SUCCESS)
 			SAMPLE_HDMI_PRT("HDMI DeInit abnormally!\n");
-
-		if (audio_en)
-			CVI_SYS_IonFree(u64PhyAddr, pVirAddr);
 
 		s32Ret = CVI_SYS_Exit();
 		if (s32Ret != CVI_SUCCESS)

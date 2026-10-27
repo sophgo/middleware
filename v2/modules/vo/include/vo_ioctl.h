@@ -102,6 +102,8 @@ int vo_sdk_set_lvdsparam(int fd, struct vo_lvds_param_cfg *cfg);
 int vo_sdk_get_lvdsparam(int fd, struct vo_lvds_param_cfg *cfg);
 int vo_sdk_set_btparam(int fd, struct vo_bt_param_cfg *cfg);
 int vo_sdk_get_btparam(int fd, struct vo_bt_param_cfg *cfg);
+int vo_sdk_set_rgbparam(int fd, struct vo_rgb_param_cfg *cfg);
+int vo_sdk_get_rgbparam(int fd, struct vo_rgb_param_cfg *cfg);
 int vo_sdk_set_hdmiparam(int fd, struct vo_hdmi_param_cfg *cfg);
 int vo_sdk_get_hdmiparam(int fd, struct vo_hdmi_param_cfg *cfg);
 int vo_sdk_get_displaybuflen(int fd, struct vo_display_buflen_cfg *cfg);

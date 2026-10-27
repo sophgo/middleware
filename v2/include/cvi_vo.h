@@ -84,6 +84,22 @@ CVI_S32 CVI_VO_SetBTParam(VO_DEV VoDev, const VO_BT_ATTR_S *pstBTParam);
  */
 CVI_S32 CVI_VO_GetBTParam(VO_DEV VoDev, VO_BT_ATTR_S *pstBTParam);
 
+/* CVI_VO_SetRGBParam: set rgb param
+ *
+ * @param VoDev: Video output device
+ * @param pstRGBParam: rgb param
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
+CVI_S32 CVI_VO_SetRGBParam(VO_DEV VoDev, const VO_RGB_ATTR_S *pstRGBParam);
+
+/* CVI_VO_GetRGBParam: get rgb param
+ *
+ * @param VoDev: Video output device
+ * @param pstRGBParam: rgb param
+ * @return: status of operation. CVI_SUCCESS if OK.
+ */
+CVI_S32 CVI_VO_GetRGBParam(VO_DEV VoDev, VO_RGB_ATTR_S *pstRGBParam);
+
 /* CVI_VO_IsEnabled: Check if VO is enabled
  *
  * @param VoDev: Video output device

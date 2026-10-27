@@ -104,3 +104,8 @@ CVI_S32 _cvi_hdmi_set_audio_mute(CVI_S32 fd, const CVI_BOOL* audio_mute_en)
 {
 	return ioctl(fd, CVI_HDMI_SET_AUDIO_MUTE, audio_mute_en);
 }
+
+CVI_S32 _cvi_hdmi_send_audio_frame(CVI_S32 fd, const CVI_HDMI_AUDIO_FRAME_S* frame)
+{
+	return ioctl(fd, CVI_HDMI_SEND_AUDIO_FRAME, frame);
+}

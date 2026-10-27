@@ -319,3 +319,22 @@ CVI_S32 CVI_HDMI_SetAudioMute(const CVI_BOOL* audio_mute_en)
 
 	return CVI_SUCCESS;
 }
+
+CVI_S32 CVI_HDMI_SendAudioFrame(const CVI_HDMI_AUDIO_FRAME_S* frame)
+{
+	CVI_S32 s32Ret;
+	CVI_S32 fd = get_hdmi_fd();
+
+	if (frame == NULL) {
+		CVI_TRACE_HDMI(CVI_DBG_ERR, "HDMI SendAudioFrame: frame is NULL\n");
+		return CVI_ERR_HDMI_NULL_PTR;
+	}
+
+	s32Ret = _cvi_hdmi_send_audio_frame(fd, frame);
+	if (s32Ret != CVI_SUCCESS) {
+		CVI_TRACE_HDMI(CVI_DBG_ERR, "HDMI send audio frame failed, ret=%d\n", s32Ret);
+		return s32Ret;
+	}
+
+	return CVI_SUCCESS;
+}

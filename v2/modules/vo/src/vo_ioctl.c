@@ -135,6 +135,16 @@ int vo_sdk_get_btparam(int fd, struct vo_bt_param_cfg *cfg)
 	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_GET_BTPARAM);
 }
 
+int vo_sdk_set_rgbparam(int fd, struct vo_rgb_param_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_SET_RGBPARAM);
+}
+
+int vo_sdk_get_rgbparam(int fd, struct vo_rgb_param_cfg *cfg)
+{
+	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_GET_RGBPARAM);
+}
+
 int vo_sdk_set_hdmiparam(int fd, struct vo_hdmi_param_cfg *cfg)
 {
 	VO_SDK_CTRL_PTR(fd, cfg, VO_IOCTL_SDK_CTRL, VO_SDK_SET_HDMIPARAM);

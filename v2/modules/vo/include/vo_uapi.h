@@ -134,6 +134,8 @@ enum VO_SDK_CTRL {
 	VO_SDK_DETACH_WBC_VBPOOL,
 	VO_SDK_SET_BTPARAM,
 	VO_SDK_GET_BTPARAM,
+	VO_SDK_SET_RGBPARAM,
+	VO_SDK_GET_RGBPARAM,
 };
 
 struct vo_ext_control {
@@ -345,6 +347,11 @@ struct vo_lvds_param_cfg {
 struct vo_bt_param_cfg {
 	CVI_U8 VoDev;
 	VO_BT_ATTR_S stBTParam;
+};
+
+struct vo_rgb_param_cfg {
+	CVI_U8 VoDev;
+	VO_RGB_ATTR_S stRGBParam;
 };
 
 struct vo_hdmi_param_cfg {

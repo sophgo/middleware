@@ -26,6 +26,8 @@
 
 static int v4l2_fd[VIDEO_DEV_NUM];
 static int test_dev_num;
+static int is_change_out_size = 0;
+static int is_patgen = 0;
 static int is_wdr_mode = 0;
 static int is_dump_yuv = 1;
 static int is_run_isp_mw = 1;
@@ -39,6 +41,34 @@ typedef struct VideoBuffer {
 } VideoBuffer;
 
 VideoBuffer framebuf[VIDEO_DEV_NUM][REQ_BUFFER_NUM];
+
+static int change_output_size(int fd)
+{
+	struct v4l2_format s_format;
+	struct v4l2_format g_format;
+
+	s_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	s_format.fmt.pix.width = 1920;
+	s_format.fmt.pix.height = 1080;
+	s_format.fmt.pix.pixelformat = V4L2_PIX_FMT_NV21;
+	if(ioctl(fd, VIDIOC_S_FMT, &s_format) < 0) {
+		printf("change_out_size size fail !\n");
+		return -1;
+	}
+
+	g_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	if(ioctl(fd, VIDIOC_G_FMT, &g_format) < 0) {
+		printf("get format size fail !\n");
+		return -1;
+
+	}
+	if(g_format.fmt.pix.width == s_format.fmt.pix.width &&
+		g_format.fmt.pix.height == s_format.fmt.pix.height) {
+		printf("change_out_size size[%d*%d] success\n", s_format.fmt.pix.width, s_format.fmt.pix.height);
+	}
+
+	return 0;
+}
 
 static int set_wdr_on(int fd, int on)
 {
@@ -72,6 +102,7 @@ static int set_dev_num(int fd, int dev_num)
 	memset(&val, 0, sizeof(struct v4l2_ext_controls));
 
 	if (fd > 0) {
+		// test set ext ctrl
 		control.id = VI_IOCTL_SET_DEV_NUM;
 		control.value = dev_num;
 		val.count = 1;
@@ -441,6 +472,7 @@ static void set_patgen(int is_patgen)
 	sprintf(cmdstr, "echo %s > /sys/module/soph_ispv4l2/parameters/csi_patgen_en", param);
 
 	system(cmdstr);
+	printf("set patgen %d success!\n", is_patgen);
 }
 
 static int stream_on(int dev)
@@ -606,33 +638,9 @@ static void *poll_thread(void *arg)
 static int _v4l2_ut_handle_op(int fd, int dev, int op)
 {
 	int ret = 0;
-	struct v4l2_format s_format;
-	struct v4l2_format g_format;
 
 	switch (op)
 	{
-	case 0:  // set format
-		s_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		s_format.fmt.pix.width = 1920;
-		s_format.fmt.pix.height = 1080;
-		s_format.fmt.pix.pixelformat = V4L2_PIX_FMT_NV21;
-		if(ioctl(fd, VIDIOC_S_FMT, &s_format) < 0) {
-			printf("set format size fail !\n");
-			ret = -1;
-			goto exit;
-		}
-
-		g_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		if(ioctl(fd, VIDIOC_G_FMT, &g_format) < 0) {
-			printf("get format size fail !\n");
-			ret = -1;
-			goto exit;
-		}
-		if(g_format.fmt.pix.width == s_format.fmt.pix.width &&
-			g_format.fmt.pix.height == s_format.fmt.pix.height) {
-			printf("set fmt size[%d*%d] success\n", s_format.fmt.pix.width, s_format.fmt.pix.height);
-		}
-		break;
 	case 5:// 1 output
 	case 6:// 2 output
 	case 7:// 4 output
@@ -687,11 +695,14 @@ static int handle_op(int op)
 
 	switch (op)
 	{
+	case 0:
+		is_change_out_size = 1; //change output size
+		return ret;
 	case 1:
 		is_wdr_mode = 1; //enable wdr
 		return ret;
 	case 2:
-		set_patgen(1); //enable pattern
+		is_patgen = 1; //enable pattern
 		return ret;
 	case 3:
 		is_run_isp_mw = 0; //diable isp mw
@@ -758,6 +769,25 @@ static int handle_op(int op)
 			}
 		}
 	}
+
+	//set patgen on or off
+	for (i = first_dev; i < first_dev + 1; i++) {
+		if (v4l2_fd[i] > 0)	{
+			if (is_patgen)
+				set_patgen(1); //enable pattern
+			else
+				set_patgen(0); //disable pattern
+		}
+	}
+
+	//change output size
+	for (i = first_dev; i < first_dev + 1; i++) {
+		if (v4l2_fd[i] > 0)	{
+			if (is_change_out_size)
+				change_output_size(v4l2_fd[i]);
+		}
+	}
+
 
 	set_dev_num(v4l2_fd[0], test_dev_num);
 
@@ -878,6 +908,8 @@ int main(int argc, char **argv)
 
 	is_run_isp_mw = 1;
 	is_wdr_mode = 0;
+	is_change_out_size = 0;
+	is_patgen= 0;
 
 	return 0;
 }

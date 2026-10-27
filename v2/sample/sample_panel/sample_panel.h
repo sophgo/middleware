@@ -32,6 +32,8 @@ extern "C" {
 #include "lvds_lcm185x56.h"
 #include "bt656_pt1000k.h"
 #include "bt1120_pt1000k.h"
+#include "rgb565_sat043at45c06d.h"
+#include "bt656_ms7024.h"
 #include "panel_i2c.h"
 
 typedef enum {
@@ -39,6 +41,7 @@ typedef enum {
 	PANEL_MODE_LVDS,
 	PANEL_MODE_BT,
 	PANEL_MODE_MCU,
+	PANEL_MODE_RGB,
 } PANEL_TYPE;
 
 typedef struct dsi_panel_desc_s {
@@ -58,6 +61,11 @@ typedef struct bt_panel_desc_s {
 	VO_BT_ATTR_S BtAttr;
 } bt_panel_desc;
 
+typedef struct rgb_panel_desc_s {
+	VO_PUB_ATTR_S stVoPubAttr;
+	VO_RGB_ATTR_S RgbAttr;
+} rgb_panel_desc;
+
 struct panel_desc_s {
 	char *panel_mode;
 	PANEL_TYPE panel_type;
@@ -65,6 +73,7 @@ struct panel_desc_s {
 		dsi_panel_desc stdsicfg;
 		lvds_panel_desc stlvdscfg;
 		bt_panel_desc stbtcfg;
+		rgb_panel_desc strgbcfg;
 	};
 };
 

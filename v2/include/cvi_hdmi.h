@@ -150,6 +150,14 @@ CVI_S32 CVI_HDMI_SetAvmute(const CVI_BOOL* avmute_en);
  */
 CVI_S32 CVI_HDMI_SetAudioMute(const CVI_BOOL* audio_mute_en);
 
+/**
+ * @brief Send audio frame to HDMI driver queue for DMA playback.
+ *
+ * @param frame(In), Audio frame data containing physical address and length.
+ * @return CVI_S32 Return CVI_SUCCESS if succeed, negative error code otherwise.
+ */
+CVI_S32 CVI_HDMI_SendAudioFrame(const CVI_HDMI_AUDIO_FRAME_S* frame);
+
 #ifdef __cplusplus
 #if __cplusplus
 }
